@@ -946,6 +946,7 @@ contract Evvm is EvvmStorage {
     function acceptImplementation() external onlyAdmin {
         if (block.timestamp < timeToAcceptImplementation)
             revert ErrorsLib.TimeLockNotExpired();
+
         currentImplementation = proposalImplementation;
         proposalImplementation = address(0);
         timeToAcceptImplementation = 0;
@@ -1077,9 +1078,8 @@ contract Evvm is EvvmStorage {
      * @param answer Bytes1 flag indicating staker status/type
      */
     function pointStaker(address user, bytes1 answer) public {
-        if (msg.sender != stakingContractAddress) {
-            revert();
-        }
+        if (msg.sender != stakingContractAddress) revert();
+
         stakerList[user] = answer;
     }
 
