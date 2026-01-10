@@ -171,8 +171,8 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         verifyAsyncNonce(user, nonce);
 
-        if (priorityFee_EVVM > 0) {
-            makePay(
+        if (priorityFee_EVVM > 0)
+            requestPay(
                 user,
                 0,
                 priorityFee_EVVM,
@@ -180,14 +180,13 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 priorityFlag_EVVM,
                 signature_EVVM
             );
-        }
 
-        string memory key = string.concat(
-            "@",
-            AdvancedStrings.bytes32ToString(hashPreRegisteredUsername)
-        );
-
-        identityDetails[key] = IdentityBaseMetadata({
+        identityDetails[
+            string.concat(
+                "@",
+                AdvancedStrings.bytes32ToString(hashPreRegisteredUsername)
+            )
+        ] = IdentityBaseMetadata({
             owner: user,
             expireDate: block.timestamp + 30 minutes,
             customMetadataMaxSlots: 0,
@@ -197,12 +196,11 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         markAsyncNonceAsUsed(user, nonce);
 
-        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender)) {
+        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender))
             makeCaPay(
                 msg.sender,
                 IEvvm(evvmAddress.current).getRewardAmount() + priorityFee_EVVM
             );
-        }
     }
 
     /**
@@ -250,7 +248,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         verifyAsyncNonce(user, nonce);
 
-        makePay(
+        requestPay(
             user,
             getPriceOfRegistration(username),
             priorityFee_EVVM,
@@ -338,7 +336,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         verifyAsyncNonce(user, nonce);
 
-        makePay(
+        requestPay(
             user,
             amount,
             priorityFee_EVVM,
@@ -417,7 +415,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         verifyAsyncNonce(user, nonce);
 
         if (priorityFee_EVVM > 0) {
-            makePay(
+            requestPay(
                 user,
                 0,
                 priorityFee_EVVM,
@@ -488,7 +486,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         verifyAsyncNonce(user, nonce);
 
         if (priorityFee_EVVM > 0) {
-            makePay(
+            requestPay(
                 user,
                 0,
                 priorityFee_EVVM,
@@ -570,7 +568,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         uint256 priceOfRenew = seePriceToRenew(username);
 
-        makePay(
+        requestPay(
             user,
             priceOfRenew,
             priorityFee_EVVM,
@@ -645,7 +643,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         verifyAsyncNonce(user, nonce);
 
-        makePay(
+        requestPay(
             user,
             getPriceToAddCustomMetadata(),
             priorityFee_EVVM,
@@ -711,7 +709,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         if (identityDetails[identity].customMetadataMaxSlots <= key)
             revert ErrorsLib.InvalidKey();
 
-        makePay(
+        requestPay(
             user,
             getPriceToRemoveCustomMetadata(),
             priorityFee_EVVM,
@@ -784,7 +782,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         if (identityDetails[identity].customMetadataMaxSlots == 0)
             revert ErrorsLib.EmptyCustomMetadata();
 
-        makePay(
+        requestPay(
             user,
             getPriceToFlushCustomMetadata(identity),
             priorityFee_EVVM,
@@ -853,7 +851,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         verifyAsyncNonce(user, nonce);
 
-        makePay(
+        requestPay(
             user,
             getPriceToFlushUsername(username),
             priorityFee_EVVM,
@@ -1036,7 +1034,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param priorityFlag True for async payment, false for sync payment
      * @param signature Signature authorizing the payment
      */
-    function makePay(
+    function requestPay(
         address user,
         uint256 amount,
         uint256 priorityFee,
