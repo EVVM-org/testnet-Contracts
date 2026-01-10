@@ -415,11 +415,8 @@ contract Evvm is EvvmStorage {
             _giveReward(msg.sender, 1);
         }
 
-        if (priorityFlag) {
-            asyncUsedNonce[from][nonce] = true;
-        } else {
-            nextSyncUsedNonce[from]++;
-        }
+        if (priorityFlag) asyncUsedNonce[from][nonce] = true;
+        else nextSyncUsedNonce[from]++;
     }
 
     /**
@@ -652,11 +649,8 @@ contract Evvm is EvvmStorage {
             balances[msg.sender][token] += priorityFee;
         }
 
-        if (priorityFlag) {
-            asyncUsedNonce[from][nonce] = true;
-        } else {
-            nextSyncUsedNonce[from]++;
-        }
+        if (priorityFlag) asyncUsedNonce[from][nonce] = true;
+        else nextSyncUsedNonce[from]++;
     }
 
     /**
