@@ -43,8 +43,12 @@ pragma solidity ^0.8.0;
 
 import {IEvvm} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
 import {IEstimator} from "@evvm/testnet-contracts/interfaces/IEstimator.sol";
-import {AsyncNonce} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
-import {StakingStructs} from "@evvm/testnet-contracts/contracts/staking/lib/StakingStructs.sol";
+import {
+    AsyncNonce
+} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+import {
+    StakingStructs
+} from "@evvm/testnet-contracts/contracts/staking/lib/StakingStructs.sol";
 import {ErrorsLib} from "./lib/ErrorsLib.sol";
 import {SignatureUtils} from "./lib/SignatureUtils.sol";
 
@@ -523,10 +527,7 @@ contract Staking is AsyncNonce, StakingStructs {
             })
         );
 
-        if (
-            evvm.isAddressStaker(msg.sender) &&
-            !account.IsAService
-        ) {
+        if (evvm.isAddressStaker(msg.sender) && !account.IsAService) {
             makeCaPay(
                 PRINCIPAL_TOKEN_ADDRESS,
                 msg.sender,
@@ -880,7 +881,9 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function proposeEstimator(address _estimator) external onlyOwner {
         estimatorAddress.proposal = _estimator;
-        estimatorAddress.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
+        estimatorAddress.timeToAccept =
+            block.timestamp +
+            TIME_TO_ACCEPT_PROPOSAL;
     }
 
     /**
@@ -1123,6 +1126,15 @@ contract Staking is AsyncNonce, StakingStructs {
         returns (BoolTypeProposal memory)
     {
         return allowPresaleStaking;
+    }
+
+    /**
+     * @notice Gets the unique identifier string for this EVVM instance
+     * @dev Returns the EvvmID used for distinguishing different EVVM deployments
+     * @return Unique EvvmID string
+     */
+    function getEvvmID() external view returns (uint256) {
+        return IEvvm(EVVM_ADDRESS).getEvvmID();
     }
 
     /**

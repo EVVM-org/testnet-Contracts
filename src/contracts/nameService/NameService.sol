@@ -1484,6 +1484,15 @@ contract NameService is AsyncNonce, NameServiceStructs {
     }
 
     /**
+     * @notice Gets the unique identifier string for this EVVM instance
+     * @dev Returns the EvvmID used for distinguishing different EVVM deployments
+     * @return Unique EvvmID string
+     */
+    function getEvvmID() external view returns (uint256) {
+        return IEvvm(evvmAddress.current).getEvvmID();
+    }
+
+    /**
      * @notice Gets the current EVVM contract address
      * @dev Returns the address of the EVVM contract used for payment processing
      * @return The current EVVM contract address

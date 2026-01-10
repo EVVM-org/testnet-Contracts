@@ -16,7 +16,9 @@ MMMMMMMMMMMM
  */
 
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {StakingStructs} from "@evvm/testnet-contracts/contracts/staking/lib/StakingStructs.sol";
+import {
+    StakingStructs
+} from "@evvm/testnet-contracts/contracts/staking/lib/StakingStructs.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 
 contract Estimator {
@@ -107,7 +109,6 @@ contract Estimator {
             uint256 timestampToOverwrite
         )
     {
-
         uint256 totSmLast;
         uint256 sumSmT;
 
@@ -125,7 +126,6 @@ contract Estimator {
 
             if (size == 1) totSmLast = h.totalStaked;
 
-
             if (h.timestamp > epoch.tFinal) {
                 if (totSmLast > 0) sumSmT += (epoch.tFinal - tLast) * totSmLast;
 
@@ -137,7 +137,6 @@ contract Estimator {
             if (h.transactionType == epochId) return (0, address(0), 0, 0, 0); // alv!!!!
 
             if (totSmLast > 0) sumSmT += (h.timestamp - tLast) * totSmLast;
-
 
             tLast = h.timestamp;
             totSmLast = h.totalStaked;
@@ -168,7 +167,6 @@ contract Estimator {
 
         timestampToOverwrite = epoch.tFinal;
 
-
         epoch.totalPool -= amountTotalToBeRewarded;
         epoch.totalStaked -= h.totalStaked;
     }
@@ -177,9 +175,7 @@ contract Estimator {
     // Admin functions
     //⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎼⎻⎺⎺⎻
 
-    function setActivatorProposal(
-        address _proposal
-    ) external onlyActivator {
+    function setActivatorProposal(address _proposal) external onlyActivator {
         activator.proposal = _proposal;
         activator.timeToAccept = block.timestamp + 1 days;
     }
@@ -197,9 +193,7 @@ contract Estimator {
         activator.timeToAccept = 0;
     }
 
-    function setEvvmAddressProposal(
-        address _proposal
-    ) external onlyAdmin {
+    function setEvvmAddressProposal(address _proposal) external onlyAdmin {
         evvmAddress.proposal = _proposal;
         evvmAddress.timeToAccept = block.timestamp + 1 days;
     }
@@ -217,9 +211,7 @@ contract Estimator {
         evvmAddress.timeToAccept = 0;
     }
 
-    function setAddressStakingProposal(
-        address _proposal
-    ) external onlyAdmin {
+    function setAddressStakingProposal(address _proposal) external onlyAdmin {
         addressStaking.proposal = _proposal;
         addressStaking.timeToAccept = block.timestamp + 1 days;
     }
@@ -237,9 +229,7 @@ contract Estimator {
         addressStaking.timeToAccept = 0;
     }
 
-    function setAdminProposal(
-        address _proposal
-    ) external onlyAdmin {
+    function setAdminProposal(address _proposal) external onlyAdmin {
         admin.proposal = _proposal;
         admin.timeToAccept = block.timestamp + 1 days;
     }
@@ -273,7 +263,11 @@ contract Estimator {
         return epochId;
     }
 
-    function getActivatorMetadata() external view returns (AddressTypeProposal memory) {
+    function getActivatorMetadata()
+        external
+        view
+        returns (AddressTypeProposal memory)
+    {
         return activator;
     }
 
@@ -293,11 +287,13 @@ contract Estimator {
         return addressStaking;
     }
 
-    function getAdminMetadata() external view returns (AddressTypeProposal memory) {
+    function getAdminMetadata()
+        external
+        view
+        returns (AddressTypeProposal memory)
+    {
         return admin;
     }
-
-
 
     function simulteEstimation(
         address _user
@@ -354,6 +350,4 @@ contract Estimator {
 
         timestampToOverwrite = epoch.tFinal;
     }
-
-
 }
