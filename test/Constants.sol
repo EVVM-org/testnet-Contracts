@@ -327,55 +327,56 @@ abstract contract Constants is Test {
         virtual
         returns (bytes memory signatureNameService, bytes memory signatureEVVM)
     {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
+                evvm.getEvvmID(),
+                keccak256(abi.encodePacked(username, clowNumber)),
+                nonceNameService
+            )
+        );
+        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        if (givePriorityFee) {
-            (v, r, s) = vm.sign(
-                user.PrivateKey,
-                Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                    evvm.getEvvmID(),
-                    keccak256(abi.encodePacked(username, uint256(clowNumber))),
-                    nonceNameService
-                )
-            );
-            signatureNameService = Erc191TestBuilder.buildERC191Signature(
-                v,
-                r,
-                s
-            );
-            (v, r, s) = vm.sign(
-                user.PrivateKey,
-                Erc191TestBuilder.buildMessageSignedForPay(
-                    evvm.getEvvmID(),
-                    address(nameService),
-                    "",
-                    PRINCIPAL_TOKEN_ADDRESS,
-                    0,
-                    priorityFeeAmount,
-                    nonceEVVM,
-                    priorityEVVM,
-                    address(nameService)
-                )
-            );
-            signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        } else {
-            (v, r, s) = vm.sign(
-                user.PrivateKey,
-                Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                    evvm.getEvvmID(),
-                    keccak256(abi.encodePacked(username, uint256(clowNumber))),
-                    nonceNameService
-                )
-            );
-            signatureNameService = Erc191TestBuilder.buildERC191Signature(
-                v,
-                r,
-                s
-            );
-            signatureEVVM = "";
-        }
+        signatureEVVM = givePriorityFee
+            ? _execute_makeSignaturePay(
+                user,
+                address(nameService),
+                "",
+                PRINCIPAL_TOKEN_ADDRESS,
+                0,
+                priorityFeeAmount,
+                nonceEVVM,
+                priorityEVVM,
+                address(nameService)
+            )
+            : bytes(hex"");
+    }
+
+    function _execute_makePreRegistrationUsername(
+        AccountData memory user,
+        string memory username,
+        uint256 clowNumber,
+        uint256 nonceNameService
+    ) internal virtual {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
+                evvm.getEvvmID(),
+                keccak256(abi.encodePacked(username, clowNumber)),
+                nonceNameService
+            )
+        );
+
+        nameService.preRegistrationUsername(
+            user.Address,
+            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            nonceNameService,
+            Erc191TestBuilder.buildERC191Signature(v, r, s),
+            0,
+            0,
+            false,
+            hex""
+        );
     }
 
     function _execute_makeMakeOfferSignatures(
@@ -584,33 +585,6 @@ abstract contract Constants is Test {
             )
         );
         signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-    }
-
-    function _execute_makePreRegistrationUsername(
-        AccountData memory user,
-        string memory username,
-        uint256 clowNumber,
-        uint256 nonceNameService
-    ) internal virtual {
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked(username, uint256(clowNumber))),
-                nonceNameService
-            )
-        );
-
-        nameService.preRegistrationUsername(
-            user.Address,
-            keccak256(abi.encodePacked(username, uint256(clowNumber))),
-            nonceNameService,
-            Erc191TestBuilder.buildERC191Signature(v, r, s),
-            0,
-            0,
-            false,
-            hex""
-        );
     }
 
     function _execute_makeRegistrationUsername(
