@@ -379,6 +379,63 @@ abstract contract Constants is Test {
         );
     }
 
+    function _execute_makeRegistrationUsernameSignatures(
+        AccountData memory user,
+        string memory username,
+        uint256 clowNumber,
+        uint256 nonceNameService,
+        uint256 priorityFeeAmountEVVM,
+        uint256 nonceEVVM,
+        bool priorityFlagEVVM
+    )
+        internal
+        virtual
+        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+    {
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+
+        (v, r, s) = vm.sign(
+            user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForRegistrationUsername(
+                evvm.getEvvmID(),
+                username,
+                clowNumber,
+                nonceNameService
+            )
+        );
+        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
+
+        (v, r, s) = vm.sign(
+            user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForPay(
+                evvm.getEvvmID(),
+                address(nameService),
+                "",
+                PRINCIPAL_TOKEN_ADDRESS,
+                nameService.getPriceOfRegistration(username),
+                priorityFeeAmountEVVM,
+                nonceEVVM,
+                priorityFlagEVVM,
+                address(nameService)
+            )
+        );
+        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
+
+        signatureEVVM = _execute_makeSignaturePay(
+            user,
+            address(nameService),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            nameService.getPriceOfRegistration(username),
+            priorityFeeAmountEVVM,
+            nonceEVVM,
+            priorityFlagEVVM,
+            address(nameService)
+        );
+    }
+
     function _execute_makeMakeOfferSignatures(
         AccountData memory user,
         string memory usernameToMakeOffer,
@@ -409,21 +466,17 @@ abstract contract Constants is Test {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        (v, r, s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountToOffer,
-                priorityFeeAmountEVVM,
-                nonceEVVM,
-                priorityFlagEVVM,
-                address(nameService)
-            )
+        signatureEVVM = _execute_makeSignaturePay(
+            user,
+            address(nameService),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            amountToOffer,
+            priorityFeeAmountEVVM,
+            nonceEVVM,
+            priorityFlagEVVM,
+            address(nameService)
         );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
     }
 
     function _execute_makeAcceptOfferSignatures(
@@ -923,51 +976,6 @@ abstract contract Constants is Test {
                 "",
                 PRINCIPAL_TOKEN_ADDRESS,
                 nameService.getPriceToFlushCustomMetadata(username),
-                priorityFeeAmountEVVM,
-                nonceEVVM,
-                priorityFlagEVVM,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-    }
-
-    function _execute_makeRegistrationUsernameSignatures(
-        AccountData memory user,
-        string memory username,
-        uint256 clowNumber,
-        uint256 nonceNameService,
-        uint256 priorityFeeAmountEVVM,
-        uint256 nonceEVVM,
-        bool priorityFlagEVVM
-    )
-        internal
-        virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRegistrationUsername(
-                evvm.getEvvmID(),
-                username,
-                clowNumber,
-                nonceNameService
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceOfRegistration(username),
                 priorityFeeAmountEVVM,
                 nonceEVVM,
                 priorityFlagEVVM,
