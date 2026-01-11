@@ -228,14 +228,6 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature_EVVM
     ) external {
         if (
-            admin.current != user &&
-            !IdentityValidation.isValidUsername(username)
-        ) revert ErrorsLib.InvalidUsername();
-
-        if (!isUsernameAvailable(username))
-            revert ErrorsLib.UsernameAlreadyRegistered();
-
-        if (
             !SignatureUtils.verifyMessageSignedForRegistrationUsername(
                 IEvvm(evvmAddress.current).getEvvmID(),
                 user,
@@ -245,6 +237,14 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 signature
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
+
+        if (
+            admin.current != user &&
+            !IdentityValidation.isValidUsername(username)
+        ) revert ErrorsLib.InvalidUsername();
+
+        if (!isUsernameAvailable(username))
+            revert ErrorsLib.UsernameAlreadyRegistered();
 
         verifyAsyncNonce(user, nonce);
 
@@ -277,13 +277,12 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         markAsyncNonceAsUsed(user, nonce);
 
-        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender)) {
+        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender))
             makeCaPay(
                 msg.sender,
                 (50 * IEvvm(evvmAddress.current).getRewardAmount()) +
                     priorityFee_EVVM
             );
-        }
 
         delete identityDetails[_key];
     }
