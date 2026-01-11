@@ -331,7 +331,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
             !verifyIfIdentityExists(username)
         ) revert ErrorsLib.InvalidUsername();
 
-        if (expireDate <= block.timestamp) revert ErrorsLib.UsernameExpired();
+        if (expireDate <= block.timestamp) revert ErrorsLib.CannotBeBeforeCurrentTime();
 
         if (amount == 0) revert ErrorsLib.AmountMustBeGreaterThanZero();
 

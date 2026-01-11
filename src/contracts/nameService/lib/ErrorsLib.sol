@@ -9,7 +9,7 @@ library ErrorsLib {
     error InvalidSignatureOnNameService();
     error InvalidUsername();
     error AmountMustBeGreaterThanZero();
-    error UsernameExpired();
+    error CannotBeBeforeCurrentTime();
     error UsernameAlreadyRegistered();
     error PreRegistrationNotValid();
     error UserIsNotOwnerOfOffer();
