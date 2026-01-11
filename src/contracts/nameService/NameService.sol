@@ -315,13 +315,6 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature_EVVM
     ) external returns (uint256 offerID) {
         if (
-            identityDetails[username].flagNotAUsername == 0x01 ||
-            !verifyIfIdentityExists(username) ||
-            amount == 0 ||
-            expireDate <= block.timestamp
-        ) revert ErrorsLib.PreRegistrationNotValid();
-
-        if (
             !SignatureUtils.verifyMessageSignedForMakeOffer(
                 IEvvm(evvmAddress.current).getEvvmID(),
                 user,
@@ -332,6 +325,15 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 signature
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
+
+        if (
+            identityDetails[username].flagNotAUsername == 0x01 ||
+            !verifyIfIdentityExists(username)
+        ) revert ErrorsLib.InvalidUsername();
+
+        if (expireDate <= block.timestamp) revert ErrorsLib.UsernameExpired();
+
+        if (amount == 0) revert ErrorsLib.AmountMustBeGreaterThanZero();
 
         verifyAsyncNonce(user, nonce);
 
