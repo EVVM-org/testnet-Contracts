@@ -120,7 +120,6 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
 
         ) = _execute_makeAcceptOfferSignatures(
                 COMMON_USER_NO_STAKER_1,
-                false,
                 "test",
                 0,
                 input.nonceNameService,
@@ -197,7 +196,6 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             bytes memory signatureEVVM
         ) = _execute_makeAcceptOfferSignatures(
                 COMMON_USER_NO_STAKER_1,
-                true,
                 "test",
                 0,
                 input.nonceNameService,
@@ -269,7 +267,6 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
 
         ) = _execute_makeAcceptOfferSignatures(
                 COMMON_USER_NO_STAKER_1,
-                false,
                 "test",
                 0,
                 input.nonceNameService,
@@ -350,7 +347,6 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             bytes memory signatureEVVM
         ) = _execute_makeAcceptOfferSignatures(
                 COMMON_USER_NO_STAKER_1,
-                true,
                 "test",
                 0,
                 input.nonceNameService,

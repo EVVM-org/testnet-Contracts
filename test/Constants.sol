@@ -451,7 +451,7 @@ abstract contract Constants is Test {
         );
 
         skip(30 minutes);
-        
+
         evvm.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
@@ -615,11 +615,10 @@ abstract contract Constants is Test {
 
     function _execute_makeAcceptOfferSignatures(
         AccountData memory user,
-        bool givePriorityFee,
         string memory usernameToFindOffer,
         uint256 index,
         uint256 nonceNameService,
-        uint256 priorityFeeAmountEVVM,
+        uint256 priorityFee,
         uint256 nonceEVVM,
         bool priorityFlagEVVM
     )
@@ -627,63 +626,30 @@ abstract contract Constants is Test {
         virtual
         returns (bytes memory signatureNameService, bytes memory signatureEVVM)
     {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
+                evvm.getEvvmID(),
+                usernameToFindOffer,
+                index,
+                nonceNameService
+            )
+        );
+        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        if (givePriorityFee) {
-            (v, r, s) = vm.sign(
-                user.PrivateKey,
-                Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                    evvm.getEvvmID(),
-                    usernameToFindOffer,
-                    index,
-                    nonceNameService
-                )
-            );
-            signatureNameService = Erc191TestBuilder.buildERC191Signature(
-                v,
-                r,
-                s
-            );
-
-            (v, r, s) = vm.sign(
-                user.PrivateKey,
-                Erc191TestBuilder.buildMessageSignedForPay(
-                    evvm.getEvvmID(),
-                    address(nameService),
-                    "",
-                    PRINCIPAL_TOKEN_ADDRESS,
-                    0,
-                    priorityFeeAmountEVVM,
-                    nonceEVVM,
-                    priorityFlagEVVM,
-                    address(nameService)
-                )
-            );
-            signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        } else {
-            (v, r, s) = vm.sign(
-                user.PrivateKey,
-                Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                    evvm.getEvvmID(),
-                    usernameToFindOffer,
-                    index,
-                    nonceNameService
-                )
-            );
-            signatureNameService = Erc191TestBuilder.buildERC191Signature(
-                v,
-                r,
-                s
-            );
-            signatureNameService = Erc191TestBuilder.buildERC191Signature(
-                v,
-                r,
-                s
-            );
-            signatureEVVM = "";
-        }
+        signatureEVVM = priorityFee > 0
+            ? _execute_makeSignaturePay(
+                user,
+                address(nameService),
+                "",
+                PRINCIPAL_TOKEN_ADDRESS,
+                0,
+                priorityFee,
+                nonceEVVM,
+                priorityFlagEVVM,
+                address(nameService)
+            )
+            : bytes(hex"");
     }
 
     function _execute_makeAddCustomMetadataSignatures(

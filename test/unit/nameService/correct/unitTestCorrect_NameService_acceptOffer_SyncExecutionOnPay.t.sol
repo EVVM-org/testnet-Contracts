@@ -93,7 +93,6 @@ contract unitTestCorrect_NameService_acceptOffer_SyncExecutionOnPay is
 
         ) = _execute_makeAcceptOfferSignatures(
                 COMMON_USER_NO_STAKER_1,
-                false,
                 "test",
                 0,
                 10000000001,
@@ -152,7 +151,6 @@ contract unitTestCorrect_NameService_acceptOffer_SyncExecutionOnPay is
             bytes memory signatureEVVM
         ) = _execute_makeAcceptOfferSignatures(
                 COMMON_USER_NO_STAKER_1,
-                true,
                 "test",
                 0,
                 10000000001,
@@ -206,7 +204,6 @@ contract unitTestCorrect_NameService_acceptOffer_SyncExecutionOnPay is
 
         ) = _execute_makeAcceptOfferSignatures(
                 COMMON_USER_NO_STAKER_1,
-                false,
                 "test",
                 0,
                 10000000001,
@@ -262,7 +259,6 @@ contract unitTestCorrect_NameService_acceptOffer_SyncExecutionOnPay is
             bytes memory signatureEVVM
         ) = _execute_makeAcceptOfferSignatures(
                 COMMON_USER_NO_STAKER_1,
-                true,
                 "test",
                 0,
                 10000000001,
