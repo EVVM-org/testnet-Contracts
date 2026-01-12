@@ -142,7 +142,6 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
 
         ) = _execute_makeWithdrawOfferSignatures(
                 selectedUser,
-                false,
                 "test",
                 indexSelected,
                 input.nonceNameService,
@@ -236,7 +235,6 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
             bytes memory signatureEVVM
         ) = _execute_makeWithdrawOfferSignatures(
                 selectedUser,
-                true,
                 "test",
                 indexSelected,
                 input.nonceNameService,
