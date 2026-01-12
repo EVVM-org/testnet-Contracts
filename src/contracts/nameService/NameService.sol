@@ -331,7 +331,8 @@ contract NameService is AsyncNonce, NameServiceStructs {
             !verifyIfIdentityExists(username)
         ) revert ErrorsLib.InvalidUsername();
 
-        if (expireDate <= block.timestamp) revert ErrorsLib.CannotBeBeforeCurrentTime();
+        if (expireDate <= block.timestamp)
+            revert ErrorsLib.CannotBeBeforeCurrentTime();
 
         if (amount == 0) revert ErrorsLib.AmountMustBeGreaterThanZero();
 
@@ -399,9 +400,6 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
     ) external {
-        if (usernameOffers[username][offerID].offerer != user)
-            revert ErrorsLib.UserIsNotOwnerOfOffer();
-
         if (
             !SignatureUtils.verifyMessageSignedForWithdrawOffer(
                 IEvvm(evvmAddress.current).getEvvmID(),
@@ -412,6 +410,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 signature
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
+
+        if (usernameOffers[username][offerID].offerer != user)
+            revert ErrorsLib.UserIsNotOwnerOfOffer();
 
         verifyAsyncNonce(user, nonce);
 
