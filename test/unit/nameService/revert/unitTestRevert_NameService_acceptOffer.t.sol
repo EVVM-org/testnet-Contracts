@@ -16,120 +16,117 @@ pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
 import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
+    ErrorsLib as EvvmErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    AsyncNonce
+} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
 
 contract unitTestRevert_NameService_acceptOffer is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
-    function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+    uint256 offerID;
 
+    string constant USERNAME = "test";
+
+    uint256 constant EXPIRATION_DATE_OF_OFFER = 30 days;
+
+    function executeBeforeSetUp() internal override {
         _execute_makeRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
-            "test",
-            777,
-            10101,
-            20202
+            USERNAME,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+            )
         );
-        makeOffer(
+
+        offerID = _execute_makeMakeOffer(
             COMMON_USER_NO_STAKER_2,
-            "test",
-            block.timestamp + 30 days,
+            USERNAME,
+            block.timestamp + EXPIRATION_DATE_OF_OFFER,
             0.001 ether,
-            10001,
-            101,
-            true
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
+            ),
+            0,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
+            ),
+            true,
+            COMMON_USER_NO_STAKER_3
         );
     }
 
-    function addBalance(
+    function _addBalance(
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(user.Address, PRINCIPAL_TOKEN_ADDRESS, priorityFeeAmount);
+        evvm.addBalance(
+            user.Address,
+            PRINCIPAL_TOKEN_ADDRESS,
+            priorityFeeAmount
+        );
 
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    /**
-     * Function to test:
-     * bSigAt[variable]: bad signature at
-     * bPaySigAt[variable]: bad payment signature at
-     * some denominations on test can be explicit expleined
-     */
-
-    /*
-    function test__unit_revert__acceptOffer__bPaySigAt() external {
-        uint256 amountPriorityFee = addBalance(
+    function test__unit_revert__acceptOffer__InvalidSignatureOnNameService_evvmID()
+        external
+    {
+        uint256 amountPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_1,
             0.001 ether
         );
 
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
+                /* 🢃 different evvmID 🢃 */
+                evvm.getEvvmID() + 1,
+                USERNAME,
+                offerID,
                 10000000001
             )
         );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
+        bytes memory signatureNameService = Erc191TestBuilder
+            .buildERC191Signature(v, r, s);
 
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                0,
-                1001,
-                true,
-                address(nameService)
-            )
+        bytes memory signatureEVVM = _execute_makeSignaturePay(
+            COMMON_USER_NO_STAKER_1,
+            address(nameService),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            0,
+            amountPriorityFee,
+            1001,
+            true,
+            address(nameService)
         );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
+            USERNAME,
             0,
             10000000001,
             signatureNameService,
@@ -141,27 +138,36 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.stopPrank();
 
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
+        (address user, ) = nameService.getIdentityBasicMetadata(USERNAME);
 
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
+        assertEq(
+            user,
+            COMMON_USER_NO_STAKER_1.Address,
+            "Username ownership should not have changed"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            amountPriorityFee
+            amountPriorityFee,
+            "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "Balance of offer maker should not have changed"
         );
     }
 
-    /////////////////////////////////////////////////////////////////////////////
-
-    function test__unit_revert__acceptOffer__() external {
-        uint256 amountPriorityFee = addBalance(
+    function test__unit_revert__acceptOffer__InvalidSignatureOnNameService_signer()
+        external
+    {
+        uint256 amountPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_1,
             0.001 ether
         );
@@ -170,1042 +176,90 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeAcceptOfferSignatures(
-                COMMON_USER_NO_STAKER_1,
-                true,
-                "test",
-                0,
-                10000000001,
-                amountPriorityFee,
-                1001,
-                true
-            );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-    */
-
-    function test__unit_revert__acceptOffer__bSigAtSigner() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                0,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bSigAtUsername() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "user",
-                0,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                0,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bSigAtOfferID() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                1,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                0,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bSigAtNonceNameService() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                777
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                0,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bPaySigAtSigner() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                0,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bPaySigAtToAddress() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                0,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bPaySigAtToIdentity() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(0),
-                "nameservice",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                0,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bPaySigAtTokenAddress() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                ETHER_ADDRESS,
-                amountPriorityFee,
-                0,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bPaySigAtAmount() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                777,
-                0,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bPaySigAtPriorityFee() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                1,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bPaySigAtNonceEVVM() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                0,
-                777,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bPaySigAtPriorityFlag() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                0,
-                1001,
-                false,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__bPaySigAtExecutor() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                10000000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amountPriorityFee,
-                0,
-                1001,
-                true,
-                address(0)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            10000000001,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__userIsNotOwner() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether
-        );
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+                /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
-                true,
-                "test",
-                0,
+                USERNAME,
+                offerID,
                 10000000001,
                 amountPriorityFee,
                 1001,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
 
         nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            offerID,
+            10000000001,
+            signatureNameService,
+            amountPriorityFee,
+            1001,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            user,
+            COMMON_USER_NO_STAKER_1.Address,
+            "Username ownership should not have changed"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            amountPriorityFee,
+            "Balance of offer accepter should not have changed"
+        );
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
             0,
+            "Balance of offer maker should not have changed"
+        );
+    }
+
+    function test__unit_revert__acceptOffer__InvalidSignatureOnNameService_username()
+        external
+    {
+        uint256 amountPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_1,
+            0.001 ether
+        );
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeAcceptOfferSignatures(
+                COMMON_USER_NO_STAKER_1,
+                /* 🢃 different username 🢃 */
+                "diferent",
+                offerID,
+                10000000001,
+                amountPriorityFee,
+                1001,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+
+        nameService.acceptOffer(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            offerID,
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -1216,92 +270,36 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.stopPrank();
 
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
+        (address user, ) = nameService.getIdentityBasicMetadata(USERNAME);
 
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
+        assertEq(
+            user,
+            COMMON_USER_NO_STAKER_1.Address,
+            "Username ownership should not have changed"
+        );
 
         assertEq(
             evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
+                COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            amountPriorityFee
+            amountPriorityFee,
+            "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__acceptOffer__nonceMnsAlreadyUsed() external {
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether
-        );
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
-                COMMON_USER_NO_STAKER_1,
-                true,
-                "test",
-                0,
-                10101,
-                amountPriorityFee,
-                1001,
-                true
-            );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
             0,
-            10101,
-            signatureNameService,
-            amountPriorityFee,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            amountPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
+            "Balance of offer maker should not have changed"
         );
     }
 
-    function test__unit_revert__acceptOffer__offerExpired() external {
-        makeOffer(
-            COMMON_USER_NO_STAKER_2,
-            "test",
-            block.timestamp + 5 days,
-            0.001 ether,
-            777,
-            777,
-            true
-        );
-
-        skip(10 days);
-
-        uint256 amountPriorityFee = addBalance(
+    function test__unit_revert__acceptOffer__InvalidSignatureOnNameService_offerId()
+        external
+    {
+        uint256 amountPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_1,
             0.001 ether
         );
@@ -1311,23 +309,23 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             bytes memory signatureEVVM
         ) = _execute_makeAcceptOfferSignatures(
                 COMMON_USER_NO_STAKER_1,
-                true,
-                "test",
-                1,
+                USERNAME,
+                /* 🢃 different offerId 🢃 */
+                offerID + 1,
                 10000000001,
                 amountPriorityFee,
                 1001,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1,
+            USERNAME,
+            offerID,
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -1338,25 +336,36 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.stopPrank();
 
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
+        (address user, ) = nameService.getIdentityBasicMetadata(USERNAME);
 
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
+        assertEq(
+            user,
+            COMMON_USER_NO_STAKER_1.Address,
+            "Username ownership should not have changed"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            amountPriorityFee
+            amountPriorityFee,
+            "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "Balance of offer maker should not have changed"
         );
     }
 
-    function test__unit_revert__acceptOffer__offerOutOfBounds() external {
-        uint256 amountPriorityFee = addBalance(
+    function test__unit_revert__acceptOffer__InvalidSignatureOnNameService_nameServiceNonce()
+        external
+    {
+        uint256 amountPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_1,
             0.001 ether
         );
@@ -1366,23 +375,23 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             bytes memory signatureEVVM
         ) = _execute_makeAcceptOfferSignatures(
                 COMMON_USER_NO_STAKER_1,
-                true,
-                "test",
-                1,
-                10000000001,
+                USERNAME,
+                offerID,
+                /* 🢃 different nameServiceNonce 🢃 */
+                67,
                 amountPriorityFee,
                 1001,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1,
+            USERNAME,
+            offerID,
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -1393,20 +402,368 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.stopPrank();
 
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
+        (address user, ) = nameService.getIdentityBasicMetadata(USERNAME);
 
-        assertEq(user, COMMON_USER_NO_STAKER_1.Address);
+        assertEq(
+            user,
+            COMMON_USER_NO_STAKER_1.Address,
+            "Username ownership should not have changed"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            amountPriorityFee
+            amountPriorityFee,
+            "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "Balance of offer maker should not have changed"
+        );
+    }
+
+    function test__unit_revert__acceptOffer__OfferInactive_offerer() external {
+        uint256 amountPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_1,
+            0.001 ether
+        );
+        /* 🢃 different offerId 🢃 */
+        uint256 diferentOfferID = offerID + 67;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeAcceptOfferSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                diferentOfferID,
+                10000000001,
+                amountPriorityFee,
+                1001,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.OfferInactive.selector);
+
+        nameService.acceptOffer(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            diferentOfferID,
+            10000000001,
+            signatureNameService,
+            amountPriorityFee,
+            1001,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            user,
+            COMMON_USER_NO_STAKER_1.Address,
+            "Username ownership should not have changed"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            amountPriorityFee,
+            "Balance of offer accepter should not have changed"
+        );
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "Balance of offer maker should not have changed"
+        );
+    }
+
+    function test__unit_revert__acceptOffer__OfferInactive_expireDate()
+        external
+    {
+        /* 🢃 skip after expiration date 🢃 */
+        skip(EXPIRATION_DATE_OF_OFFER * 5);
+
+        uint256 amountPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_1,
+            0.001 ether
+        );
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeAcceptOfferSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                offerID,
+                10000000001,
+                amountPriorityFee,
+                1001,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.OfferInactive.selector);
+
+        nameService.acceptOffer(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            offerID,
+            10000000001,
+            signatureNameService,
+            amountPriorityFee,
+            1001,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            user,
+            COMMON_USER_NO_STAKER_1.Address,
+            "Username ownership should not have changed"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            amountPriorityFee,
+            "Balance of offer accepter should not have changed"
+        );
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "Balance of offer maker should not have changed"
+        );
+    }
+
+    function test__unit_revert__acceptOffer__AsyncNonceAlreadyUsed() external {
+        uint256 amountPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_1,
+            0.001 ether
+        );
+
+        /* 🢃 reused nonce 🢃 */
+        uint256 nonceNameService = uint256(
+            0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+        );
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeAcceptOfferSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                offerID,
+                nonceNameService,
+                amountPriorityFee,
+                1001,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+
+        nameService.acceptOffer(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            offerID,
+            nonceNameService,
+            signatureNameService,
+            amountPriorityFee,
+            1001,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            user,
+            COMMON_USER_NO_STAKER_1.Address,
+            "Username ownership should not have changed"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            amountPriorityFee,
+            "Balance of offer accepter should not have changed"
+        );
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "Balance of offer maker should not have changed"
+        );
+    }
+
+    function test__unit_revert__acceptOffer__InvalidSignature_fromEvvm()
+        external
+    {
+        uint256 amountPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_1,
+            0.001 ether
+        );
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeAcceptOfferSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                offerID,
+                10000000001,
+                /* 🢃 different totalPriorityFee 🢃 */
+                10 ether,
+                /* 🢃 different nonceEVVM 🢃 */
+                6767676767,
+                /* 🢃 different priorityFlag 🢃 */
+                false
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+
+        nameService.acceptOffer(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            offerID,
+            10000000001,
+            signatureNameService,
+            amountPriorityFee,
+            1001,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            user,
+            COMMON_USER_NO_STAKER_1.Address,
+            "Username ownership should not have changed"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            amountPriorityFee,
+            "Balance of offer accepter should not have changed"
+        );
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "Balance of offer maker should not have changed"
+        );
+    }
+
+    function test__unit_revert__acceptOffer__InsufficientBalance_fromEvvm()
+        external
+    {
+        uint256 amountPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_1,
+            0.001 ether
+        );
+
+        /* 🢃 insufficient balance 🢃 */
+        amountPriorityFee += 1 ether;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeAcceptOfferSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                offerID,
+                10000000001,
+                amountPriorityFee,
+                1001,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+
+        nameService.acceptOffer(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            offerID,
+            10000000001,
+            signatureNameService,
+            amountPriorityFee,
+            1001,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        amountPriorityFee -= 1 ether;
+
+        (address user, ) = nameService.getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            user,
+            COMMON_USER_NO_STAKER_1.Address,
+            "Username ownership should not have changed"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            amountPriorityFee,
+            "Balance of offer accepter should not have changed"
+        );
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "Balance of offer maker should not have changed"
         );
     }
 }
