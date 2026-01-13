@@ -629,6 +629,65 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
     }
 
+    function test__unit_revert__acceptOffer__UserIsNotOwnerOfIdentity()
+        external
+    {
+        uint256 amountPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.001 ether
+        );
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeAcceptOfferSignatures(
+                /* 🢃 not the owner address 🢃 */
+                COMMON_USER_NO_STAKER_2,
+                USERNAME,
+                offerID,
+                10000000001,
+                amountPriorityFee,
+                1001,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.UserIsNotOwnerOfIdentity.selector);
+
+        nameService.acceptOffer(
+            /* 🢃 not the owner address 🢃 */
+            COMMON_USER_NO_STAKER_2.Address,
+            USERNAME,
+            offerID,
+            10000000001,
+            signatureNameService,
+            amountPriorityFee,
+            1001,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            user,
+            COMMON_USER_NO_STAKER_1.Address,
+            "Username ownership should not have changed"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            amountPriorityFee,
+            "Balance of offer accepter should not have changed"
+        );
+    }
+
     function test__unit_revert__acceptOffer__InvalidSignature_fromEvvm()
         external
     {
@@ -766,4 +825,5 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer maker should not have changed"
         );
     }
+    
 }
