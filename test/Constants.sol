@@ -652,6 +652,82 @@ abstract contract Constants is Test {
             : bytes(hex"");
     }
 
+    function _execute_makeRenewUsernameSignatures(
+        AccountData memory user,
+        string memory usernameToRenew,
+        uint256 nonceNameService,
+        uint256 priorityFeeAmountEVVM,
+        uint256 nonceEVVM,
+        bool priorityFlagEVVM
+    )
+        internal
+        virtual
+        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+    {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForRenewUsername(
+                evvm.getEvvmID(),
+                usernameToRenew,
+                nonceNameService
+            )
+        );
+        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
+
+        signatureEVVM = _execute_makeSignaturePay(
+            user,
+            address(nameService),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            nameService.seePriceToRenew(usernameToRenew),
+            priorityFeeAmountEVVM,
+            nonceEVVM,
+            priorityFlagEVVM,
+            address(nameService)
+        );
+    }
+
+    function _execute_makeRenewUsername(
+        AccountData memory user,
+        string memory usernameToRenew,
+        uint256 nonceNameService,
+        uint256 priorityFeeAmountEVVM,
+        uint256 nonceEVVM,
+        bool priorityFlagEVVM,
+        AccountData memory fisher
+    )
+        internal
+        virtual
+    {
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeRenewUsernameSignatures(
+            user,
+            usernameToRenew,
+            nonceNameService,
+            priorityFeeAmountEVVM,
+            nonceEVVM,
+            priorityFlagEVVM
+        );
+
+
+        vm.startPrank(fisher.Address);
+        
+        nameService.renewUsername(
+            user.Address,
+            usernameToRenew,
+            nonceNameService,
+            signatureNameService,
+            priorityFeeAmountEVVM,
+            nonceEVVM,
+            priorityFlagEVVM,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+    }
+
     function _execute_makeAddCustomMetadataSignatures(
         AccountData memory user,
         string memory username,
@@ -839,49 +915,6 @@ abstract contract Constants is Test {
                 "",
                 PRINCIPAL_TOKEN_ADDRESS,
                 nameService.getPriceToRemoveCustomMetadata(),
-                priorityFeeAmountEVVM,
-                nonceEVVM,
-                priorityFlagEVVM,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-    }
-
-    function _execute_makeRenewUsernameSignatures(
-        AccountData memory user,
-        string memory usernameToRenew,
-        uint256 nonceNameService,
-        uint256 priorityFeeAmountEVVM,
-        uint256 nonceEVVM,
-        bool priorityFlagEVVM
-    )
-        internal
-        virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                usernameToRenew,
-                nonceNameService
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.seePriceToRenew(usernameToRenew),
                 priorityFeeAmountEVVM,
                 nonceEVVM,
                 priorityFlagEVVM,
