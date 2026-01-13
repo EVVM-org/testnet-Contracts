@@ -552,11 +552,6 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature_EVVM
     ) external onlyOwnerOfIdentity(user, username) {
         if (
-            identityDetails[username].flagNotAUsername == 0x01 ||
-            identityDetails[username].expireDate > block.timestamp + 36500 days
-        ) revert ErrorsLib.RenewUsernameVerificationFailed();
-
-        if (
             !SignatureUtils.verifyMessageSignedForRenewUsername(
                 IEvvm(evvmAddress.current).getEvvmID(),
                 user,
@@ -565,6 +560,12 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 signature
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
+
+        if (identityDetails[username].flagNotAUsername == 0x01)
+            revert ErrorsLib.IdentityIsNotAUsername();
+
+        if (identityDetails[username].expireDate > block.timestamp + 36500 days)
+            revert ErrorsLib.RenewalTimeLimitExceeded();
 
         verifyAsyncNonce(user, nonce);
 

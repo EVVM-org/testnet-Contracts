@@ -14,7 +14,8 @@ library ErrorsLib {
     error PreRegistrationNotValid();
     error UserIsNotOwnerOfOffer();
     error OfferInactive();
-    error RenewUsernameVerificationFailed();
+    error IdentityIsNotAUsername();
+    error RenewalTimeLimitExceeded();
     error EmptyCustomMetadata();
     error InvalidKey();
     error FlushUsernameVerificationFailed();
