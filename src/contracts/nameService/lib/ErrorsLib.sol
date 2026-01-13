@@ -13,7 +13,7 @@ library ErrorsLib {
     error UsernameAlreadyRegistered();
     error PreRegistrationNotValid();
     error UserIsNotOwnerOfOffer();
-    error AcceptOfferVerificationFailed();
+    error OfferInactive();
     error RenewUsernameVerificationFailed();
     error EmptyCustomMetadata();
     error InvalidKey();

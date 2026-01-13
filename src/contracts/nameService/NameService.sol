@@ -470,11 +470,6 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature_EVVM
     ) external onlyOwnerOfIdentity(user, username) {
         if (
-            usernameOffers[username][offerID].offerer == address(0) ||
-            usernameOffers[username][offerID].expireDate < block.timestamp
-        ) revert ErrorsLib.AcceptOfferVerificationFailed();
-
-        if (
             !SignatureUtils.verifyMessageSignedForAcceptOffer(
                 IEvvm(evvmAddress.current).getEvvmID(),
                 user,
@@ -484,6 +479,11 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 signature
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
+
+        if (
+            usernameOffers[username][offerID].offerer == address(0) ||
+            usernameOffers[username][offerID].expireDate < block.timestamp
+        ) revert ErrorsLib.OfferInactive();
 
         verifyAsyncNonce(user, nonce);
 
