@@ -16,35 +16,45 @@ pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
 import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
+    ErrorsLib as EvvmErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    AsyncNonce
+} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
 
 contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
+
+    uint256 offerID;
+
+    string constant USERNAME = "test";
+
+    function executeBeforeSetUp() internal override {
+        _execute_makeRegistrationUsername(
+            COMMON_USER_NO_STAKER_1,
+            USERNAME,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+            )
+        );
+    }
 
     function addBalance(
         AccountData memory user,
@@ -67,82 +77,74 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    /**
-     * Function to test:
-     * bSigAt[variable]: bad signature at
-     * bPaySigAt[variable]: bad payment signature at
-     * some denominations on test can be explicit expleined
-     */
-
-    /*
-    function test__unit_revert__addCustomMetadata__bPaySigAt() external {
+    function test__unit_revert__addCustomMetadata__InvalidSignatureOnNameService_evvmID()
+        external
+    {
         (
             uint256 totalPriceToAddCustomMetadata,
             uint256 totalPriorityFeeAmount
         ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
+        string memory customMetadata = string.concat(USERNAME, ">1");
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1001;
 
         uint8 v;
         bytes32 r;
         bytes32 s;
+        bytes memory signatureNameService;
+        bytes memory signatureEVVM;
 
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                100010001
+                /* 🢃 different evvmID 🢃 */
+                evvm.getEvvmID() + 1,
+                USERNAME,
+                customMetadata,
+                nonceNameService
             )
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                1001,
-                true,
-                address(nameService)
-            )
+        signatureEVVM = _execute_makeSignaturePay(
+            COMMON_USER_NO_STAKER_1,
+            address(nameService),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            nameService.getPriceToAddCustomMetadata(),
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            address(nameService)
         );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
+            USERNAME,
+            customMetadata,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            1001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata = nameService.getSingleCustomMetadataOfIdentity(
-            "test",
-            0
-        );
+        string memory customMetadataInfo = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, 0);
 
         assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
+            bytes(customMetadataInfo).length == bytes("").length &&
+                keccak256(bytes(customMetadataInfo)) == keccak256(bytes(""))
         );
 
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
+        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
             evvm.getBalance(
@@ -151,61 +153,122 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             ),
             totalPriceToAddCustomMetadata + totalPriorityFeeAmount
         );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
     }
 
-    /////////////////
-
-    function test__unit_revert__addCustomMetadata__() external {
+    function test__unit_revert__addCustomMetadata__InvalidSignatureOnNameService_signer()
+        external
+    {
         (
             uint256 totalPriceToAddCustomMetadata,
             uint256 totalPriorityFeeAmount
         ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        string memory customMetadata = string.concat(USERNAME, ">1");
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1001;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeAddCustomMetadataSignatures(
+                /* 🢃 different signer 🢃 */
+                COMMON_USER_NO_STAKER_2,
+                USERNAME,
+                customMetadata,
+                nonceNameService,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.addCustomMetadata(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            customMetadata,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        string memory customMetadataInfo = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, 0);
+
+        assert(
+            bytes(customMetadataInfo).length == bytes("").length &&
+                keccak256(bytes(customMetadataInfo)) == keccak256(bytes(""))
+        );
+
+        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
+        );
+    }
+
+    function test__unit_revert__addCustomMetadata__InvalidSignatureOnNameService_identity()
+        external
+    {
+        (
+            uint256 totalPriceToAddCustomMetadata,
+            uint256 totalPriorityFeeAmount
+        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        string memory customMetadata = string.concat(USERNAME, ">1");
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeAddCustomMetadataSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "test",
-                "test>1",
-                100010001,
+                /* 🢃 different identity 🢃 */
+                "differentIdentity",
+                customMetadata,
+                nonceNameService,
                 totalPriorityFeeAmount,
-                1001,
+                nonceEVVM,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
+            USERNAME,
+            customMetadata,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            1001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata = nameService.getSingleCustomMetadataOfIdentity(
-            "test",
-            0
-        );
+        string memory customMetadataInfo = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, 0);
 
         assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
+            bytes(customMetadataInfo).length == bytes("").length &&
+                keccak256(bytes(customMetadataInfo)) == keccak256(bytes(""))
         );
 
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
+        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
             evvm.getBalance(
@@ -214,174 +277,9 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             ),
             totalPriceToAddCustomMetadata + totalPriorityFeeAmount
         );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-    */
-
-    function test__unit_revert__addCustomMetadata__bSigAtSigner() external {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
     }
 
-    function test__unit_revert__addCustomMetadata__bSigAtUsername() external {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "user",
-                "test>1",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__bSigAtCustomMetadata()
+    function test__unit_revert__addCustomMetadata__InvalidSignatureOnNameService_value()
         external
     {
         (
@@ -389,941 +287,174 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "number>777",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__bSigAtNonceNameService()
-        external
-    {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                777
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__bPaySigAtSigner() external {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__bPaySigAtToAddress()
-        external
-    {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__bPaySigAtToIdentity()
-        external
-    {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(0),
-                "mtenameservices",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__bPaySigAtTokenAddress()
-        external
-    {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                ETHER_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__bPaySigAtAmount() external {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                7,
-                totalPriorityFeeAmount,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__bPaySigAtPriorityFee()
-        external
-    {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                7,
-                1001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__bPaySigAtNonceEVVM()
-        external
-    {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                777,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__bPaySigAtPriorityFlag()
-        external
-    {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                1001,
-                false,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__bPaySigAtExecutor()
-        external
-    {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                "test>1",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                nameService.getPriceToAddCustomMetadata(),
-                totalPriorityFeeAmount,
-                1001,
-                true,
-                address(0)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
-
-        assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
-        );
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__addCustomMetadata__userNotOwner() external {
-        (
-            uint256 totalPriceToAddCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_2, 0.0001 ether);
+        string memory customMetadata = string.concat(USERNAME, ">1");
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeAddCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_2,
-                "test",
-                "test>1",
-                100010001,
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                /* 🢃 different value 🢃 */
+                string.concat(USERNAME, ">2"),
+                nonceNameService,
                 totalPriorityFeeAmount,
-                1001,
+                nonceEVVM,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.addCustomMetadata(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            "test>1",
-            100010001,
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            customMetadata,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            1001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
+        string memory customMetadataInfo = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, 0);
 
         assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
+            bytes(customMetadataInfo).length == bytes("").length &&
+                keccak256(bytes(customMetadataInfo)) == keccak256(bytes(""))
         );
 
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
+        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
+        );
+    }
+
+    function test__unit_revert__addCustomMetadata__InvalidSignatureOnNameService_nameServiceNonce()
+        external
+    {
+        (
+            uint256 totalPriceToAddCustomMetadata,
+            uint256 totalPriorityFeeAmount
+        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        string memory customMetadata = string.concat(USERNAME, ">1");
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1001;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeAddCustomMetadataSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                customMetadata,
+                /* 🢃 different nonce 🢃 */
+                nonceNameService + 1,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.addCustomMetadata(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            customMetadata,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        string memory customMetadataInfo = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, 0);
+
+        assert(
+            bytes(customMetadataInfo).length == bytes("").length &&
+                keccak256(bytes(customMetadataInfo)) == keccak256(bytes(""))
+        );
+
+        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
+        );
+    }
+
+    function test__unit_revert__addCustomMetadata__UserIsNotOwnerOfIdentity() external {
+        (
+            uint256 totalPriceToAddCustomMetadata,
+            uint256 totalPriorityFeeAmount
+                    /* 🢃 different user (not owner) 🢃 */
+        ) = addBalance(COMMON_USER_NO_STAKER_2, 0.0001 ether);
+
+        string memory customMetadata = string.concat(USERNAME, ">1");
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1001;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeAddCustomMetadataSignatures(
+                /* 🢃 different user (not owner) 🢃 */
+                COMMON_USER_NO_STAKER_2,
+                USERNAME,
+                customMetadata,
+                nonceNameService,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.UserIsNotOwnerOfIdentity.selector);
+        nameService.addCustomMetadata(
+            /* 🢃 different user (not owner) 🢃 */
+            COMMON_USER_NO_STAKER_2.Address,
+            USERNAME,
+            customMetadata,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        string memory customMetadataInfo = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, 0);
+
+        assert(
+            bytes(customMetadataInfo).length == bytes("").length &&
+                keccak256(bytes(customMetadataInfo)) == keccak256(bytes(""))
+        );
+
+        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
             evvm.getBalance(
@@ -1332,57 +463,59 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             ),
             totalPriceToAddCustomMetadata + totalPriorityFeeAmount
         );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
     }
 
-    function test__unit_revert__addCustomMetadata__nonceAlreadyUsed() external {
+
+    function test__unit_revert__addCustomMetadata__EmptyCustomMetadata() external {
         (
             uint256 totalPriceToAddCustomMetadata,
             uint256 totalPriorityFeeAmount
         ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        /* 🢃 empty custom metadata 🢃 */
+        string memory customMetadata = "";
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeAddCustomMetadataSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "test",
-                "test>1",
-                10101,
+                USERNAME,
+                customMetadata,
+                nonceNameService,
                 totalPriorityFeeAmount,
-                1001,
+                nonceEVVM,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.EmptyCustomMetadata.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            10101,
+            USERNAME,
+            customMetadata,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            1001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
+        string memory customMetadataInfo = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, 0);
 
         assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
+            bytes(customMetadataInfo).length == bytes("").length &&
+                keccak256(bytes(customMetadataInfo)) == keccak256(bytes(""))
         );
 
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
+        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
             evvm.getBalance(
@@ -1391,59 +524,60 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             ),
             totalPriceToAddCustomMetadata + totalPriorityFeeAmount
         );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
     }
 
-    function test__unit_revert__addCustomMetadata__noDataOnCustomMetadata()
-        external
-    {
+    function test__unit_revert__addCustomMetadata__AsyncNonceAlreadyUsed() external {
         (
             uint256 totalPriceToAddCustomMetadata,
             uint256 totalPriorityFeeAmount
         ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        string memory customMetadata = string.concat(USERNAME, ">1");
+        /* 🢃 reused nonce 🢃 */
+        uint256 nonceNameService = uint256(
+            0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+        );
+        uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeAddCustomMetadataSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "test",
-                "",
-                100010001,
+                USERNAME,
+                customMetadata,
+                nonceNameService,
                 totalPriorityFeeAmount,
-                1001,
+                nonceEVVM,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "",
-            100010001,
+            USERNAME,
+            customMetadata,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            1001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
+        string memory customMetadataInfo = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, 0);
 
         assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
+            bytes(customMetadataInfo).length == bytes("").length &&
+                keccak256(bytes(customMetadataInfo)) == keccak256(bytes(""))
         );
 
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
+        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
             evvm.getBalance(
@@ -1452,56 +586,115 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             ),
             totalPriceToAddCustomMetadata + totalPriorityFeeAmount
         );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
     }
 
-    function test__unit_revert__addCustomMetadata__userHasNotEnoughBalance()
-        external
-    {
-        uint256 totalPriorityFeeAmount = 0;
+    function test__unit_revert__addCustomMetadata__InvalidSignature_fromEvvm() external {
+        (
+            uint256 totalPriceToAddCustomMetadata,
+            uint256 totalPriorityFeeAmount
+        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        string memory customMetadata = string.concat(USERNAME, ">1");
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeAddCustomMetadataSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "test",
-                "test>1",
-                100010001,
-                totalPriorityFeeAmount,
-                1001,
-                true
+                USERNAME,
+                customMetadata,
+                nonceNameService,
+                /* 🢃 different totalPriorityFee 🢃 */
+                totalPriorityFeeAmount + 50,
+                /* 🢃 different nonceEVVM 🢃 */
+                nonceEVVM + 1,
+                /* 🢃 different priorityFlag 🢃 */
+                false
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            "test>1",
-            100010001,
+            USERNAME,
+            customMetadata,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            1001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 0);
+        string memory customMetadataInfo = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, 0);
 
         assert(
-            bytes(customMetadata).length == bytes("").length &&
-                keccak256(bytes(customMetadata)) == keccak256(bytes(""))
+            bytes(customMetadataInfo).length == bytes("").length &&
+                keccak256(bytes(customMetadataInfo)) == keccak256(bytes(""))
         );
 
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 0);
+        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriceToAddCustomMetadata + totalPriorityFeeAmount
+        );
+    }
+
+    function test__unit_revert__addCustomMetadata__InsufficientBalance_fromEvvm() external {
+
+        string memory customMetadata = string.concat(USERNAME, ">1");
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1001;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeAddCustomMetadataSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                customMetadata,
+                nonceNameService,
+                0,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        nameService.addCustomMetadata(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            customMetadata,
+            nonceNameService,
+            signatureNameService,
+            0,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        string memory customMetadataInfo = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, 0);
+
+        assert(
+            bytes(customMetadataInfo).length == bytes("").length &&
+                keccak256(bytes(customMetadataInfo)) == keccak256(bytes(""))
+        );
+
+        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
             evvm.getBalance(
@@ -1510,9 +703,6 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             ),
             0
         );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
     }
+    
 }
