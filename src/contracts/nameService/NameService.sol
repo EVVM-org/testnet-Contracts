@@ -117,14 +117,6 @@ contract NameService is AsyncNonce, NameServiceStructs {
         _;
     }
 
-    /// @dev Verifies that the caller owns the specified identity/username
-    modifier onlyOwnerOfIdentity(address _user, string memory _identity) {
-        if (identityDetails[_identity].owner != _user)
-            revert ErrorsLib.UserIsNotOwnerOfIdentity();
-
-        _;
-    }
-
     /**
      * @notice Initializes the NameService contract
      * @dev Sets up the EVVM integration and initial admin
@@ -468,7 +460,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, username) {
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForAcceptOffer(
                 IEvvm(evvmAddress.current).getEvvmID(),
@@ -479,6 +471,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 signature
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
+
+        if (identityDetails[username].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
 
         if (
             usernameOffers[username][offerID].offerer == address(0) ||
@@ -550,7 +545,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, username) {
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForRenewUsername(
                 IEvvm(evvmAddress.current).getEvvmID(),
@@ -560,6 +555,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 signature
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
+
+        if (identityDetails[username].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
 
         if (identityDetails[username].flagNotAUsername == 0x01)
             revert ErrorsLib.IdentityIsNotAUsername();
@@ -630,9 +628,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, identity) {
-        if (bytes(value).length == 0) revert ErrorsLib.EmptyCustomMetadata();
-
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForAddCustomMetadata(
                 IEvvm(evvmAddress.current).getEvvmID(),
@@ -643,6 +639,11 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 signature
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
+
+        if (identityDetails[identity].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+
+        if (bytes(value).length == 0) revert ErrorsLib.EmptyCustomMetadata();
 
         verifyAsyncNonce(user, nonce);
 
@@ -695,7 +696,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, identity) {
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForRemoveCustomMetadata(
                 IEvvm(evvmAddress.current).getEvvmID(),
@@ -706,6 +707,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 signature
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
+
+        if (identityDetails[identity].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
 
         verifyAsyncNonce(user, nonce);
 
@@ -769,7 +773,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, identity) {
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForFlushCustomMetadata(
                 IEvvm(evvmAddress.current).getEvvmID(),
@@ -779,6 +783,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 signature
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
+
+        if (identityDetails[identity].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
 
         verifyAsyncNonce(user, nonce);
 
@@ -836,12 +843,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, username) {
-        if (
-            block.timestamp >= identityDetails[username].expireDate ||
-            identityDetails[username].flagNotAUsername == 0x01
-        ) revert ErrorsLib.FlushUsernameVerificationFailed();
-
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForFlushUsername(
                 IEvvm(evvmAddress.current).getEvvmID(),
@@ -851,6 +853,14 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 signature
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
+
+        if (identityDetails[username].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+
+        if (
+            block.timestamp >= identityDetails[username].expireDate ||
+            identityDetails[username].flagNotAUsername == 0x01
+        ) revert ErrorsLib.FlushUsernameVerificationFailed();
 
         verifyAsyncNonce(user, nonce);
 
