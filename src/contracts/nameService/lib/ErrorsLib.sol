@@ -18,5 +18,5 @@ library ErrorsLib {
     error RenewalTimeLimitExceeded();
     error EmptyCustomMetadata();
     error InvalidKey();
-    error FlushUsernameVerificationFailed();
+    error OwnershipExpired();
 }

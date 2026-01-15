@@ -711,10 +711,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
         if (identityDetails[identity].owner != user)
             revert ErrorsLib.UserIsNotOwnerOfIdentity();
 
-        verifyAsyncNonce(user, nonce);
-
         if (identityDetails[identity].customMetadataMaxSlots <= key)
             revert ErrorsLib.InvalidKey();
+
+        verifyAsyncNonce(user, nonce);
 
         requestPay(
             user,
@@ -787,10 +787,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
         if (identityDetails[identity].owner != user)
             revert ErrorsLib.UserIsNotOwnerOfIdentity();
 
-        verifyAsyncNonce(user, nonce);
-
         if (identityDetails[identity].customMetadataMaxSlots == 0)
             revert ErrorsLib.EmptyCustomMetadata();
+
+        verifyAsyncNonce(user, nonce);
 
         requestPay(
             user,
@@ -857,10 +857,11 @@ contract NameService is AsyncNonce, NameServiceStructs {
         if (identityDetails[username].owner != user)
             revert ErrorsLib.UserIsNotOwnerOfIdentity();
 
-        if (
-            block.timestamp >= identityDetails[username].expireDate ||
-            identityDetails[username].flagNotAUsername == 0x01
-        ) revert ErrorsLib.FlushUsernameVerificationFailed();
+        if (block.timestamp >= identityDetails[username].expireDate)
+            revert ErrorsLib.OwnershipExpired();
+            
+        if (identityDetails[username].flagNotAUsername == 0x01)
+            revert ErrorsLib.IdentityIsNotAUsername();
 
         verifyAsyncNonce(user, nonce);
 
