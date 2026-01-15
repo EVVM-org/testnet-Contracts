@@ -436,7 +436,8 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
 
     function test__unit_correct__flushCustomMetadata__EmptyCustomMetadata()
         external
-    {
+    {   
+        /* 🢃 identity has no custom metadata 🢃 */
         _execute_makeRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "testing",
@@ -515,6 +516,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             0.0001 ether
         );
 
+        /* 🢃 nonce already used 🢃 */
         uint256 nonceNameService = uint256(
             0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
         );
