@@ -16,72 +16,82 @@ pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+    ErrorsLib as EvvmErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    AsyncNonce
+} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
 
 contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
-    function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+    uint256 offerID;
 
+    string constant USERNAME = "test";
+    string constant CUSTOM_METADATA_VALUE_0 = "test>0";
+    string constant CUSTOM_METADATA_VALUE_1 = "test>1";
+    string constant CUSTOM_METADATA_VALUE_2 = "test>2";
+
+    function executeBeforeSetUp() internal override {
         _execute_makeRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
-            "test",
-            777,
-            10101,
-            20202
+            USERNAME,
+            1,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
+            )
         );
 
         _execute_makeAddCustomMetadata(
             COMMON_USER_NO_STAKER_1,
-            "test",
-            "test>1",
-            11,
-            11,
+            USERNAME,
+            CUSTOM_METADATA_VALUE_0,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+            ),
             true
         );
+
         _execute_makeAddCustomMetadata(
             COMMON_USER_NO_STAKER_1,
-            "test",
-            "test>2",
-            22,
-            22,
+            USERNAME,
+            CUSTOM_METADATA_VALUE_1,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+            ),
             true
         );
+
         _execute_makeAddCustomMetadata(
             COMMON_USER_NO_STAKER_1,
-            "test",
-            "test>3",
-            33,
-            33,
+            USERNAME,
+            CUSTOM_METADATA_VALUE_2,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+            ),
             true
         );
     }
@@ -108,196 +118,178 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    /**
-     * Function to test:
-     * bSigAt[variable]: bad signature at
-     * bPaySigAt[variable]: bad payment signature at
-     * some denominations on test can be explicit expleined
-     */
-
-    /*
-
-    function test__unit_correct__flushCustomMetadata__bSigAt() external {
+    function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_evvmID()
+        external
+    {
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
             COMMON_USER_NO_STAKER_1,
-            "test",
+            USERNAME,
             0.0001 ether
         );
 
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1000001;
 
-        (v, r, s) = vm.sign(
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                100010001
+                /* 🢃 different evvmID 🢃 */
+                evvm.getEvvmID() + 1,
+                USERNAME,
+                nonceNameService
             )
         );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
+        bytes memory signatureNameService = Erc191TestBuilder
+            .buildERC191Signature(v, r, s);
 
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                totalAmountFlush,
-                totalPriorityFeeAmount,
-                1000001,
-                true,
-                address(nameService)
-            )
+        bytes memory signatureEVVM = _execute_makeSignaturePay(
+            COMMON_USER_NO_STAKER_1,
+            address(nameService),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            nameService.getPriceToFlushCustomMetadata(USERNAME),
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            address(nameService)
         );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata("test");
+        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
+            USERNAME
+        );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.flushCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
+            USERNAME,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            1000001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        assertEq(nameService.getAmountOfCustomMetadata("test"), amountOfSlotsBefore);
+        assertEq(
+            nameService.getAmountOfCustomMetadata(USERNAME),
+            amountOfSlotsBefore,
+            "custom metadata slots should remain the same after failed flush"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
+            totalAmountFlush + totalPriorityFeeAmount,
+            "user balance should remain the same after failed flush"
         );
     }
 
-    //////////////////////////////////////////////////////////////////
-
-    function test__unit_correct__flushCustomMetadata__() external {
+    function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_signer()
+        external
+    {
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
             COMMON_USER_NO_STAKER_1,
-            "test",
+            USERNAME,
             0.0001 ether
         );
+
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1000001;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeFlushCustomMetadataSignatures(
+                /* 🢃 different signer 🢃 */
+                COMMON_USER_NO_STAKER_2,
+                USERNAME,
+                nonceNameService,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
+            USERNAME
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.flushCustomMetadata(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        assertEq(
+            nameService.getAmountOfCustomMetadata(USERNAME),
+            amountOfSlotsBefore,
+            "custom metadata slots should remain the same after failed flush"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalAmountFlush + totalPriorityFeeAmount,
+            "user balance should remain the same after failed flush"
+        );
+    }
+
+    function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_identity()
+        external
+    {
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+            COMMON_USER_NO_STAKER_1,
+            USERNAME,
+            0.0001 ether
+        );
+
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1000001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeFlushCustomMetadataSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "test",
-                100010001,
+                /* 🢃 different identity 🢃 */
+                "diferent",
+                nonceNameService,
                 totalPriorityFeeAmount,
-                1000001,
+                nonceEVVM,
                 true
             );
 
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(nameService.getAmountOfCustomMetadata("test"), amountOfSlotsBefore);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    */
-
-    function test__unit_correct__flushCustomMetadata__bSigAtSigner() external {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                totalAmountFlush,
-                totalPriorityFeeAmount,
-                1000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
+            USERNAME
         );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.flushCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
+            USERNAME,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            1000001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
@@ -305,8 +297,9 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
+            nameService.getAmountOfCustomMetadata(USERNAME),
+            amountOfSlotsBefore,
+            "custom metadata slots should remain the same after failed flush"
         );
 
         assertEq(
@@ -314,918 +307,50 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
+            totalAmountFlush + totalPriorityFeeAmount,
+            "user balance should remain the same after failed flush"
         );
     }
 
-    function test__unit_correct__flushCustomMetadata__bSigAtUsername()
+    function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_nonce()
         external
     {
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
             COMMON_USER_NO_STAKER_1,
-            "test",
+            USERNAME,
             0.0001 ether
         );
 
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "user",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                totalAmountFlush,
-                totalPriorityFeeAmount,
-                1000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__bSigAtNonceNameService()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                777
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                totalAmountFlush,
-                totalPriorityFeeAmount,
-                1000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__bPaySigAtSigner()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                totalAmountFlush,
-                totalPriorityFeeAmount,
-                1000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__bPaySigAtToAddress()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                totalAmountFlush,
-                totalPriorityFeeAmount,
-                1000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__bPaySigAtToIdentity()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(0),
-                "nameservice",
-                PRINCIPAL_TOKEN_ADDRESS,
-                totalAmountFlush,
-                totalPriorityFeeAmount,
-                1000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__bPaySigAtTokenAddress()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                ETHER_ADDRESS,
-                totalAmountFlush,
-                totalPriorityFeeAmount,
-                1000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__bPaySigAtAmount()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                7,
-                totalPriorityFeeAmount,
-                1000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__bPaySigAtPriorityFee()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                totalAmountFlush,
-                7,
-                1000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__bPaySigAtNonceEVVM()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                totalAmountFlush,
-                totalPriorityFeeAmount,
-                777,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__bPaySigAtPriorityFlag()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                totalAmountFlush,
-                totalPriorityFeeAmount,
-                1000001,
-                false,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__bPaySigAtExecutor()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                totalAmountFlush,
-                totalPriorityFeeAmount,
-                1000001,
-                true,
-                address(0)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__userIsNotOwner()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            "test",
-            0.0001 ether
-        );
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1000001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeFlushCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_2,
-                "test",
-                100010001,
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                /* 🢃 different nonce 🢃 */
+                nonceNameService + 1,
                 totalPriorityFeeAmount,
-                1000001,
+                nonceEVVM,
                 true
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
+            USERNAME
         );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            100010001,
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            1000001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
@@ -1233,8 +358,72 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
+            nameService.getAmountOfCustomMetadata(USERNAME),
+            amountOfSlotsBefore,
+            "custom metadata slots should remain the same after failed flush"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalAmountFlush + totalPriorityFeeAmount,
+            "user balance should remain the same after failed flush"
+        );
+    }
+
+    function test__unit_correct__flushCustomMetadata__UserIsNotOwnerOfIdentity()
+        external
+    {
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+            /* 🢃 different user 🢃 */
+            COMMON_USER_NO_STAKER_2,
+            USERNAME,
+            0.0001 ether
+        );
+
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1000001;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeFlushCustomMetadataSignatures(
+                /* 🢃 different user 🢃 */
+                COMMON_USER_NO_STAKER_2,
+                USERNAME,
+                nonceNameService,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
+            USERNAME
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(ErrorsLib.UserIsNotOwnerOfIdentity.selector);
+        nameService.flushCustomMetadata(
+            /* 🢃 different user 🢃 */
+            COMMON_USER_NO_STAKER_2.Address,
+            USERNAME,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        assertEq(
+            nameService.getAmountOfCustomMetadata(USERNAME),
+            amountOfSlotsBefore,
+            "custom metadata slots should remain the same after failed flush"
         );
 
         assertEq(
@@ -1242,168 +431,61 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
+            totalAmountFlush + totalPriorityFeeAmount,
+            "user balance should remain the same after failed flush"
         );
     }
 
-    function test__unit_correct__flushCustomMetadata__nonceAlreadyUsed()
-        external
-    {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0.0001 ether
-        );
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "test",
-                11,
-                totalPriorityFeeAmount,
-                1000001,
-                true
-            );
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            11,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__usernameHasNotCustomMetadata()
+    function test__unit_correct__flushCustomMetadata__EmptyCustomMetadata()
         external
     {
         _execute_makeRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
-            "user",
+            "testing",
+            1,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
-            ),
-            uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+                0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00
             )
         );
+
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
             COMMON_USER_NO_STAKER_1,
-            "user",
+            "testing",
             0.0001 ether
         );
 
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "user",
-                100010001,
-                totalPriorityFeeAmount,
-                1000001,
-                true
-            );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "user",
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            1000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            totalAmountFlush + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata__userHasNotAmount()
-        external
-    {
-        uint256 totalAmountFlush = 0;
-        uint256 totalPriorityFeeAmount = 0;
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1000001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeFlushCustomMetadataSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "test",
-                100010001,
+                "testing",
+                nonceNameService,
                 totalPriorityFeeAmount,
-                1000001,
+                nonceEVVM,
                 true
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            "test"
+            "testing"
         );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.EmptyCustomMetadata.selector);
         nameService.flushCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            100010001,
+            "testing",
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            1000001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
@@ -1411,8 +493,9 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            nameService.getAmountOfCustomMetadata("test"),
-            amountOfSlotsBefore
+            nameService.getAmountOfCustomMetadata("testing"),
+            amountOfSlotsBefore,
+            "custom metadata slots should remain the same after failed flush"
         );
 
         assertEq(
@@ -1420,11 +503,187 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalAmountFlush + totalPriorityFeeAmount
+            totalAmountFlush + totalPriorityFeeAmount,
+            "user balance should remain the same after failed flush"
         );
+    }
+
+    function test__unit_correct__flushCustomMetadata__AsyncNonceAlreadyUsed()
+        external
+    {
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+            COMMON_USER_NO_STAKER_1,
+            USERNAME,
+            0.0001 ether
+        );
+
+        uint256 nonceNameService = uint256(
+            0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+        );
+        uint256 nonceEVVM = 1000001;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeFlushCustomMetadataSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                nonceNameService,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
+            USERNAME
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        nameService.flushCustomMetadata(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0
+            nameService.getAmountOfCustomMetadata(USERNAME),
+            amountOfSlotsBefore,
+            "custom metadata slots should remain the same after failed flush"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalAmountFlush + totalPriorityFeeAmount,
+            "user balance should remain the same after failed flush"
+        );
+    }
+
+    function test__unit_correct__flushCustomMetadata__InvalidSignature_fromEvvm()
+        external
+    {
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+            COMMON_USER_NO_STAKER_1,
+            USERNAME,
+            0.0001 ether
+        );
+
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1000001;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeFlushCustomMetadataSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                nonceNameService,
+                /* 🢃 different totalPriorityFee 🢃 */
+                totalPriorityFeeAmount + 50,
+                /* 🢃 different nonceEVVM 🢃 */
+                nonceEVVM + 1,
+                /* 🢃 different priorityFlag 🢃 */
+                false
+            );
+
+        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
+            USERNAME
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        nameService.flushCustomMetadata(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        assertEq(
+            nameService.getAmountOfCustomMetadata(USERNAME),
+            amountOfSlotsBefore,
+            "custom metadata slots should remain the same after failed flush"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalAmountFlush + totalPriorityFeeAmount,
+            "user balance should remain the same after failed flush"
+        );
+    }
+
+    function test__unit_correct__flushCustomMetadata__InsufficientBalance_fromEvvm()
+        external
+    {
+        uint256 nonceNameService = 100010001;
+        uint256 nonceEVVM = 1000001;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeFlushCustomMetadataSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                nonceNameService,
+                0,
+                nonceEVVM,
+                true
+            );
+
+        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
+            USERNAME
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        nameService.flushCustomMetadata(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            nonceNameService,
+            signatureNameService,
+            0,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        assertEq(
+            nameService.getAmountOfCustomMetadata(USERNAME),
+            amountOfSlotsBefore,
+            "custom metadata slots should remain the same after failed flush"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "user balance should remain the same after failed flush"
         );
     }
 }

@@ -403,12 +403,14 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_revert__addCustomMetadata__UserIsNotOwnerOfIdentity() external {
+    function test__unit_revert__addCustomMetadata__UserIsNotOwnerOfIdentity()
+        external
+    {
         (
             uint256 totalPriceToAddCustomMetadata,
             uint256 totalPriorityFeeAmount
-                    /* 🢃 different user (not owner) 🢃 */
-        ) = addBalance(COMMON_USER_NO_STAKER_2, 0.0001 ether);
+        ) = /* 🢃 different user (not owner) 🢃 */
+            addBalance(COMMON_USER_NO_STAKER_2, 0.0001 ether);
 
         string memory customMetadata = string.concat(USERNAME, ">1");
         uint256 nonceNameService = 100010001;
@@ -465,8 +467,9 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         );
     }
 
-
-    function test__unit_revert__addCustomMetadata__EmptyCustomMetadata() external {
+    function test__unit_revert__addCustomMetadata__EmptyCustomMetadata()
+        external
+    {
         (
             uint256 totalPriceToAddCustomMetadata,
             uint256 totalPriorityFeeAmount
@@ -526,7 +529,9 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_revert__addCustomMetadata__AsyncNonceAlreadyUsed() external {
+    function test__unit_revert__addCustomMetadata__AsyncNonceAlreadyUsed()
+        external
+    {
         (
             uint256 totalPriceToAddCustomMetadata,
             uint256 totalPriorityFeeAmount
@@ -588,7 +593,9 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_revert__addCustomMetadata__InvalidSignature_fromEvvm() external {
+    function test__unit_revert__addCustomMetadata__InvalidSignature_fromEvvm()
+        external
+    {
         (
             uint256 totalPriceToAddCustomMetadata,
             uint256 totalPriorityFeeAmount
@@ -650,8 +657,9 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_revert__addCustomMetadata__InsufficientBalance_fromEvvm() external {
-
+    function test__unit_revert__addCustomMetadata__InsufficientBalance_fromEvvm()
+        external
+    {
         string memory customMetadata = string.concat(USERNAME, ">1");
         uint256 nonceNameService = 100010001;
         uint256 nonceEVVM = 1001;
@@ -704,5 +712,4 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             0
         );
     }
-    
 }
