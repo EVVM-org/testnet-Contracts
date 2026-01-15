@@ -116,7 +116,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_evvmID()
+    function test__unit_revert__flushCustomMetadata__InvalidSignatureOnNameService_evvmID()
         external
     {
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
@@ -188,7 +188,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_signer()
+    function test__unit_revert__flushCustomMetadata__InvalidSignatureOnNameService_signer()
         external
     {
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
@@ -249,7 +249,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_identity()
+    function test__unit_revert__flushCustomMetadata__InvalidSignatureOnNameService_identity()
         external
     {
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
@@ -310,7 +310,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_nonce()
+    function test__unit_revert__flushCustomMetadata__InvalidSignatureOnNameService_nonce()
         external
     {
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
@@ -371,7 +371,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushCustomMetadata__UserIsNotOwnerOfIdentity()
+    function test__unit_revert__flushCustomMetadata__UserIsNotOwnerOfIdentity()
         external
     {
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
@@ -434,7 +434,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushCustomMetadata__EmptyCustomMetadata()
+    function test__unit_revert__flushCustomMetadata__EmptyCustomMetadata()
         external
     {   
         /* 🢃 identity has no custom metadata 🢃 */
@@ -507,7 +507,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushCustomMetadata__AsyncNonceAlreadyUsed()
+    function test__unit_revert__flushCustomMetadata__AsyncNonceAlreadyUsed()
         external
     {
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
@@ -570,7 +570,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushCustomMetadata__InvalidSignature_fromEvvm()
+    function test__unit_revert__flushCustomMetadata__InvalidSignature_fromEvvm()
         external
     {
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
@@ -633,7 +633,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushCustomMetadata__InsufficientBalance_fromEvvm()
+    function test__unit_revert__flushCustomMetadata__InsufficientBalance_fromEvvm()
         external
     {
         uint256 nonceNameService = 100010001;

@@ -115,7 +115,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    function test__unit_correct__flushUsername__InvalidSignatureOnNameService_evvmID() external {
+    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_evvmID() external {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
@@ -190,7 +190,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushUsername__InvalidSignatureOnNameService_signer() external {
+    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_signer() external {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
@@ -255,7 +255,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushUsername__InvalidSignatureOnNameService_username() external {
+    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_username() external {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
@@ -320,7 +320,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushUsername__InvalidSignatureOnNameService_nonce() external {
+    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_nonce() external {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
@@ -385,7 +385,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushUsername__UserIsNotOwnerOfIdentity() external {
+    function test__unit_revert__flushUsername__UserIsNotOwnerOfIdentity() external {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
@@ -453,7 +453,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
     }
 
 
-    function test__unit_correct__flushUsername__OwnershipExpired() external {
+    function test__unit_revert__flushUsername__OwnershipExpired() external {
         /* 🢃 advance time to expire ownership 🢃 */
         skip(800 days);
         (
@@ -519,7 +519,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushUsername__IdentityIsNotAUsername()
+    function test__unit_revert__flushUsername__IdentityIsNotAUsername()
         external
     {
         _execute_makePreRegistrationUsername(
@@ -603,7 +603,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
     }
 
 
-    function test__unit_correct__flushUsername__AsyncNonceAlreadyUsed() external {
+    function test__unit_revert__flushUsername__AsyncNonceAlreadyUsed() external {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
@@ -670,7 +670,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushUsername__InvalidSignature_fromEvvm() external {
+    function test__unit_revert__flushUsername__InvalidSignature_fromEvvm() external {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
@@ -737,7 +737,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushUsername__InsufficientBalance_fromEvvm() external {
+    function test__unit_revert__flushUsername__InsufficientBalance_fromEvvm() external {
 
         uint256 nonceNameService = 110010011;
         uint256 nonceEVVM = 1001;
