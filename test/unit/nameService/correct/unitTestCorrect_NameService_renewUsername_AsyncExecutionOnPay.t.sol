@@ -6,9 +6,7 @@
 ||__|||__|||__|||__|||_______|||__|||__|||__|||__||
 |/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
 
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+ * @title unit test for EVVM functions
  */
 
 pragma solidity ^0.8.0;
