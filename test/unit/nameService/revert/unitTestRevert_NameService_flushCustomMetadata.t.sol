@@ -94,7 +94,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function addBalance(
+    function _addBalance(
         AccountData memory user,
         string memory usernameToFlushCustomMetadata,
         uint256 priorityFeeAmount
@@ -119,7 +119,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_evvmID()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             0.0001 ether
@@ -191,7 +191,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_signer()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             0.0001 ether
@@ -252,7 +252,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_identity()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             0.0001 ether
@@ -313,7 +313,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_correct__flushCustomMetadata__InvalidSignatureOnNameService_nonce()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             0.0001 ether
@@ -374,7 +374,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_correct__flushCustomMetadata__UserIsNotOwnerOfIdentity()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
             /* 🢃 different user 🢃 */
             COMMON_USER_NO_STAKER_2,
             USERNAME,
@@ -449,7 +449,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             )
         );
 
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             "testing",
             0.0001 ether
@@ -509,7 +509,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_correct__flushCustomMetadata__AsyncNonceAlreadyUsed()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             0.0001 ether
@@ -571,7 +571,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_correct__flushCustomMetadata__InvalidSignature_fromEvvm()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = addBalance(
+        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             0.0001 ether
