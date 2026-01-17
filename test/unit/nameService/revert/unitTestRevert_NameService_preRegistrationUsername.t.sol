@@ -111,7 +111,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 username,
                 clowNumber,
                 nonceNameService,
-                false,
                 0,
                 0,
                 false
@@ -160,7 +159,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 clowNumber,
                 /* 🢃 different nonce 🢃 */
                 nonceNameService + 67,
-                false,
                 0,
                 0,
                 false
@@ -210,7 +208,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 67,
                 /**************************/
                 nonceNameService,
-                false,
                 0,
                 0,
                 false
@@ -267,7 +264,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 clowNumber,
                 /* 🢃 nonce already used 🢃 */
                 nonceNameService,
-                false,
                 0,
                 0,
                 false
@@ -317,7 +313,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 username,
                 clowNumber,
                 nonceNameService,
-                true,
                 0.0001 ether,
                 6767,
                 true
@@ -366,7 +361,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 username,
                 clowNumber,
                 nonceNameService,
-                true,
                 0.1 ether,
                 676767,
                 true

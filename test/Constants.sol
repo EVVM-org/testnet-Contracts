@@ -318,7 +318,6 @@ abstract contract Constants is Test {
         string memory username,
         uint256 clowNumber,
         uint256 nonceNameService,
-        bool givePriorityFee,
         uint256 priorityFeeAmount,
         uint256 nonceEVVM,
         bool priorityEVVM
@@ -337,7 +336,7 @@ abstract contract Constants is Test {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = givePriorityFee
+        signatureEVVM = priorityFeeAmount > 0
             ? _execute_makeSignaturePay(
                 user,
                 address(nameService),

@@ -133,7 +133,6 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                 username,
                 input.clowNumber,
                 input.nonceNameService,
-                false,
                 0,
                 nonce,
                 input.priorityFlagEVVM
@@ -212,7 +211,6 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                 username,
                 input.clowNumber,
                 input.nonceNameService,
-                true,
                 input.priorityFeeAmount,
                 nonce,
                 input.priorityFlagEVVM
@@ -284,7 +282,6 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                 username,
                 input.clowNumber,
                 input.nonceNameService,
-                false,
                 0,
                 nonce,
                 input.priorityFlagEVVM
@@ -365,7 +362,6 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                 username,
                 input.clowNumber,
                 input.nonceNameService,
-                true,
                 input.priorityFeeAmount,
                 nonce,
                 input.priorityFlagEVVM
