@@ -38,15 +38,6 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
     AccountData FISHER_STAKER = COMMON_USER_STAKER;
 
-    function _addBalance(
-        AccountData memory user,
-        uint256 priorityFee
-    ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(user.Address, PRINCIPAL_TOKEN_ADDRESS, priorityFee);
-
-        return priorityFee;
-    }
-
     struct Params {
         AccountData user;
         string username;
@@ -55,6 +46,15 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         uint256 priorityFee;
         uint256 nonceEVVM;
         bool priorityEVVM;
+    }
+
+    function _addBalance(
+        AccountData memory user,
+        uint256 priorityFee
+    ) private returns (uint256 totalPriorityFeeAmount) {
+        evvm.addBalance(user.Address, PRINCIPAL_TOKEN_ADDRESS, priorityFee);
+
+        return priorityFee;
     }
 
     function test__unit_correct__preRegistrationUsername__noPriorityFee()
@@ -129,7 +129,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         assertEq(
             user,
             COMMON_USER_NO_STAKER_1.Address,
-            "Error NonStaker: username not registered correctly"
+            "Error NonStaker: username not preregistered correctly"
         );
 
         assertEq(
@@ -192,7 +192,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         assertEq(
             user,
             COMMON_USER_NO_STAKER_2.Address,
-            "Error Staker: username not registered correctly"
+            "Error Staker: username not preregistered correctly"
         );
         assertEq(
             evvm.getBalance(
@@ -212,7 +212,6 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
     function test__unit_correct__preRegistrationUsername__priorityFee_sync()
         external
     {
-        
         Params memory params1 = Params({
             user: COMMON_USER_NO_STAKER_1,
             username: "testfirst",
@@ -289,7 +288,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         assertEq(
             user,
             COMMON_USER_NO_STAKER_1.Address,
-            "Error NonStaker: username not registered correctly"
+            "Error NonStaker: username not preregistered correctly"
         );
 
         assertEq(
@@ -352,7 +351,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         assertEq(
             user,
             COMMON_USER_NO_STAKER_2.Address,
-            "Error Staker: username not registered correctly"
+            "Error Staker: username not preregistered correctly"
         );
         assertEq(
             evvm.getBalance(
@@ -369,11 +368,9 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         );
     }
 
-
     function test__unit_correct__preRegistrationUsername__priorityFee_async()
         external
     {
-        
         Params memory params1 = Params({
             user: COMMON_USER_NO_STAKER_1,
             username: "testfirst",
@@ -446,7 +443,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         assertEq(
             user,
             COMMON_USER_NO_STAKER_1.Address,
-            "Error NonStaker: username not registered correctly"
+            "Error NonStaker: username not preregistered correctly"
         );
 
         assertEq(
@@ -509,7 +506,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         assertEq(
             user,
             COMMON_USER_NO_STAKER_2.Address,
-            "Error Staker: username not registered correctly"
+            "Error Staker: username not preregistered correctly"
         );
         assertEq(
             evvm.getBalance(
