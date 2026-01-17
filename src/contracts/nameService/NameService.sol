@@ -355,6 +355,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 ((amount * 125) / 100_000) +
                 priorityFee_EVVM
         );
+
         principalTokenTokenLockedForWithdrawOffers +=
             ((amount * 995) / 1000) +
             (amount / 800);
@@ -1019,9 +1020,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @dev Can only be called after the time delay has passed
      */
     function acceptChangeEvvmAddress() public onlyAdmin {
-        if (block.timestamp < evvmAddress.timeToAccept) 
+        if (block.timestamp < evvmAddress.timeToAccept)
             revert ErrorsLib.LockTimeNotExpired();
-        
+
         evvmAddress = AddressTypeProposal({
             current: evvmAddress.proposal,
             proposal: address(0),
