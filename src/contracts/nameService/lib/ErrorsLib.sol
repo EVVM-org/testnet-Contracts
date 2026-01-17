@@ -19,4 +19,9 @@ library ErrorsLib {
     error EmptyCustomMetadata();
     error InvalidKey();
     error OwnershipExpired();
+    error InvalidAdminProposal();
+    error SenderIsNotProposedAdmin();
+    error LockTimeNotExpired();
+    error InvalidWithdrawAmount();
+    error InvalidEvvmAddress();
 }

@@ -859,7 +859,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         if (block.timestamp >= identityDetails[username].expireDate)
             revert ErrorsLib.OwnershipExpired();
-            
+
         if (identityDetails[username].flagNotAUsername == 0x01)
             revert ErrorsLib.IdentityIsNotAUsername();
 
@@ -907,9 +907,8 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param _adminToPropose Address of the proposed new admin
      */
     function proposeAdmin(address _adminToPropose) public onlyAdmin {
-        if (_adminToPropose == address(0) || _adminToPropose == admin.current) {
-            revert();
-        }
+        if (_adminToPropose == address(0) || _adminToPropose == admin.current)
+            revert ErrorsLib.InvalidAdminProposal();
 
         admin.proposal = _adminToPropose;
         admin.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
@@ -929,12 +928,11 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @dev Can only be called by the proposed admin after the time delay has passed
      */
     function acceptProposeAdmin() public {
-        if (admin.proposal != msg.sender) {
-            revert();
-        }
-        if (block.timestamp < admin.timeToAccept) {
-            revert();
-        }
+        if (admin.proposal != msg.sender)
+            revert ErrorsLib.SenderIsNotProposedAdmin();
+
+        if (block.timestamp < admin.timeToAccept)
+            revert ErrorsLib.LockTimeNotExpired();
 
         admin = AddressTypeProposal({
             current: admin.proposal,
@@ -960,7 +958,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
             _amount ||
             _amount == 0
         ) {
-            revert();
+            revert ErrorsLib.InvalidWithdrawAmount();
         }
 
         amountToWithdrawTokens.proposal = _amount;
@@ -983,9 +981,8 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @dev Can only be called after the time delay has passed
      */
     function claimWithdrawPrincipalTokens() public onlyAdmin {
-        if (block.timestamp < amountToWithdrawTokens.timeToAccept) {
-            revert();
-        }
+        if (block.timestamp < amountToWithdrawTokens.timeToAccept)
+            revert ErrorsLib.LockTimeNotExpired();
 
         makeCaPay(admin.current, amountToWithdrawTokens.proposal);
 
@@ -1001,9 +998,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
     function proposeChangeEvvmAddress(
         address _newEvvmAddress
     ) public onlyAdmin {
-        if (_newEvvmAddress == address(0)) {
-            revert();
-        }
+        if (_newEvvmAddress == address(0))
+            revert ErrorsLib.InvalidEvvmAddress();
+
         evvmAddress.proposal = _newEvvmAddress;
         evvmAddress.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
     }
@@ -1022,9 +1019,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @dev Can only be called after the time delay has passed
      */
     function acceptChangeEvvmAddress() public onlyAdmin {
-        if (block.timestamp < evvmAddress.timeToAccept) {
-            revert();
-        }
+        if (block.timestamp < evvmAddress.timeToAccept) 
+            revert ErrorsLib.LockTimeNotExpired();
+        
         evvmAddress = AddressTypeProposal({
             current: evvmAddress.proposal,
             proposal: address(0),
