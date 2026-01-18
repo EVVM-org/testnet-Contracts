@@ -17,6 +17,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+
 contract unitTestCorrect_NameService_renewUsername is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
     AccountData FISHER_STAKER = COMMON_USER_STAKER;
