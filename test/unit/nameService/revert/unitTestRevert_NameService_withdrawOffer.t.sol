@@ -68,7 +68,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         );
     }
 
-    function addBalance(
+    function _addBalance(
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
@@ -84,7 +84,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_evvmID()
         external
     {
-        uint256 totalPriorityFee = addBalance(
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
@@ -153,7 +153,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_signer()
         external
     {
-        uint256 totalPriorityFee = addBalance(
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
@@ -211,7 +211,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_username()
         external
     {
-        uint256 totalPriorityFee = addBalance(
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
@@ -269,7 +269,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_offerId()
         external
     {
-        uint256 totalPriorityFee = addBalance(
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
@@ -327,7 +327,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_nameServiceNonce()
         external
     {
-        uint256 totalPriorityFee = addBalance(
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
@@ -385,7 +385,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__UserIsNotOwnerOfOffer()
         external
     {
-        uint256 totalPriorityFee = addBalance(
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
@@ -444,7 +444,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__AsyncNonceAlreadyUsed()
         external
     {
-        uint256 totalPriorityFee = addBalance(
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
@@ -504,7 +504,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InvalidSignature_fromEvvm()
         external
     {
-        uint256 totalPriorityFee = addBalance(
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
@@ -564,7 +564,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InsufficientBalance_fromEvvm()
         external
     {
-        uint256 totalPriorityFee = addBalance(
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
