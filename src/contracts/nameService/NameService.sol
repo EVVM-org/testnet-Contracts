@@ -742,15 +742,17 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 identityDetails[identity].customMetadataMaxSlots
             ];
         }
+
         identityDetails[identity].customMetadataMaxSlots--;
+
         markAsyncNonceAsUsed(user, nonce);
-        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender)) {
+
+        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender))
             makeCaPay(
                 msg.sender,
                 (5 * IEvvm(evvmAddress.current).getRewardAmount()) +
                     priorityFee_EVVM
             );
-        }
     }
 
     /**
