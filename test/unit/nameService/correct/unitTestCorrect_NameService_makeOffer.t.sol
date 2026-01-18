@@ -145,7 +145,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             (evvm.getRewardAmount() +
                 ((params.amount * 125) / 100_000) +
                 params.priorityFee),
-            "Error: fisher no staker balance not correct"
+            "Error: fisherr balance not correct"
         );
     }
 
@@ -221,7 +221,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             (evvm.getRewardAmount() +
                 ((params.amount * 125) / 100_000) +
                 params.priorityFee),
-            "Error: fisher no staker balance not correct"
+            "Error: fisherr balance not correct"
         );
     }
 
@@ -297,7 +297,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             (evvm.getRewardAmount() +
                 ((params.amount * 125) / 100_000) +
                 params.priorityFee),
-            "Error: fisher staker balance not correct"
+            "Error: fisherr balance not correct"
         );
     }
 
@@ -373,7 +373,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             (evvm.getRewardAmount() +
                 ((params.amount * 125) / 100_000) +
                 params.priorityFee),
-            "Error: fisher staker balance not correct"
+            "Error: fisherr balance not correct"
         );
     }
 
@@ -449,7 +449,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             (evvm.getRewardAmount() +
                 ((params.amount * 125) / 100_000) +
                 params.priorityFee),
-            "Error: fisher no staker balance not correct"
+            "Error: fisherr balance not correct"
         );
     }
 
@@ -525,7 +525,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             (evvm.getRewardAmount() +
                 ((params.amount * 125) / 100_000) +
                 params.priorityFee),
-            "Error: fisher no staker balance not correct"
+            "Error: fisherr balance not correct"
         );
     }
 
@@ -601,7 +601,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             (evvm.getRewardAmount() +
                 ((params.amount * 125) / 100_000) +
                 params.priorityFee),
-            "Error: fisher staker balance not correct"
+            "Error: fisherr balance not correct"
         );
     }
 
@@ -677,7 +677,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             (evvm.getRewardAmount() +
                 ((params.amount * 125) / 100_000) +
                 params.priorityFee),
-            "Error: fisher staker balance not correct"
+            "Error: fisherr balance not correct"
         );
     }
 }
