@@ -339,14 +339,15 @@ contract NameService is AsyncNonce, NameServiceStructs {
             signature_EVVM
         );
 
-        while (usernameOffers[username][offerID].offerer != address(0)) {
+        while (usernameOffers[username][offerID].offerer != address(0))
             offerID++;
-        }
+
+        uint256 amountToOffer = ((amount * 995) / 1000);
 
         usernameOffers[username][offerID] = OfferMetadata({
             offerer: user,
             expireDate: expireDate,
-            amount: ((amount * 995) / 1000)
+            amount: amountToOffer
         });
 
         makeCaPay(
@@ -357,7 +358,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         );
 
         principalTokenTokenLockedForWithdrawOffers +=
-            ((amount * 995) / 1000) +
+            amountToOffer +
             (amount / 800);
 
         if (offerID > identityDetails[username].offerMaxSlots) {
@@ -409,7 +410,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         verifyAsyncNonce(user, nonce);
 
-        if (priorityFee_EVVM > 0) {
+        if (priorityFee_EVVM > 0)
             requestPay(
                 user,
                 0,
@@ -418,7 +419,6 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 priorityFlag_EVVM,
                 signature_EVVM
             );
-        }
 
         makeCaPay(user, usernameOffers[username][offerID].amount);
 
