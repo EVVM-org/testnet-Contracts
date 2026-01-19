@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
-
+/*
 :::::::::: :::    ::: ::::::::: :::::::::      ::::::::::: :::::::::: :::::::: ::::::::::: 
 :+:        :+:    :+:      :+:       :+:           :+:     :+:       :+:    :+:    :+:     
 +:+        +:+    +:+     +:+       +:+            +:+     +:+       +:+           +:+     
@@ -10,46 +9,15 @@
 +#+        +#+    +#+   +#+       +#+              +#+     +#+              +#+    +#+     
 #+#        #+#    #+#  #+#       #+#               #+#     #+#       #+#    #+#    #+#     
 ###         ########  ######### #########          ###     ########## ########     ###     
-
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
  */
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract fuzzTest_NameService_acceptOffer is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
