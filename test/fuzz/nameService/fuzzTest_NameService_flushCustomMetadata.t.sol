@@ -15,50 +15,61 @@ pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
-    AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
+    AccountData FISHER_NO_STAKER = WILDCARD_USER;
+    AccountData FISHER_STAKER = COMMON_USER_STAKER;
+
+    AccountData USER_USERNAME_OWNER = COMMON_USER_NO_STAKER_1;
+
+    string USERNAME = "alice";
+
+    struct Params {
+        AccountData user;
+        string identity;
+        uint256 nonceNameService;
+        bytes signatureNameService;
+        uint256 priorityFee;
+        uint256 nonceEVVM;
+        bool priorityEVVM;
+        bytes signatureEVVM;
+    }
 
     function executeBeforeSetUp() internal override {
         _execute_makeRegistrationUsername(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2)
+            USER_USERNAME_OWNER,
+            USERNAME,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+            )
         );
+
+        for (uint256 i = 0; i < 10; i++) {
+            _execute_makeAddCustomMetadata(
+                USER_USERNAME_OWNER,
+                USERNAME,
+                string.concat("test>", AdvancedStrings.uintToString(i)),
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                ) + i,
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                ) + i,
+                true
+            );
+        }
     }
 
-    function addBalance(
+    function _addBalance(
         AccountData memory user,
         string memory usernameToFlushCustomMetadata,
         uint256 priorityFeeAmount
@@ -80,333 +91,170 @@ contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    function setAmountOfCustomMetadata(
-        AccountData memory user,
-        string memory username,
-        uint256 amount
-    ) private {
-        for (uint256 i = 0; i < amount; i++) {
-            _execute_makeAddCustomMetadata(
-                user,
-                username,
-                string.concat("test>", AdvancedStrings.uintToString(i)),
-                i,
-                i,
-                true
-            );
-        }
+    struct Input {
+        uint256 nonceNameService;
+        uint64 priorityFee;
+        uint256 nonceAsyncEVVM;
+        bool priorityEVVM;
     }
 
-    /**
-     * Function to test:
-     * nS: No staker
-     * S: Staker
-     * PF: Includes priority fee
-     * nPF: No priority fee
-     */
-
-    struct FlushCustomMetadataFuzzTestInput_nPF {
-        uint8 amountOfCustomMetadata;
-        uint32 nonceNameService;
-        uint32 nonceEVVM;
-        bool priorityFlagEVVM;
-    }
-
-    struct FlushCustomMetadataFuzzTestInput_PF {
-        uint8 amountOfCustomMetadata;
-        uint32 nonceNameService;
-        uint32 nonceEVVM;
-        uint16 priorityFeeAmountEVVM;
-        bool priorityFlagEVVM;
-    }
-
-    function test__fuzz__flushCustomMetadata__nS_nPF(
-        FlushCustomMetadataFuzzTestInput_nPF memory input
+    function test__fuzz__flushCustomMetadata_noStaker(
+        Input memory input
     ) external {
         vm.assume(
-            input.nonceNameService > uint256(input.amountOfCustomMetadata) &&
-                input.nonceEVVM > uint256(input.amountOfCustomMetadata) &&
-                input.nonceNameService != 10101 &&
-                input.nonceEVVM != 10101 &&
-                input.nonceNameService != 20202 &&
-                input.nonceEVVM != 20202 &&
-                uint256(input.amountOfCustomMetadata) > 0
+            input.nonceNameService <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
         );
 
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
+        vm.assume(
+            input.nonceAsyncEVVM <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
+        );
 
-        setAmountOfCustomMetadata(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            input.amountOfCustomMetadata
-        );
-        (, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0
-        );
+        Params memory params = Params({
+            user: USER_USERNAME_OWNER,
+            identity: USERNAME,
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: input.priorityFee,
+            nonceEVVM: input.priorityEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(USER_USERNAME_OWNER.Address),
+            priorityEVVM: input.priorityEVVM,
+            signatureEVVM: ""
+        });
+
+        _addBalance(params.user, params.identity, params.priorityFee);
 
         (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            params.signatureNameService,
+            params.signatureEVVM
         ) = _execute_makeFlushCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "test",
-                input.nonceNameService,
-                totalPriorityFeeAmount,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
+            params.user,
+            params.identity,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
+        );
 
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.startPrank(FISHER_NO_STAKER.Address);
 
         nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            input.nonceNameService,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            signatureEVVM
+            params.user.Address,
+            params.identity,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        assertEq(nameService.getAmountOfCustomMetadata("test"), 0);
+        assertEq(
+            nameService.getAmountOfCustomMetadata(params.identity),
+            0,
+            "amount of custom metadata after flushCustomMetadata is incorrect"
+        );
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0
+            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "user balance after flushCustomMetadata is incorrect"
         );
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0
+            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "fisher balance after flushCustomMetadata is incorrect"
         );
     }
 
-    function test__fuzz__flushCustomMetadata__nS_PF(
-        FlushCustomMetadataFuzzTestInput_PF memory input
+
+    function test__fuzz__flushCustomMetadata_staker(
+        Input memory input
     ) external {
         vm.assume(
-            input.nonceNameService > uint256(input.amountOfCustomMetadata) &&
-                input.nonceEVVM > uint256(input.amountOfCustomMetadata) &&
-                input.nonceNameService != 10101 &&
-                input.nonceEVVM != 10101 &&
-                input.nonceNameService != 20202 &&
-                input.nonceEVVM != 20202 &&
-                uint256(input.amountOfCustomMetadata) > 0 &&
-                input.priorityFeeAmountEVVM > 0
+            input.nonceNameService <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
         );
 
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
+        vm.assume(
+            input.nonceAsyncEVVM <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
+        );
 
-        setAmountOfCustomMetadata(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            input.amountOfCustomMetadata
+        Params memory params = Params({
+            user: USER_USERNAME_OWNER,
+            identity: USERNAME,
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: input.priorityFee,
+            nonceEVVM: input.priorityEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(USER_USERNAME_OWNER.Address),
+            priorityEVVM: input.priorityEVVM,
+            signatureEVVM: ""
+        });
+
+        uint256 sizeOfCustomMetadata = nameService.getAmountOfCustomMetadata(
+            params.identity
         );
-        (, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            input.priorityFeeAmountEVVM
-        );
+
+        _addBalance(params.user, params.identity, params.priorityFee);
 
         (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            params.signatureNameService,
+            params.signatureEVVM
         ) = _execute_makeFlushCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "test",
-                input.nonceNameService,
-                totalPriorityFeeAmount,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
+            params.user,
+            params.identity,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
+        );
 
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.startPrank(FISHER_STAKER.Address);
 
         nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            input.nonceNameService,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            signatureEVVM
+            params.user.Address,
+            params.identity,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        assertEq(nameService.getAmountOfCustomMetadata("test"), 0);
+        assertEq(
+            nameService.getAmountOfCustomMetadata(params.identity),
+            0,
+            "amount of custom metadata after flushCustomMetadata is incorrect"
+        );
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0
+            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "user balance after flushCustomMetadata is incorrect"
         );
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0
-        );
-    }
-
-    function test__fuzz__flushCustomMetadata__S_nPF(
-        FlushCustomMetadataFuzzTestInput_nPF memory input
-    ) external {
-        vm.assume(
-            input.nonceNameService > uint256(input.amountOfCustomMetadata) &&
-                input.nonceEVVM > uint256(input.amountOfCustomMetadata) &&
-                input.nonceNameService != 10101 &&
-                input.nonceEVVM != 10101 &&
-                input.nonceNameService != 20202 &&
-                input.nonceEVVM != 20202 &&
-                uint256(input.amountOfCustomMetadata) > 0
-        );
-
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
-
-        setAmountOfCustomMetadata(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            input.amountOfCustomMetadata
-        );
-        (, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            0
-        );
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "test",
-                input.nonceNameService,
-                totalPriorityFeeAmount,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            input.nonceNameService,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(nameService.getAmountOfCustomMetadata("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * input.amountOfCustomMetadata) +
-                totalPriorityFeeAmount
-        );
-    }
-
-    function test__fuzz__flushCustomMetadata__S_PF(
-        FlushCustomMetadataFuzzTestInput_PF memory input
-    ) external {
-        vm.assume(
-            input.nonceNameService > uint256(input.amountOfCustomMetadata) &&
-                input.nonceEVVM > uint256(input.amountOfCustomMetadata) &&
-                input.nonceNameService != 10101 &&
-                input.nonceEVVM != 10101 &&
-                input.nonceNameService != 20202 &&
-                input.nonceEVVM != 20202 &&
-                uint256(input.amountOfCustomMetadata) > 0 &&
-                input.priorityFeeAmountEVVM > 0
-        );
-
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
-
-        setAmountOfCustomMetadata(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            input.amountOfCustomMetadata
-        );
-        (, uint256 totalPriorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            input.priorityFeeAmountEVVM
-        );
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "test",
-                input.nonceNameService,
-                totalPriorityFeeAmount,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        nameService.flushCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            input.nonceNameService,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(nameService.getAmountOfCustomMetadata("test"), 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * input.amountOfCustomMetadata) +
-                totalPriorityFeeAmount
+            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((5 * evvm.getRewardAmount()) * sizeOfCustomMetadata) +
+                params.priorityFee,
+            "fisher balance after flushCustomMetadata is incorrect"
         );
     }
 }
