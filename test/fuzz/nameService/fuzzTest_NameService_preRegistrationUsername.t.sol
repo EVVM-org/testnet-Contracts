@@ -52,7 +52,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         bool priorityEVVM;
     }
 
-    function test__unit_correct__preRegistrationUsername__noStaker(
+    function test__fuzz__preRegistrationUsername__noStaker(
         Input memory input
     ) external {
         Params memory params = Params({
@@ -134,7 +134,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         );
     }
 
-    function test__unit_correct__preRegistrationUsername__staker(
+    function test__fuzz__preRegistrationUsername__staker(
         Input memory input
     ) external {
         Params memory params = Params({
