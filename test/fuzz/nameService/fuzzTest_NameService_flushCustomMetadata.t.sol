@@ -175,7 +175,6 @@ contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-
     function test__fuzz__flushCustomMetadata_staker(
         Input memory input
     ) external {
