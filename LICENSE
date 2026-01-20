@@ -1,166 +1,193 @@
-Copyright (c) 2025
-MATE Labs Inc., a Delaware corporation ("Licensor")
+================================================================================
+EVVM NONCOMMERCIAL LICENSE v1.0
+================================================================================
 
-EVVM is licensed under the EVVM Noncommercial License v1.0 (the "License").
-You may obtain a copy of the License text in this file or at:
+SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+
+Copyright (c) 2025 MATE Labs Inc., a Delaware corporation
+
+================================================================================
+
+1. OVERVIEW
+
+This software is licensed under a modified PolyForm Noncommercial License
+1.0.0 with additional share-alike requirements. You may use, modify, and
+distribute this software for noncommercial purposes only, subject to the terms
+below.
+
+COMMERCIAL USE REQUIRES A SEPARATE LICENSE.
+For commercial licensing inquiries, contact: g@evvm.org
+
+Full license text available at:
 https://polyformproject.org/licenses/noncommercial/1.0.0/
 
-COMMERCIAL USE OF THIS SOFTWARE REQUIRES A SEPARATE COMMERCIAL LICENSE.
-For commercial licensing, please contact g@evvm.org.
+================================================================================
 
---------------------------------------------------------------------------------
+2. BASE LICENSE: PolyForm Noncommercial 1.0.0
 
-# PolyForm Noncommercial License 1.0.0
+2.1 Acceptance
 
-https://polyformproject.org/licenses/noncommercial/1.0.0
+By using this software, you agree to these terms as binding obligations and
+conditions.
 
-## Acceptance
+2.2 Copyright License
 
-In order to get any license under these terms, you must agree
-to them as both strict obligations and conditions to all
-your licenses.
+MATE Labs Inc. grants you a copyright license to use the software for any
+permitted purpose, subject to the distribution and modification restrictions
+below.
 
-## Copyright License
+2.3 Distribution License
 
-The licensor grants you a copyright license for the
-software to do everything you might do with the software
-that would otherwise infringe the licensor's copyright
-in it for any permitted purpose.  However, you may
-only distribute the software according to [Distribution
-License](#distribution-license) and make changes or new works
-based on the software according to [Changes and New Works
-License](#changes-and-new-works-license).
+You may distribute copies of the software, including modified versions,
+provided you comply with Section 3 (Share-Alike Requirements) and Section 2.4
+(Notices).
 
-## Distribution License
+2.4 Notices
 
-The licensor grants you an additional copyright license
-to distribute copies of the software.  Your license
-to distribute covers distributing the software with
-changes and new works permitted by [Changes and New Works
-License](#changes-and-new-works-license).
+Anyone receiving the software from you must also receive:
+  - A copy of this license or the URL:
+    https://polyformproject.org/licenses/noncommercial/1.0.0/
+  - The following notice: "Copyright (c) 2025 MATE Labs Inc."
 
-## Notices
+2.5 Changes and New Works License
 
-You must ensure that anyone who gets a copy of any part of
-the software from you also gets a copy of these terms or the
-URL for them above, as well as copies of any plain-text lines
-beginning with `Required Notice:` that the licensor provided
-with the software.  For example:
+You may create modifications and derivative works for any permitted purpose,
+subject to Section 3.
 
-> Required Notice: Copyright (c) 2025 MATE Labs Inc., a Delaware corporation ("Licensor")
+2.6 Patent License
 
-## Changes and New Works License
+MATE Labs Inc. grants you a patent license covering any patent claims that
+would be infringed by using the software.
 
-The licensor grants you an additional copyright license to
-make changes and new works based on the software for any
-permitted purpose.
+2.7 Permitted Purposes
 
-## Patent License
+The following are permitted purposes:
 
-The licensor grants you a patent license for the software that
-covers patent claims the licensor can license, or becomes able
-to license, that you would infringe by using the software.
+  - Noncommercial purposes: Any use that does not generate revenue or provide
+    commercial advantage
 
-## Noncommercial Purposes
+  - Personal use: Research, experimentation, testing, study, entertainment,
+    hobbies, or religious observance without commercial application
 
-Any noncommercial purpose is a permitted purpose.
+  - Noncommercial organizations: Use by charitable, educational, research,
+    public safety, health, environmental, or government institutions
 
-## Personal Uses
+2.8 Fair Use
 
-Personal use for research, experiment, and testing for
-the benefit of public knowledge, personal study, private
-entertainment, hobby projects, amateur pursuits, or religious
-observance, without any anticipated commercial application,
-is use for a permitted purpose.
+These terms do not limit your fair use rights under applicable law.
 
-## Noncommercial Organizations
+2.9 No Sublicensing
 
-Use by any charitable organization, educational institution,
-public research organization, public safety or health
-organization, environmental protection organization,
-or government institution is use for a permitted purpose
-regardless of the source of funding or obligations resulting
-from the funding.
+You may not sublicense or transfer your licenses to others.
 
-## Fair Use
+2.10 Patent Defense
 
-You may have "fair use" rights for the software under the
-law. These terms do not limit them.
+If you or your company claims the software infringes any patent, all your
+licenses terminate immediately.
 
-## No Other Rights
+2.11 Violations and Cure Period
 
-These terms do not allow you to sublicense or transfer any of
-your licenses to anyone else, or prevent the licensor from
-granting licenses to anyone else.  These terms do not imply
-any other licenses.
+If you violate these terms, you have 32 days from written notification to:
+  - Come into full compliance, AND
+  - Take practical steps to correct past violations
 
-## Patent Defense
+Otherwise, all licenses terminate immediately.
 
-If you make any written claim that the software infringes or
-contributes to infringement of any patent, your patent license
-for the software granted under these terms ends immediately. If
-your company makes such a claim, your patent license ends
-immediately for work on behalf of your company.
+================================================================================
 
-## Violations
+3. SHARE-ALIKE REQUIREMENTS
 
-The first time you are notified in writing that you have
-violated any of these terms, or done anything with the software
-not covered by your licenses, your licenses can nonetheless
-continue if you come into full compliance with these terms,
-and take practical steps to correct past violations, within
-32 days of receiving notice.  Otherwise, all your licenses
-end immediately.
+3.1 Scope
 
-## No Liability
+If you create a Derivative Work and engage in Triggering Distribution, you
+must publicly release that Derivative Work under this same license.
 
-***As far as the law allows, the software comes as is, without
-any warranty or condition, and the licensor will not be liable
-to you for any damages arising out of these terms or the use
-or nature of the software, under any kind of legal claim.***
+3.2 Definitions
 
-## Definitions
+"Derivative Work" means any modification, enhancement, or work based on the
+software that:
+  - Alters, adds, or removes functionality of the original code
+  - Incorporates substantial portions of the original source code
+  - Creates new components that depend on or interface with the original
+    software
 
-The **licensor** is GERMAN MARIA ABAL BAZZANO (g@evvm.org),
-and the **software** is EVVM and related components made
-available under these terms.
+Derivative Work does NOT include:
+  - Configuration files or parameters
+  - Plugins or extensions that use only public APIs
+  - Works that merely link to or use the software as a library without
+    modification
 
-**You** refers to the individual or entity agreeing to these
-terms.
+"Triggering Distribution" means:
+  - Making the Derivative Work available to any third party (whether by
+    download, hosting, or other means)
+  - Using the Derivative Work to provide services accessible to third parties
+  - Deploying the Derivative Work in production environments accessible to
+    others
 
-**Your company** is any legal entity, sole proprietorship,
-or other kind of organization that you work for, plus all
-organizations that have control over, are under the control of,
-or are under common control with that organization.  **Control**
-means ownership of substantially all the assets of an entity,
-or the power to direct its management and policies by vote,
-contract, or otherwise.  Control can be direct or indirect.
+3.3 Publication Requirements
 
-**Your licenses** are all the licenses granted to you for the
-software under these terms.
+Within 90 days of first Triggering Distribution, you must:
 
-**Use** means anything you do with the software requiring one
-of your licenses.
+  1. Publish source code on a publicly accessible platform (e.g., GitHub,
+     GitLab, Codeberg)
 
---------------------------------------------------------------------------------
+  2. Include this license with the published code
 
-ADDITIONAL TERMS (Share-Alike Requirement):
+  3. Provide clear attribution identifying:
+     - The original work (EVVM)
+     - MATE Labs Inc. as the original licensor
+     - A description of your modifications
 
-1. Any modifications, enhancements, or derivative works created under non-commercial use
-   must be publicly released under this same License within 90 days of creation,
-   distribution, or other availability.
+  4. Ensure accessibility - the code must remain publicly available for at
+     least 3 years
 
-2. "Publicly released" requires making source code freely accessible on platforms like
-   GitHub or GitLab, with clear attribution to the original work.
+3.4 Internal Use Exception
 
-3. These terms supplement and do not replace any conditions in the PolyForm
-   Noncommercial 1.0.0 license.
+You are NOT required to publish Derivative Works that:
+  - Remain internal to your organization
+  - Are not distributed to third parties
+  - Are not used to provide services to external users
 
---------------------------------------------------------------------------------
+However, once you engage in Triggering Distribution, the 90-day publication
+requirement begins.
 
-DISCLAIMER OF WARRANTY:
-THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING
-FROM THE USE OF THIS SOFTWARE.
+================================================================================
+
+4. NO LIABILITY
+
+AS FAR AS THE LAW ALLOWS, THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY
+WARRANTY, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NONINFRINGEMENT.
+
+MATE LABS INC. SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM THE USE OF
+THIS SOFTWARE UNDER ANY LEGAL THEORY.
+
+================================================================================
+
+5. DEFINITIONS
+
+  - "MATE Labs Inc." or "Licensor": MATE Labs Inc., a Delaware corporation
+
+  - "Software": EVVM and all related components distributed under this license
+
+  - "You": The individual or entity agreeing to these terms
+
+  - "Your company": Any legal entity you work for, plus all entities under
+    common control
+
+  - "Control": Ownership of substantially all assets or power to direct
+    management
+
+  - "Use": Any activity with the software requiring a license
+
+================================================================================
+
+6. QUESTIONS AND COMMERCIAL LICENSING
+
+For questions about this license or to obtain a commercial license:
+  - Email: g@evvm.org
+  - Include "EVVM License Inquiry" in subject line
+
+================================================================================
+
+END OF LICENSE
