@@ -40,16 +40,22 @@ library EvvmStructs {
 }
 
 interface IEvvm {
+    error AddressCantBeZero();
     error AsyncNonceAlreadyUsed();
+    error BreakerExploded();
+    error ImplementationIsNotActive();
+    error IncorrectAddressInput();
     error InsufficientBalance();
-    error InvalidAmount(uint256, uint256);
+    error InvalidAmount();
     error InvalidSignature();
     error NotAnCA();
+    error SenderIsNotAdmin();
     error SenderIsNotTheExecutor();
+    error SenderIsNotTheProposedAdmin();
     error SenderIsNotTreasury();
     error SyncNonceMismatch();
-    error UpdateBalanceFailed();
-    error WindowToChangeEvvmIDExpired();
+    error TimeLockNotExpired();
+    error WindowExpired();
 
     fallback() external;
 
@@ -116,6 +122,5 @@ interface IEvvm {
     function rejectUpgrade() external;
     function removeAmountFromUser(address user, address token, uint256 amount) external;
     function setEvvmID(uint256 newEvvmID) external;
-    function setNameServiceAddress(address _nameServiceAddress) external;
     function setPointStaker(address user, bytes1 answer) external;
 }

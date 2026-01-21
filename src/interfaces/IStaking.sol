@@ -50,11 +50,12 @@ interface IStaking {
         external
         view
         returns (StakingStructs.HistoryMetadata memory);
-    function getAllDataOfAllowPublicStaking() external view returns (StakingStructs.BoolTypeProposal memory);
     function getAllowPresaleStaking() external view returns (StakingStructs.BoolTypeProposal memory);
+    function getAllowPublicStaking() external view returns (StakingStructs.BoolTypeProposal memory);
     function getEstimatorAddress() external view returns (address);
     function getEstimatorProposal() external view returns (address);
     function getEvvmAddress() external view returns (address);
+    function getEvvmID() external view returns (uint256);
     function getGoldenFisher() external view returns (address);
     function getGoldenFisherProposal() external view returns (address);
     function getIfUsedAsyncNonce(address user, uint256 nonce) external view returns (bool);

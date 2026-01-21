@@ -11,16 +11,24 @@ library NameServiceStructs {
 }
 
 interface INameService {
-    error AcceptOfferVerificationFailed();
+    error AmountMustBeGreaterThanZero();
     error AsyncNonceAlreadyUsed();
+    error CannotBeBeforeCurrentTime();
     error EmptyCustomMetadata();
-    error FlushUsernameVerificationFailed();
+    error IdentityIsNotAUsername();
+    error InvalidAdminProposal();
+    error InvalidEvvmAddress();
     error InvalidKey();
     error InvalidSignatureOnNameService();
     error InvalidUsername();
+    error InvalidWithdrawAmount();
+    error LockTimeNotExpired();
+    error OfferInactive();
+    error OwnershipExpired();
     error PreRegistrationNotValid();
-    error RenewUsernameVerificationFailed();
+    error RenewalTimeLimitExceeded();
     error SenderIsNotAdmin();
+    error SenderIsNotProposedAdmin();
     error UserIsNotOwnerOfIdentity();
     error UserIsNotOwnerOfOffer();
     error UsernameAlreadyRegistered();
@@ -85,6 +93,7 @@ interface INameService {
         external
         view
         returns (address currentEvvmAddress, address proposalEvvmAddress, uint256 timeToAcceptEvvmAddress);
+    function getEvvmID() external view returns (uint256);
     function getExpireDateOfIdentity(string memory _identity) external view returns (uint256);
     function getFullCustomMetadataOfIdentity(string memory _username) external view returns (string[] memory);
     function getIdentityBasicMetadata(string memory _username) external view returns (address, uint256);
