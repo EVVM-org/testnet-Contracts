@@ -130,9 +130,23 @@ contract Staking is AsyncNonce, StakingStructs {
         admin.actual = initialAdmin;
 
         goldenFisher.actual = initialGoldenFisher;
+        
+        /**
+         * @dev Because presale staking is disabled by default
+         *      if you want to enable it, you need to do it via
+         *      this admin functions
+         *
+         *      prepareChangeAllowPresaleStaking()
+         *      prepareChangeAllowPublicStaking()
+         *
+         *      wait TIME_TO_ACCEPT_PROPOSAL
+         *
+         *      confirmChangeAllowPresaleStaking()
+         *      confirmChangeAllowPublicStaking()
+         */
 
-        allowPublicStaking.flag = false;
-        allowPresaleStaking.flag = true;
+        allowPublicStaking.flag = true;
+        allowPresaleStaking.flag = false;
 
         secondsToUnlockStaking.actual = 0;
 
@@ -865,13 +879,11 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Toggles between enabled/disabled state for presale staking after 1-day delay
      */
     function confirmChangeAllowPresaleStaking() external onlyOwner {
-        if (allowPresaleStaking.timeToAccept > block.timestamp) {
+        if (allowPresaleStaking.timeToAccept > block.timestamp) 
             revert();
-        }
-        allowPresaleStaking = BoolTypeProposal({
-            flag: !allowPresaleStaking.flag,
-            timeToAccept: 0
-        });
+
+        allowPresaleStaking.flag = !allowPresaleStaking.flag;
+        allowPresaleStaking.timeToAccept = 0;
     }
 
     /**
@@ -1107,7 +1119,7 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Includes current flag state and any pending changes with timestamps
      * @return BoolTypeProposal struct containing flag and timeToAccept
      */
-    function getAllDataOfAllowPublicStaking()
+    function getAllowPublicStaking()
         external
         view
         returns (BoolTypeProposal memory)
