@@ -908,64 +908,38 @@ abstract contract Constants is Test {
         );
     }
 
-    // @note delete this part after unit correct test is remade
-    function makeOffer(
-        AccountData memory user,
-        string memory usernameToMakeOffer,
-        uint256 expireDate,
-        uint256 amountToOffer,
-        uint256 nonceNameService,
-        uint256 nonceEVVM,
-        bool priorityFlagEVVM
-    ) internal virtual {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        evvm.addBalance(user.Address, PRINCIPAL_TOKEN_ADDRESS, amountToOffer);
-
-        (v, r, s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                usernameToMakeOffer,
-                expireDate,
-                amountToOffer,
-                nonceNameService
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
+    function _execute_makeGoldenStakingSignature(
+        bool isStaking,
+        uint256 amount
+    ) internal virtual returns (bytes memory signatureEVVM) {
+        signatureEVVM = isStaking
+            ? _execute_makeSignaturePay(
+                GOLDEN_STAKER,
+                address(staking),
                 "",
                 PRINCIPAL_TOKEN_ADDRESS,
-                amountToOffer,
+                (staking.priceOfStaking() * amount),
                 0,
-                nonceEVVM,
-                priorityFlagEVVM,
-                address(nameService)
+                evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
+                false,
+                address(staking)
             )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
+            : bytes(hex"");
+    }
 
-        nameService.makeOffer(
-            user.Address,
-            usernameToMakeOffer,
-            expireDate,
-            amountToOffer,
-            nonceNameService,
-            signatureNameService,
-            0,
-            nonceEVVM,
-            priorityFlagEVVM,
-            signatureEVVM
+    function _execute_makeGoldenStaking(
+        bool isStaking,
+        uint256 amount
+    ) internal virtual {
+        vm.startPrank(GOLDEN_STAKER.Address);
+
+        staking.goldenStaking(
+            isStaking,
+            amount,
+            _execute_makeGoldenStakingSignature(isStaking, amount)
         );
+
+        vm.stopPrank();
     }
 }
 
