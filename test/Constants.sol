@@ -978,7 +978,6 @@ abstract contract Constants is Test {
         );
     }
 
-
     function _execute_makePresaleStaking(
         AccountData memory user,
         bool isStaking,
@@ -1014,6 +1013,103 @@ abstract contract Constants is Test {
             nonceStaking,
             signatureStaking,
             priorityFee,
+            nonceEVVM,
+            priorityFlagEVVM,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+    }
+
+    function _execute_makePublicStakingSignature(
+        AccountData memory user,
+        bool isStaking,
+        uint256 amountOfStaking,
+        uint256 nonce,
+        uint256 priorityFeeEVVM,
+        uint256 nonceEVVM,
+        bool priorityFlagEVVM
+    )
+        internal
+        virtual
+        returns (bytes memory signatureStaking, bytes memory signatureEVVM)
+    {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForPublicStaking(
+                evvm.getEvvmID(),
+                isStaking,
+                amountOfStaking,
+                nonce
+            )
+        );
+        signatureStaking = Erc191TestBuilder.buildERC191Signature(v, r, s);
+
+        if (isStaking) {
+            signatureEVVM = _execute_makeSignaturePay(
+                user,
+                address(staking),
+                "",
+                PRINCIPAL_TOKEN_ADDRESS,
+                staking.priceOfStaking() * amountOfStaking,
+                priorityFeeEVVM,
+                nonceEVVM,
+                priorityFlagEVVM,
+                address(staking)
+            );
+        } else {
+            signatureEVVM = _execute_makeSignaturePay(
+            user,
+            address(staking),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            0,
+            priorityFeeEVVM,
+            nonceEVVM,
+            priorityFlagEVVM,
+            address(staking)
+        );
+        }
+    }
+
+    function _execute_makePublicStaking(
+        AccountData memory user,
+        bool isStaking,
+        uint256 amountOfStaking,
+        uint256 nonce,
+        uint256 priorityFeeEVVM,
+        uint256 nonceEVVM,
+        bool priorityFlagEVVM,
+        AccountData memory fisher
+    ) internal virtual {
+        evvm.addBalance(
+            user.Address,
+            PRINCIPAL_TOKEN_ADDRESS,
+            staking.priceOfStaking() * amountOfStaking + priorityFeeEVVM
+        );
+
+        (
+            bytes memory signatureStaking,
+            bytes memory signatureEVVM
+        ) = _execute_makePublicStakingSignature(
+                user,
+                isStaking,
+                amountOfStaking,
+                nonce,
+                priorityFeeEVVM,
+                nonceEVVM,
+                priorityFlagEVVM
+            );
+
+        vm.startPrank(fisher.Address);
+
+        staking.publicStaking(
+            user.Address,
+            isStaking,
+            amountOfStaking,
+            nonce,
+            signatureStaking,
+            priorityFeeEVVM,
             nonceEVVM,
             priorityFlagEVVM,
             signatureEVVM
