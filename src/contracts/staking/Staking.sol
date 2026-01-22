@@ -508,8 +508,8 @@ contract Staking is AsyncNonce, StakingStructs {
             if (priorityFee_EVVM != 0 && !account.IsAService)
                 makePay(
                     account.Address,
-                    priorityFee_EVVM,
                     0,
+                    priorityFee_EVVM,
                     priorityFlag_EVVM,
                     nonce_EVVM,
                     signature_EVVM
