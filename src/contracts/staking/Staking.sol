@@ -130,7 +130,7 @@ contract Staking is AsyncNonce, StakingStructs {
         admin.actual = initialAdmin;
 
         goldenFisher.actual = initialGoldenFisher;
-        
+
         /**
          * @dev Because presale staking is disabled by default
          *      if you want to enable it, you need to do it via
@@ -222,6 +222,9 @@ contract Staking is AsyncNonce, StakingStructs {
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
     ) external {
+        if (!allowPresaleStaking.flag)
+            revert ErrorsLib.PresaleStakingDisabled();
+
         if (
             !SignatureUtils.verifyMessageSignedForStake(
                 evvm.getEvvmID(),
@@ -237,9 +240,6 @@ contract Staking is AsyncNonce, StakingStructs {
         verifyAsyncNonce(user, nonce);
 
         presaleClaims(isStaking, user);
-
-        if (!allowPresaleStaking.flag)
-            revert ErrorsLib.PresaleStakingDisabled();
 
         stakingBaseProcess(
             AccountMetadata({Address: user, IsAService: false}),
@@ -310,9 +310,7 @@ contract Staking is AsyncNonce, StakingStructs {
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
     ) external {
-        if (!allowPublicStaking.flag) {
-            revert();
-        }
+        if (!allowPublicStaking.flag) revert ErrorsLib.PublicStakingDisabled();
 
         if (
             !SignatureUtils.verifyMessageSignedForStake(
@@ -879,8 +877,7 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Toggles between enabled/disabled state for presale staking after 1-day delay
      */
     function confirmChangeAllowPresaleStaking() external onlyOwner {
-        if (allowPresaleStaking.timeToAccept > block.timestamp) 
-            revert();
+        if (allowPresaleStaking.timeToAccept > block.timestamp) revert();
 
         allowPresaleStaking.flag = !allowPresaleStaking.flag;
         allowPresaleStaking.timeToAccept = 0;
