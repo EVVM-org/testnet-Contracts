@@ -941,6 +941,86 @@ abstract contract Constants is Test {
 
         vm.stopPrank();
     }
+
+    function _execute_makePresaleStakingSignature(
+        AccountData memory user,
+        bool isStaking,
+        uint256 nonceStaking,
+        uint256 priorityFee,
+        uint256 nonceEVVM,
+        bool priorityFlagEVVM
+    )
+        internal
+        virtual
+        returns (bytes memory signatureStaking, bytes memory signatureEVVM)
+    {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
+                evvm.getEvvmID(),
+                isStaking,
+                1,
+                nonceStaking
+            )
+        );
+        signatureStaking = Erc191TestBuilder.buildERC191Signature(v, r, s);
+
+        signatureEVVM = _execute_makeSignaturePay(
+            user,
+            address(staking),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            staking.priceOfStaking(),
+            priorityFee,
+            nonceEVVM,
+            priorityFlagEVVM,
+            address(staking)
+        );
+    }
+
+
+    function _execute_makePresaleStaking(
+        AccountData memory user,
+        bool isStaking,
+        uint256 nonceStaking,
+        uint256 priorityFee,
+        uint256 nonceEVVM,
+        bool priorityFlagEVVM,
+        AccountData memory fisher
+    ) internal virtual {
+        evvm.addBalance(
+            user.Address,
+            PRINCIPAL_TOKEN_ADDRESS,
+            staking.priceOfStaking() + priorityFee
+        );
+
+        (
+            bytes memory signatureStaking,
+            bytes memory signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+                user,
+                isStaking,
+                nonceStaking,
+                priorityFee,
+                nonceEVVM,
+                priorityFlagEVVM
+            );
+
+        vm.startPrank(fisher.Address);
+
+        staking.presaleStaking(
+            user.Address,
+            isStaking,
+            nonceStaking,
+            signatureStaking,
+            priorityFee,
+            nonceEVVM,
+            priorityFlagEVVM,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+    }
 }
 
 contract MockContractToStake is StakingServiceUtils {
