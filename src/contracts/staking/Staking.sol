@@ -661,9 +661,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @param _staker Address to be added to the presale staker list
      */
     function addPresaleStaker(address _staker) external onlyOwner {
-        if (presaleStakerCount > LIMIT_PRESALE_STAKER) {
-            revert();
-        }
+        if (presaleStakerCount > LIMIT_PRESALE_STAKER)
+            revert ErrorsLib.LimitPresaleStakersExceeded();
+
         userPresaleStaker[_staker].isAllow = true;
         presaleStakerCount++;
     }
@@ -675,9 +675,9 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function addPresaleStakers(address[] calldata _stakers) external onlyOwner {
         for (uint256 i = 0; i < _stakers.length; i++) {
-            if (presaleStakerCount > LIMIT_PRESALE_STAKER) {
-                revert();
-            }
+            if (presaleStakerCount > LIMIT_PRESALE_STAKER)
+                revert ErrorsLib.LimitPresaleStakersExceeded();
+
             userPresaleStaker[_stakers[i]].isAllow = true;
             presaleStakerCount++;
         }
@@ -707,11 +707,12 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Can only be called by the proposed admin after the time delay has passed
      */
     function acceptNewAdmin() external {
-        if (
-            msg.sender != admin.proposal || admin.timeToAccept > block.timestamp
-        ) {
-            revert();
-        }
+        if (msg.sender != admin.proposal)
+            revert ErrorsLib.SenderIsNotProposedAdmin();
+
+        if (admin.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+
         admin.actual = admin.proposal;
         admin.proposal = address(0);
         admin.timeToAccept = 0;
@@ -741,9 +742,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Can only be called by the current admin after the 1-day time delay
      */
     function acceptNewGoldenFisher() external onlyOwner {
-        if (goldenFisher.timeToAccept > block.timestamp) {
-            revert();
-        }
+        if (goldenFisher.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+
         goldenFisher.actual = goldenFisher.proposal;
         goldenFisher.proposal = address(0);
         goldenFisher.timeToAccept = 0;
@@ -777,9 +778,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Can only be called by the current admin after the 1-day time delay
      */
     function acceptSetSecondsToUnlockStaking() external onlyOwner {
-        if (secondsToUnlockStaking.timeToAccept > block.timestamp) {
-            revert();
-        }
+        if (secondsToUnlockStaking.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+
         secondsToUnlockStaking.actual = secondsToUnlockStaking.proposal;
         secondsToUnlockStaking.proposal = 0;
         secondsToUnlockStaking.timeToAccept = 0;
@@ -813,9 +814,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Can only be called by the current admin after the 1-day time delay
      */
     function confirmSetSecondsToUnllockFullUnstaking() external onlyOwner {
-        if (secondsToUnllockFullUnstaking.timeToAccept > block.timestamp) {
-            revert();
-        }
+        if (secondsToUnllockFullUnstaking.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+
         secondsToUnllockFullUnstaking.actual = secondsToUnllockFullUnstaking
             .proposal;
         secondsToUnllockFullUnstaking.proposal = 0;
@@ -845,9 +846,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Toggles between enabled/disabled state for public staking after 1-day delay
      */
     function confirmChangeAllowPublicStaking() external onlyOwner {
-        if (allowPublicStaking.timeToAccept > block.timestamp) {
-            revert();
-        }
+        if (allowPublicStaking.timeToAccept > block.timestamp) 
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+        
         allowPublicStaking = BoolTypeProposal({
             flag: !allowPublicStaking.flag,
             timeToAccept: 0
@@ -877,7 +878,8 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Toggles between enabled/disabled state for presale staking after 1-day delay
      */
     function confirmChangeAllowPresaleStaking() external onlyOwner {
-        if (allowPresaleStaking.timeToAccept > block.timestamp) revert();
+        if (allowPresaleStaking.timeToAccept > block.timestamp) 
+        revert ErrorsLib.TimeToAcceptProposalNotReached();
 
         allowPresaleStaking.flag = !allowPresaleStaking.flag;
         allowPresaleStaking.timeToAccept = 0;
@@ -909,9 +911,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Can only be called by the current admin after the 1-day time delay
      */
     function acceptNewEstimator() external onlyOwner {
-        if (estimatorAddress.timeToAccept > block.timestamp) {
-            revert();
-        }
+        if (estimatorAddress.timeToAccept > block.timestamp) 
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+        
         estimatorAddress.actual = estimatorAddress.proposal;
         estimatorAddress.proposal = address(0);
         estimatorAddress.timeToAccept = 0;

@@ -19,4 +19,7 @@ library ErrorsLib {
     error ServiceDoesNotFulfillCorrectStakingAmount(uint256 requiredAmount);
     error ServiceDoesNotStakeInSameTx();
     error AddressMismatch();
+    error LimitPresaleStakersExceeded();
+    error SenderIsNotProposedAdmin();
+    error TimeToAcceptProposalNotReached();
 }
