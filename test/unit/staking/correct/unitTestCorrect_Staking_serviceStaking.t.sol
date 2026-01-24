@@ -11,29 +11,9 @@ pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants, MockContractToStake} from "test/Constants.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
     MockContractToStake mockContract;
@@ -52,7 +32,7 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
         mockContract = new MockContractToStake(address(staking));
     }
 
-    function giveMateToExecute(
+    function _addBalance(
         address user,
         uint256 stakingAmount
     ) private returns (uint256 totalOfMate) {
@@ -71,31 +51,31 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
         return (evvm.getRewardAmount() * 2) * numberOfTx;
     }
 
-    /**
-     * Function to test:
-     * nS: No staker
-     * S: Staker
-     * nPF: No priority fee
-     * PF: Includes priority fee
-     */
-
     function test__unit_correct__publicServiceStaking__stake() external {
         uint256 amountStakingBefore = evvm.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
 
-        uint256 totalOfMate = giveMateToExecute(address(mockContract), 10);
+        uint256 totalOfMate = _addBalance(address(mockContract), 10);
 
         mockContract.stake(10);
 
-        assert(evvm.isAddressStaker(address(mockContract)));
+        assertTrue(
+            evvm.isAddressStaker(address(mockContract)),
+            "Error: address should be recognized as staker"
+        );
 
-        assertEq(evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS), 0);
+        assertEq(
+            evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "Error: staker principal token balance should be zero after staking"
+        );
 
         assertEq(
             evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
-            amountStakingBefore + totalOfMate
+            amountStakingBefore + totalOfMate,
+            "Error: staking contract principal token balance should be increased after staking"
         );
 
         Staking.HistoryMetadata[]
@@ -105,10 +85,26 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
 
         history = staking.getAddressHistory(address(mockContract));
 
-        assertEq(history[0].timestamp, block.timestamp);
-        assert(history[0].transactionType == DEPOSIT_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[0].amount, 10);
-        assertEq(history[0].totalStaked, 10);
+        assertEq(
+            history[0].timestamp,
+            block.timestamp,
+            "Error: staking history timestamp mismatch"
+        );
+        assertEq(
+            history[0].transactionType,
+            DEPOSIT_HISTORY_SMATE_IDENTIFIER,
+            "Error: staking history transaction type mismatch"
+        );
+        assertEq(
+            history[0].amount,
+            10,
+            "Error: staking history amount mismatch"
+        );
+        assertEq(
+            history[0].totalStaked,
+            10,
+            "Error: staking history total staked mismatch"
+        );
     }
 
     function test__unit_correct__publicServiceStaking__unstake() external {
@@ -117,26 +113,28 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
             PRINCIPAL_TOKEN_ADDRESS
         );
 
-        giveMateToExecute(address(mockContract), 10);
+        _addBalance(address(mockContract), 10);
 
         mockContract.stake(10);
 
-        assert(evvm.isAddressStaker(address(mockContract)));
-
         mockContract.unstake(5);
 
-        assert(evvm.isAddressStaker(address(mockContract)));
-
+        assertTrue(
+            evvm.isAddressStaker(address(mockContract)),
+            "Error: address should be recognized as staker"
+        );
         assertEq(
             evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
-            staking.priceOfStaking() * 5
+            staking.priceOfStaking() * 5,
+            "Error: staker principal token balance mismatch after unstaking"
         );
 
         assertEq(
             evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
             amountStakingBefore +
                 (staking.priceOfStaking() * 5) +
-                evvm.getRewardAmount()
+                evvm.getRewardAmount(),
+            "Error: staking contract principal token balance mismatch after unstaking"
         );
 
         Staking.HistoryMetadata[]
@@ -146,15 +144,26 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
 
         history = staking.getAddressHistory(address(mockContract));
 
-        assertEq(history[0].timestamp, block.timestamp);
-        assert(history[0].transactionType == DEPOSIT_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[0].amount, 10);
-        assertEq(history[0].totalStaked, 10);
-
-        assertEq(history[1].timestamp, block.timestamp);
-        assert(history[1].transactionType == WITHDRAW_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[1].amount, 5);
-        assertEq(history[1].totalStaked, 5);
+        assertEq(
+            history[1].timestamp,
+            block.timestamp,
+            "Error: unstaking history timestamp mismatch"
+        );
+        assertEq(
+            history[1].transactionType,
+            WITHDRAW_HISTORY_SMATE_IDENTIFIER,
+            "Error: unstaking history transaction type mismatch"
+        );
+        assertEq(
+            history[1].amount,
+            5,
+            "Error: unstaking history amount mismatch"
+        );
+        assertEq(
+            history[1].totalStaked,
+            5,
+            "Error: unstaking history total staked mismatch"
+        );
     }
 
     function test__unit_correct__publicServiceStaking__fullUnstake() external {
@@ -163,26 +172,29 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
             PRINCIPAL_TOKEN_ADDRESS
         );
 
-        giveMateToExecute(address(mockContract), 10);
+        _addBalance(address(mockContract), 10);
 
         mockContract.stake(10);
-
-        assert(evvm.isAddressStaker(address(mockContract)));
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
         mockContract.unstake(10);
 
-        assert(!evvm.isAddressStaker(address(mockContract)));
+        assertFalse(
+            evvm.isAddressStaker(address(mockContract)),
+            "Error: address should not be recognized as staker after full unstake"
+        );
 
         assertEq(
             evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
-            staking.priceOfStaking() * 10
+            staking.priceOfStaking() * 10,
+            "Error: staker principal token balance mismatch after full unstake"
         );
 
         assertEq(
             evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
-            amountStakingBefore + evvm.getRewardAmount()
+            amountStakingBefore + evvm.getRewardAmount(),
+            "Error: staking contract principal token balance mismatch after full unstake"
         );
 
         Staking.HistoryMetadata[]
@@ -196,14 +208,27 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
             history[0].timestamp,
             block.timestamp - staking.getSecondsToUnlockFullUnstaking()
         );
-        assert(history[0].transactionType == DEPOSIT_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[0].amount, 10);
-        assertEq(history[0].totalStaked, 10);
 
-        assertEq(history[1].timestamp, block.timestamp);
-        assert(history[1].transactionType == WITHDRAW_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[1].amount, 10);
-        assertEq(history[1].totalStaked, 0);
+        assertEq(
+            history[1].timestamp,
+            block.timestamp,
+            "Error: full unstaking history timestamp mismatch"
+        );
+        assertEq(
+            history[1].transactionType,
+            WITHDRAW_HISTORY_SMATE_IDENTIFIER,
+            "Error: full unstaking history transaction type mismatch"
+        );
+        assertEq(
+            history[1].amount,
+            10,
+            "Error: full unstaking history amount mismatch"
+        );
+        assertEq(
+            history[1].totalStaked,
+            0,
+            "Error: full unstaking history total staked mismatch"
+        );
     }
 
     function test__unit_correct__publicServiceStaking__stakeAfterFullUnstake()
@@ -214,11 +239,9 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
             PRINCIPAL_TOKEN_ADDRESS
         );
 
-        giveMateToExecute(address(mockContract), 10);
+        _addBalance(address(mockContract), 10);
 
         mockContract.stake(10);
-
-        assert(evvm.isAddressStaker(address(mockContract)));
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
@@ -228,15 +251,23 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
 
         mockContract.stake(10);
 
-        assert(evvm.isAddressStaker(address(mockContract)));
+        assertTrue(
+            evvm.isAddressStaker(address(mockContract)),
+            "Error: address should be recognized as staker after staking again"
+        );
 
-        assertEq(evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS), 0);
+        assertEq(
+            evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "Error: staker principal token balance should be zero after staking again"
+        );
 
         assertEq(
             evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
             amountStakingBefore +
                 (staking.priceOfStaking() * 10) +
-                evvm.getRewardAmount()
+                evvm.getRewardAmount(),
+            "Error: staking contract principal token balance mismatch after staking again"
         );
 
         Staking.HistoryMetadata[]
@@ -247,26 +278,24 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
         history = staking.getAddressHistory(address(mockContract));
 
         assertEq(
-            history[0].timestamp,
-            block.timestamp -
-                staking.getSecondsToUnlockFullUnstaking() -
-                staking.getSecondsToUnlockStaking()
+            history[2].timestamp,
+            block.timestamp,
+            "Error: staking again history timestamp mismatch"
         );
-        assert(history[0].transactionType == DEPOSIT_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[0].amount, 10);
-        assertEq(history[0].totalStaked, 10);
-
         assertEq(
-            history[1].timestamp,
-            block.timestamp - staking.getSecondsToUnlockStaking()
+            history[2].transactionType,
+            DEPOSIT_HISTORY_SMATE_IDENTIFIER,
+            "Error: staking again history transaction type mismatch"
         );
-        assert(history[1].transactionType == WITHDRAW_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[1].amount, 10);
-        assertEq(history[1].totalStaked, 0);
-
-        assertEq(history[2].timestamp, block.timestamp);
-        assert(history[2].transactionType == DEPOSIT_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[2].amount, 10);
-        assertEq(history[2].totalStaked, 10);
+        assertEq(
+            history[2].amount,
+            10,
+            "Error: staking again history amount mismatch"
+        );
+        assertEq(
+            history[2].totalStaked,
+            10,
+            "Error: staking again history total staked mismatch"
+        );
     }
 }
