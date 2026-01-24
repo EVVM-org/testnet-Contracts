@@ -1085,7 +1085,7 @@ abstract contract Constants is Test {
         evvm.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
-            staking.priceOfStaking() * amountOfStaking + priorityFeeEVVM
+            isStaking ? (staking.priceOfStaking() * amountOfStaking) : 0  + priorityFeeEVVM
         );
 
         (
