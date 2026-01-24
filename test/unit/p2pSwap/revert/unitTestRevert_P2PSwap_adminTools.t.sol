@@ -1,14 +1,19 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function revert behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
 
 pragma solidity ^0.8.0;
@@ -153,7 +158,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         vm.stopPrank();
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp + 2 days);
         vm.expectRevert();
         p2pSwap.rejectProposeOwner();
         vm.stopPrank();
@@ -176,7 +181,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         vm.stopPrank();
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp + 2 days);
         vm.expectRevert();
         p2pSwap.acceptOwner();
         vm.stopPrank();
@@ -249,7 +254,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
             servicePercentage,
             stakerPercentage
         );
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp  + 2 days);
         vm.expectRevert();
         p2pSwap.rejectProposeFillFixedPercentage();
 
@@ -289,7 +294,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
             servicePercentage,
             stakerPercentage
         );
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp  + 2 days);
         vm.expectRevert();
         p2pSwap.acceptFillFixedPercentage();
 
@@ -364,7 +369,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
             servicePercentage,
             stakerPercentage
         );
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp  + 2 days);
         vm.expectRevert();
         p2pSwap.rejectProposeFillPropotionalPercentage();
         vm.stopPrank();
@@ -405,7 +410,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
             servicePercentage,
             stakerPercentage
         );
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp  + 2 days);
         vm.expectRevert();
         p2pSwap.acceptFillPropotionalPercentage();
 
@@ -442,7 +447,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         vm.startPrank(ADMIN.Address);
         p2pSwap.proposePercentageFee(fee);
 
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp  + 2 days);
         vm.expectRevert();
         p2pSwap.rejectProposePercentageFee();
         vm.stopPrank();
@@ -467,7 +472,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         vm.startPrank(ADMIN.Address);
         p2pSwap.proposePercentageFee(fee);
 
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp  + 2 days);
 
         vm.expectRevert();
         p2pSwap.acceptPercentageFee();
@@ -506,7 +511,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
 
         vm.startPrank(ADMIN.Address);
         p2pSwap.proposeMaxLimitFillFixedFee(prop);
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp  + 2 days);
 
         vm.expectRevert();
         p2pSwap.rejectProposeMaxLimitFillFixedFee();
@@ -534,7 +539,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         vm.startPrank(ADMIN.Address);
         p2pSwap.proposeMaxLimitFillFixedFee(prop);
 
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp  + 2 days);
         vm.expectRevert();
         p2pSwap.acceptMaxLimitFillFixedFee();
         vm.stopPrank();
@@ -603,7 +608,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         p2pSwap.addBalance(token, 0.1 ether);
         p2pSwap.proposeWithdrawal(token, amount, to);
 
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp  + 2 days);
 
         vm.expectRevert();
         p2pSwap.rejectProposeWithdrawal();
@@ -639,7 +644,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         p2pSwap.addBalance(token, 0.1 ether);
         p2pSwap.proposeWithdrawal(token, amount, to);
 
-        vm.warp(vm.getBlockTimestamp() + 2 days);
+        vm.warp(block.timestamp  + 2 days);
 
         vm.expectRevert();
         p2pSwap.acceptWithdrawal();
