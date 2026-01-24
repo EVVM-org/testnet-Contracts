@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/* _______ __   __ _______ _______   _______ _______ _______ _______ 
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
 |       |  | |  |       |       | |       |       |       |       |
 |    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
 |   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
@@ -9,7 +10,6 @@
 |   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
 |___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
@@ -18,6 +18,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+
 contract fuzzTest_NameService_flushUsername is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
     AccountData FISHER_STAKER = COMMON_USER_STAKER;
