@@ -86,4 +86,8 @@ library AdvancedStrings {
         
         return string(result);
     }
+
+    function boolToString(bool value) internal pure returns (string memory) {
+        return value ? "true" : "false";
+    }
 }
