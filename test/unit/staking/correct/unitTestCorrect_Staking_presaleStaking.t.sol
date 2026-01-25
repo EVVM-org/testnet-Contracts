@@ -34,22 +34,21 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
          */
         vm.startPrank(ADMIN.Address);
 
-        staking.prepareChangeAllowPresaleStaking();
-        skip(1 days);
-        staking.confirmChangeAllowPresaleStaking();
-
-        assertTrue(
-            staking.getAllowPresaleStaking().flag,
-            "presale staking was not enabled in setup"
-        );
-
         staking.prepareChangeAllowPublicStaking();
+        staking.prepareChangeAllowPresaleStaking();
+
         skip(1 days);
         staking.confirmChangeAllowPublicStaking();
+        staking.confirmChangeAllowPresaleStaking();
 
         assertFalse(
             staking.getAllowPublicStaking().flag,
             "public staking was not disabled in setup"
+        );
+
+        assertTrue(
+            staking.getAllowPresaleStaking().flag,
+            "presale staking was not enabled in setup"
         );
 
         ///@dev Adding a presale staker to be able to execute
@@ -965,7 +964,6 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             GOLDEN_STAKER
         );
 
-
         Params memory params = Params({
             user: USER,
             isStaking: true,
@@ -1016,9 +1014,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             memory historyFullUnstake = new Staking.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
-        historyFullUnstake = staking.getAddressHistory(
-            params.user.Address
-        );
+        historyFullUnstake = staking.getAddressHistory(params.user.Address);
 
         assertTrue(
             evvm.isAddressStaker(params.user.Address),
@@ -1053,7 +1049,6 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
     }
 
-
     function test__unit_correct__presaleStaking__stakeAfterFullUnstaking_fisherStake()
         external
     {
@@ -1083,7 +1078,6 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             false,
             GOLDEN_STAKER
         );
-
 
         Params memory params = Params({
             user: USER,
@@ -1135,9 +1129,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             memory historyFullUnstake = new Staking.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
-        historyFullUnstake = staking.getAddressHistory(
-            params.user.Address
-        );
+        historyFullUnstake = staking.getAddressHistory(params.user.Address);
 
         assertTrue(
             evvm.isAddressStaker(params.user.Address),
