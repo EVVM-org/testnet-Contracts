@@ -2,8 +2,12 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 pragma solidity ^0.8.0;
 
-import {SignatureUtil} from "@evvm/testnet-contracts/library/utils/SignatureUtil.sol";
-import {AdvancedStrings} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    SignatureUtil
+} from "@evvm/testnet-contracts/library/utils/SignatureUtil.sol";
+import {
+    AdvancedStrings
+} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 library SignatureUtils {
     /**
@@ -15,9 +19,9 @@ library SignatureUtils {
     function verifyMessageSignedForPresaleStake(
         uint256 evvmID,
         address signer,
-        bool _isStaking,
-        uint256 _amountOfStaking,
-        uint256 _nonce,
+        bool isStaking,
+        uint256 amountOfStaking,
+        uint256 nonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -25,11 +29,11 @@ library SignatureUtils {
                 evvmID,
                 "presaleStaking",
                 string.concat(
-                    _isStaking ? "true" : "false",
+                    AdvancedStrings.boolToString(isStaking),
                     ",",
-                    AdvancedStrings.uintToString(_amountOfStaking),
+                    AdvancedStrings.uintToString(amountOfStaking),
                     ",",
-                    AdvancedStrings.uintToString(_nonce)
+                    AdvancedStrings.uintToString(nonce)
                 ),
                 signature,
                 signer
@@ -39,9 +43,9 @@ library SignatureUtils {
     function verifyMessageSignedForPublicStake(
         uint256 evvmID,
         address signer,
-        bool _isStaking,
-        uint256 _amountOfStaking,
-        uint256 _nonce,
+        bool isStaking,
+        uint256 amountOfStaking,
+        uint256 nonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -49,11 +53,11 @@ library SignatureUtils {
                 evvmID,
                 "publicStaking",
                 string.concat(
-                    _isStaking ? "true" : "false",
+                    AdvancedStrings.boolToString(isStaking),
                     ",",
-                    AdvancedStrings.uintToString(_amountOfStaking),
+                    AdvancedStrings.uintToString(amountOfStaking),
                     ",",
-                    AdvancedStrings.uintToString(_nonce)
+                    AdvancedStrings.uintToString(nonce)
                 ),
                 signature,
                 signer
