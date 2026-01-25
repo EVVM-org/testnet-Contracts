@@ -18,121 +18,48 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
-
 contract fuzzTest_Staking_presaleStaking is Test, Constants {
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
-
+        /**
+         *  @dev Because presale staking is disabled by default in 
+                 testnet contracts, we need to enable it here
+         */
         vm.startPrank(ADMIN.Address);
+
+        staking.prepareChangeAllowPublicStaking();
+        staking.prepareChangeAllowPresaleStaking();
+
+        skip(1 days);
+        staking.confirmChangeAllowPublicStaking();
+        staking.confirmChangeAllowPresaleStaking();
 
         staking.addPresaleStaker(COMMON_USER_NO_STAKER_1.Address);
         vm.stopPrank();
 
-        giveMateToExecute(COMMON_USER_NO_STAKER_1, true, 0);
+        _addBalance(COMMON_USER_NO_STAKER_1.Address, true, 0);
 
-        (
-            bytes memory signatureEVVM,
-            bytes memory signatureStaking
-        ) = makePresaleStakingSignature(
-                COMMON_USER_NO_STAKER_1,
-                true,
-                0,
-                0,
-                0,
-                false
-            );
-
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
+        _execute_makePresaleStaking(
+            COMMON_USER_NO_STAKER_1,
             true,
             0,
-            signatureStaking,
             0,
             0,
             false,
-            signatureEVVM
+            COMMON_USER_NO_STAKER_1
         );
     }
 
-    function giveMateToExecute(
-        AccountData memory user,
+    function _addBalance(
+        address user,
         bool isStaking,
         uint256 priorityFee
-    ) private returns (uint256 totalOfMate, uint256 totalOfPriorityFee) {
+    ) private returns (uint256 amount, uint256 amountPriorityFee) {
         evvm.addBalance(
-            user.Address,
+            user,
             PRINCIPAL_TOKEN_ADDRESS,
-            (isStaking ? (staking.priceOfStaking() * 1) : 0) + priorityFee
+            (isStaking ? staking.priceOfStaking() : 0) + priorityFee
         );
-
-        totalOfMate = (isStaking ? (staking.priceOfStaking() * 1) : 0);
-        totalOfPriorityFee = priorityFee;
-    }
-
-    function makePresaleStakingSignature(
-        AccountData memory user,
-        bool isStaking,
-        uint256 priorityFee,
-        uint256 nonceSmate,
-        uint256 nonceEVVM,
-        bool priorityEVVM
-    )
-        private
-        view
-        returns (bytes memory signatureEVVM, bytes memory signatureStaking)
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        if (isStaking) {
-            (v, r, s) = vm.sign(
-                user.PrivateKey,
-                Erc191TestBuilder.buildMessageSignedForPay(
-                    evvm.getEvvmID(),
-                    address(staking),
-                    "",
-                    PRINCIPAL_TOKEN_ADDRESS,
-                    staking.priceOfStaking() * 1,
-                    priorityFee,
-                    nonceEVVM,
-                    priorityEVVM,
-                    address(staking)
-                )
-            );
-        } else {
-            (v, r, s) = vm.sign(
-                user.PrivateKey,
-                Erc191TestBuilder.buildMessageSignedForPay(
-                    evvm.getEvvmID(),
-                    address(staking),
-                    "",
-                    PRINCIPAL_TOKEN_ADDRESS,
-                    priorityFee,
-                    0,
-                    nonceEVVM,
-                    priorityEVVM,
-                    address(staking)
-                )
-            );
-        }
-
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                isStaking,
-                1,
-                nonceSmate
-            )
-        );
-        signatureStaking = Erc191TestBuilder.buildERC191Signature(v, r, s);
+        return (staking.priceOfStaking(), priorityFee);
     }
 
     function calculateRewardPerExecution(
@@ -147,15 +74,12 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
         uint144 nonceStaking;
         uint144 nonceEVVM;
         bool priorityEVVM;
-        bool givePriorityFee;
         uint16 priorityFeeAmountEVVM;
     }
 
     function test__fuzz__presaleStaking_AsyncExecution(
         PresaleStakingFuzzTestInput[20] memory input
     ) external {
-        bytes memory signatureEVVM;
-        bytes memory signatureStaking;
         Staking.HistoryMetadata memory history;
         uint256 amountBeforeFisher;
         uint256 amountBeforeUser;
@@ -225,57 +149,25 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                     );
                 }
 
-                giveMateToExecute(
+                _addBalance(
+                    COMMON_USER_NO_STAKER_1.Address,
+                    true,
+                    uint256(input[i].priorityFeeAmountEVVM)
+                );
+
+                _execute_makePresaleStaking(
                     COMMON_USER_NO_STAKER_1,
                     true,
-                    (
-                        input[i].givePriorityFee
-                            ? uint256(input[i].priorityFeeAmountEVVM)
-                            : 0
-                    )
-                );
-
-                (signatureEVVM, signatureStaking) = makePresaleStakingSignature(
-                    COMMON_USER_NO_STAKER_1,
-                    input[i].isStaking,
-                    (
-                        input[i].givePriorityFee
-                            ? uint256(input[i].priorityFeeAmountEVVM)
-                            : 0
-                    ),
                     input[i].nonceStaking,
-                    (
-                        input[i].priorityEVVM
-                            ? input[i].nonceEVVM
-                            : evvm.getNextCurrentSyncNonce(
-                                COMMON_USER_NO_STAKER_1.Address
-                            )
-                    ),
+                    uint256(input[i].priorityFeeAmountEVVM),
                     input[i].priorityEVVM
-                );
-
-                vm.startPrank(FISHER.Address);
-                staking.presaleStaking(
-                    COMMON_USER_NO_STAKER_1.Address,
-                    input[i].isStaking,
-                    input[i].nonceStaking,
-                    signatureStaking,
-                    (
-                        input[i].givePriorityFee
-                            ? uint256(input[i].priorityFeeAmountEVVM)
-                            : 0
-                    ),
-                    (
-                        input[i].priorityEVVM
-                            ? input[i].nonceEVVM
-                            : evvm.getNextCurrentSyncNonce(
-                                COMMON_USER_NO_STAKER_1.Address
-                            )
-                    ),
+                        ? input[i].nonceEVVM
+                        : evvm.getNextCurrentSyncNonce(
+                            COMMON_USER_NO_STAKER_1.Address
+                        ),
                     input[i].priorityEVVM,
-                    signatureEVVM
+                    FISHER
                 );
-                vm.stopPrank();
             } else {
                 // unstaking
                 if (
@@ -299,55 +191,25 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                     );
                 }
 
-                if (input[i].givePriorityFee) {
-                    giveMateToExecute(
-                        COMMON_USER_NO_STAKER_1,
-                        false,
-                        uint256(input[i].priorityFeeAmountEVVM)
-                    );
-                }
-
-                (signatureEVVM, signatureStaking) = makePresaleStakingSignature(
-                    COMMON_USER_NO_STAKER_1,
-                    input[i].isStaking,
-                    (
-                        input[i].givePriorityFee
-                            ? uint256(input[i].priorityFeeAmountEVVM)
-                            : 0
-                    ),
-                    input[i].nonceStaking,
-                    (
-                        input[i].priorityEVVM
-                            ? input[i].nonceEVVM
-                            : evvm.getNextCurrentSyncNonce(
-                                COMMON_USER_NO_STAKER_1.Address
-                            )
-                    ),
-                    input[i].priorityEVVM
-                );
-
-                vm.startPrank(FISHER.Address);
-                staking.presaleStaking(
+                _addBalance(
                     COMMON_USER_NO_STAKER_1.Address,
-                    input[i].isStaking,
-                    input[i].nonceStaking,
-                    signatureStaking,
-                    (
-                        input[i].givePriorityFee
-                            ? uint256(input[i].priorityFeeAmountEVVM)
-                            : 0
-                    ),
-                    (
-                        input[i].priorityEVVM
-                            ? input[i].nonceEVVM
-                            : evvm.getNextCurrentSyncNonce(
-                                COMMON_USER_NO_STAKER_1.Address
-                            )
-                    ),
-                    input[i].priorityEVVM,
-                    signatureEVVM
+                    false,
+                    uint256(input[i].priorityFeeAmountEVVM)
                 );
-                vm.stopPrank();
+
+                _execute_makePresaleStaking(
+                    COMMON_USER_NO_STAKER_1,
+                    false,
+                    input[i].nonceStaking,
+                    uint256(input[i].priorityFeeAmountEVVM),
+                    input[i].priorityEVVM
+                        ? input[i].nonceEVVM
+                        : evvm.getNextCurrentSyncNonce(
+                            COMMON_USER_NO_STAKER_1.Address
+                        ),
+                    input[i].priorityEVVM,
+                    FISHER
+                );
             }
 
             history = staking.getAddressHistoryByIndex(
@@ -361,7 +223,8 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                     PRINCIPAL_TOKEN_ADDRESS
                 ),
                 amountBeforeUser +
-                    (input[i].isStaking ? 0 : staking.priceOfStaking() * 1)
+                    (input[i].isStaking ? 0 : staking.priceOfStaking() * 1),
+                "Error: balance of user is not correct after presale staking tx"
             );
 
             if (FISHER.Address == COMMON_USER_STAKER.Address) {
@@ -369,35 +232,46 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                     evvm.getBalance(FISHER.Address, PRINCIPAL_TOKEN_ADDRESS),
                     amountBeforeFisher +
                         calculateRewardPerExecution(1) +
-                        (
-                            input[i].givePriorityFee
-                                ? uint256(input[i].priorityFeeAmountEVVM)
-                                : 0
-                        )
+                        uint256(input[i].priorityFeeAmountEVVM),
+                    "Error: balance of staker is not correct after presale staking tx"
                 );
             } else {
                 assertEq(
                     evvm.getBalance(FISHER.Address, PRINCIPAL_TOKEN_ADDRESS),
-                    amountBeforeFisher
+                    amountBeforeFisher,
+                    "Error: balance of non-staker is not correct after presale staking tx"
                 );
             }
 
-            assertEq(history.timestamp, block.timestamp);
-            assert(
-                history.transactionType ==
-                    (
-                        input[i].isStaking
-                            ? DEPOSIT_HISTORY_SMATE_IDENTIFIER
-                            : WITHDRAW_HISTORY_SMATE_IDENTIFIER
-                    )
+            assertEq(
+                history.timestamp,
+                block.timestamp,
+                "Error: timestamp in history is not correct"
+            );
+            assertEq(
+                history.transactionType,
+                (
+                    input[i].isStaking
+                        ? DEPOSIT_HISTORY_SMATE_IDENTIFIER
+                        : WITHDRAW_HISTORY_SMATE_IDENTIFIER
+                ),
+                "Error: transactionType in history is not correct"
             );
 
             assertEq(history.amount, 1);
 
             if (input[i].isStaking) {
-                assertEq(history.totalStaked, totalStakedBefore + 1);
+                assertEq(
+                    history.totalStaked,
+                    totalStakedBefore + 1,
+                    "Error: totalStaked in history is not correct"
+                );
             } else {
-                assertEq(history.totalStaked, totalStakedBefore - 1);
+                assertEq(
+                    history.totalStaked,
+                    totalStakedBefore - 1,
+                    "Error: totalStaked in history is not correct"
+                );
             }
         }
     }
