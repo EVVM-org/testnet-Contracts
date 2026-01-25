@@ -18,33 +18,18 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
-
 contract fuzzTest_Staking_serviceStaking is Test, Constants {
     MockContractToStake mockContract;
 
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
-
-        vm.startPrank(ADMIN.Address);
-
-        staking.prepareChangeAllowPublicStaking();
-        skip(1 days);
-        staking.confirmChangeAllowPublicStaking();
-
-        vm.stopPrank();
-
         mockContract = new MockContractToStake(address(staking));
 
-        giveMateToExecute(address(mockContract), 10);
+        _addBalance(address(mockContract), 10);
 
         mockContract.stake(10);
     }
 
-    function giveMateToExecute(
+    function _addBalance(
         address user,
         uint256 stakingAmount
     ) private returns (uint256 totalOfMate) {
@@ -81,18 +66,17 @@ contract fuzzTest_Staking_serviceStaking is Test, Constants {
 
             if (input[i].isStaking) {
                 if (
-                    evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS) <
-                    staking.priceOfStaking() * input[i].amount
+                    evvm.getBalance(
+                        address(mockContract),
+                        PRINCIPAL_TOKEN_ADDRESS
+                    ) < staking.priceOfStaking() * input[i].amount
                 ) {
                     uint256 totalOfStakeNeeded = input[i].amount -
                         (evvm.getBalance(
                             address(mockContract),
                             PRINCIPAL_TOKEN_ADDRESS
                         ) / staking.priceOfStaking());
-                    giveMateToExecute(
-                        address(mockContract),
-                        totalOfStakeNeeded
-                    );
+                    _addBalance(address(mockContract), totalOfStakeNeeded);
                 }
 
                 if (staking.getUserAmountStaked(address(mockContract)) == 0)
@@ -124,23 +108,34 @@ contract fuzzTest_Staking_serviceStaking is Test, Constants {
             Staking.HistoryMetadata memory history = staking
                 .getAddressHistoryByIndex(address(mockContract), counterTx);
 
-            assertEq(history.timestamp, block.timestamp);
+            assertEq(
+                history.timestamp,
+                block.timestamp,
+                "Error: timestamp in history is not correct"
+            );
             assertEq(
                 history.transactionType,
                 input[i].isStaking
                     ? DEPOSIT_HISTORY_SMATE_IDENTIFIER
-                    : WITHDRAW_HISTORY_SMATE_IDENTIFIER
+                    : WITHDRAW_HISTORY_SMATE_IDENTIFIER,
+                "Error: transactionType in history is not correct"
             );
-            assertEq(history.amount, input[i].amount);
+            assertEq(
+                history.amount,
+                input[i].amount,
+                "Error: amount in history is not correct"
+            );
             if (input[i].isStaking)
                 assertEq(
                     history.totalStaked,
-                    amountStakingBefore + input[i].amount
+                    amountStakingBefore + input[i].amount,
+                    "Error: totalStaked in history is not correct"
                 );
             else
                 assertEq(
                     history.totalStaked,
-                    amountStakingBefore - input[i].amount
+                    amountStakingBefore - input[i].amount,
+                    "Error: totalStaked in history is not correct"
                 );
         }
     }
