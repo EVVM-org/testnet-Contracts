@@ -364,23 +364,13 @@ contract Staking is AsyncNonce, StakingStructs {
         uint256 totalStakingRequired = PRICE_OF_STAKING *
             serviceStakingData.amountOfStaking;
 
-        uint256 actualServiceBalance = evvm.getBalance(
-            msg.sender,
-            PRINCIPAL_TOKEN_ADDRESS
-        );
-
-        uint256 actualStakingBalance = evvm.getBalance(
-            address(this),
-            PRINCIPAL_TOKEN_ADDRESS
-        );
-
         if (
             serviceStakingData.amountServiceBeforeStaking -
                 totalStakingRequired !=
-            actualServiceBalance &&
+            evvm.getBalance(msg.sender, PRINCIPAL_TOKEN_ADDRESS) &&
             serviceStakingData.amountStakingBeforeStaking +
                 totalStakingRequired !=
-            actualStakingBalance
+            evvm.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS)
         )
             revert ErrorsLib.ServiceDoesNotFulfillCorrectStakingAmount(
                 totalStakingRequired
