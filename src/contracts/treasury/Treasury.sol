@@ -29,21 +29,21 @@ pragma solidity ^0.8.0;
 
 import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
 import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
-import {IEvvm} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
+import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
     ErrorsLib
 } from "@evvm/testnet-contracts/contracts/treasury/lib/ErrorsLib.sol";
 
 contract Treasury {
 
-    IEvvm evvm;
+    Evvm evvm;
 
     /**
      * @notice Initialize Treasury with EVVM contract address
      * @param _evvmAddress Address of the EVVM core contract
      */
     constructor(address _evvmAddress) {
-        evvm = IEvvm(_evvmAddress);
+        evvm = Evvm(_evvmAddress);
     }
 
     /**
