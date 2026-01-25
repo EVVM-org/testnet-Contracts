@@ -400,6 +400,11 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
     function test__unit_revert__publicStaking__AsyncNonceAlreadyUsed()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -461,6 +466,11 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
     function test__unit_revert__publicStaking__AddressMustWaitToFullUnstake()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -522,6 +532,11 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
     function test__unit_revert__publicStaking__AddressMustWaitToStakeAgain()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,

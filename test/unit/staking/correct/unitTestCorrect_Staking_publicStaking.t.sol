@@ -822,6 +822,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherNoStaking_unstaking()
         external
     {
+        _addBalance(
+            USER,
+            30,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -1199,6 +1204,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherStaking_unstaking()
         external
     {
+        _addBalance(
+            USER,
+            30,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -1585,6 +1595,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherNoStaking_noPriorityFee_sync_fullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -1690,6 +1705,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherNoStaking_noPriorityFee_async_fullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -1795,6 +1815,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherNoStaking_priorityFee_sync_fullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -1900,6 +1925,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherNoStaking_priorityFee_async_fullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -2005,6 +2035,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherStaking_noPriorityFee_sync_fullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -2110,6 +2145,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherStaking_noPriorityFee_async_fullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -2215,6 +2255,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherStaking_priorityFee_sync_fullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -2320,6 +2365,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherStaking_priorityFee_async_fullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -2425,6 +2475,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherNoStaking_noPriorityFee_sync_stakingAfterfullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -2548,6 +2603,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherNoStaking_noPriorityFee_async_stakingAfterfullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -2671,6 +2731,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherNoStaking_priorityFee_sync_stakingAfterfullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -2794,6 +2859,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherNoStaking_priorityFee_async_stakingAfterfullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -2918,6 +2988,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherStaking_noPriorityFee_sync_stakingAfterfullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -3041,6 +3116,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherStaking_noPriorityFee_async_stakingAfterfullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -3164,6 +3244,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherStaking_priorityFee_sync_stakingAfterfullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,
@@ -3287,6 +3372,11 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     function test__unit_correct__publicStaking__fisherStaking_priorityFee_async_stakingAfterfullunstaking()
         external
     {
+        _addBalance(
+            USER,
+            10,
+            0
+        );
         _execute_makePublicStaking(
             USER,
             true,

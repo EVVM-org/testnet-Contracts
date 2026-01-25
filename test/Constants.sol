@@ -1062,14 +1062,6 @@ abstract contract Constants is Test {
         bool priorityFlagEVVM,
         AccountData memory fisher
     ) internal virtual {
-        evvm.addBalance(
-            user.Address,
-            PRINCIPAL_TOKEN_ADDRESS,
-            isStaking
-                ? (staking.priceOfStaking() * amountOfStaking)
-                : 0 + priorityFeeEVVM
-        );
-
         (
             bytes memory signatureStaking,
             bytes memory signatureEVVM
