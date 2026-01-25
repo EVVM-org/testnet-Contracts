@@ -20,51 +20,16 @@ pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants, MockContractToStake} from "test/Constants.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
-import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/staking/lib/ErrorsLib.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/contracts/staking/lib/ErrorsLib.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract unitTestRevert_Staking_serviceStaking is Test, Constants {
     MockContractToStake mockContract;
 
-    function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
 
-        vm.startPrank(ADMIN.Address);
-
-        staking.prepareChangeAllowPublicStaking();
-        skip(1 days);
-        staking.confirmChangeAllowPublicStaking();
-
-        vm.stopPrank();
-
-        mockContract = new MockContractToStake(address(staking));
-    }
-
-    function giveMateToExecute(
+    function _addBalance(
         address user,
         uint256 stakingAmount
     ) private returns (uint256 totalOfMate) {
@@ -85,7 +50,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
             PRINCIPAL_TOKEN_ADDRESS
         );
 
-        giveMateToExecute(WILDCARD_USER.Address, 10);
+        _addBalance(WILDCARD_USER.Address, 10);
 
         vm.startPrank(WILDCARD_USER.Address);
         vm.expectRevert(ErrorsLib.AddressIsNotAService.selector);
@@ -115,7 +80,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
             PRINCIPAL_TOKEN_ADDRESS
         );
 
-        uint256 amountStaking = giveMateToExecute(WILDCARD_USER.Address, 10);
+        uint256 amountStaking = _addBalance(WILDCARD_USER.Address, 10);
 
         vm.startPrank(WILDCARD_USER.Address);
         vm.expectRevert(ErrorsLib.AddressIsNotAService.selector);
@@ -145,7 +110,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
             PRINCIPAL_TOKEN_ADDRESS
         );
 
-        uint256 amountStaking = giveMateToExecute(address(mockContract), 10);
+        uint256 amountStaking = _addBalance(address(mockContract), 10);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -178,7 +143,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
             PRINCIPAL_TOKEN_ADDRESS
         );
 
-        uint256 amountStaking = giveMateToExecute(address(mockContract), 10);
+        uint256 amountStaking = _addBalance(address(mockContract), 10);
 
         mockContract.stakeJustInPartTwo(10);
 
@@ -211,9 +176,9 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
             address(staking)
         );
 
-        uint256 amountStaking = giveMateToExecute(address(mockContract), 10);
+        uint256 amountStaking = _addBalance(address(mockContract), 10);
 
-        giveMateToExecute(address(auxMockContract), 10);
+        _addBalance(address(auxMockContract), 10);
 
         mockContract.stakeJustInPartTwo(10);
 
@@ -240,7 +205,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
             PRINCIPAL_TOKEN_ADDRESS
         );
 
-        uint256 amountStaking = giveMateToExecute(address(mockContract), 10);
+        uint256 amountStaking = _addBalance(address(mockContract), 10);
 
         mockContract.stake(10);
 
@@ -290,7 +255,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
             PRINCIPAL_TOKEN_ADDRESS
         );
 
-        giveMateToExecute(address(mockContract), 10);
+        _addBalance(address(mockContract), 10);
 
         mockContract.stake(10);
 
