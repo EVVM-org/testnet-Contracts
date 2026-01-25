@@ -970,7 +970,7 @@ abstract contract Constants is Test {
             address(staking),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
-            staking.priceOfStaking(),
+            isStaking ? staking.priceOfStaking() : 0,
             priorityFee,
             nonceEVVM,
             priorityFlagEVVM,
