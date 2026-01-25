@@ -1045,31 +1045,17 @@ abstract contract Constants is Test {
         );
         signatureStaking = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        if (isStaking) {
-            signatureEVVM = _execute_makeSignaturePay(
-                user,
-                address(staking),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                staking.priceOfStaking() * amountOfStaking,
-                priorityFeeEVVM,
-                nonceEVVM,
-                priorityFlagEVVM,
-                address(staking)
-            );
-        } else {
-            signatureEVVM = _execute_makeSignaturePay(
-                user,
-                address(staking),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                0,
-                priorityFeeEVVM,
-                nonceEVVM,
-                priorityFlagEVVM,
-                address(staking)
-            );
-        }
+        signatureEVVM = _execute_makeSignaturePay(
+            user,
+            address(staking),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            isStaking ? staking.priceOfStaking() * amountOfStaking : 0,
+            priorityFeeEVVM,
+            nonceEVVM,
+            priorityFlagEVVM,
+            address(staking)
+        );
     }
 
     function _execute_makePublicStaking(
