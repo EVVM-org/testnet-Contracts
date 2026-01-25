@@ -2,8 +2,12 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 pragma solidity ^0.8.0;
 
-import {SignatureUtil} from "@evvm/testnet-contracts/library/utils/SignatureUtil.sol";
-import {AdvancedStrings} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    SignatureUtil
+} from "@evvm/testnet-contracts/library/utils/SignatureUtil.sol";
+import {
+    AdvancedStrings
+} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 library SignatureUtils {
     /**
@@ -15,8 +19,8 @@ library SignatureUtils {
     function verifyMessageSignedForPreRegistrationUsername(
         uint256 evvmID,
         address signer,
-        bytes32 _hashUsername,
-        uint256 _nameServiceNonce,
+        bytes32 hashUsername,
+        uint256 nameServiceNonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -24,9 +28,9 @@ library SignatureUtils {
                 evvmID,
                 "preRegistrationUsername",
                 string.concat(
-                    AdvancedStrings.bytes32ToString(_hashUsername),
+                    AdvancedStrings.bytes32ToString(hashUsername),
                     ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                    AdvancedStrings.uintToString(nameServiceNonce)
                 ),
                 signature,
                 signer
@@ -36,9 +40,9 @@ library SignatureUtils {
     function verifyMessageSignedForRegistrationUsername(
         uint256 evvmID,
         address signer,
-        string memory _username,
-        uint256 _clowNumber,
-        uint256 _nameServiceNonce,
+        string memory username,
+        uint256 clowNumber,
+        uint256 nameServiceNonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -46,11 +50,11 @@ library SignatureUtils {
                 evvmID,
                 "registrationUsername",
                 string.concat(
-                    _username,
+                    username,
                     ",",
-                    AdvancedStrings.uintToString(_clowNumber),
+                    AdvancedStrings.uintToString(clowNumber),
                     ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                    AdvancedStrings.uintToString(nameServiceNonce)
                 ),
                 signature,
                 signer
@@ -60,10 +64,10 @@ library SignatureUtils {
     function verifyMessageSignedForMakeOffer(
         uint256 evvmID,
         address signer,
-        string memory _username,
-        uint256 _dateExpire,
-        uint256 _amount,
-        uint256 _nameServiceNonce,
+        string memory username,
+        uint256 dateExpire,
+        uint256 amount,
+        uint256 nameServiceNonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -71,13 +75,13 @@ library SignatureUtils {
                 evvmID,
                 "makeOffer",
                 string.concat(
-                    _username,
+                    username,
                     ",",
-                    AdvancedStrings.uintToString(_dateExpire),
+                    AdvancedStrings.uintToString(dateExpire),
                     ",",
-                    AdvancedStrings.uintToString(_amount),
+                    AdvancedStrings.uintToString(amount),
                     ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                    AdvancedStrings.uintToString(nameServiceNonce)
                 ),
                 signature,
                 signer
@@ -87,9 +91,9 @@ library SignatureUtils {
     function verifyMessageSignedForWithdrawOffer(
         uint256 evvmID,
         address signer,
-        string memory _username,
-        uint256 _offerId,
-        uint256 _nameServiceNonce,
+        string memory username,
+        uint256 offerId,
+        uint256 nameServiceNonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -97,11 +101,11 @@ library SignatureUtils {
                 evvmID,
                 "withdrawOffer",
                 string.concat(
-                    _username,
+                    username,
                     ",",
-                    AdvancedStrings.uintToString(_offerId),
+                    AdvancedStrings.uintToString(offerId),
                     ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                    AdvancedStrings.uintToString(nameServiceNonce)
                 ),
                 signature,
                 signer
@@ -111,9 +115,9 @@ library SignatureUtils {
     function verifyMessageSignedForAcceptOffer(
         uint256 evvmID,
         address signer,
-        string memory _username,
-        uint256 _offerId,
-        uint256 _nameServiceNonce,
+        string memory username,
+        uint256 offerId,
+        uint256 nameServiceNonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -121,11 +125,11 @@ library SignatureUtils {
                 evvmID,
                 "acceptOffer",
                 string.concat(
-                    _username,
+                    username,
                     ",",
-                    AdvancedStrings.uintToString(_offerId),
+                    AdvancedStrings.uintToString(offerId),
                     ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                    AdvancedStrings.uintToString(nameServiceNonce)
                 ),
                 signature,
                 signer
@@ -135,8 +139,8 @@ library SignatureUtils {
     function verifyMessageSignedForRenewUsername(
         uint256 evvmID,
         address signer,
-        string memory _username,
-        uint256 _nameServiceNonce,
+        string memory username,
+        uint256 nameServiceNonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -144,9 +148,9 @@ library SignatureUtils {
                 evvmID,
                 "renewUsername",
                 string.concat(
-                    _username,
+                    username,
                     ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                    AdvancedStrings.uintToString(nameServiceNonce)
                 ),
                 signature,
                 signer
@@ -156,9 +160,9 @@ library SignatureUtils {
     function verifyMessageSignedForAddCustomMetadata(
         uint256 evvmID,
         address signer,
-        string memory _identity,
-        string memory _value,
-        uint256 _nameServiceNonce,
+        string memory identity,
+        string memory value,
+        uint256 nameServiceNonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -166,11 +170,11 @@ library SignatureUtils {
                 evvmID,
                 "addCustomMetadata",
                 string.concat(
-                    _identity,
+                    identity,
                     ",",
-                    _value,
+                    value,
                     ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                    AdvancedStrings.uintToString(nameServiceNonce)
                 ),
                 signature,
                 signer
@@ -180,9 +184,9 @@ library SignatureUtils {
     function verifyMessageSignedForRemoveCustomMetadata(
         uint256 evvmID,
         address signer,
-        string memory _username,
-        uint256 _key,
-        uint256 _nonce,
+        string memory username,
+        uint256 key,
+        uint256 nonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -190,11 +194,11 @@ library SignatureUtils {
                 evvmID,
                 "removeCustomMetadata",
                 string.concat(
-                    _username,
+                    username,
                     ",",
-                    AdvancedStrings.uintToString(_key),
+                    AdvancedStrings.uintToString(key),
                     ",",
-                    AdvancedStrings.uintToString(_nonce)
+                    AdvancedStrings.uintToString(nonce)
                 ),
                 signature,
                 signer
@@ -204,8 +208,8 @@ library SignatureUtils {
     function verifyMessageSignedForFlushCustomMetadata(
         uint256 evvmID,
         address signer,
-        string memory _identity,
-        uint256 _nonce,
+        string memory identity,
+        uint256 nonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -213,9 +217,9 @@ library SignatureUtils {
                 evvmID,
                 "flushCustomMetadata",
                 string.concat(
-                    _identity,
+                    identity,
                     ",",
-                    AdvancedStrings.uintToString(_nonce)
+                    AdvancedStrings.uintToString(nonce)
                 ),
                 signature,
                 signer
@@ -225,8 +229,8 @@ library SignatureUtils {
     function verifyMessageSignedForFlushUsername(
         uint256 evvmID,
         address signer,
-        string memory _username,
-        uint256 _nonce,
+        string memory username,
+        uint256 nonce,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -234,9 +238,9 @@ library SignatureUtils {
                 evvmID,
                 "flushUsername",
                 string.concat(
-                    _username,
+                    username,
                     ",",
-                    AdvancedStrings.uintToString(_nonce)
+                    AdvancedStrings.uintToString(nonce)
                 ),
                 signature,
                 signer

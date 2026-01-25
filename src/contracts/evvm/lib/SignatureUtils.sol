@@ -19,31 +19,31 @@ library SignatureUtils {
     /**
      *  @notice This function is used to verify the message signed for the payment
      *  @param signer user who signed the message
-     *  @param _receiverAddress address of the receiver
-     *  @param _receiverIdentity identity of the receiver
+     *  @param receiverAddress address of the receiver
+     *  @param receiverIdentity identity of the receiver
      *
-     *  @notice if the _receiverAddress is 0x0 the function will use the _receiverIdentity
+     *  @notice if the receiverAddress is 0x0 the function will use the receiverIdentity
      *
-     *  @param _token address of the token to send
-     *  @param _amount amount to send
-     *  @param _priorityFee priorityFee to send to the staking holder
-     *  @param _nonce nonce of the transaction
-     *  @param _priorityFlag if the transaction is priority or not
-     *  @param _executor the executor of the transaction
+     *  @param token address of the token to send
+     *  @param amount amount to send
+     *  @param priorityFee priorityFee to send to the staking holder
+     *  @param nonce nonce of the transaction
+     *  @param priorityFlag if the transaction is priority or not
+     *  @param executor the executor of the transaction
      *  @param signature signature of the user who wants to send the message
      *  @return true if the signature is valid
      */
     function verifyMessageSignedForPay(
         uint256 evvmID,
         address signer,
-        address _receiverAddress,
-        string memory _receiverIdentity,
-        address _token,
-        uint256 _amount,
-        uint256 _priorityFee,
-        uint256 _nonce,
-        bool _priorityFlag,
-        address _executor,
+        address receiverAddress,
+        string memory receiverIdentity,
+        address token,
+        uint256 amount,
+        uint256 priorityFee,
+        uint256 nonce,
+        bool priorityFlag,
+        address executor,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -51,21 +51,21 @@ library SignatureUtils {
                 evvmID,
                 "pay",
                 string.concat(
-                    _receiverAddress == address(0)
-                        ? _receiverIdentity
-                        : AdvancedStrings.addressToString(_receiverAddress),
+                    receiverAddress == address(0)
+                        ? receiverIdentity
+                        : AdvancedStrings.addressToString(receiverAddress),
                     ",",
-                    AdvancedStrings.addressToString(_token),
+                    AdvancedStrings.addressToString(token),
                     ",",
-                    AdvancedStrings.uintToString(_amount),
+                    AdvancedStrings.uintToString(amount),
                     ",",
-                    AdvancedStrings.uintToString(_priorityFee),
+                    AdvancedStrings.uintToString(priorityFee),
                     ",",
-                    AdvancedStrings.uintToString(_nonce),
+                    AdvancedStrings.uintToString(nonce),
                     ",",
-                    _priorityFlag ? "true" : "false",
+                    AdvancedStrings.boolToString(priorityFlag),
                     ",",
-                    AdvancedStrings.addressToString(_executor)
+                    AdvancedStrings.addressToString(executor)
                 ),
                 signature,
                 signer
@@ -77,12 +77,12 @@ library SignatureUtils {
      *  @param signer user who signed the message
      *  @param hashList hash of the list of the transactions, the hash is calculated
      *                  using sha256(abi.encode(toData))
-     *  @param _token token address to send
-     *  @param _amount amount to send
-     *  @param _priorityFee priorityFee to send to the fisher who wants to send the message
-     *  @param _nonce nonce of the transaction
-     *  @param _priorityFlag if the transaction is priority or not
-     *  @param _executor the executor of the transaction
+     *  @param token token address to send
+     *  @param amount amount to send
+     *  @param priorityFee priorityFee to send to the fisher who wants to send the message
+     *  @param nonce nonce of the transaction
+     *  @param priorityFlag if the transaction is priority or not
+     *  @param executor the executor of the transaction
      *  @param signature signature of the user who wants to send the message
      *  @return true if the signature is valid
      */
@@ -90,12 +90,12 @@ library SignatureUtils {
         uint256 evvmID,
         address signer,
         bytes32 hashList,
-        address _token,
-        uint256 _amount,
-        uint256 _priorityFee,
-        uint256 _nonce,
-        bool _priorityFlag,
-        address _executor,
+        address token,
+        uint256 amount,
+        uint256 priorityFee,
+        uint256 nonce,
+        bool priorityFlag,
+        address executor,
         bytes memory signature
     ) internal pure returns (bool) {
         return
@@ -105,17 +105,17 @@ library SignatureUtils {
                 string.concat(
                     AdvancedStrings.bytes32ToString(hashList),
                     ",",
-                    AdvancedStrings.addressToString(_token),
+                    AdvancedStrings.addressToString(token),
                     ",",
-                    AdvancedStrings.uintToString(_amount),
+                    AdvancedStrings.uintToString(amount),
                     ",",
-                    AdvancedStrings.uintToString(_priorityFee),
+                    AdvancedStrings.uintToString(priorityFee),
                     ",",
-                    AdvancedStrings.uintToString(_nonce),
+                    AdvancedStrings.uintToString(nonce),
                     ",",
-                    _priorityFlag ? "true" : "false",
+                    AdvancedStrings.boolToString(priorityFlag),
                     ",",
-                    AdvancedStrings.addressToString(_executor)
+                    AdvancedStrings.addressToString(executor)
                 ),
                 signature,
                 signer
