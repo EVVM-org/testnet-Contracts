@@ -990,7 +990,7 @@ abstract contract Constants is Test {
         evvm.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
-            staking.priceOfStaking() + priorityFee
+            isStaking ? staking.priceOfStaking() : 0 + priorityFee
         );
 
         (
@@ -1059,16 +1059,16 @@ abstract contract Constants is Test {
             );
         } else {
             signatureEVVM = _execute_makeSignaturePay(
-            user,
-            address(staking),
-            "",
-            PRINCIPAL_TOKEN_ADDRESS,
-            0,
-            priorityFeeEVVM,
-            nonceEVVM,
-            priorityFlagEVVM,
-            address(staking)
-        );
+                user,
+                address(staking),
+                "",
+                PRINCIPAL_TOKEN_ADDRESS,
+                0,
+                priorityFeeEVVM,
+                nonceEVVM,
+                priorityFlagEVVM,
+                address(staking)
+            );
         }
     }
 
@@ -1085,7 +1085,9 @@ abstract contract Constants is Test {
         evvm.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
-            isStaking ? (staking.priceOfStaking() * amountOfStaking) : 0  + priorityFeeEVVM
+            isStaking
+                ? (staking.priceOfStaking() * amountOfStaking)
+                : 0 + priorityFeeEVVM
         );
 
         (
