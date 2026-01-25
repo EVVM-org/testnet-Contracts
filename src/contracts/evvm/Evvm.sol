@@ -447,97 +447,81 @@ contract Evvm is EvvmStorage {
     function payMultiple(
         PayData[] memory payData
     ) external returns (uint256 successfulTransactions, bool[] memory results) {
+        
         bool isSenderStaker = isAddressStaker(msg.sender);
         address to_aux;
+        PayData memory payment;
         results = new bool[](payData.length);
+
         for (uint256 iteration = 0; iteration < payData.length; iteration++) {
+            payment = payData[iteration];
             if (
                 !SignatureUtils.verifyMessageSignedForPay(
                     evvmMetadata.EvvmID,
-                    payData[iteration].from,
-                    payData[iteration].to_address,
-                    payData[iteration].to_identity,
-                    payData[iteration].token,
-                    payData[iteration].amount,
-                    payData[iteration].priorityFee,
-                    payData[iteration].nonce,
-                    payData[iteration].priorityFlag,
-                    payData[iteration].executor,
-                    payData[iteration].signature
+                    payment.from,
+                    payment.to_address,
+                    payment.to_identity,
+                    payment.token,
+                    payment.amount,
+                    payment.priorityFee,
+                    payment.nonce,
+                    payment.priorityFlag,
+                    payment.executor,
+                    payment.signature
                 )
             ) revert ErrorsLib.InvalidSignature();
 
-            if (payData[iteration].executor != address(0)) {
-                if (msg.sender != payData[iteration].executor) {
-                    results[iteration] = false;
-                    continue;
-                }
+            if (
+                payment.executor != address(0) && msg.sender != payment.executor
+            ) {
+                results[iteration] = false;
+                continue;
             }
 
-            if (payData[iteration].priorityFlag) {
+            if (payment.priorityFlag) {
                 /// @dev priorityFlag == true (async)
 
-                if (
-                    asyncUsedNonce[payData[iteration].from][
-                        payData[iteration].nonce
-                    ]
-                ) {
+                if (asyncUsedNonce[payment.from][payment.nonce]) {
                     results[iteration] = false;
                     continue;
                 }
             } else {
                 /// @dev priorityFlag == false (sync)
 
-                if (
-                    nextSyncUsedNonce[payData[iteration].from] !=
-                    payData[iteration].nonce
-                ) {
+                if (nextSyncUsedNonce[payment.from] != payment.nonce) {
                     results[iteration] = false;
                     continue;
                 }
             }
 
             if (
-                (isSenderStaker ? payData[iteration].priorityFee : 0) +
-                    payData[iteration].amount >
-                balances[payData[iteration].from][payData[iteration].token]
+                (isSenderStaker ? payment.priorityFee : 0) + payment.amount >
+                balances[payment.from][payment.token]
             ) {
                 results[iteration] = false;
                 continue;
             }
 
-            to_aux = !AdvancedStrings.equal(payData[iteration].to_identity, "")
+            to_aux = !AdvancedStrings.equal(payment.to_identity, "")
                 ? NameService(nameServiceAddress)
-                    .verifyStrictAndGetOwnerOfIdentity(
-                        payData[iteration].to_identity
-                    )
-                : payData[iteration].to_address;
+                    .verifyStrictAndGetOwnerOfIdentity(payment.to_identity)
+                : payment.to_address;
 
             /// @dev Because of the previous check, _updateBalance can´t fail
 
-            _updateBalance(
-                payData[iteration].from,
-                to_aux,
-                payData[iteration].token,
-                payData[iteration].amount
-            );
+            _updateBalance(payment.from, to_aux, payment.token, payment.amount);
 
-            if (payData[iteration].priorityFee > 0 && isSenderStaker) {
+            if (payment.priorityFee > 0 && isSenderStaker)
                 _updateBalance(
-                    payData[iteration].from,
+                    payment.from,
                     msg.sender,
-                    payData[iteration].token,
-                    payData[iteration].priorityFee
+                    payment.token,
+                    payment.priorityFee
                 );
-            }
 
-            if (payData[iteration].priorityFlag) {
-                asyncUsedNonce[payData[iteration].from][
-                    payData[iteration].nonce
-                ] = true;
-            } else {
-                nextSyncUsedNonce[payData[iteration].from]++;
-            }
+            if (payment.priorityFlag)
+                asyncUsedNonce[payment.from][payment.nonce] = true;
+            else nextSyncUsedNonce[payment.from]++;
 
             successfulTransactions++;
             results[iteration] = true;
