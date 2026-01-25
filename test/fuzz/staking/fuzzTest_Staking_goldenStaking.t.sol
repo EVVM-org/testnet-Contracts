@@ -18,20 +18,18 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
-
 contract fuzzTest_Staking_goldenStaking is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
         evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
 
-        uint256 totalAmount = giveMateToExecute(GOLDEN_STAKER.Address, 10);
+        _addBalance(10);
 
-        bytes memory signatureEVVM = makePaySignature(totalAmount);
+        bytes memory signatureEVVM = _execute_makeGoldenStakingSignature(
+            true,
+            10
+        );
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
@@ -40,43 +38,22 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function giveMateToExecute(
-        address user,
+    function _addBalance(
         uint256 stakingAmount
-    ) private returns (uint256 totalAmount) {
+    ) private returns (uint256 totalOfMate) {
         evvm.addBalance(
-            user,
+            GOLDEN_STAKER.Address,
             PRINCIPAL_TOKEN_ADDRESS,
-            staking.priceOfStaking() * stakingAmount
+            (staking.priceOfStaking() * stakingAmount)
         );
 
-        totalAmount = staking.priceOfStaking() * stakingAmount;
+        totalOfMate = (staking.priceOfStaking() * stakingAmount);
     }
 
     function calculateRewardPerExecution(
         uint256 numberOfTx
     ) private view returns (uint256) {
         return (evvm.getRewardAmount() * 2) * numberOfTx;
-    }
-
-    function makePaySignature(
-        uint256 amount
-    ) private view returns (bytes memory signatureEVVM) {
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            GOLDEN_STAKER.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                amount,
-                0,
-                evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
-                false,
-                address(staking)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
     }
 
     struct GoldenStakingFuzzTestInput {
@@ -88,7 +65,6 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
         GoldenStakingFuzzTestInput[10] memory input
     ) external {
         uint256 totalAmount;
-        bytes memory signatureEVVM;
         uint256 amountBefore;
         uint256 stakingFullAmountBefore;
         uint256 totalStakedBefore;
@@ -115,24 +91,14 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                     );
                 }
 
-                totalAmount = giveMateToExecute(
-                    GOLDEN_STAKER.Address,
-                    input[i].amount
+                totalAmount = _addBalance(input[i].amount);
+
+                _execute_makeGoldenStaking(input[i].isStaking, input[i].amount);
+
+                assertTrue(
+                    evvm.isAddressStaker(GOLDEN_STAKER.Address),
+                    "Error: golden user is not pointer as staker after staking"
                 );
-
-                signatureEVVM = makePaySignature(totalAmount);
-
-                vm.startPrank(GOLDEN_STAKER.Address);
-
-                staking.goldenStaking(
-                    input[i].isStaking,
-                    input[i].amount,
-                    signatureEVVM
-                );
-
-                vm.stopPrank();
-
-                assert(evvm.isAddressStaker(GOLDEN_STAKER.Address));
             } else {
                 // unstaking
                 if (
@@ -148,27 +114,21 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                     stakingFullAmountBefore = staking.getUserAmountStaked(
                         GOLDEN_STAKER.Address
                     );
-                    vm.startPrank(GOLDEN_STAKER.Address);
 
-                    staking.goldenStaking(
+                    _execute_makeGoldenStaking(
                         input[i].isStaking,
-                        staking.getUserAmountStaked(GOLDEN_STAKER.Address),
-                        signatureEVVM
+                        stakingFullAmountBefore
                     );
 
-                    vm.stopPrank();
-
-                    assert(!evvm.isAddressStaker(GOLDEN_STAKER.Address));
+                    assertFalse(
+                        evvm.isAddressStaker(GOLDEN_STAKER.Address),
+                        "Error: golden user is pointer as staker after full unstaking"
+                    );
                 } else {
-                    vm.startPrank(GOLDEN_STAKER.Address);
-
-                    staking.goldenStaking(
+                    _execute_makeGoldenStaking(
                         input[i].isStaking,
-                        input[i].amount,
-                        signatureEVVM
+                        input[i].amount
                     );
-
-                    vm.stopPrank();
                 }
             }
 
@@ -192,17 +152,23 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                                         stakingFullAmountBefore
                                     : staking.priceOfStaking() * input[i].amount
                             )
-                    )
+                    ),
+                "Error: balance after staking/unstaking is not correct"
             );
 
-            assertEq(history.timestamp, block.timestamp);
-            assert(
-                history.transactionType ==
-                    (
-                        input[i].isStaking
-                            ? DEPOSIT_HISTORY_SMATE_IDENTIFIER
-                            : WITHDRAW_HISTORY_SMATE_IDENTIFIER
-                    )
+            assertEq(
+                history.timestamp,
+                block.timestamp,
+                "Error: timestamp in history is not correct"
+            );
+            assertEq(
+                history.transactionType,
+                (
+                    input[i].isStaking
+                        ? DEPOSIT_HISTORY_SMATE_IDENTIFIER
+                        : WITHDRAW_HISTORY_SMATE_IDENTIFIER
+                ),
+                "Error: transactionType in history is not correct"
             );
             assertEq(
                 history.amount,
@@ -216,12 +182,14 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                                 ? stakingFullAmountBefore
                                 : input[i].amount
                         )
-                )
+                ),
+                "Error: amount in history is not correct"
             );
             if (input[i].isStaking) {
                 assertEq(
                     history.totalStaked,
-                    totalStakedBefore + input[i].amount
+                    totalStakedBefore + input[i].amount,
+                    "Error: totalStaked is not correct after staking"
                 );
             } else {
                 assertEq(
@@ -233,7 +201,8 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                             ) == 0
                                 ? stakingFullAmountBefore
                                 : input[i].amount
-                        )
+                        ),
+                    "Error: totalStaked is not correct after unstaking"
                 );
             }
         }
