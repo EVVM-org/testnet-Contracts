@@ -41,7 +41,7 @@ pragma solidity ^0.8.0;
  * - Estimator integration for yield calculations
  */
 
-import {IEvvm} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
+import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {IEstimator} from "@evvm/testnet-contracts/interfaces/IEstimator.sol";
 import {
     AsyncNonce
@@ -95,7 +95,7 @@ contract Staking is AsyncNonce, StakingStructs {
     /// @dev Mapping to store complete staking history for each user
     mapping(address => HistoryMetadata[]) private userHistory;
 
-    IEvvm private evvm;
+    Evvm private evvm;
     IEstimator private estimator;
 
     /// @dev Modifier to verify access to admin functions
@@ -170,7 +170,7 @@ contract Staking is AsyncNonce, StakingStructs {
         estimatorAddress.actual = _estimator;
         EVVM_ADDRESS = _evvm;
         breakerSetupEstimatorAndEvvm = 0x00;
-        evvm = IEvvm(_evvm);
+        evvm = Evvm(_evvm);
         estimator = IEstimator(_estimator);
     }
 
@@ -222,14 +222,13 @@ contract Staking is AsyncNonce, StakingStructs {
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
     ) external {
-        if (!allowPresaleStaking.flag)
+        if (!allowPresaleStaking.flag || allowPublicStaking.flag)
             revert ErrorsLib.PresaleStakingDisabled();
 
         if (
-            !SignatureUtils.verifyMessageSignedForStake(
+            !SignatureUtils.verifyMessageSignedForPresaleStake(
                 evvm.getEvvmID(),
                 user,
-                false,
                 isStaking,
                 1,
                 nonce,
@@ -237,9 +236,19 @@ contract Staking is AsyncNonce, StakingStructs {
             )
         ) revert ErrorsLib.InvalidSignatureOnStaking();
 
+        if (!userPresaleStaker[user].isAllow)
+            revert ErrorsLib.UserIsNotPresaleStaker();
+
         verifyAsyncNonce(user, nonce);
 
-        presaleClaims(isStaking, user);
+        uint256 current = userPresaleStaker[user].stakingAmount;
+
+        if (isStaking ? current >= 2 : current == 0)
+            revert ErrorsLib.UserPresaleStakerLimitExceeded();
+
+        userPresaleStaker[user].stakingAmount = isStaking
+            ? current + 1
+            : current - 1;
 
         stakingBaseProcess(
             AccountMetadata({Address: user, IsAService: false}),
@@ -252,38 +261,6 @@ contract Staking is AsyncNonce, StakingStructs {
         );
 
         markAsyncNonceAsUsed(user, nonce);
-    }
-
-    /**
-     * @notice Internal function to manage presale staking limits and permissions
-     * @dev Enforces the 2 staking token limit for presale users and tracks staking amounts
-     * @param _isStaking True for staking (increments count), false for unstaking (decrements count)
-     * @param _user Address of the presale user
-     */
-    function presaleClaims(bool _isStaking, address _user) internal {
-        if (allowPublicStaking.flag) {
-            revert ErrorsLib.PresaleStakingDisabled();
-        } else {
-            if (userPresaleStaker[_user].isAllow) {
-                if (_isStaking) {
-                    // staking
-
-                    if (userPresaleStaker[_user].stakingAmount >= 2)
-                        revert ErrorsLib.UserPresaleStakerLimitExceeded();
-
-                    userPresaleStaker[_user].stakingAmount++;
-                } else {
-                    // unstaking
-
-                    if (userPresaleStaker[_user].stakingAmount == 0)
-                        revert ErrorsLib.UserPresaleStakerLimitExceeded();
-
-                    userPresaleStaker[_user].stakingAmount--;
-                }
-            } else {
-                revert ErrorsLib.UserIsNotPresaleStaker();
-            }
-        }
     }
 
     /**
@@ -313,10 +290,9 @@ contract Staking is AsyncNonce, StakingStructs {
         if (!allowPublicStaking.flag) revert ErrorsLib.PublicStakingDisabled();
 
         if (
-            !SignatureUtils.verifyMessageSignedForStake(
+            !SignatureUtils.verifyMessageSignedForPublicStake(
                 evvm.getEvvmID(),
                 user,
-                true,
                 isStaking,
                 amountOfStaking,
                 nonce,
@@ -846,9 +822,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Toggles between enabled/disabled state for public staking after 1-day delay
      */
     function confirmChangeAllowPublicStaking() external onlyOwner {
-        if (allowPublicStaking.timeToAccept > block.timestamp) 
+        if (allowPublicStaking.timeToAccept > block.timestamp)
             revert ErrorsLib.TimeToAcceptProposalNotReached();
-        
+
         allowPublicStaking = BoolTypeProposal({
             flag: !allowPublicStaking.flag,
             timeToAccept: 0
@@ -878,8 +854,8 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Toggles between enabled/disabled state for presale staking after 1-day delay
      */
     function confirmChangeAllowPresaleStaking() external onlyOwner {
-        if (allowPresaleStaking.timeToAccept > block.timestamp) 
-        revert ErrorsLib.TimeToAcceptProposalNotReached();
+        if (allowPresaleStaking.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
 
         allowPresaleStaking.flag = !allowPresaleStaking.flag;
         allowPresaleStaking.timeToAccept = 0;
@@ -911,9 +887,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Can only be called by the current admin after the 1-day time delay
      */
     function acceptNewEstimator() external onlyOwner {
-        if (estimatorAddress.timeToAccept > block.timestamp) 
+        if (estimatorAddress.timeToAccept > block.timestamp)
             revert ErrorsLib.TimeToAcceptProposalNotReached();
-        
+
         estimatorAddress.actual = estimatorAddress.proposal;
         estimatorAddress.proposal = address(0);
         estimatorAddress.timeToAccept = 0;
@@ -1145,7 +1121,7 @@ contract Staking is AsyncNonce, StakingStructs {
      * @return Unique EvvmID string
      */
     function getEvvmID() external view returns (uint256) {
-        return IEvvm(EVVM_ADDRESS).getEvvmID();
+        return evvm.getEvvmID();
     }
 
     /**

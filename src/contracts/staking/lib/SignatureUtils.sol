@@ -12,10 +12,9 @@ library SignatureUtils {
      *       by the users
      */
 
-    function verifyMessageSignedForStake(
+    function verifyMessageSignedForPresaleStake(
         uint256 evvmID,
-        address user,
-        bool isExternalStaking,
+        address signer,
         bool _isStaking,
         uint256 _amountOfStaking,
         uint256 _nonce,
@@ -24,7 +23,7 @@ library SignatureUtils {
         return
             SignatureUtil.verifySignature(
                 evvmID,
-                isExternalStaking ? "publicStaking" : "presaleStaking",
+                "presaleStaking",
                 string.concat(
                     _isStaking ? "true" : "false",
                     ",",
@@ -33,7 +32,31 @@ library SignatureUtils {
                     AdvancedStrings.uintToString(_nonce)
                 ),
                 signature,
-                user
+                signer
+            );
+    }
+
+    function verifyMessageSignedForPublicStake(
+        uint256 evvmID,
+        address signer,
+        bool _isStaking,
+        uint256 _amountOfStaking,
+        uint256 _nonce,
+        bytes memory signature
+    ) internal pure returns (bool) {
+        return
+            SignatureUtil.verifySignature(
+                evvmID,
+                "publicStaking",
+                string.concat(
+                    _isStaking ? "true" : "false",
+                    ",",
+                    AdvancedStrings.uintToString(_amountOfStaking),
+                    ",",
+                    AdvancedStrings.uintToString(_nonce)
+                ),
+                signature,
+                signer
             );
     }
 }
