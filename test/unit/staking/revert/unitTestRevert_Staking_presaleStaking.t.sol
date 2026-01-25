@@ -581,7 +581,11 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
     function test__unit_revert__presaleStaking__AsyncNonceAlreadyUsed()
         external
-    {
+    {   
+        _addBalance(
+            COMMON_USER_NO_STAKER_1.Address,
+            0
+        );
         _execute_makePresaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
@@ -685,6 +689,10 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_maxLimit()
         external
     {
+        _addBalance(
+            COMMON_USER_NO_STAKER_1.Address,
+            0
+        );
         _execute_makePresaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
@@ -693,6 +701,10 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
             false,
             GOLDEN_STAKER
+        );
+        _addBalance(
+            COMMON_USER_NO_STAKER_1.Address,
+            0
         );
         _execute_makePresaleStaking(
             COMMON_USER_NO_STAKER_1,
@@ -753,6 +765,10 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_AddressMustWaitToFullUnstake()
         external
     {
+        _addBalance(
+            COMMON_USER_NO_STAKER_1.Address,
+            0
+        );
         _execute_makePresaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
@@ -812,6 +828,10 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_AddressMustWaitToStakeAgain()
         external
     {
+        _addBalance(
+            COMMON_USER_NO_STAKER_1.Address,
+            0
+        );
         _execute_makePresaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
