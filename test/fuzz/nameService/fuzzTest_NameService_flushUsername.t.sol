@@ -118,7 +118,7 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
 
     struct Input {
         uint256 nonceNameService;
-        uint256 priorityFee;
+        uint32 priorityFee;
         uint256 nonceAsyncEVVM;
         bool priorityEVVM;
     }
@@ -143,7 +143,7 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
             username: USERNAME,
             nonceNameService: input.nonceNameService,
             signatureNameService: "",
-            priorityFee: input.priorityFee,
+            priorityFee: uint256(input.priorityFee),
             nonceEVVM: input.priorityEVVM
                 ? input.nonceAsyncEVVM
                 : evvm.getNextCurrentSyncNonce(USER_USERNAME_OWNER.Address),
