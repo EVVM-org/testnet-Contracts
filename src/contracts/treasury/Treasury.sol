@@ -36,6 +36,7 @@ import {
 
 contract Treasury {
 
+    /// @dev Reference to the EVVM core contract for balance management
     Evvm evvm;
 
     /**
@@ -47,9 +48,15 @@ contract Treasury {
     }
 
     /**
-     * @notice Deposit ETH or ERC20 tokens
-     * @param token ERC20 token address (ignored for ETH deposits)
-     * @param amount Token amount (ignored for ETH deposits)
+     * @notice Deposit ETH or ERC20 tokens into the EVVM ecosystem
+     * @dev For ETH deposits: token must be address(0) and amount must equal msg.value
+     *      For ERC20 deposits: msg.value must be 0 and token must be a valid ERC20 contract
+     *      Deposited funds are credited to the user's EVVM balance and can be used for
+     *      gasless transactions within the ecosystem.
+     * @param token ERC20 token address (use address(0) for ETH deposits)
+     * @param amount Token amount to deposit (must match msg.value for ETH deposits)
+     * @custom:throws DepositAmountMustBeGreaterThanZero If amount/msg.value is zero
+     * @custom:throws InvalidDepositAmount If amount doesn't match msg.value (ETH) or msg.value != 0 (ERC20)
      */
     function deposit(address token, uint256 amount) external payable {
         if (address(0) == token) {
@@ -72,9 +79,14 @@ contract Treasury {
     }
 
     /**
-     * @notice Withdraw ETH or ERC20 tokens
-     * @param token Token address (address(0) for ETH)
-     * @param amount Amount to withdraw
+     * @notice Withdraw ETH or ERC20 tokens from the EVVM ecosystem
+     * @dev Withdraws tokens from the user's EVVM balance back to their wallet.
+     *      Principal Tokens cannot be withdrawn through this function - they can
+     *      only be transferred via EVVM pay operations.
+     * @param token Token address to withdraw (use address(0) for ETH)
+     * @param amount Amount of tokens to withdraw
+     * @custom:throws PrincipalTokenIsNotWithdrawable If attempting to withdraw Principal Tokens
+     * @custom:throws InsufficientBalance If user's EVVM balance is less than withdrawal amount
      */
     function withdraw(address token, uint256 amount) external {
         if (token == evvm.getEvvmMetadata().principalTokenAddress)
@@ -96,6 +108,11 @@ contract Treasury {
         }
     }
 
+    /**
+     * @notice Returns the address of the connected EVVM core contract
+     * @dev Used for verification and integration purposes
+     * @return Address of the EVVM contract managing balances
+     */
     function getEvvmAddress() external view returns (address) {
         return address(evvm);
     }
