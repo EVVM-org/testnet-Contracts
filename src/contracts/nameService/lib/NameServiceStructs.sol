@@ -18,7 +18,6 @@ pragma solidity ^0.8.0;
  *
  * @custom:inheritance This contract is inherited by NameService.sol
  * @custom:scope Exclusive to the NameService.sol contract
- * @custom:version 1.0.0
  */
 abstract contract NameServiceStructs {
     //░▒▓█ Governance Proposal Structures ███████████████████████████████████████████████▓▒░

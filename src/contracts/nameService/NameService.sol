@@ -108,6 +108,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
     mapping(string username => IdentityBaseMetadata basicMetadata)
         private identityDetails;
 
+    /// @dev Instance of the EVVM core contract for payment processing and token operations
     Evvm private evvm;
 
     /// @dev Restricts function access to the current admin address only

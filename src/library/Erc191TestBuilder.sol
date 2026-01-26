@@ -17,6 +17,21 @@ library Erc191TestBuilder {
     //-----------------------------------------------------------------------------------
     // EVVM
     //-----------------------------------------------------------------------------------
+    
+    /**
+     * @notice Builds the message hash for a pay operation signature
+     * @dev Creates an EIP-191 compatible hash for EVVM pay function
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _receiverAddress Address of the payment receiver (use address(0) if using identity)
+     * @param _receiverIdentity String identity of receiver (used if address is zero)
+     * @param _token Token address being transferred
+     * @param _amount Amount of tokens to transfer
+     * @param _priorityFee Priority fee for transaction processing
+     * @param _nonce Nonce for replay protection
+     * @param _priority_boolean True for async nonce, false for sync nonce
+     * @param _executor Address authorized to execute the transaction
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForPay(
         uint256 evvmID,
         address _receiverAddress,
@@ -52,6 +67,19 @@ library Erc191TestBuilder {
         messageHash = buildHashForSign(messageToSign);
     }
 
+    /**
+     * @notice Builds the message hash for a disperse pay operation signature
+     * @dev Creates an EIP-191 compatible hash for EVVM dispersePay function
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param hashList Hash of the recipient list for batch payment
+     * @param _token Token address being transferred
+     * @param _amount Total amount of tokens to transfer
+     * @param _priorityFee Priority fee for transaction processing
+     * @param _nonce Nonce for replay protection
+     * @param _priority_boolean True for async nonce, false for sync nonce
+     * @param _executor Address authorized to execute the transaction
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForDispersePay(
         uint256 evvmID,
         bytes32 hashList,
@@ -90,6 +118,14 @@ library Erc191TestBuilder {
     // MATE NAME SERVICE
     //-----------------------------------------------------------------------------------
 
+    /**
+     * @notice Builds the message hash for username pre-registration
+     * @dev Creates an EIP-191 compatible hash for NameService preRegistrationUsername
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _hashUsername Hash of username + random number for commit-reveal
+     * @param _nameServiceNonce Nonce for NameService replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForPreRegistrationUsername(
         uint256 evvmID,
         bytes32 _hashUsername,
@@ -109,6 +145,15 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for username registration
+     * @dev Creates an EIP-191 compatible hash for NameService registrationUsername
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _username The username being registered
+     * @param _clowNumber Random number from pre-registration
+     * @param _nameServiceNonce Nonce for NameService replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForRegistrationUsername(
         uint256 evvmID,
         string memory _username,
@@ -131,6 +176,16 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for making a username offer
+     * @dev Creates an EIP-191 compatible hash for NameService makeOffer
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _username Target username for the offer
+     * @param _dateExpire Timestamp when the offer expires
+     * @param _amount Amount being offered in Principal Tokens
+     * @param _nameServiceNonce Nonce for NameService replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForMakeOffer(
         uint256 evvmID,
         string memory _username,
@@ -156,6 +211,15 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for withdrawing a username offer
+     * @dev Creates an EIP-191 compatible hash for NameService withdrawOffer
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _username Username the offer was made for
+     * @param _offerId ID of the offer to withdraw
+     * @param _nameServiceNonce Nonce for NameService replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForWithdrawOffer(
         uint256 evvmID,
         string memory _username,
@@ -178,6 +242,15 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for accepting a username offer
+     * @dev Creates an EIP-191 compatible hash for NameService acceptOffer
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _username Username being sold
+     * @param _offerId ID of the offer to accept
+     * @param _nameServiceNonce Nonce for NameService replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForAcceptOffer(
         uint256 evvmID,
         string memory _username,
@@ -200,6 +273,14 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for renewing a username
+     * @dev Creates an EIP-191 compatible hash for NameService renewUsername
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _username Username to renew
+     * @param _nameServiceNonce Nonce for NameService replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForRenewUsername(
         uint256 evvmID,
         string memory _username,
@@ -219,6 +300,15 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for adding custom metadata
+     * @dev Creates an EIP-191 compatible hash for NameService addCustomMetadata
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _username Username to add metadata to
+     * @param _value Metadata value following schema format
+     * @param _nameServiceNonce Nonce for NameService replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForAddCustomMetadata(
         uint256 evvmID,
         string memory _username,
@@ -241,6 +331,15 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for removing custom metadata
+     * @dev Creates an EIP-191 compatible hash for NameService removeCustomMetadata
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _username Username to remove metadata from
+     * @param _key Index of the metadata entry to remove
+     * @param _nonce Nonce for NameService replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForRemoveCustomMetadata(
         uint256 evvmID,
         string memory _username,
@@ -263,6 +362,14 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for flushing all custom metadata
+     * @dev Creates an EIP-191 compatible hash for NameService flushCustomMetadata
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _username Username to flush metadata from
+     * @param _nonce Nonce for NameService replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForFlushCustomMetadata(
         uint256 evvmID,
         string memory _username,
@@ -282,6 +389,14 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for flushing a username
+     * @dev Creates an EIP-191 compatible hash for NameService flushUsername
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _username Username to completely remove
+     * @param _nonce Nonce for NameService replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForFlushUsername(
         uint256 evvmID,
         string memory _username,
@@ -305,6 +420,16 @@ library Erc191TestBuilder {
     // staking functions
     //-----------------------------------------------------------------------------------
 
+    /**
+     * @notice Builds the message hash for public service staking
+     * @dev Creates an EIP-191 compatible hash for Staking publicServiceStaking
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _serviceAddress Address of the service to stake for
+     * @param _isStaking True for staking, false for unstaking
+     * @param _amountOfStaking Amount of staking units
+     * @param _nonce Nonce for replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForPublicServiceStake(
         uint256 evvmID,
         address _serviceAddress,
@@ -330,6 +455,15 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for public staking
+     * @dev Creates an EIP-191 compatible hash for Staking publicStaking
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _isStaking True for staking, false for unstaking
+     * @param _amountOfStaking Amount of staking units
+     * @param _nonce Nonce for replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForPublicStaking(
         uint256 evvmID,
         bool _isStaking,
@@ -352,6 +486,15 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for presale staking
+     * @dev Creates an EIP-191 compatible hash for Staking presaleStaking
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _isStaking True for staking, false for unstaking
+     * @param _amountOfStaking Amount of staking units
+     * @param _nonce Nonce for replay protection
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForPresaleStaking(
         uint256 evvmID,
         bool _isStaking,
@@ -378,6 +521,17 @@ library Erc191TestBuilder {
     // P2PSwap functions
     //-----------------------------------------------------------------------------------
 
+    /**
+     * @notice Builds the message hash for making a P2P swap order
+     * @dev Creates an EIP-191 compatible hash for P2PSwap makeOrder
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _nonce Nonce for replay protection
+     * @param _tokenA Token address being offered
+     * @param _tokenB Token address being requested
+     * @param _amountA Amount of tokenA being offered
+     * @param _amountB Amount of tokenB being requested
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForMakeOrder(
         uint256 evvmID,
         uint256 _nonce,
@@ -406,6 +560,16 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for canceling a P2P swap order
+     * @dev Creates an EIP-191 compatible hash for P2PSwap cancelOrder
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _nonce Nonce for replay protection
+     * @param _tokenA Token address that was offered
+     * @param _tokenB Token address that was requested
+     * @param _orderId ID of the order to cancel
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForCancelOrder(
         uint256 evvmID,
         uint256 _nonce,
@@ -431,6 +595,16 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Builds the message hash for dispatching (accepting) a P2P swap order
+     * @dev Creates an EIP-191 compatible hash for P2PSwap dispatchOrder
+     * @param evvmID Unique identifier of the EVVM instance
+     * @param _nonce Nonce for replay protection
+     * @param _tokenA Token address that was offered
+     * @param _tokenB Token address that was requested
+     * @param _orderId ID of the order to dispatch
+     * @return messageHash The EIP-191 formatted hash ready for signing
+     */
     function buildMessageSignedForDispatchOrder(
         uint256 evvmID,
         uint256 _nonce,
@@ -460,6 +634,12 @@ library Erc191TestBuilder {
     // General functions
     //-----------------------------------------------------------------------------------
 
+    /**
+     * @notice Creates an EIP-191 formatted hash from a message string
+     * @dev Prepends the Ethereum Signed Message prefix and message length
+     * @param messageToSign The message string to hash
+     * @return The EIP-191 formatted hash ready for signature verification
+     */
     function buildHashForSign(
         string memory messageToSign
     ) internal pure returns (bytes32) {
@@ -473,6 +653,14 @@ library Erc191TestBuilder {
             );
     }
 
+    /**
+     * @notice Combines signature components into a 65-byte signature
+     * @dev Packs r, s, and v into the standard EIP-191 signature format
+     * @param v Recovery identifier (27 or 28)
+     * @param r First 32 bytes of the signature
+     * @param s Second 32 bytes of the signature
+     * @return 65-byte encoded signature in (r, s, v) format
+     */
     function buildERC191Signature(
         uint8 v,
         bytes32 r,
