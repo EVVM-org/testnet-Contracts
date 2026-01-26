@@ -28,6 +28,10 @@ import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 contract unitTestRevert_Staking_serviceStaking is Test, Constants {
     MockContractToStake mockContract;
 
+    function executeBeforeSetUp() internal override {
+        mockContract = new MockContractToStake(address(staking));
+    }
+
     function _addBalance(
         address user,
         uint256 stakingAmount
