@@ -35,4 +35,7 @@ library ErrorsLib {
 
     /// @dev Thrown when attempting to deposit zero amount of tokens or ETH
     error DepositAmountMustBeGreaterThanZero();
+
+    /// @dev Thrown when attempting to deposit blockchain native coin while also sending ERC20 tokens
+    error DepositCoinWithToken();
 }

@@ -35,7 +35,6 @@ import {
 } from "@evvm/testnet-contracts/contracts/treasury/lib/ErrorsLib.sol";
 
 contract Treasury {
-
     /// @dev Reference to the EVVM core contract for balance management
     Evvm evvm;
 
@@ -63,13 +62,15 @@ contract Treasury {
             /// user is sending host native coin
             if (msg.value == 0)
                 revert ErrorsLib.DepositAmountMustBeGreaterThanZero();
+
             if (amount != msg.value) revert ErrorsLib.InvalidDepositAmount();
 
             evvm.addAmountToUser(msg.sender, address(0), msg.value);
         } else {
             /// user is sending ERC20 tokens
 
-            if (msg.value != 0) revert ErrorsLib.InvalidDepositAmount();
+            if (msg.value != 0) revert ErrorsLib.DepositCoinWithToken();
+
             if (amount == 0)
                 revert ErrorsLib.DepositAmountMustBeGreaterThanZero();
 
@@ -89,7 +90,7 @@ contract Treasury {
      * @custom:throws InsufficientBalance If user's EVVM balance is less than withdrawal amount
      */
     function withdraw(address token, uint256 amount) external {
-        if (token == evvm.getEvvmMetadata().principalTokenAddress)
+        if (token == evvm.getPrincipalTokenAddress())
             revert ErrorsLib.PrincipalTokenIsNotWithdrawable();
 
         if (evvm.getBalance(msg.sender, token) < amount)
