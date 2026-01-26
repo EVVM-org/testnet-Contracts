@@ -168,16 +168,10 @@ contract P2PSwap is
                 // send the executor the priorityFee
                 makeCaPay(msg.sender, metadata.tokenA, _priorityFee_Evvm);
             }
-
-            // send some mate token reward to the executor (independent of the priorityFee the user attached)
-            makeCaPay(
-                msg.sender,
-                MATE_TOKEN_ADDRESS,
-                _priorityFee_Evvm > 0
-                    ? (evvm.getRewardAmount() * 3)
-                    : (evvm.getRewardAmount() * 2)
-            );
         }
+
+        // send some mate token reward to the executor (independent of the priorityFee the user attached)
+        _rewardExecutor(msg.sender, _priorityFee_Evvm > 0 ? 3 : 2);
 
         markAsyncNonceAsUsed(user, metadata.nonce);
     }
@@ -208,12 +202,7 @@ contract P2PSwap is
 
         verifyAsyncNonce(user, metadata.nonce);
 
-        if (
-            market == 0 ||
-            ordersInsideMarket[market][metadata.orderId].seller != user
-        ) {
-            revert("Invalid order");
-        }
+        _validateOrderOwnership(market, metadata.orderId, user);
 
         if (_priorityFee_Evvm > 0) {
             requestPay(
@@ -233,18 +222,13 @@ contract P2PSwap is
             ordersInsideMarket[market][metadata.orderId].amountA
         );
 
-        ordersInsideMarket[market][metadata.orderId].seller = address(0);
+        _clearOrderAndUpdateMarket(market, metadata.orderId);
 
-        if (evvm.isAddressStaker(msg.sender)) {
-            makeCaPay(
-                msg.sender,
-                MATE_TOKEN_ADDRESS,
-                _priorityFee_Evvm > 0
-                    ? ((evvm.getRewardAmount() * 3) + _priorityFee_Evvm)
-                    : (evvm.getRewardAmount() * 2)
-            );
+        if (evvm.isAddressStaker(msg.sender) && _priorityFee_Evvm > 0) {
+            makeCaPay(msg.sender, MATE_TOKEN_ADDRESS, _priorityFee_Evvm);
         }
-        marketMetadata[market].ordersAvailable--;
+        _rewardExecutor(msg.sender, _priorityFee_Evvm > 0 ? 3 : 2);
+
         markAsyncNonceAsUsed(user, metadata.nonce);
     }
 
@@ -274,21 +258,12 @@ contract P2PSwap is
 
         verifyAsyncNonce(user, metadata.nonce);
 
-        if (
-            market == 0 ||
-            ordersInsideMarket[market][metadata.orderId].seller == address(0)
-        ) {
-            revert("Invalid order");
-        }
+        Order storage order = _validateMarketAndOrder(market, metadata.orderId);
 
-        uint256 fee = calculateFillPropotionalFee(
-            ordersInsideMarket[market][metadata.orderId].amountB
-        );
+        uint256 fee = calculateFillPropotionalFee(order.amountB);
+        uint256 requiredAmount = order.amountB + fee;
 
-        if (
-            metadata.amountOfTokenBToFill <
-            ordersInsideMarket[market][metadata.orderId].amountB + fee
-        ) {
+        if (metadata.amountOfTokenBToFill < requiredAmount) {
             revert("Insuficient amountOfTokenToFill");
         }
 
@@ -303,67 +278,29 @@ contract P2PSwap is
         );
 
         // si es mas del fee + el monto de la orden hacemos caPay al usuario del sobranate
-        if (
-            metadata.amountOfTokenBToFill >
-            ordersInsideMarket[market][metadata.orderId].amountB + fee
-        ) {
-            makeCaPay(
-                user,
-                metadata.tokenB,
-                metadata.amountOfTokenBToFill -
-                    (ordersInsideMarket[market][metadata.orderId].amountB + fee)
-            );
-        }
-
-        EvvmStructs.DisperseCaPayMetadata[]
-            memory toData = new EvvmStructs.DisperseCaPayMetadata[](2);
-
-        uint256 sellerAmount = ordersInsideMarket[market][metadata.orderId]
-            .amountB + ((fee * rewardPercentage.seller) / 10_000);
-        uint256 executorAmount = _priorityFee_Evvm +
-            ((fee * rewardPercentage.mateStaker) / 10_000);
-
-        // pay seller
-        toData[0] = EvvmStructs.DisperseCaPayMetadata(
-            sellerAmount,
-            ordersInsideMarket[market][metadata.orderId].seller
-        );
-        // pay executor
-        toData[1] = EvvmStructs.DisperseCaPayMetadata(
-            executorAmount,
-            msg.sender
-        );
-
-        balancesOfContract[metadata.tokenB] +=
-            (fee * rewardPercentage.service) /
-            10_000;
-
-        makeDisperseCaPay(
-            toData,
+        bool didRefund = _handleOverpaymentRefund(
+            user,
             metadata.tokenB,
-            toData[0].amount + toData[1].amount
+            metadata.amountOfTokenBToFill,
+            requiredAmount
+        );
+
+        // distribute payments to seller and executor
+        _distributePayments(
+            metadata.tokenB,
+            order.amountB,
+            fee,
+            order.seller,
+            msg.sender,
+            _priorityFee_Evvm
         );
 
         // pay user with token A
-        makeCaPay(
-            user,
-            metadata.tokenA,
-            ordersInsideMarket[market][metadata.orderId].amountA
-        );
+        makeCaPay(user, metadata.tokenA, order.amountA);
 
-        if (evvm.isAddressStaker(msg.sender)) {
-            makeCaPay(
-                msg.sender,
-                MATE_TOKEN_ADDRESS,
-                metadata.amountOfTokenBToFill >
-                    ordersInsideMarket[market][metadata.orderId].amountB + fee
-                    ? evvm.getRewardAmount() * 5
-                    : evvm.getRewardAmount() * 4
-            );
-        }
+        _rewardExecutor(msg.sender, didRefund ? 5 : 4);
 
-        ordersInsideMarket[market][metadata.orderId].seller = address(0);
-        marketMetadata[market].ordersAvailable--;
+        _clearOrderAndUpdateMarket(market, metadata.orderId);
         markAsyncNonceAsUsed(user, metadata.nonce);
     }
 
@@ -394,22 +331,17 @@ contract P2PSwap is
 
         verifyAsyncNonce(user, metadata.nonce);
 
-        if (
-            market == 0 ||
-            ordersInsideMarket[market][metadata.orderId].seller == address(0)
-        ) {
-            revert("Invalid order");
-        }
+        Order storage order = _validateMarketAndOrder(market, metadata.orderId);
 
         (uint256 fee, uint256 fee10) = calculateFillFixedFee(
-            ordersInsideMarket[market][metadata.orderId].amountB,
+            order.amountB,
             maxFillFixedFee
         );
 
-        if (
-            metadata.amountOfTokenBToFill <
-            ordersInsideMarket[market][metadata.orderId].amountB + fee - fee10
-        ) {
+        uint256 minRequired = order.amountB + fee - fee10;
+        uint256 fullRequired = order.amountB + fee;
+
+        if (metadata.amountOfTokenBToFill < minRequired) {
             revert("Insuficient amountOfTokenBToFill");
         }
 
@@ -423,76 +355,39 @@ contract P2PSwap is
             _signature_Evvm
         );
 
-        uint256 finalFee = metadata.amountOfTokenBToFill >=
-            ordersInsideMarket[market][metadata.orderId].amountB +
-                fee -
-                fee10 &&
-            metadata.amountOfTokenBToFill <
-            ordersInsideMarket[market][metadata.orderId].amountB + fee
-            ? metadata.amountOfTokenBToFill -
-                ordersInsideMarket[market][metadata.orderId].amountB
-            : fee;
+        uint256 finalFee = _calculateFinalFee(
+            metadata.amountOfTokenBToFill,
+            order.amountB,
+            fee,
+            fee10
+        );
 
         // si es mas del fee + el monto de la orden hacemos caPay al usuario del sobranate
-        if (
-            metadata.amountOfTokenBToFill >
-            ordersInsideMarket[market][metadata.orderId].amountB + fee
-        ) {
-            makeCaPay(
-                user,
-                metadata.tokenB,
-                metadata.amountOfTokenBToFill -
-                    (ordersInsideMarket[market][metadata.orderId].amountB + fee)
-            );
-        }
-
-        EvvmStructs.DisperseCaPayMetadata[]
-            memory toData = new EvvmStructs.DisperseCaPayMetadata[](2);
-
-        toData[0] = EvvmStructs.DisperseCaPayMetadata(
-            ordersInsideMarket[market][metadata.orderId].amountB +
-                ((finalFee * rewardPercentage.seller) / 10_000),
-            ordersInsideMarket[market][metadata.orderId].seller
-        );
-        toData[1] = EvvmStructs.DisperseCaPayMetadata(
-            _priorityFee_Evvm +
-                ((finalFee * rewardPercentage.mateStaker) / 10_000),
-            msg.sender
-        );
-
-        balancesOfContract[metadata.tokenB] +=
-            (finalFee * rewardPercentage.service) /
-            10_000;
-
-        makeDisperseCaPay(
-            toData,
-            metadata.tokenB,
-            toData[0].amount + toData[1].amount
-        );
-
-        makeCaPay(
+        bool didRefund = _handleOverpaymentRefund(
             user,
-            metadata.tokenA,
-            ordersInsideMarket[market][metadata.orderId].amountA
+            metadata.tokenB,
+            metadata.amountOfTokenBToFill,
+            fullRequired
         );
 
-        if (evvm.isAddressStaker(msg.sender)) {
-            makeCaPay(
-                msg.sender,
-                MATE_TOKEN_ADDRESS,
-                metadata.amountOfTokenBToFill >
-                    ordersInsideMarket[market][metadata.orderId].amountB + fee
-                    ? evvm.getRewardAmount() * 5
-                    : evvm.getRewardAmount() * 4
-            );
-        }
+        // distribute payments to seller and executor
+        _distributePayments(
+            metadata.tokenB,
+            order.amountB,
+            finalFee,
+            order.seller,
+            msg.sender,
+            _priorityFee_Evvm
+        );
 
-        ordersInsideMarket[market][metadata.orderId].seller = address(0);
-        marketMetadata[market].ordersAvailable--;
+        makeCaPay(user, metadata.tokenA, order.amountA);
+
+        _rewardExecutor(msg.sender, didRefund ? 5 : 4);
+
+        _clearOrderAndUpdateMarket(market, metadata.orderId);
         markAsyncNonceAsUsed(user, metadata.nonce);
     }
 
-    //devolver el 0.05% del monto de la orden
     function calculateFillPropotionalFee(
         uint256 amount
     ) internal view returns (uint256 fee) {
@@ -510,6 +405,152 @@ contract P2PSwap is
         } else {
             fee = calculateFillPropotionalFee(amount);
         }
+    }
+
+    /**
+     * @dev Calculates the final fee for fixed fee dispatch considering tolerance range
+     * @param amountPaid Amount paid by user
+     * @param orderAmount Base order amount
+     * @param fee Full fee amount
+     * @param fee10 10% tolerance of fee
+     * @return finalFee The calculated final fee
+     */
+    function _calculateFinalFee(
+        uint256 amountPaid,
+        uint256 orderAmount,
+        uint256 fee,
+        uint256 fee10
+    ) internal pure returns (uint256 finalFee) {
+        uint256 minRequired = orderAmount + fee - fee10;
+        uint256 fullRequired = orderAmount + fee;
+
+        if (amountPaid >= minRequired && amountPaid < fullRequired) {
+            finalFee = amountPaid - orderAmount;
+        } else {
+            finalFee = fee;
+        }
+    }
+
+    //◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢
+    // Internal helper functions to avoid Stack too deep
+    //◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢
+
+    /**
+     * @dev Validates that a market and order exist and are valid
+     * @param market The market ID
+     * @param orderId The order ID within the market
+     * @return order The order data if valid
+     */
+    function _validateMarketAndOrder(
+        uint256 market,
+        uint256 orderId
+    ) internal view returns (Order storage order) {
+        if (market == 0) {
+            revert("Invalid order");
+        }
+        order = ordersInsideMarket[market][orderId];
+        if (order.seller == address(0)) {
+            revert("Invalid order");
+        }
+    }
+
+    /**
+     * @dev Validates that a market exists and the user is the seller of the order
+     * @param market The market ID
+     * @param orderId The order ID
+     * @param user The expected seller address
+     */
+    function _validateOrderOwnership(
+        uint256 market,
+        uint256 orderId,
+        address user
+    ) internal view {
+        if (
+            market == 0 ||
+            ordersInsideMarket[market][orderId].seller != user
+        ) {
+            revert("Invalid order");
+        }
+    }
+
+    /**
+     * @dev Rewards the executor (staker) with MATE tokens based on operation complexity
+     * @param executor The address of the executor
+     * @param multiplier The reward multiplier (2, 3, 4, or 5)
+     */
+    function _rewardExecutor(address executor, uint256 multiplier) internal {
+        if (evvm.isAddressStaker(executor)) {
+            makeCaPay(
+                executor,
+                MATE_TOKEN_ADDRESS,
+                evvm.getRewardAmount() * multiplier
+            );
+        }
+    }
+
+    /**
+     * @dev Clears an order and updates market metadata
+     * @param market The market ID
+     * @param orderId The order ID to clear
+     */
+    function _clearOrderAndUpdateMarket(
+        uint256 market,
+        uint256 orderId
+    ) internal {
+        ordersInsideMarket[market][orderId].seller = address(0);
+        marketMetadata[market].ordersAvailable--;
+    }
+
+    /**
+     * @dev Handles refund to user if they overpaid
+     * @param user The user address to refund
+     * @param token The token address
+     * @param amountPaid The amount the user paid
+     * @param amountRequired The required amount (order amount + fee)
+     * @return didRefund Whether a refund was made
+     */
+    function _handleOverpaymentRefund(
+        address user,
+        address token,
+        uint256 amountPaid,
+        uint256 amountRequired
+    ) internal returns (bool didRefund) {
+        if (amountPaid > amountRequired) {
+            makeCaPay(user, token, amountPaid - amountRequired);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @dev Distributes payment to seller and executor, and accumulates service fee
+     * @param token The token address for payment
+     * @param orderAmount The base order amount
+     * @param fee The fee amount to distribute
+     * @param seller The seller address
+     * @param executor The executor address
+     * @param priorityFee The priority fee for executor
+     */
+    function _distributePayments(
+        address token,
+        uint256 orderAmount,
+        uint256 fee,
+        address seller,
+        address executor,
+        uint256 priorityFee
+    ) internal {
+        uint256 sellerAmount = orderAmount + ((fee * rewardPercentage.seller) / 10_000);
+        uint256 executorAmount = priorityFee + ((fee * rewardPercentage.mateStaker) / 10_000);
+
+        EvvmStructs.DisperseCaPayMetadata[]
+            memory toData = new EvvmStructs.DisperseCaPayMetadata[](2);
+
+        toData[0] = EvvmStructs.DisperseCaPayMetadata(sellerAmount, seller);
+        toData[1] = EvvmStructs.DisperseCaPayMetadata(executorAmount, executor);
+
+        balancesOfContract[token] += (fee * rewardPercentage.service) / 10_000;
+
+        makeDisperseCaPay(toData, token, sellerAmount + executorAmount);
     }
 
     function createMarket(
