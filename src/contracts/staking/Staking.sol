@@ -1124,7 +1124,7 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev This is a constant address used to represent the principal token
      * @return Address representing the Principal Token (0x...0001)
      */
-    function getMateAddress() external pure returns (address) {
+    function getMateAddress() external view returns (address) {
         return evvm.getPrincipalTokenAddress();
     }
 
