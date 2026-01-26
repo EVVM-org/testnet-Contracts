@@ -3,6 +3,27 @@
 
 pragma solidity ^0.8.0;
 
+/**
+ * @title IdentityValidation
+ * @author Mate labs
+ * @notice Library for validating usernames, emails, and phone numbers in the NameService system
+ * @dev Provides pure validation functions for identity-related strings used in NameService.sol.
+ *      All validations are performed at the byte level for gas efficiency and precision.
+ *
+ * Validation Types:
+ * - Username: Alphanumeric identifiers with specific length and format requirements
+ * - Email: Standard email format validation with prefix, domain, and TLD checks
+ * - Phone Number: Numeric phone numbers with length constraints
+ *
+ * Character Validation:
+ * - Uses ASCII byte ranges for precise character classification
+ * - Supports letters (A-Z, a-z), digits (0-9), and specific symbols
+ * - All checks performed without external dependencies for security
+ *
+ * @custom:scope Exclusive to NameService.sol contract
+ * @custom:security All functions are pure with no external calls
+ * @custom:gas-optimization Byte-level operations for maximum efficiency
+ */
 library IdentityValidation{
     /**
      * @notice Validates username format according to system rules
