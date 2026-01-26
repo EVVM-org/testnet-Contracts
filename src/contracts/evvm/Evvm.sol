@@ -123,12 +123,12 @@ contract Evvm is EvvmStorage {
      * - Configures admin address with full administrative privileges
      * - Sets staking contract address for reward distribution and status management
      * - Stores EVVM metadata including principal token address and reward parameters
-     * - Distributes initial MATE tokens to staking contract (2x reward amount)
+     * - Distributes initial Principal Tokens to staking contract (2x reward amount)
      * - Registers staking contract as privileged staker with full benefits
      * - Activates breaker flag for one-time NameService and Treasury setup
      *
      * Token Distribution:
-     * - Staking contract receives 2x current reward amount in MATE tokens
+     * - Staking contract receives 2x current reward amount in Principal Tokens
      * - Enables immediate reward distribution capabilities
      * - Provides operational liquidity for staking rewards
      *
@@ -181,7 +181,7 @@ contract Evvm is EvvmStorage {
      * - Validates the breaker flag is active (prevents multiple calls)
      * - Sets the NameService contract address for identity resolution in payments
      * - Configures the Treasury contract address for privileged balance operations
-     * - Provides initial Principal Token balance (10,000 MATE) to NameService for operations
+     * - Provides initial Principal Token balance (10,000 tokens) to NameService for operations
      * - Registers NameService as a privileged staker for enhanced functionality and rewards
      *
      * Security Features:
@@ -190,7 +190,7 @@ contract Evvm is EvvmStorage {
      * - Must be called during initial system deployment phase
      *
      * Initial Token Distribution:
-     * - NameService receives 10,000 MATE tokens for operational expenses
+     * - NameService receives 10,000 Principal Tokens for operational expenses
      * - NameService gains staker privileges for transaction processing
      * - Enables identity-based payment resolution throughout the ecosystem
      *
@@ -549,7 +549,7 @@ contract Evvm is EvvmStorage {
      *
      * Staker Benefits:
      * - Executor receives priority fee (if staker)
-     * - MATE reward based on number of successful distributions
+     * - Principal Token reward based on number of successful distributions
      *
      * @param from Address of the payment sender
      * @param toData Array of recipient data with addresses/identities and amounts
@@ -1086,10 +1086,22 @@ contract Evvm is EvvmStorage {
         return evvmMetadata;
     }
 
+    /**
+     * @notice Gets the address representing the Principal Token in balance mappings
+     * @dev Returns the virtual address used to track Principal Token balances in the balances mapping
+     *      This is not an ERC20 contract address but a sentinel value for the EVVM-native token
+     * @return Address used as the key for Principal Token balances
+     */
     function getPrincipalTokenAddress() external view returns (address) {
         return evvmMetadata.principalTokenAddress;
     }
 
+    /**
+     * @notice Gets the address representing native chain currency (ETH/MATIC) in balance mappings
+     * @dev Returns address(0) which is the standard sentinel for native blockchain tokens
+     *      Use this address as the token parameter when dealing with ETH or chain-native assets
+     * @return address(0) representing the native chain currency
+     */
     function getChainHostCoinAddress() external pure returns (address) {
         return address(0);
     }
@@ -1208,16 +1220,16 @@ contract Evvm is EvvmStorage {
     /**
      * @notice Gets the current Principal Token reward amount per transaction
      * @dev Returns the base reward distributed to stakers for transaction processing
-     * @return Current reward amount in MATE tokens
+     * @return Current reward amount in Principal Tokens
      */
     function getRewardAmount() public view returns (uint256) {
         return evvmMetadata.reward;
     }
 
     /**
-     * @notice Gets the total supply of the principal token (MATE)
+     * @notice Gets the total supply of the Principal Token
      * @dev Returns the current total supply used for era transition calculations
-     * @return Total supply of MATE tokens
+     * @return Total supply of Principal Tokens
      */
     function getPrincipalTokenTotalSupply() public view returns (uint256) {
         return evvmMetadata.totalSupply;
