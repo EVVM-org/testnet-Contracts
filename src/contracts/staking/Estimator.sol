@@ -12,7 +12,31 @@ MM        .M `88888P'   dP   dP dP  dP  dP `88888P8   dP   `88888P' dP
 MMMMMMMMMMMM                                                                 
                                                                             
  * @title Staking Estimator Contract
- * @author Mate labs
+ * @author Mate Labs
+ * @notice Contract responsible for calculating staking rewards based on time-weighted averages
+ * @dev This contract works in conjunction with the Staking contract to calculate
+ * and distribute rewards to stakers based on their participation during epochs.
+ *
+ * Key Responsibilities:
+ * - Track epoch metadata (pool, total staked, time periods)
+ * - Calculate time-weighted average stake for each user
+ * - Determine proportional reward distribution
+ *
+ * Reward Calculation Formula:
+ * The time-weighted average is calculated as:
+ *   Sum of [(ti - ti-1) x Si-1] x 10^18 / (tFinal - tStart)
+ *
+ * Where:
+ * - ti: timestamp of current iteration
+ * - ti-1: timestamp of previous iteration
+ * - Si-1: stake amount at previous iteration
+ * - tFinal: epoch end timestamp
+ * - tStart: epoch start timestamp
+ *
+ * Access Control:
+ * - onlyStaking: Functions callable only by the Staking contract
+ * - onlyActivator: Functions callable only by the epoch activator
+ * - onlyAdmin: Administrative functions for governance
  */
 
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
@@ -22,18 +46,28 @@ import {
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 
 contract Estimator {
+    /// @dev Struct for managing address change proposals with time delay
     struct AddressTypeProposal {
         address actual;
         address proposal;
         uint256 timeToAccept;
     }
 
+    /// @dev Struct for managing uint256 value proposals with time delay
     struct UintTypeProposal {
         uint256 actual;
         uint256 proposal;
         uint256 timeToAccept;
     }
 
+    /**
+     * @dev Struct containing epoch metadata for reward calculations
+     * @param tokenPool Address of the token being distributed as rewards
+     * @param totalPool Total amount of tokens available for distribution
+     * @param totalStaked Total staking tokens staked during this epoch
+     * @param tFinal Timestamp when the epoch ended
+     * @param tStart Timestamp when the epoch started
+     */
     struct EpochMetadata {
         address tokenPool;
         uint256 totalPool;
@@ -42,33 +76,53 @@ contract Estimator {
         uint256 tStart;
     }
 
+    /// @dev Current epoch metadata storage
     EpochMetadata private epoch;
+    /// @dev Proposal system for activator address changes
     AddressTypeProposal private activator;
+    /// @dev Proposal system for EVVM address changes
     AddressTypeProposal private evvmAddress;
+    /// @dev Proposal system for Staking contract address changes
     AddressTypeProposal private addressStaking;
+    /// @dev Proposal system for admin address changes
     AddressTypeProposal private admin;
 
+    /// @dev Transaction type identifier for deposit (staking) operations
     bytes32 constant DEPOSIT_IDENTIFIER = bytes32(uint256(1));
+    /// @dev Transaction type identifier for withdraw (unstaking) operations
     bytes32 constant WITHDRAW_IDENTIFIER = bytes32(uint256(2));
+    /// @dev Beginning identifier same as withdraw for epoch tracking
     bytes32 constant BEGUIN_IDENTIFIER = WITHDRAW_IDENTIFIER;
 
+    /// @dev Current epoch identifier, increments with each new epoch
     bytes32 epochId = bytes32(uint256(3));
 
+    /// @dev Restricts function access to the Staking contract only
     modifier onlyStaking() {
         if (msg.sender != addressStaking.actual) revert();
         _;
     }
 
+    /// @dev Restricts function access to the activator address only
     modifier onlyActivator() {
         if (msg.sender != activator.actual) revert();
         _;
     }
 
+    /// @dev Restricts function access to the admin address only
     modifier onlyAdmin() {
         if (msg.sender != admin.actual) revert();
         _;
     }
 
+    /**
+     * @notice Initializes the Estimator contract
+     * @dev Sets up all required addresses for contract operation
+     * @param _activator Address authorized to start new epochs
+     * @param _evvmAddress Address of the EVVM core contract
+     * @param _addressStaking Address of the Staking contract
+     * @param _admin Address with administrative privileges
+     */
     constructor(
         address _activator,
         address _evvmAddress,
@@ -81,6 +135,14 @@ contract Estimator {
         admin.actual = _admin;
     }
 
+    /**
+     * @notice Starts a new reward epoch with the provided parameters
+     * @dev Only callable by the activator address. Records epoch metadata for reward calculations.
+     * @param tokenPool Address of the token to be distributed as rewards
+     * @param totalPool Total amount of tokens available for distribution this epoch
+     * @param totalStaked Total staking tokens staked at epoch start
+     * @param tStart Timestamp when the epoch started
+     */
     function notifyNewEpoch(
         address tokenPool,
         uint256 totalPool,
@@ -96,6 +158,17 @@ contract Estimator {
         });
     }
 
+    /**
+     * @notice Calculates and returns the reward amount for a specific user
+     * @dev Only callable by the Staking contract. Uses time-weighted average calculation
+     *      to determine proportional rewards based on staking duration and amount.
+     * @param _user Address of the user to calculate rewards for
+     * @return epochAnswer Epoch identifier to record in user history
+     * @return tokenAddress Address of the reward token
+     * @return amountTotalToBeRewarded Calculated reward amount for the user
+     * @return idToOverwrite Index in user history to update with reward info
+     * @return timestampToOverwrite Timestamp to record for the reward transaction
+     */
     function makeEstimation(
         address _user
     )
@@ -175,16 +248,20 @@ contract Estimator {
     // Admin functions
     //⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎼⎻⎺⎺⎻
 
+    /// @notice Proposes a new activator address with 1-day time delay
+    /// @param _proposal Address of the proposed new activator
     function setActivatorProposal(address _proposal) external onlyActivator {
         activator.proposal = _proposal;
         activator.timeToAccept = block.timestamp + 1 days;
     }
 
+    /// @notice Cancels the pending activator proposal
     function cancelActivatorProposal() external onlyActivator {
         activator.proposal = address(0);
         activator.timeToAccept = 0;
     }
 
+    /// @notice Accepts the activator proposal after time delay
     function acceptActivatorProposal() external {
         if (block.timestamp < activator.timeToAccept) revert();
 
@@ -193,16 +270,20 @@ contract Estimator {
         activator.timeToAccept = 0;
     }
 
+    /// @notice Proposes a new EVVM address with 1-day time delay
+    /// @param _proposal Address of the proposed new EVVM contract
     function setEvvmAddressProposal(address _proposal) external onlyAdmin {
         evvmAddress.proposal = _proposal;
         evvmAddress.timeToAccept = block.timestamp + 1 days;
     }
 
+    /// @notice Cancels the pending EVVM address proposal
     function cancelEvvmAddressProposal() external onlyAdmin {
         evvmAddress.proposal = address(0);
         evvmAddress.timeToAccept = 0;
     }
 
+    /// @notice Accepts the EVVM address proposal after time delay
     function acceptEvvmAddressProposal() external onlyAdmin {
         if (block.timestamp < evvmAddress.timeToAccept) revert();
 
@@ -211,16 +292,20 @@ contract Estimator {
         evvmAddress.timeToAccept = 0;
     }
 
+    /// @notice Proposes a new Staking contract address with 1-day time delay
+    /// @param _proposal Address of the proposed new Staking contract
     function setAddressStakingProposal(address _proposal) external onlyAdmin {
         addressStaking.proposal = _proposal;
         addressStaking.timeToAccept = block.timestamp + 1 days;
     }
 
+    /// @notice Cancels the pending Staking address proposal
     function cancelAddressStakingProposal() external onlyAdmin {
         addressStaking.proposal = address(0);
         addressStaking.timeToAccept = 0;
     }
 
+    /// @notice Accepts the Staking address proposal after time delay
     function acceptAddressStakingProposal() external onlyAdmin {
         if (block.timestamp < addressStaking.timeToAccept) revert();
 
@@ -229,16 +314,20 @@ contract Estimator {
         addressStaking.timeToAccept = 0;
     }
 
+    /// @notice Proposes a new admin address with 1-day time delay
+    /// @param _proposal Address of the proposed new admin
     function setAdminProposal(address _proposal) external onlyAdmin {
         admin.proposal = _proposal;
         admin.timeToAccept = block.timestamp + 1 days;
     }
 
+    /// @notice Cancels the pending admin proposal
     function cancelAdminProposal() external onlyAdmin {
         admin.proposal = address(0);
         admin.timeToAccept = 0;
     }
 
+    /// @notice Accepts the admin proposal after time delay
     function acceptAdminProposal() external {
         if (block.timestamp < admin.timeToAccept) revert();
 
@@ -251,18 +340,26 @@ contract Estimator {
     // Getters
     //⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎽⎼⎻⎺⎺⎻⎼⎽⎼⎻⎺⎺⎻
 
+    /// @notice Returns the current epoch metadata
+    /// @return Complete EpochMetadata struct with pool and timing information
     function getEpochMetadata() external view returns (EpochMetadata memory) {
         return epoch;
     }
 
+    /// @notice Returns the current epoch number as uint256
+    /// @return Current epoch number (epochId - 2)
     function getActualEpochInUint() external view returns (uint256) {
         return uint256(epochId) - 2;
     }
 
+    /// @notice Returns the current epoch identifier in bytes32 format
+    /// @return Current epoch identifier
     function getActualEpochInFormat() external view returns (bytes32) {
         return epochId;
     }
 
+    /// @notice Returns the activator address proposal information
+    /// @return Complete AddressTypeProposal struct for activator
     function getActivatorMetadata()
         external
         view
@@ -271,6 +368,8 @@ contract Estimator {
         return activator;
     }
 
+    /// @notice Returns the EVVM address proposal information
+    /// @return Complete AddressTypeProposal struct for EVVM
     function getEvvmAddressMetadata()
         external
         view
@@ -279,6 +378,8 @@ contract Estimator {
         return evvmAddress;
     }
 
+    /// @notice Returns the Staking contract address proposal information
+    /// @return Complete AddressTypeProposal struct for Staking
     function getAddressStakingMetadata()
         external
         view
@@ -287,6 +388,8 @@ contract Estimator {
         return addressStaking;
     }
 
+    /// @notice Returns the admin address proposal information
+    /// @return Complete AddressTypeProposal struct for admin
     function getAdminMetadata()
         external
         view
@@ -295,6 +398,16 @@ contract Estimator {
         return admin;
     }
 
+    /**
+     * @notice Simulates reward estimation without modifying state
+     * @dev View function for previewing rewards before claiming
+     * @param _user Address of the user to simulate rewards for
+     * @return epochAnswer Epoch identifier that would be recorded
+     * @return tokenAddress Address of the reward token
+     * @return amountTotalToBeRewarded Calculated reward amount
+     * @return idToOverwrite Index in user history that would be updated
+     * @return timestampToOverwrite Timestamp that would be recorded
+     */
     function simulteEstimation(
         address _user
     )
