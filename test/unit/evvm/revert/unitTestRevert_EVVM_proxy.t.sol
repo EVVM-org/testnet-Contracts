@@ -1,57 +1,44 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for Staking function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
-
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 contract unitTestRevert_EVVM_proxy is Test, Constants {
     /**
      * Naming Convention for Init Test Functions
      * Basic Structure:
-     * test__init__[typeOfTest]__[functionName]__[errorType]
+     * test__init__[typeOfTest]__[functionName]__[options]
      * General Rules:
      *  - Always start with "test__"
      *  - The name of the function to be executed must immediately follow "test__"
      *  - Options are added at the end, separated by underscores
      *
      * Example:
-     * test__init__pay_noStaker_sync__nonceAlreadyUsed
+     * test__init__pay_noStaker_sync__PF_nEX
      *
      * Example explanation:
      * Function to test: payNoStaker_sync
@@ -70,98 +57,91 @@ contract unitTestRevert_EVVM_proxy is Test, Constants {
      * - xU: Evvm updates x number of times
      */
 
-    ExtraFunctionsV1 v1;
+    TartarusV1 v1;
     address addressV1;
 
-    bytes32 constant DEPOSIT_IDENTIFIER = bytes32(uint256(1));
-    bytes32 constant WITHDRAW_IDENTIFIER = bytes32(uint256(2));
+    TartarusV2 v2;
+    address addressV2;
+
+    TartarusV3 v3;
+    address addressV3;
+
+    CounterDummy counter;
+    address addressCounter;
 
     function executeBeforeSetUp() internal override {
-        v1 = new ExtraFunctionsV1();
+        v1 = new TartarusV1();
         addressV1 = address(v1);
 
-        vm.stopPrank();
+        v2 = new TartarusV2();
+        addressV2 = address(v2);
 
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        counter = new CounterDummy();
+        addressCounter = address(counter);
+        v3 = new TartarusV3(address(addressCounter));
+        addressV3 = address(v3);
     }
 
-    function test__init__revert__proposeImplementation__notAdmin() public {
+    function test__unit_revert__fallback__ImplementationIsNotActive() external {
+        vm.expectRevert(ErrorsLib.ImplementationIsNotActive.selector);
+
+        ITartarusV1(address(evvm)).burnToken(
+            COMMON_USER_NO_STAKER_1.Address,
+            PRINCIPAL_TOKEN_ADDRESS,
+            10
+        );
+    }
+
+    function test__unit_revert__proposeImplementation__SenderIsNotAdmin()
+        external
+    {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
         evvm.proposeImplementation(addressV1);
-
         vm.stopPrank();
     }
 
-    function test__init__revert__acceptImplementation__notAdmin() public {
-        vm.startPrank(ADMIN.Address);
-        evvm.proposeImplementation(addressV1);
-        vm.stopPrank();
-
-        skip(30 days);
-
-        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-
-        vm.expectRevert();
-        evvm.acceptImplementation();
-
-        vm.stopPrank();
-    }
-
-    function test__init__revert__acceptImplementation__tryToAcceptBeforeTime()
-        public
+    function test__unit_revert__proposeImplementation__IncorrectAddressInput()
+        external
     {
         vm.startPrank(ADMIN.Address);
-
-        evvm.proposeImplementation(addressV1);
-
-        //time less than 30 days
-        skip(29 days);
-
-        vm.expectRevert();
-        evvm.acceptImplementation();
-
+        vm.expectRevert(ErrorsLib.IncorrectAddressInput.selector);
+        evvm.proposeImplementation(address(0));
         vm.stopPrank();
     }
 
-    function test__init__revert__rejectUpgrade__notAdmin() public {
+    function test__unit_revert__rejectUpgrade__SenderIsNotAdmin()
+        external
+    {
         vm.startPrank(ADMIN.Address);
         evvm.proposeImplementation(addressV1);
         vm.stopPrank();
-
-        skip(1 days);
-
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
         evvm.rejectUpgrade();
         vm.stopPrank();
     }
 
-    /// @notice because we tested in others init thes the pay
-    ///         with no implementation we begin with 1 update
-    function test__init__revert__TxAndUseProxy__doesNotHaveImplementation()
-        public
+    function test__unit_revert__acceptImplementation__SenderIsNotAdmin()
+        external
     {
-        vm.expectRevert();
-        IExtraFunctionsV1(address(evvm)).burnToken(
-            COMMON_USER_NO_STAKER_1.Address,
-            MATE_TOKEN_ADDRESS,
-            10
-        );
+        vm.startPrank(ADMIN.Address);
+        evvm.proposeImplementation(addressV1);
+        vm.stopPrank();
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        evvm.acceptImplementation();
+        vm.stopPrank();
     }
-}
 
-interface IExtraFunctionsV1 {
-    function burnToken(address user, address token, uint256 amount) external;
-}
+    function test__unit_revert__acceptImplementation__TimeLockNotExpired()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        evvm.proposeImplementation(addressV1);
 
-contract ExtraFunctionsV1 is EvvmStorage {
-    function burnToken(address user, address token, uint256 amount) external {
-        if (balances[user][token] < amount) {
-            revert();
-        }
-
-        balances[user][token] -= amount;
+        vm.expectRevert(ErrorsLib.TimeLockNotExpired.selector);
+        evvm.acceptImplementation();
+        vm.stopPrank();
     }
 }

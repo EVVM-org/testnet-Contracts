@@ -1,52 +1,22 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
-
-:::::::::: :::    ::: ::::::::: :::::::::      ::::::::::: :::::::::: :::::::: ::::::::::: 
-:+:        :+:    :+:      :+:       :+:           :+:     :+:       :+:    :+:    :+:     
-+:+        +:+    +:+     +:+       +:+            +:+     +:+       +:+           +:+     
-:#::+::#   +#+    +:+    +#+       +#+             +#+     +#++:++#  +#++:++#++    +#+     
-+#+        +#+    +#+   +#+       +#+              +#+     +#+              +#+    +#+     
-#+#        #+#    #+#  #+#       #+#               #+#     #+#       #+#    #+#    #+#     
-###         ########  ######### #########          ###     ########## ########     ###     
-
-
- * @title fuzz test for staking function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants} from "test/Constants.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 contract fuzzTest_Staking_goldenStaking is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -54,9 +24,12 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
     function executeBeforeSetUp() internal override {
         evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
 
-        uint256 totalAmount = giveMateToExecute(GOLDEN_STAKER.Address, 10);
+        _addBalance(10);
 
-        bytes memory signatureEVVM = makePaySignature(totalAmount);
+        bytes memory signatureEVVM = _execute_makeGoldenStakingSignature(
+            true,
+            10
+        );
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
@@ -65,43 +38,22 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function giveMateToExecute(
-        address user,
+    function _addBalance(
         uint256 stakingAmount
-    ) private returns (uint256 totalAmount) {
+    ) private returns (uint256 totalOfMate) {
         evvm.addBalance(
-            user,
-            MATE_TOKEN_ADDRESS,
-            staking.priceOfStaking() * stakingAmount
+            GOLDEN_STAKER.Address,
+            PRINCIPAL_TOKEN_ADDRESS,
+            (staking.priceOfStaking() * stakingAmount)
         );
 
-        totalAmount = staking.priceOfStaking() * stakingAmount;
+        totalOfMate = (staking.priceOfStaking() * stakingAmount);
     }
 
     function calculateRewardPerExecution(
         uint256 numberOfTx
     ) private view returns (uint256) {
         return (evvm.getRewardAmount() * 2) * numberOfTx;
-    }
-
-    function makePaySignature(
-        uint256 amount
-    ) private view returns (bytes memory signatureEVVM) {
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            GOLDEN_STAKER.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                amount,
-                0,
-                evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
-                false,
-                address(staking)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
     }
 
     struct GoldenStakingFuzzTestInput {
@@ -113,7 +65,6 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
         GoldenStakingFuzzTestInput[10] memory input
     ) external {
         uint256 totalAmount;
-        bytes memory signatureEVVM;
         uint256 amountBefore;
         uint256 stakingFullAmountBefore;
         uint256 totalStakedBefore;
@@ -128,7 +79,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
 
             amountBefore = evvm.getBalance(
                 GOLDEN_STAKER.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             );
             if (input[i].isStaking) {
                 // staking
@@ -140,24 +91,14 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                     );
                 }
 
-                totalAmount = giveMateToExecute(
-                    GOLDEN_STAKER.Address,
-                    input[i].amount
+                totalAmount = _addBalance(input[i].amount);
+
+                _execute_makeGoldenStaking(input[i].isStaking, input[i].amount);
+
+                assertTrue(
+                    evvm.isAddressStaker(GOLDEN_STAKER.Address),
+                    "Error: golden user is not pointer as staker after staking"
                 );
-
-                signatureEVVM = makePaySignature(totalAmount);
-
-                vm.startPrank(GOLDEN_STAKER.Address);
-
-                staking.goldenStaking(
-                    input[i].isStaking,
-                    input[i].amount,
-                    signatureEVVM
-                );
-
-                vm.stopPrank();
-
-                assert(evvm.isAddressStaker(GOLDEN_STAKER.Address));
             } else {
                 // unstaking
                 if (
@@ -173,27 +114,21 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                     stakingFullAmountBefore = staking.getUserAmountStaked(
                         GOLDEN_STAKER.Address
                     );
-                    vm.startPrank(GOLDEN_STAKER.Address);
 
-                    staking.goldenStaking(
+                    _execute_makeGoldenStaking(
                         input[i].isStaking,
-                        staking.getUserAmountStaked(GOLDEN_STAKER.Address),
-                        signatureEVVM
+                        stakingFullAmountBefore
                     );
 
-                    vm.stopPrank();
-
-                    assert(!evvm.isAddressStaker(GOLDEN_STAKER.Address));
+                    assertFalse(
+                        evvm.isAddressStaker(GOLDEN_STAKER.Address),
+                        "Error: golden user is pointer as staker after full unstaking"
+                    );
                 } else {
-                    vm.startPrank(GOLDEN_STAKER.Address);
-
-                    staking.goldenStaking(
+                    _execute_makeGoldenStaking(
                         input[i].isStaking,
-                        input[i].amount,
-                        signatureEVVM
+                        input[i].amount
                     );
-
-                    vm.stopPrank();
                 }
             }
 
@@ -201,7 +136,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                 .getAddressHistoryByIndex(GOLDEN_STAKER.Address, i + 1);
 
             assertEq(
-                evvm.getBalance(GOLDEN_STAKER.Address, MATE_TOKEN_ADDRESS),
+                evvm.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
                 amountBefore +
                     calculateRewardPerExecution(
                         evvm.isAddressStaker(GOLDEN_STAKER.Address) ? 1 : 0
@@ -217,17 +152,23 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                                         stakingFullAmountBefore
                                     : staking.priceOfStaking() * input[i].amount
                             )
-                    )
+                    ),
+                "Error: balance after staking/unstaking is not correct"
             );
 
-            assertEq(history.timestamp, block.timestamp);
-            assert(
-                history.transactionType ==
-                    (
-                        input[i].isStaking
-                            ? DEPOSIT_HISTORY_SMATE_IDENTIFIER
-                            : WITHDRAW_HISTORY_SMATE_IDENTIFIER
-                    )
+            assertEq(
+                history.timestamp,
+                block.timestamp,
+                "Error: timestamp in history is not correct"
+            );
+            assertEq(
+                history.transactionType,
+                (
+                    input[i].isStaking
+                        ? DEPOSIT_HISTORY_SMATE_IDENTIFIER
+                        : WITHDRAW_HISTORY_SMATE_IDENTIFIER
+                ),
+                "Error: transactionType in history is not correct"
             );
             assertEq(
                 history.amount,
@@ -241,12 +182,14 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                                 ? stakingFullAmountBefore
                                 : input[i].amount
                         )
-                )
+                ),
+                "Error: amount in history is not correct"
             );
             if (input[i].isStaking) {
                 assertEq(
                     history.totalStaked,
-                    totalStakedBefore + input[i].amount
+                    totalStakedBefore + input[i].amount,
+                    "Error: totalStaked is not correct after staking"
                 );
             } else {
                 assertEq(
@@ -258,7 +201,8 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                             ) == 0
                                 ? stakingFullAmountBefore
                                 : input[i].amount
-                        )
+                        ),
+                    "Error: totalStaked is not correct after unstaking"
                 );
             }
         }

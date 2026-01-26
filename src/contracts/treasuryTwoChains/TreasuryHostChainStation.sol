@@ -32,7 +32,7 @@ pragma solidity ^0.8.0;
  */
 
 import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
-import {IEvvm} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
+import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
     ErrorsLib
 } from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/ErrorsLib.sol";
@@ -87,7 +87,7 @@ contract TreasuryHostChainStation is
 {
     /// @notice EVVM core contract for balance operations
     /// @dev Used to integrate with EVVM's balance management and token operations
-    IEvvm evvm;
+    Evvm evvm;
 
     /// @notice Admin address management with time-delayed proposals
     /// @dev Stores current admin, proposed admin, and acceptance timestamp
@@ -178,7 +178,7 @@ contract TreasuryHostChainStation is
         Ownable(_admin)
         AxelarExecutable(_crosschainConfig.axelar.gatewayAddress)
     {
-        evvm = IEvvm(_evvmAddress);
+        evvm = Evvm(_evvmAddress);
 
         admin = AddressTypeProposal({
             current: _admin,

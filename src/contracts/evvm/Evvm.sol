@@ -73,11 +73,21 @@ pragma solidity ^0.8.0;
  * @custom:upgrade-pattern Transparent proxy with admin-controlled implementation
  */
 
-import {NameService} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {EvvmStorage} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {ErrorsLib} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
-import {SignatureUtils} from "@evvm/testnet-contracts/contracts/evvm/lib/SignatureUtils.sol";
-import {AdvancedStrings} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    NameService
+} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
+import {
+    EvvmStorage
+} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
+import {
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+import {
+    SignatureUtils
+} from "@evvm/testnet-contracts/contracts/evvm/lib/SignatureUtils.sol";
+import {
+    AdvancedStrings
+} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract Evvm is EvvmStorage {
     /**
@@ -100,9 +110,8 @@ contract Evvm is EvvmStorage {
      * - Part of the time-delayed governance system for critical operations
      */
     modifier onlyAdmin() {
-        if (msg.sender != admin.current) {
-            revert();
-        }
+        if (msg.sender != admin.current) revert ErrorsLib.SenderIsNotAdmin();
+
         _;
     }
 
@@ -114,12 +123,12 @@ contract Evvm is EvvmStorage {
      * - Configures admin address with full administrative privileges
      * - Sets staking contract address for reward distribution and status management
      * - Stores EVVM metadata including principal token address and reward parameters
-     * - Distributes initial MATE tokens to staking contract (2x reward amount)
+     * - Distributes initial Principal Tokens to staking contract (2x reward amount)
      * - Registers staking contract as privileged staker with full benefits
      * - Activates breaker flag for one-time NameService and Treasury setup
      *
      * Token Distribution:
-     * - Staking contract receives 2x current reward amount in MATE tokens
+     * - Staking contract receives 2x current reward amount in Principal Tokens
      * - Enables immediate reward distribution capabilities
      * - Provides operational liquidity for staking rewards
      *
@@ -145,6 +154,10 @@ contract Evvm is EvvmStorage {
         address _stakingContractAddress,
         EvvmMetadata memory _evvmMetadata
     ) {
+        if (
+            _initialOwner == address(0) || _stakingContractAddress == address(0)
+        ) revert ErrorsLib.AddressCantBeZero();
+
         evvmMetadata = _evvmMetadata;
 
         stakingContractAddress = _stakingContractAddress;
@@ -168,7 +181,7 @@ contract Evvm is EvvmStorage {
      * - Validates the breaker flag is active (prevents multiple calls)
      * - Sets the NameService contract address for identity resolution in payments
      * - Configures the Treasury contract address for privileged balance operations
-     * - Provides initial Principal Token balance (10,000 MATE) to NameService for operations
+     * - Provides initial Principal Token balance (10,000 tokens) to NameService for operations
      * - Registers NameService as a privileged staker for enhanced functionality and rewards
      *
      * Security Features:
@@ -177,7 +190,7 @@ contract Evvm is EvvmStorage {
      * - Must be called during initial system deployment phase
      *
      * Initial Token Distribution:
-     * - NameService receives 10,000 MATE tokens for operational expenses
+     * - NameService receives 10,000 Principal Tokens for operational expenses
      * - NameService gains staker privileges for transaction processing
      * - Enables identity-based payment resolution throughout the ecosystem
      *
@@ -192,9 +205,12 @@ contract Evvm is EvvmStorage {
         address _nameServiceAddress,
         address _treasuryAddress
     ) external {
-        if (breakerSetupNameServiceAddress == 0x00) {
-            revert();
-        }
+        if (breakerSetupNameServiceAddress == 0x00)
+            revert ErrorsLib.BreakerExploded();
+
+        if (_nameServiceAddress == address(0) || _treasuryAddress == address(0))
+            revert ErrorsLib.AddressCantBeZero();
+
         nameServiceAddress = _nameServiceAddress;
         balances[nameServiceAddress][evvmMetadata.principalTokenAddress] =
             10000 *
@@ -211,7 +227,7 @@ contract Evvm is EvvmStorage {
     function setEvvmID(uint256 newEvvmID) external onlyAdmin {
         if (evvmMetadata.EvvmID != 0) {
             if (block.timestamp > windowTimeToChangeEvvmID)
-                revert ErrorsLib.WindowToChangeEvvmIDExpired();
+                revert ErrorsLib.WindowExpired();
         }
 
         evvmMetadata.EvvmID = newEvvmID;
@@ -253,7 +269,8 @@ contract Evvm is EvvmStorage {
      * @custom:upgrade-safe Preserves storage layout between upgrades
      */
     fallback() external {
-        if (currentImplementation == address(0)) revert();
+        if (currentImplementation == address(0))
+            revert ErrorsLib.ImplementationIsNotActive();
 
         assembly {
             /**
@@ -389,22 +406,17 @@ contract Evvm is EvvmStorage {
             )
             : to_address;
 
-        if (!_updateBalance(from, to, token, amount))
-            revert ErrorsLib.UpdateBalanceFailed();
+        _updateBalance(from, to, token, amount);
 
         if (isAddressStaker(msg.sender)) {
             if (priorityFee > 0) {
-                if (!_updateBalance(from, msg.sender, token, priorityFee))
-                    revert ErrorsLib.UpdateBalanceFailed();
+                _updateBalance(from, msg.sender, token, priorityFee);
             }
             _giveReward(msg.sender, 1);
         }
 
-        if (priorityFlag) {
-            asyncUsedNonce[from][nonce] = true;
-        } else {
-            nextSyncUsedNonce[from]++;
-        }
+        if (priorityFlag) asyncUsedNonce[from][nonce] = true;
+        else nextSyncUsedNonce[from]++;
     }
 
     /**
@@ -435,112 +447,87 @@ contract Evvm is EvvmStorage {
     function payMultiple(
         PayData[] memory payData
     ) external returns (uint256 successfulTransactions, bool[] memory results) {
+        
+        bool isSenderStaker = isAddressStaker(msg.sender);
         address to_aux;
+        PayData memory payment;
         results = new bool[](payData.length);
+
         for (uint256 iteration = 0; iteration < payData.length; iteration++) {
+            payment = payData[iteration];
             if (
                 !SignatureUtils.verifyMessageSignedForPay(
                     evvmMetadata.EvvmID,
-                    payData[iteration].from,
-                    payData[iteration].to_address,
-                    payData[iteration].to_identity,
-                    payData[iteration].token,
-                    payData[iteration].amount,
-                    payData[iteration].priorityFee,
-                    payData[iteration].nonce,
-                    payData[iteration].priorityFlag,
-                    payData[iteration].executor,
-                    payData[iteration].signature
+                    payment.from,
+                    payment.to_address,
+                    payment.to_identity,
+                    payment.token,
+                    payment.amount,
+                    payment.priorityFee,
+                    payment.nonce,
+                    payment.priorityFlag,
+                    payment.executor,
+                    payment.signature
                 )
             ) revert ErrorsLib.InvalidSignature();
 
-            if (payData[iteration].executor != address(0)) {
-                if (msg.sender != payData[iteration].executor) {
-                    results[iteration] = false;
-                    continue;
-                }
+            if (
+                payment.executor != address(0) && msg.sender != payment.executor
+            ) {
+                results[iteration] = false;
+                continue;
             }
 
-            if (payData[iteration].priorityFlag) {
+            if (payment.priorityFlag) {
                 /// @dev priorityFlag == true (async)
 
-                if (
-                    !asyncUsedNonce[payData[iteration].from][
-                        payData[iteration].nonce
-                    ]
-                ) {
-                    asyncUsedNonce[payData[iteration].from][
-                        payData[iteration].nonce
-                    ] = true;
-                } else {
+                if (asyncUsedNonce[payment.from][payment.nonce]) {
                     results[iteration] = false;
                     continue;
                 }
             } else {
                 /// @dev priorityFlag == false (sync)
 
-                if (
-                    nextSyncUsedNonce[payData[iteration].from] ==
-                    payData[iteration].nonce
-                ) {
-                    nextSyncUsedNonce[payData[iteration].from]++;
-                } else {
+                if (nextSyncUsedNonce[payment.from] != payment.nonce) {
                     results[iteration] = false;
                     continue;
                 }
             }
 
-            to_aux = !AdvancedStrings.equal(payData[iteration].to_identity, "")
+            if (
+                (isSenderStaker ? payment.priorityFee : 0) + payment.amount >
+                balances[payment.from][payment.token]
+            ) {
+                results[iteration] = false;
+                continue;
+            }
+
+            to_aux = !AdvancedStrings.equal(payment.to_identity, "")
                 ? NameService(nameServiceAddress)
-                    .verifyStrictAndGetOwnerOfIdentity(
-                        payData[iteration].to_identity
-                    )
-                : payData[iteration].to_address;
+                    .verifyStrictAndGetOwnerOfIdentity(payment.to_identity)
+                : payment.to_address;
 
-            if (
-                payData[iteration].priorityFee + payData[iteration].amount >
-                balances[payData[iteration].from][payData[iteration].token]
-            ) {
-                results[iteration] = false;
-                continue;
-            }
+            /// @dev Because of the previous check, _updateBalance can´t fail
 
-            if (
-                !_updateBalance(
-                    payData[iteration].from,
-                    to_aux,
-                    payData[iteration].token,
-                    payData[iteration].amount
-                )
-            ) {
-                results[iteration] = false;
-                continue;
-            } else {
-                if (
-                    payData[iteration].priorityFee > 0 &&
-                    isAddressStaker(msg.sender)
-                ) {
-                    if (
-                        !_updateBalance(
-                            payData[iteration].from,
-                            msg.sender,
-                            payData[iteration].token,
-                            payData[iteration].priorityFee
-                        )
-                    ) {
-                        results[iteration] = false;
-                        continue;
-                    }
-                }
+            _updateBalance(payment.from, to_aux, payment.token, payment.amount);
 
-                successfulTransactions++;
-                results[iteration] = true;
-            }
+            if (payment.priorityFee > 0 && isSenderStaker)
+                _updateBalance(
+                    payment.from,
+                    msg.sender,
+                    payment.token,
+                    payment.priorityFee
+                );
+
+            if (payment.priorityFlag)
+                asyncUsedNonce[payment.from][payment.nonce] = true;
+            else nextSyncUsedNonce[payment.from]++;
+
+            successfulTransactions++;
+            results[iteration] = true;
         }
 
-        if (isAddressStaker(msg.sender)) {
-            _giveReward(msg.sender, successfulTransactions);
-        }
+        if (isSenderStaker) _giveReward(msg.sender, successfulTransactions);
     }
 
     /**
@@ -562,7 +549,7 @@ contract Evvm is EvvmStorage {
      *
      * Staker Benefits:
      * - Executor receives priority fee (if staker)
-     * - MATE reward based on number of successful distributions
+     * - Principal Token reward based on number of successful distributions
      *
      * @param from Address of the payment sender
      * @param toData Array of recipient data with addresses/identities and amounts
@@ -600,10 +587,8 @@ contract Evvm is EvvmStorage {
             )
         ) revert ErrorsLib.InvalidSignature();
 
-        if (executor != address(0)) {
-            if (msg.sender != executor)
-                revert ErrorsLib.SenderIsNotTheExecutor();
-        }
+        if ((executor != address(0)) && (msg.sender != executor))
+            revert ErrorsLib.SenderIsNotTheExecutor();
 
         if (priorityFlag) {
             if (asyncUsedNonce[from][nonce])
@@ -613,11 +598,13 @@ contract Evvm is EvvmStorage {
                 revert ErrorsLib.SyncNonceMismatch();
         }
 
-        if (balances[from][token] < amount + priorityFee)
+        bool isSenderStaker = isAddressStaker(msg.sender);
+
+        if (balances[from][token] < amount + (isSenderStaker ? priorityFee : 0))
             revert ErrorsLib.InsufficientBalance();
 
         uint256 acomulatedAmount = 0;
-        balances[from][token] -= (amount + priorityFee);
+        balances[from][token] -= (amount + (isSenderStaker ? priorityFee : 0));
         address to_aux;
         for (uint256 i = 0; i < toData.length; i++) {
             acomulatedAmount += toData[i].amount;
@@ -629,8 +616,8 @@ contract Evvm is EvvmStorage {
                     )
                 ) {
                     to_aux = NameService(nameServiceAddress).getOwnerOfIdentity(
-                            toData[i].to_identity
-                        );
+                        toData[i].to_identity
+                    );
                 }
             } else {
                 to_aux = toData[i].to_address;
@@ -639,22 +626,15 @@ contract Evvm is EvvmStorage {
             balances[to_aux][token] += toData[i].amount;
         }
 
-        if (acomulatedAmount != amount)
-            revert ErrorsLib.InvalidAmount(acomulatedAmount, amount);
+        if (acomulatedAmount != amount) revert ErrorsLib.InvalidAmount();
 
-        if (isAddressStaker(msg.sender)) {
+        if (isSenderStaker) {
             _giveReward(msg.sender, 1);
             balances[msg.sender][token] += priorityFee;
-        } else {
-            balances[from][token] += priorityFee;
         }
 
-        if (priorityFlag) {
-            asyncUsedNonce[from][nonce] = true;
-        } else {
-            nextSyncUsedNonce[from]++;
-        }
-
+        if (priorityFlag) asyncUsedNonce[from][nonce] = true;
+        else nextSyncUsedNonce[from]++;
     }
 
     /**
@@ -693,12 +673,9 @@ contract Evvm is EvvmStorage {
 
         if (size == 0) revert ErrorsLib.NotAnCA();
 
-        if (!_updateBalance(from, to, token, amount))
-            revert ErrorsLib.UpdateBalanceFailed();
+        _updateBalance(from, to, token, amount);
 
-        if (isAddressStaker(msg.sender)) {
-            _giveReward(msg.sender, 1);
-        }
+        if (isAddressStaker(msg.sender)) _giveReward(msg.sender, 1);
     }
 
     /**
@@ -741,27 +718,21 @@ contract Evvm is EvvmStorage {
 
         if (size == 0) revert ErrorsLib.NotAnCA();
 
-        uint256 acomulatedAmount = 0;
         if (balances[msg.sender][token] < amount)
             revert ErrorsLib.InsufficientBalance();
+
+        uint256 acomulatedAmount = 0;
 
         balances[msg.sender][token] -= amount;
 
         for (uint256 i = 0; i < toData.length; i++) {
             acomulatedAmount += toData[i].amount;
-            if (acomulatedAmount > amount)
-                revert ErrorsLib.InvalidAmount(acomulatedAmount, amount);
-
             balances[toData[i].toAddress][token] += toData[i].amount;
         }
 
-        if (acomulatedAmount != amount)
-            revert ErrorsLib.InvalidAmount(acomulatedAmount, amount);
+        if (acomulatedAmount != amount) revert ErrorsLib.InvalidAmount();
 
-        if (isAddressStaker(msg.sender)) {
-            _giveReward(msg.sender, 1);
-        }
-
+        if (isAddressStaker(msg.sender)) _giveReward(msg.sender, 1);
     }
 
     //░▒▓█Treasury exclusive functions██████████████████████████████████████████▓▒░
@@ -871,23 +842,19 @@ contract Evvm is EvvmStorage {
      * @param to Address to transfer tokens to
      * @param token Address of the token contract
      * @param value Amount of tokens to transfer
-     * @return success True if transfer completed, false if insufficient balance
      */
     function _updateBalance(
         address from,
         address to,
         address token,
         uint256 value
-    ) internal returns (bool) {
+    ) internal {
         uint256 fromBalance = balances[from][token];
-        if (fromBalance < value) {
-            return false;
-        } else {
-            unchecked {
-                balances[from][token] = fromBalance - value;
-                balances[to][token] += value;
-            }
-            return true;
+        if (fromBalance < value) revert ErrorsLib.InsufficientBalance();
+
+        unchecked {
+            balances[from][token] = fromBalance - value;
+            balances[to][token] += value;
         }
     }
 
@@ -940,6 +907,7 @@ contract Evvm is EvvmStorage {
      * @param _newImpl Address of the new implementation contract
      */
     function proposeImplementation(address _newImpl) external onlyAdmin {
+        if (_newImpl == address(0)) revert ErrorsLib.IncorrectAddressInput();
         proposalImplementation = _newImpl;
         timeToAcceptImplementation =
             block.timestamp +
@@ -960,23 +928,12 @@ contract Evvm is EvvmStorage {
      * @dev Executes the proxy upgrade to the new implementation contract
      */
     function acceptImplementation() external onlyAdmin {
-        if (block.timestamp < timeToAcceptImplementation) revert();
+        if (block.timestamp < timeToAcceptImplementation)
+            revert ErrorsLib.TimeLockNotExpired();
+
         currentImplementation = proposalImplementation;
         proposalImplementation = address(0);
         timeToAcceptImplementation = 0;
-    }
-
-    //█ NameService Integration Functions ████████████████████████████████████████
-
-    /**
-     * @notice Updates the NameService contract address for identity resolution
-     * @dev Allows admin to change the NameService integration address
-     * @param _nameServiceAddress Address of the new NameService contract
-     */
-    function setNameServiceAddress(
-        address _nameServiceAddress
-    ) external onlyAdmin {
-        nameServiceAddress = _nameServiceAddress;
     }
 
     //█ Admin Management Functions ███████████████████████████████████████████████
@@ -987,12 +944,14 @@ contract Evvm is EvvmStorage {
      * @param _newOwner Address of the proposed new admin
      */
     function proposeAdmin(address _newOwner) external onlyAdmin {
-        if (_newOwner == address(0) || _newOwner == admin.current) {
-            revert();
-        }
+        if (_newOwner == address(0) || _newOwner == admin.current)
+            revert ErrorsLib.IncorrectAddressInput();
 
-        admin.proposal = _newOwner;
-        admin.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
+        admin = AddressTypeProposal({
+            current: admin.current,
+            proposal: _newOwner,
+            timeToAccept: block.timestamp + TIME_TO_ACCEPT_PROPOSAL
+        });
     }
 
     /**
@@ -1000,8 +959,11 @@ contract Evvm is EvvmStorage {
      * @dev Allows current admin to reject proposed admin changes
      */
     function rejectProposalAdmin() external onlyAdmin {
-        admin.proposal = address(0);
-        admin.timeToAccept = 0;
+        admin = AddressTypeProposal({
+            current: admin.current,
+            proposal: address(0),
+            timeToAccept: 0
+        });
     }
 
     /**
@@ -1009,17 +971,17 @@ contract Evvm is EvvmStorage {
      * @dev Can only be called by the proposed admin after the time delay
      */
     function acceptAdmin() external {
-        if (block.timestamp < admin.timeToAccept) {
-            revert();
-        }
-        if (msg.sender != admin.proposal) {
-            revert();
-        }
+        if (block.timestamp < admin.timeToAccept)
+            revert ErrorsLib.TimeLockNotExpired();
 
-        admin.current = admin.proposal;
+        if (msg.sender != admin.proposal)
+            revert ErrorsLib.SenderIsNotTheProposedAdmin();
 
-        admin.proposal = address(0);
-        admin.timeToAccept = 0;
+        admin = AddressTypeProposal({
+            current: admin.proposal,
+            proposal: address(0),
+            timeToAccept: 0
+        });
     }
 
     //█ Reward System Functions ███████████████████████████████████████████████████████████████
@@ -1100,9 +1062,8 @@ contract Evvm is EvvmStorage {
      * @param answer Bytes1 flag indicating staker status/type
      */
     function pointStaker(address user, bytes1 answer) public {
-        if (msg.sender != stakingContractAddress) {
-            revert();
-        }
+        if (msg.sender != stakingContractAddress) revert();
+
         stakerList[user] = answer;
     }
 
@@ -1125,10 +1086,22 @@ contract Evvm is EvvmStorage {
         return evvmMetadata;
     }
 
+    /**
+     * @notice Gets the address representing the Principal Token in balance mappings
+     * @dev Returns the virtual address used to track Principal Token balances in the balances mapping
+     *      This is not an ERC20 contract address but a sentinel value for the EVVM-native token
+     * @return Address used as the key for Principal Token balances
+     */
     function getPrincipalTokenAddress() external view returns (address) {
         return evvmMetadata.principalTokenAddress;
     }
 
+    /**
+     * @notice Gets the address representing native chain currency (ETH/MATIC) in balance mappings
+     * @dev Returns address(0) which is the standard sentinel for native blockchain tokens
+     *      Use this address as the token parameter when dealing with ETH or chain-native assets
+     * @return address(0) representing the native chain currency
+     */
     function getChainHostCoinAddress() external pure returns (address) {
         return address(0);
     }
@@ -1247,16 +1220,16 @@ contract Evvm is EvvmStorage {
     /**
      * @notice Gets the current Principal Token reward amount per transaction
      * @dev Returns the base reward distributed to stakers for transaction processing
-     * @return Current reward amount in MATE tokens
+     * @return Current reward amount in Principal Tokens
      */
     function getRewardAmount() public view returns (uint256) {
         return evvmMetadata.reward;
     }
 
     /**
-     * @notice Gets the total supply of the principal token (MATE)
+     * @notice Gets the total supply of the Principal Token
      * @dev Returns the current total supply used for era transition calculations
-     * @return Total supply of MATE tokens
+     * @return Total supply of Principal Tokens
      */
     function getPrincipalTokenTotalSupply() public view returns (uint256) {
         return evvmMetadata.totalSupply;

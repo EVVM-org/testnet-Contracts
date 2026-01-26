@@ -1,405 +1,310 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
-
-:::::::::: :::    ::: ::::::::: :::::::::      ::::::::::: :::::::::: :::::::: ::::::::::: 
-:+:        :+:    :+:      :+:       :+:           :+:     :+:       :+:    :+:    :+:     
-+:+        +:+    +:+     +:+       +:+            +:+     +:+       +:+           +:+     
-:#::+::#   +#+    +:+    +#+       +#+             +#+     +#++:++#  +#++:++#++    +#+     
-+#+        +#+    +#+   +#+       +#+              +#+     +#+              +#+    +#+     
-#+#        #+#    #+#  #+#       #+#               #+#     #+#       #+#    #+#    #+#     
-###         ########  ######### #########          ###     ########## ########     ###     
-
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract fuzzTest_NameService_acceptOffer is Test, Constants {
-    AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
+    AccountData FISHER_NO_STAKER = WILDCARD_USER;
+    AccountData FISHER_STAKER = COMMON_USER_STAKER;
+
+    AccountData USER_USERNAME_OWNER = COMMON_USER_NO_STAKER_1;
+    AccountData USER = COMMON_USER_NO_STAKER_2;
+
+    uint256 AMOUNT_OFFER = 1 ether;
+
+    string USERNAME = "alice";
+
+    struct Params {
+        AccountData user;
+        string username;
+        uint256 offerID;
+        uint256 nonceNameService;
+        bytes signatureNameService;
+        uint256 priorityFee;
+        uint256 nonceEVVM;
+        bool priorityEVVM;
+        bytes signatureEVVM;
+    }
 
     function executeBeforeSetUp() internal override {
         _execute_makeRegistrationUsername(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2)
+            USER_USERNAME_OWNER,
+            USERNAME,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+            )
         );
     }
 
-    function addBalance(
+    function _addBalance(
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(user.Address, MATE_TOKEN_ADDRESS, priorityFeeAmount);
+        evvm.addBalance(
+            user.Address,
+            PRINCIPAL_TOKEN_ADDRESS,
+            priorityFeeAmount
+        );
 
-        totalPriorityFeeAmount = priorityFeeAmount;
+        return priorityFeeAmount;
     }
 
-    /**
-     * Function to test:
-     * nS: No staker
-     * S: Staker
-     * PF: Includes priority fee
-     * nPF: No priority fee
-     */
-
-    struct AcceptOfferFuzzTestInput_nPF {
-        uint16 amountToOffer;
-        uint8 nonceNameService;
-        uint8 nonceEVVM;
-        bool priorityFlagEVVM;
-    }
-
-    struct AcceptOfferFuzzTestInput_PF {
-        uint16 amountToOffer;
-        uint8 nonceNameService;
+    struct Input {
+        // makeOffer parameters
+        uint128 amountToOffer;
+        uint8 expirationDateDays;
+        // acceptOffer parameters
+        uint256 nonceNameService;
         uint32 priorityFeeAmountEVVM;
-        uint8 nonceEVVM;
+        uint256 nonceAsyncEVVM;
         bool priorityFlagEVVM;
     }
 
-    function test__fuzz__acceptOffer__nS_nPF(
-        AcceptOfferFuzzTestInput_nPF memory input
-    ) external {
+    function test__fuzz__acceptOffer__noStaker(Input memory input) external {
         vm.assume(input.amountToOffer > 0);
-
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
-
-        makeOffer(
-            COMMON_USER_NO_STAKER_2,
-            "test",
-            block.timestamp + 30 days,
-            input.amountToOffer,
-            10001,
-            101,
-            true
+        vm.assume(input.expirationDateDays > 0);
+        vm.assume(
+            input.nonceNameService <
+                uint256(
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                )
         );
+        vm.assume(
+            input.nonceAsyncEVVM <
+                uint256(
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                )
+        );
+
+        uint offerID = _execute_makeMakeOffer(
+            USER,
+            USERNAME,
+            block.timestamp + (uint256(input.expirationDateDays) * 1 days),
+            input.amountToOffer,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+            ),
+            0,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
+            ),
+            true,
+            GOLDEN_STAKER
+        );
+
+        Params memory params = Params({
+            user: USER_USERNAME_OWNER,
+            username: USERNAME,
+            offerID: offerID,
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: uint256(input.priorityFeeAmountEVVM),
+            nonceEVVM: input.priorityFlagEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            priorityEVVM: input.priorityFlagEVVM,
+            signatureEVVM: ""
+        });
+
+        _addBalance(params.user, params.priorityFee);
 
         (
-            bytes memory signatureNameService,
-
+            params.signatureNameService,
+            params.signatureEVVM
         ) = _execute_makeAcceptOfferSignatures(
-                COMMON_USER_NO_STAKER_1,
-                false,
-                "test",
-                0,
-                input.nonceNameService,
-                0,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            input.nonceNameService,
-            signatureNameService,
-            0,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            ""
+            params.user,
+            params.username,
+            params.offerID,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
         );
 
+        vm.prank(FISHER_NO_STAKER.Address);
+        nameService.acceptOffer(
+            params.user.Address,
+            params.username,
+            params.offerID,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
+        );
         vm.stopPrank();
 
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_2.Address);
+        NameService.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            checkData.amount
+            checkData.offerer,
+            address(0),
+            "Error: offerer address should be zeroed out"
         );
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_3.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
+            checkData.expireDate,
+            block.timestamp + (uint256(input.expirationDateDays) * 1 days),
+            "Error: offer expiration date should remain the same"
+        );
+
+        assertEq(
+            checkData.amount,
+            ((uint256(input.amountToOffer) * 995) / 1000),
+            "Error: offer amount should remain the same"
+        );
+
+        (address owner, ) = nameService.getIdentityBasicMetadata(
+            params.username
+        );
+
+        assertEq(
+            owner,
+            USER.Address,
+            "Error: username owner not updated correctly"
+        );
+
+        assertEq(
+            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "Error staker: balance incorrectly changed"
         );
     }
 
-    function test__fuzz__acceptOffer__nS_PF(
-        AcceptOfferFuzzTestInput_PF memory input
-    ) external {
-        vm.assume(input.amountToOffer > 0 && input.priorityFeeAmountEVVM > 0);
-
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
-
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            input.priorityFeeAmountEVVM
-        );
-
-        makeOffer(
-            COMMON_USER_NO_STAKER_2,
-            "test",
-            block.timestamp + 30 days,
-            input.amountToOffer,
-            10001,
-            101,
-            true
-        );
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
-                COMMON_USER_NO_STAKER_1,
-                true,
-                "test",
-                0,
-                input.nonceNameService,
-                input.priorityFeeAmountEVVM,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            input.nonceNameService,
-            signatureNameService,
-            amountPriorityFee,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_2.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            checkData.amount
-        );
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_3.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
-        );
-    }
-
-    function test__fuzz__acceptOffer__S_nPF(
-        AcceptOfferFuzzTestInput_nPF memory input
-    ) external {
+    function test__fuzz__acceptOffer__staker(Input memory input) external {
         vm.assume(input.amountToOffer > 0);
-
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
-
-        makeOffer(
-            COMMON_USER_NO_STAKER_2,
-            "test",
-            block.timestamp + 30 days,
-            input.amountToOffer,
-            10001,
-            101,
-            true
+        vm.assume(input.expirationDateDays > 0);
+        vm.assume(
+            input.nonceNameService <
+                uint256(
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                )
         );
+        vm.assume(
+            input.nonceAsyncEVVM <
+                uint256(
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                )
+        );
+
+        uint offerID = _execute_makeMakeOffer(
+            USER,
+            USERNAME,
+            block.timestamp + (uint256(input.expirationDateDays) * 1 days),
+            input.amountToOffer,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+            ),
+            0,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
+            ),
+            true,
+            GOLDEN_STAKER
+        );
+
+        Params memory params = Params({
+            user: USER_USERNAME_OWNER,
+            username: USERNAME,
+            offerID: offerID,
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: uint256(input.priorityFeeAmountEVVM),
+            nonceEVVM: input.priorityFlagEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            priorityEVVM: input.priorityFlagEVVM,
+            signatureEVVM: ""
+        });
+
+        _addBalance(params.user, params.priorityFee);
 
         (
-            bytes memory signatureNameService,
-
+            params.signatureNameService,
+            params.signatureEVVM
         ) = _execute_makeAcceptOfferSignatures(
-                COMMON_USER_NO_STAKER_1,
-                false,
-                "test",
-                0,
-                input.nonceNameService,
-                0,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        uint256 amountOfStakerBefore = evvm.getBalance(
-            COMMON_USER_STAKER.Address,
-            MATE_TOKEN_ADDRESS
+            params.user,
+            params.username,
+            params.offerID,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
         );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
+        vm.prank(FISHER_STAKER.Address);
         nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            input.nonceNameService,
-            signatureNameService,
-            0,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            ""
+            params.user.Address,
+            params.username,
+            params.offerID,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
         );
-
         vm.stopPrank();
 
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_2.Address);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            checkData.amount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            (evvm.getRewardAmount()) +
-                (((checkData.amount * 1) / 199) / 4) +
-                amountOfStakerBefore
-        );
-    }
-
-    function test__fuzz__acceptOffer__S_PF(
-        AcceptOfferFuzzTestInput_PF memory input
-    ) external {
-        vm.assume(input.amountToOffer > 0 && input.priorityFeeAmountEVVM > 0);
-
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
-
-        uint256 amountPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            input.priorityFeeAmountEVVM
-        );
-
-        makeOffer(
-            COMMON_USER_NO_STAKER_2,
-            "test",
-            block.timestamp + 30 days,
-            input.amountToOffer,
-            10001,
-            101,
-            true
-        );
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
-                COMMON_USER_NO_STAKER_1,
-                true,
-                "test",
-                0,
-                input.nonceNameService,
-                input.priorityFeeAmountEVVM,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
-
         NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        uint256 amountOfStakerBefore = evvm.getBalance(
-            COMMON_USER_STAKER.Address,
-            MATE_TOKEN_ADDRESS
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        nameService.acceptOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            0,
-            input.nonceNameService,
-            signatureNameService,
-            amountPriorityFee,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata("test");
-
-        assertEq(user, COMMON_USER_NO_STAKER_2.Address);
+            .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            checkData.amount
+            checkData.offerer,
+            address(0),
+            "Error: offerer address should be zeroed out"
         );
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            (evvm.getRewardAmount()) +
-                (((checkData.amount * 1) / 199) / 4) +
-                input.priorityFeeAmountEVVM +
-                amountOfStakerBefore
+            checkData.expireDate,
+            block.timestamp + (uint256(input.expirationDateDays) * 1 days),
+            "Error: offer expiration date should remain the same"
+        );
+
+        assertEq(
+            checkData.amount,
+            ((uint256(input.amountToOffer) * 995) / 1000),
+            "Error: offer amount should remain the same"
+        );
+
+        (address owner, ) = nameService.getIdentityBasicMetadata(
+            params.username
+        );
+
+        assertEq(
+            owner,
+            USER.Address,
+            "Error: username owner not updated correctly"
+        );
+
+        assertEq(
+            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((evvm.getRewardAmount()) +
+                (((uint256(checkData.amount) * 1) / 199) / 4) +
+                uint256(params.priorityFee)),
+            "Error staker: balance incorrectly changed"
         );
     }
 }

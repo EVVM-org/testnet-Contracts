@@ -1,92 +1,53 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for 
- * @notice some functions has evvm functions that are implemented
- *         and dosent need to be tested here
+/**                                                                                                        
+██  ██ ▄▄  ▄▄ ▄▄ ▄▄▄▄▄▄   ▄▄▄▄▄▄ ▄▄▄▄▄  ▄▄▄▄ ▄▄▄▄▄▄ 
+██  ██ ███▄██ ██   ██       ██   ██▄▄  ███▄▄   ██   
+▀████▀ ██ ▀██ ██   ██       ██   ██▄▄▄ ▄▄██▀   ██   
+                                                    
+                                                    
+                                                    
+ ▄▄▄▄  ▄▄▄  ▄▄▄▄  ▄▄▄▄  ▄▄▄▄▄  ▄▄▄▄ ▄▄▄▄▄▄          
+██▀▀▀ ██▀██ ██▄█▄ ██▄█▄ ██▄▄  ██▀▀▀   ██            
+▀████ ▀███▀ ██ ██ ██ ██ ██▄▄▄ ▀████   ██                                                    
  */
+
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants} from "test/Constants.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
-    AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
-
-    function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
-    }
-
-    function giveMateToExecute(
-        address user,
-        uint256 stakingAmount,
-        uint256 priorityFee
+    function _addBalance(
+        uint256 stakingAmount
     ) private returns (uint256 totalOfMate) {
         evvm.addBalance(
-            user,
-            MATE_TOKEN_ADDRESS,
-            (staking.priceOfStaking() * stakingAmount) + priorityFee
+            GOLDEN_STAKER.Address,
+            PRINCIPAL_TOKEN_ADDRESS,
+            (staking.priceOfStaking() * stakingAmount)
         );
 
-        totalOfMate = (staking.priceOfStaking() * stakingAmount) + priorityFee;
-    }
-
-    function calculateRewardPerExecution(
-        uint256 numberOfTx
-    ) private view returns (uint256) {
-        return (evvm.getRewardAmount() * 2) * numberOfTx;
+        totalOfMate = (staking.priceOfStaking() * stakingAmount);
     }
 
     function test__unit_correct__goldenStaking__staking() external {
-        uint256 totalOfMate = giveMateToExecute(GOLDEN_STAKER.Address, 10, 0);
+        uint256 totalOfMate = _addBalance(10);
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            GOLDEN_STAKER.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                0,
-                evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
-                false,
-                address(staking)
-            )
-        );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
+        bytes memory signatureEVVM = _execute_makeSignaturePay(
+            GOLDEN_STAKER,
+            address(staking),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            totalOfMate,
+            0,
+            evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
+            false,
+            address(staking)
         );
 
         vm.startPrank(GOLDEN_STAKER.Address);
@@ -95,51 +56,52 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
 
         vm.stopPrank();
 
-        assert(evvm.isAddressStaker(GOLDEN_STAKER.Address));
-
         Staking.HistoryMetadata[]
             memory history = new Staking.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(GOLDEN_STAKER.Address)
             );
         history = staking.getAddressHistory(GOLDEN_STAKER.Address);
 
-        assertEq(
-            evvm.getBalance(GOLDEN_STAKER.Address, MATE_TOKEN_ADDRESS),
-            calculateRewardPerExecution(1)
+        assertTrue(
+            evvm.isAddressStaker(GOLDEN_STAKER.Address),
+            "golden user is not pointer as staker"
         );
-        assertEq(history[0].timestamp, block.timestamp);
-        assert(history[0].transactionType == DEPOSIT_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[0].amount, 10);
-        assertEq(history[0].totalStaked, 10);
+
+        assertEq(
+            evvm.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (evvm.getRewardAmount() * 2),
+            "balance after staking is not correct"
+        );
+
+        assertEq(
+            history[0].timestamp,
+            block.timestamp,
+            "timestamp in history [0] is not correct"
+        );
+
+        assertEq(
+            history[0].transactionType,
+            DEPOSIT_HISTORY_SMATE_IDENTIFIER,
+            "transactionType in history [0] is not correct"
+        );
+
+        assertEq(history[0].amount, 10, "amount in history [0] is not correct");
+
+        assertEq(
+            history[0].totalStaked,
+            10,
+            "totalStaked in history [0] is not correct"
+        );
     }
 
     function test__unit_correct__goldenStaking__unstaking() external {
-        uint256 totalOfMate = giveMateToExecute(GOLDEN_STAKER.Address, 2, 0);
+        _addBalance(10);
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            GOLDEN_STAKER.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                0,
-                evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
-                false,
-                address(staking)
-            )
-        );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        _execute_makeGoldenStaking(true, 10);
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
-        staking.goldenStaking(true, 2, signatureEVVM);
-        staking.goldenStaking(false, 1, "");
+        staking.goldenStaking(false, 4, bytes(hex""));
 
         vm.stopPrank();
 
@@ -149,83 +111,145 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
             );
         history = staking.getAddressHistory(GOLDEN_STAKER.Address);
 
-        assert(evvm.isAddressStaker(GOLDEN_STAKER.Address));
-
-        assertEq(
-            evvm.getBalance(GOLDEN_STAKER.Address, MATE_TOKEN_ADDRESS),
-            calculateRewardPerExecution(2) + staking.priceOfStaking()
+        assertTrue(
+            evvm.isAddressStaker(GOLDEN_STAKER.Address),
+            "golden user must still be pointer as staker"
         );
 
-        assertEq(history[0].timestamp, block.timestamp);
-        assert(history[0].transactionType == DEPOSIT_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[0].amount, 2);
-        assertEq(history[0].totalStaked, 2);
+        assertEq(
+            evvm.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((evvm.getRewardAmount() * 2) * 2) + (staking.priceOfStaking() * 4),
+            "balance after staking is not correct"
+        );
 
-        assertEq(history[1].timestamp, block.timestamp);
-        assert(history[1].transactionType == WITHDRAW_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[1].amount, 1);
-        assertEq(history[1].totalStaked, 1);
+        assertEq(
+            history[1].timestamp,
+            block.timestamp,
+            "timestamp in history [1] is not correct"
+        );
+
+        assertEq(
+            history[1].transactionType,
+            WITHDRAW_HISTORY_SMATE_IDENTIFIER,
+            "transactionType in history [1] is not correct"
+        );
+
+        assertEq(history[1].amount, 4, "amount in history [1] is not correct");
+
+        assertEq(
+            history[1].totalStaked,
+            6,
+            "totalStaked in history [1] is not correct"
+        );
     }
 
-    function test__unit_correct__goldenStaking__fullUnstaking() external {
-        uint256 totalOfMate = giveMateToExecute(GOLDEN_STAKER.Address, 2, 0);
+    function test__unit_correct__goldenStaking__fullunstaking() external {
+        uint256 amountToStake = _addBalance(10);
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            GOLDEN_STAKER.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                0,
-                evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
-                false,
-                address(staking)
-            )
-        );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        _execute_makeGoldenStaking(true, 10);
+
+        skip(staking.getSecondsToUnlockFullUnstaking());
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
-        staking.goldenStaking(true, 2, signatureEVVM);
-
-        vm.warp(
-            staking.getTimeToUserUnlockFullUnstakingTime(GOLDEN_STAKER.Address)
-        );
-
-        console2.log(evvm.getBalance(address(staking), MATE_TOKEN_ADDRESS));
-
-        staking.goldenStaking(false, 2, "");
+        staking.goldenStaking(false, 10, bytes(hex""));
 
         vm.stopPrank();
-
-        assertEq(
-            evvm.getBalance(GOLDEN_STAKER.Address, MATE_TOKEN_ADDRESS),
-            (calculateRewardPerExecution(1)) + (staking.priceOfStaking() * 2)
-        );
-
-        assert(!evvm.isAddressStaker(GOLDEN_STAKER.Address));
 
         Staking.HistoryMetadata[]
             memory history = new Staking.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(GOLDEN_STAKER.Address)
             );
-
         history = staking.getAddressHistory(GOLDEN_STAKER.Address);
 
-        assertEq(history[0].timestamp, 1);
-        assert(history[0].transactionType == DEPOSIT_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[0].amount, 2);
-        assertEq(history[0].totalStaked, 2);
+        assertFalse(
+            evvm.isAddressStaker(GOLDEN_STAKER.Address),
+            "golden user must be pointer as not staker anymore"
+        );
 
-        assertEq(history[1].timestamp, block.timestamp);
-        assert(history[1].transactionType == WITHDRAW_HISTORY_SMATE_IDENTIFIER);
-        assertEq(history[1].amount, 2);
-        assertEq(history[1].totalStaked, 0);
+        assertEq(
+            evvm.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((evvm.getRewardAmount() * 2)) + amountToStake,
+            "balance after staking is not correct"
+        );
+
+        assertEq(
+            history[1].timestamp,
+            block.timestamp,
+            "timestamp in history [1] is not correct"
+        );
+
+        assertEq(
+            history[1].transactionType,
+            WITHDRAW_HISTORY_SMATE_IDENTIFIER,
+            "transactionType in history [1] is not correct"
+        );
+
+        assertEq(history[1].amount, 10, "amount in history [1] is not correct");
+
+        assertEq(
+            history[1].totalStaked,
+            0,
+            "totalStaked in history [1] is not correct"
+        );
+    }
+
+    function test__unit_correct__goldenStaking__stakeAfterFullunstaking()
+        external
+    {
+        _addBalance(10);
+
+        _execute_makeGoldenStaking(true, 10);
+
+        skip(staking.getSecondsToUnlockFullUnstaking());
+
+        _execute_makeGoldenStaking(false, 10);
+
+        skip(staking.getSecondsToUnlockStaking());
+
+        vm.startPrank(GOLDEN_STAKER.Address);
+        staking.goldenStaking(
+            true,
+            10,
+            _execute_makeGoldenStakingSignature(true, 10)
+        );
+        vm.stopPrank();
+
+        Staking.HistoryMetadata[]
+            memory history = new Staking.HistoryMetadata[](
+                staking.getSizeOfAddressHistory(GOLDEN_STAKER.Address)
+            );
+        history = staking.getAddressHistory(GOLDEN_STAKER.Address);
+
+        assertTrue(
+            evvm.isAddressStaker(GOLDEN_STAKER.Address),
+            "golden user must be pointer as staker again"
+        );
+
+        assertEq(
+            evvm.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (evvm.getRewardAmount() * 2) * 2,
+            "balance after staking is not correct"
+        );
+
+        assertEq(
+            history[2].timestamp,
+            block.timestamp,
+            "timestamp in history [2] is not correct"
+        );
+
+        assertEq(
+            history[2].transactionType,
+            DEPOSIT_HISTORY_SMATE_IDENTIFIER,
+            "transactionType in history [2] is not correct"
+        );
+
+        assertEq(history[2].amount, 10, "amount in history [2] is not correct");
+
+        assertEq(
+            history[2].totalStaked,
+            10,
+            "totalStaked in history [2] is not correct"
+        );
     }
 }

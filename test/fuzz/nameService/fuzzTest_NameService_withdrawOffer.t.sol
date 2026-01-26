@@ -1,285 +1,275 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
-
-:::::::::: :::    ::: ::::::::: :::::::::      ::::::::::: :::::::::: :::::::: ::::::::::: 
-:+:        :+:    :+:      :+:       :+:           :+:     :+:       :+:    :+:    :+:     
-+:+        +:+    +:+     +:+       +:+            +:+     +:+       +:+           +:+     
-:#::+::#   +#+    +:+    +#+       +#+             +#+     +#++:++#  +#++:++#++    +#+     
-+#+        +#+    +#+   +#+       +#+              +#+     +#+              +#+    +#+     
-#+#        #+#    #+#  #+#       #+#               #+#     #+#       #+#    #+#    #+#     
-###         ########  ######### #########          ###     ########## ########     ###     
-
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract fuzzTest_NameService_withdrawOffer is Test, Constants {
-    AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
+    AccountData FISHER_NO_STAKER = WILDCARD_USER;
+    AccountData FISHER_STAKER = COMMON_USER_STAKER;
+
+    AccountData USER_USERNAME_OWNER = COMMON_USER_NO_STAKER_1;
+    AccountData USER = COMMON_USER_NO_STAKER_2;
+
+    uint256 OFFER_ID;
+    uint256 AMOUNT_OFFER = 1 ether;
+    uint256 EXPIRATION_DATE = block.timestamp + 30 days;
+
+    string USERNAME = "alice";
+
+    struct Params {
+        AccountData user;
+        string username;
+        uint256 offerID;
+        uint256 nonceNameService;
+        bytes signatureNameService;
+        uint256 priorityFee;
+        uint256 nonceEVVM;
+        bool priorityEVVM;
+        bytes signatureEVVM;
+    }
 
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
         _execute_makeRegistrationUsername(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2)
+            USER_USERNAME_OWNER,
+            USERNAME,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+            )
+        );
+
+        OFFER_ID = _execute_makeMakeOffer(
+            USER,
+            USERNAME,
+            EXPIRATION_DATE,
+            AMOUNT_OFFER,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+            ),
+            0,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
+            ),
+            true,
+            GOLDEN_STAKER
         );
     }
 
-    function addBalance(
+    function _addBalance(
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(user.Address, MATE_TOKEN_ADDRESS, priorityFeeAmount);
+        evvm.addBalance(
+            user.Address,
+            PRINCIPAL_TOKEN_ADDRESS,
+            priorityFeeAmount
+        );
 
-        totalPriorityFeeAmount = priorityFeeAmount;
+        return priorityFeeAmount;
     }
 
-    /**
-     * Function to test:
-     * PF: Includes priority fee
-     * nPF: No priority fee
-     */
-
-    struct WithdrawOfferFuzzTestInput_nPF {
-        bool usingUserTwo;
-        bool usingFisher;
-        uint8 nonceNameService;
-        uint8 nonceEVVM;
-        bool priorityFlagEVVM;
+    struct Input {
+        uint256 nonceNameService;
+        uint32 priorityFee;
+        bool priorityEVVM;
+        uint256 nonceAsyncEVVM;
     }
 
-    struct WithdrawOfferFuzzTestInput_PF {
-        bool usingUserTwo;
-        bool usingFisher;
-        uint8 nonceNameService;
-        uint8 nonceEVVM;
-        bool priorityFlagEVVM;
-        uint16 priorityFeeAmountEVVM;
-    }
-
-    function test__fuzz__withdrawOffer__nPF(
-        WithdrawOfferFuzzTestInput_nPF memory input
-    ) external {
-        vm.assume(input.nonceNameService != 10001 && input.nonceEVVM != 101);
-
-        makeOffer(
-            COMMON_USER_NO_STAKER_2,
-            "test",
-            block.timestamp + 30 days,
-            0.001 ether,
-            10001,
-            101,
-            true
-        );
-
-        makeOffer(
-            COMMON_USER_NO_STAKER_3,
-            "test",
-            block.timestamp + 30 days,
-            0.001 ether,
-            10001,
-            101,
-            true
-        );
-
-        AccountData memory selectedUser = input.usingUserTwo
-            ? COMMON_USER_NO_STAKER_2
-            : COMMON_USER_NO_STAKER_3;
-
-        AccountData memory selectedExecuter = input.usingFisher
-            ? COMMON_USER_STAKER
-            : COMMON_USER_NO_STAKER_1;
-
-        uint256 indexSelected = input.usingUserTwo ? 0 : 1;
-
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(selectedUser.Address);
-
-        (
-            bytes memory signatureNameService,
-
-        ) = _execute_makeWithdrawOfferSignatures(
-                selectedUser,
-                false,
-                "test",
-                indexSelected,
-                input.nonceNameService,
-                0,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", indexSelected);
-
-        vm.startPrank(selectedExecuter.Address);
-
-        nameService.withdrawOffer(
-            selectedUser.Address,
-            "test",
-            indexSelected,
-            input.nonceNameService,
-            signatureNameService,
-            0,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            ""
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", indexSelected);
-
-        assertEq(checkDataAfter.offerer, address(0));
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(selectedUser.Address, MATE_TOKEN_ADDRESS),
-            checkDataBefore.amount
-        );
-        assertEq(
-            evvm.getBalance(selectedExecuter.Address, MATE_TOKEN_ADDRESS),
-            evvm.getRewardAmount() + (((checkDataBefore.amount * 1) / 796))
-        );
-    }
-
-    function test__fuzz__withdrawOffer__PF(
-        WithdrawOfferFuzzTestInput_PF memory input
-    ) external {
+    function test__fuzz__withdrawOffer__noStaking(Input memory input) external {
         vm.assume(
-            input.nonceNameService != 10001 &&
-                input.nonceEVVM != 101 &&
-                input.priorityFeeAmountEVVM != 0
+            input.nonceNameService <
+                uint256(
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                )
         );
 
-        makeOffer(
-            COMMON_USER_NO_STAKER_2,
-            "test",
-            block.timestamp + 30 days,
-            0.001 ether,
-            10001,
-            101,
-            true
+        vm.assume(
+            input.nonceAsyncEVVM <
+                uint256(
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                )
         );
+        Params memory params = Params({
+            user: USER,
+            username: USERNAME,
+            offerID: OFFER_ID,
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: input.priorityFee,
+            nonceEVVM: input.priorityEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(USER.Address),
+            priorityEVVM: input.priorityEVVM,
+            signatureEVVM: ""
+        });
 
-        makeOffer(
-            COMMON_USER_NO_STAKER_3,
-            "test",
-            block.timestamp + 30 days,
-            0.001 ether,
-            10001,
-            101,
-            true
-        );
+        _addBalance(params.user, params.priorityFee);
 
-        AccountData memory selectedUser = input.usingUserTwo
-            ? COMMON_USER_NO_STAKER_2
-            : COMMON_USER_NO_STAKER_3;
-
-        AccountData memory selectedExecuter = input.usingFisher
-            ? COMMON_USER_STAKER
-            : COMMON_USER_NO_STAKER_1;
-
-        uint256 indexSelected = input.usingUserTwo ? 0 : 1;
-
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(selectedUser.Address);
-
-        addBalance(selectedUser, input.priorityFeeAmountEVVM);
         (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            params.signatureNameService,
+            params.signatureEVVM
         ) = _execute_makeWithdrawOfferSignatures(
-                selectedUser,
-                true,
-                "test",
-                indexSelected,
-                input.nonceNameService,
-                input.priorityFeeAmountEVVM,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
+            params.user,
+            params.username,
+            params.offerID,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
+        );
 
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", indexSelected);
-
-        vm.startPrank(selectedExecuter.Address);
+        vm.startPrank(FISHER_NO_STAKER.Address);
 
         nameService.withdrawOffer(
-            selectedUser.Address,
-            "test",
-            indexSelected,
-            input.nonceNameService,
-            signatureNameService,
-            input.priorityFeeAmountEVVM,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            signatureEVVM
+            params.user.Address,
+            params.username,
+            params.offerID,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", indexSelected);
-
-        assertEq(checkDataAfter.offerer, address(0));
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
+        NameService.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
-            evvm.getBalance(selectedUser.Address, MATE_TOKEN_ADDRESS),
-            checkDataBefore.amount
+            checkData.offerer,
+            address(0),
+            "Error: offerer address should be zeroed out"
         );
         assertEq(
-            evvm.getBalance(selectedExecuter.Address, MATE_TOKEN_ADDRESS),
-            evvm.getRewardAmount() +
-                (((checkDataBefore.amount * 1) / 796)) +
-                input.priorityFeeAmountEVVM
+            checkData.expireDate,
+            EXPIRATION_DATE,
+            "Error: offer expiration date should remain the same"
+        );
+
+        assertEq(
+            checkData.amount,
+            ((AMOUNT_OFFER * 995) / 1000),
+            "Error: offer amount should remain the same"
+        );
+
+        assertEq(
+            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (evvm.getRewardAmount() +
+                ((checkData.amount * 1) / 796) +
+                params.priorityFee),
+            "Error: fisher balance not correct"
+        );
+    }
+
+
+    function test__fuzz__withdrawOffer__staking(Input memory input) external {
+        vm.assume(
+            input.nonceNameService <
+                uint256(
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                )
+        );
+
+        vm.assume(
+            input.nonceAsyncEVVM <
+                uint256(
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                )
+        );
+        Params memory params = Params({
+            user: USER,
+            username: USERNAME,
+            offerID: OFFER_ID,
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: input.priorityFee,
+            nonceEVVM: input.priorityEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(USER.Address),
+            priorityEVVM: input.priorityEVVM,
+            signatureEVVM: ""
+        });
+
+        _addBalance(params.user, params.priorityFee);
+
+        (
+            params.signatureNameService,
+            params.signatureEVVM
+        ) = _execute_makeWithdrawOfferSignatures(
+            params.user,
+            params.username,
+            params.offerID,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
+        );
+
+        vm.startPrank(FISHER_STAKER.Address);
+
+        nameService.withdrawOffer(
+            params.user.Address,
+            params.username,
+            params.offerID,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        NameService.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername(params.username, params.offerID);
+
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Error: offerer address should be zeroed out"
+        );
+        assertEq(
+            checkData.expireDate,
+            EXPIRATION_DATE,
+            "Error: offer expiration date should remain the same"
+        );
+
+        assertEq(
+            checkData.amount,
+            ((AMOUNT_OFFER * 995) / 1000),
+            "Error: offer amount should remain the same"
+        );
+
+        assertEq(
+            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (evvm.getRewardAmount() +
+                ((checkData.amount * 1) / 796) +
+                params.priorityFee),
+            "Error: fisher balance not correct"
         );
     }
 }

@@ -1,55 +1,62 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+    ErrorsLib as EvvmErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    AsyncNonce
+} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
 
 contract unitTestRevert_NameService_makeOffer is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
-    function addBalance(
+    function executeBeforeSetUp() internal override {
+        _execute_makeRegistrationUsername(
+            COMMON_USER_NO_STAKER_1,
+            "test",
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+            )
+        );
+    }
+
+    function _addBalance(
         AccountData memory user,
         uint256 offerAmount,
         uint256 priorityFeeAmount
@@ -59,953 +66,23 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
     {
         evvm.addBalance(
             user.Address,
-            MATE_TOKEN_ADDRESS,
+            PRINCIPAL_TOKEN_ADDRESS,
             offerAmount + priorityFeeAmount
         );
 
-        totalOfferAmount = offerAmount;
-        totalPriorityFeeAmount = priorityFeeAmount;
+        return (offerAmount, priorityFeeAmount);
     }
 
-    /**
-     * Function to test:
-     * bSigAt[variable]: bad signature at
-     * bPaySigAt[variable]: bad payment signature at
-     * some denominations on test can be explicit expleined
-     */
-
-    /*
-
-    function test__unit_revert__makeOffer__bPaySigAt() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-             totalOfferAmount +  priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-
-    ////////////////////////////////////////////////////
-    function test__unit_revert__makeOffer__bPaySigAt() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
-                COMMON_USER_NO_STAKER_2,
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001,
-                priorityFeeAmount,
-                101,
-                true
-            );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-        
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-             totalOfferAmount +  priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    */
-
-    function test__unit_revert__makeOffer__bSigAtSigner() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bSigAtUsername() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "user",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bSigAtExpirationDate() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 1 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bSigAtOfferAmount() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                0.0000001 ether,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bSigAtNonceNameService() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                777
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bPaySigAtSigner() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bPaySigAtToAddress() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bPaySigAtToIdentity() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(0),
-                "nameservice",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bPaySigAtTokenAddress() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                ETHER_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bPaySigAtAmount() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                777,
-                priorityFeeAmount,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bPaySigAtPriorityFeeAmount()
+    function test__unit_revert__makeOffer__InvalidSignatureOnNameService_evvmID()
         external
     {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.001 ether,
             0.000001 ether
         );
+        uint256 expirationDate = block.timestamp + 30 days;
 
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
         uint8 v;
         bytes32 r;
         bytes32 s;
@@ -1013,38 +90,36 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
+                /* 🢃 different evvmID 🢃 */
+                evvm.getEvvmID() + 1,
                 "test",
-                block.timestamp + 30 days,
+                expirationDate,
                 totalOfferAmount,
                 10001
             )
         );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
+        bytes memory signatureNameService = Erc191TestBuilder
+            .buildERC191Signature(v, r, s);
 
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                1 ether,
-                101,
-                true,
-                address(nameService)
-            )
+        bytes memory signatureEVVM = _execute_makeSignaturePay(
+            COMMON_USER_NO_STAKER_2,
+            address(nameService),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            totalOfferAmount,
+            priorityFeeAmount,
+            101,
+            true,
+            address(nameService)
         );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            block.timestamp + 30 days,
+            expirationDate,
             totalOfferAmount,
             10001,
             signatureNameService,
@@ -1058,328 +133,41 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         NameService.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
         );
     }
 
-    function test__unit_revert__makeOffer__bPaySigAtNonceEVVM() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
+    function test__unit_revert__makeOffer__InvalidSignatureOnNameService_signer()
+        external
+    {
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.001 ether,
             0.000001 ether
         );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                777,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bPaySigAtPriorityFlag() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                false,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__bPaySigAtExecutor() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
-                "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfferAmount,
-                priorityFeeAmount,
-                101,
-                true,
-                address(evvm)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10001,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__NonceMnsAlreadyUsed() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            0.001 ether,
-            0.000001 ether
-        );
+        uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeMakeOfferSignatures(
-                COMMON_USER_NO_STAKER_1,
+                /* 🢃 different signer 🢃 */
+                COMMON_USER_NO_STAKER_3,
                 "test",
-                block.timestamp + 30 days,
-                totalOfferAmount,
-                10101,
-                priorityFeeAmount,
-                101,
-                true
-            );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            block.timestamp + 30 days,
-            totalOfferAmount,
-            10101,
-            signatureNameService,
-            priorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__makeOffer__identityDoesNotExist() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.001 ether,
-            0.000001 ether
-        );
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
-                COMMON_USER_NO_STAKER_2,
-                "fake",
-                block.timestamp + 30 days,
+                expirationDate,
                 totalOfferAmount,
                 10001,
                 priorityFeeAmount,
@@ -1387,13 +175,13 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
-            "fake",
-            block.timestamp + 30 days,
+            "test",
+            expirationDate,
             totalOfferAmount,
             10001,
             signatureNameService,
@@ -1402,54 +190,310 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             true,
             signatureEVVM
         );
-
         vm.stopPrank();
 
         NameService.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
         );
     }
 
-    function test__unit_revert__makeOffer__identityIsNotAUsername() external {
+    function test__unit_revert__makeOffer__InvalidSignatureOnNameService_username()
+        external
+    {
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.001 ether,
+            0.000001 ether
+        );
+        uint256 expirationDate = block.timestamp + 30 days;
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeMakeOfferSignatures(
+                COMMON_USER_NO_STAKER_2,
+                /* 🢃 different username 🢃 */
+                "differentusername",
+                expirationDate,
+                totalOfferAmount,
+                10001,
+                priorityFeeAmount,
+                101,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.makeOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            expirationDate,
+            totalOfferAmount,
+            10001,
+            signatureNameService,
+            priorityFeeAmount,
+            101,
+            true,
+            signatureEVVM
+        );
+        vm.stopPrank();
+
+        NameService.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername("test", 0);
+
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
+        );
+    }
+
+    function test__unit_revert__makeOffer__InvalidSignatureOnNameService_dateExpire()
+        external
+    {
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.001 ether,
+            0.000001 ether
+        );
+        uint256 expirationDate = block.timestamp + 30 days;
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeMakeOfferSignatures(
+                COMMON_USER_NO_STAKER_2,
+                "test",
+                /* 🢃 different dateExpire 🢃 */
+                expirationDate + 1,
+                totalOfferAmount,
+                10001,
+                priorityFeeAmount,
+                101,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.makeOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            expirationDate,
+            totalOfferAmount,
+            10001,
+            signatureNameService,
+            priorityFeeAmount,
+            101,
+            true,
+            signatureEVVM
+        );
+        vm.stopPrank();
+
+        NameService.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername("test", 0);
+
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
+        );
+    }
+
+    function test__unit_revert__makeOffer__InvalidSignatureOnNameService_amount()
+        external
+    {
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.001 ether,
+            0.000001 ether
+        );
+        uint256 expirationDate = block.timestamp + 30 days;
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeMakeOfferSignatures(
+                COMMON_USER_NO_STAKER_2,
+                "test",
+                expirationDate,
+                /* 🢃 different amount 🢃 */
+                totalOfferAmount + 1,
+                10001,
+                priorityFeeAmount,
+                101,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.makeOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            expirationDate,
+            totalOfferAmount,
+            10001,
+            signatureNameService,
+            priorityFeeAmount,
+            101,
+            true,
+            signatureEVVM
+        );
+        vm.stopPrank();
+
+        NameService.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername("test", 0);
+
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
+        );
+    }
+
+    function test__unit_revert__makeOffer__InvalidSignatureOnNameService_nameServiceNonce()
+        external
+    {
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.001 ether,
+            0.000001 ether
+        );
+        uint256 expirationDate = block.timestamp + 30 days;
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeMakeOfferSignatures(
+                COMMON_USER_NO_STAKER_2,
+                "test",
+                expirationDate,
+                totalOfferAmount,
+                /* 🢃 different nameServiceNonce 🢃 */
+                67,
+                priorityFeeAmount,
+                101,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.makeOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            expirationDate,
+            totalOfferAmount,
+            10001,
+            signatureNameService,
+            priorityFeeAmount,
+            101,
+            true,
+            signatureEVVM
+        );
+        vm.stopPrank();
+
+        NameService.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername("test", 0);
+
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
+        );
+    }
+
+    function test__unit_revert__makeOffer__InvalidUsername_flagNotAUsername()
+        external
+    {
         _execute_makePreRegistrationUsername(
-            COMMON_USER_NO_STAKER_1,
-            "notuser",
-            1,
-            99999999999999999999999999999999999
+            COMMON_USER_NO_STAKER_3,
+            "testrevert",
+            67,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffA
+            )
         );
 
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
+        /* 🢃 flagNotAUsername == 0x01 🢃 */
+        string memory invalidUsername = string.concat(
+            "@",
+            AdvancedStrings.bytes32ToString(
+                keccak256(abi.encodePacked("testrevert", uint256(67)))
+            )
+        );
+
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.001 ether,
             0.000001 ether
         );
+        uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeMakeOfferSignatures(
                 COMMON_USER_NO_STAKER_2,
-                string.concat(
-                    "@",
-                    AdvancedStrings.bytes32ToString(
-                        keccak256(abi.encodePacked("notuser", uint256(1)))
-                    )
-                ),
-                block.timestamp + 30 days,
+                invalidUsername,
+                expirationDate,
                 totalOfferAmount,
                 10001,
                 priorityFeeAmount,
@@ -1457,18 +501,13 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidUsername.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("notuser", uint256(1)))
-                )
-            ),
-            block.timestamp + 30 days,
+            invalidUsername,
+            expirationDate,
             totalOfferAmount,
             10001,
             signatureNameService,
@@ -1477,50 +516,171 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             true,
             signatureEVVM
         );
-
         vm.stopPrank();
 
         NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername(
-                string.concat(
-                    "@",
-                    AdvancedStrings.bytes32ToString(
-                        keccak256(abi.encodePacked("notuser", uint256(1)))
-                    )
-                ),
-                0
-            );
+            .getSingleOfferOfUsername(invalidUsername, 0);
 
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
         );
     }
 
-    function test__unit_revert__makeOffer__amountToOfferIsZero() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
+    function test__unit_revert__makeOffer__InvalidUsername_verifyIfIdentityExists()
+        external
+    {
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_2,
+            0.001 ether,
+            0.000001 ether
+        );
+        uint256 expirationDate = block.timestamp + 30 days;
+        /* 🢃 unregistered username 🢃 */
+        string memory unregisteredUsername = "testrevert";
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeMakeOfferSignatures(
+                COMMON_USER_NO_STAKER_2,
+                unregisteredUsername,
+                expirationDate,
+                totalOfferAmount,
+                10001,
+                priorityFeeAmount,
+                101,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidUsername.selector);
+        nameService.makeOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            unregisteredUsername,
+            expirationDate,
+            totalOfferAmount,
+            10001,
+            signatureNameService,
+            priorityFeeAmount,
+            101,
+            true,
+            signatureEVVM
+        );
+        vm.stopPrank();
+
+        NameService.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername(unregisteredUsername, 0);
+
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
+        );
+    }
+
+    function test__unit_revert__makeOffer__CannotBeBeforeCurrentTime()
+        external
+    {
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.001 ether,
+            0.000001 ether
+        );
+        /* 🢃 expirationDate before current time 🢃 */
+        uint256 expirationDate = block.timestamp - 1;
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeMakeOfferSignatures(
+                COMMON_USER_NO_STAKER_2,
+                "test",
+                expirationDate,
+                totalOfferAmount,
+                10001,
+                priorityFeeAmount,
+                101,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.CannotBeBeforeCurrentTime.selector);
+        nameService.makeOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            expirationDate,
+            totalOfferAmount,
+            10001,
+            signatureNameService,
+            priorityFeeAmount,
+            101,
+            true,
+            signatureEVVM
+        );
+        vm.stopPrank();
+
+        NameService.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername("test", 0);
+
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
+        );
+    }
+
+    function test__unit_revert__makeOffer__AmountMustBeGreaterThanZero()
+        external
+    {
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            /* 🢃 amount == 0 🢃 */
             0 ether,
             0.000001 ether
         );
+        uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeMakeOfferSignatures(
                 COMMON_USER_NO_STAKER_2,
                 "test",
-                block.timestamp + 30 days,
+                expirationDate,
                 totalOfferAmount,
                 10001,
                 priorityFeeAmount,
@@ -1528,13 +688,13 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.AmountMustBeGreaterThanZero.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            block.timestamp + 30 days,
+            expirationDate,
             totalOfferAmount,
             10001,
             signatureNameService,
@@ -1548,50 +708,122 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         NameService.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
         );
     }
 
-    function test__unit_revert__makeOffer__expireDateLessThanNow() external {
-        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = addBalance(
+    function test__unit_revert__makeOffer__AsyncNonceAlreadyUsed() external {
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.001 ether,
             0.000001 ether
         );
+        uint256 expirationDate = block.timestamp + 30 days;
+        /* 🢃 reuse nonce 🢃 */
+        uint256 nonceToUse = 10001;
+
+        _execute_makePreRegistrationUsername(
+            COMMON_USER_NO_STAKER_2,
+            "testrevert",
+            67,
+            nonceToUse
+        );
+
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeMakeOfferSignatures(
                 COMMON_USER_NO_STAKER_2,
                 "test",
-                block.timestamp - 1,
+                expirationDate,
                 totalOfferAmount,
-                10001,
+                nonceToUse,
                 priorityFeeAmount,
                 101,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         vm.expectRevert();
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            block.timestamp - 1,
+            expirationDate,
+            totalOfferAmount,
+            nonceToUse,
+            signatureNameService,
+            priorityFeeAmount,
+            101,
+            true,
+            signatureEVVM
+        );
+        vm.stopPrank();
+
+        NameService.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername("test", 0);
+
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
+        );
+    }
+
+    function test__unit_revert__makeOffer__InvalidSignature_fromEvvm() external {
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.001 ether,
+            0.000001 ether
+        );
+        uint256 expirationDate = block.timestamp + 30 days;
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeMakeOfferSignatures(
+                COMMON_USER_NO_STAKER_2,
+                "test",
+                expirationDate,
+                totalOfferAmount,
+                10001,
+                priorityFeeAmount,
+                /* 🢃 different evvm nonce 🢃 */
+                67,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        nameService.makeOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            expirationDate,
             totalOfferAmount,
             10001,
             signatureNameService,
@@ -1600,26 +832,90 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             true,
             signatureEVVM
         );
-
         vm.stopPrank();
 
         NameService.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
-        assertEq(checkData.offerer, address(0));
-        assertEq(checkData.amount, 0);
-        assertEq(checkData.expireDate, 0);
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalOfferAmount + priorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalOfferAmount + priorityFeeAmount,
+            "User balance should be the same after revert"
         );
     }
+
+    function test__unit_revert__makeOffer__InsufficientBalance_fromEvvm() external {
+        (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.001 ether,
+            0.000001 ether
+        );
+        uint256 expirationDate = block.timestamp + 30 days;
+
+        /* 🢃 insufficient balance 🢃 */
+        totalOfferAmount += 1 ether;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeMakeOfferSignatures(
+                COMMON_USER_NO_STAKER_2,
+                "test",
+                expirationDate,
+                totalOfferAmount,
+                10001,
+                priorityFeeAmount,
+                101,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        nameService.makeOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            expirationDate,
+            totalOfferAmount,
+            10001,
+            signatureNameService,
+            priorityFeeAmount,
+            101,
+            true,
+            signatureEVVM
+        );
+        vm.stopPrank();
+
+        NameService.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername("test", 0);
+
+        assertEq(
+            checkData.offerer,
+            address(0),
+            "Offerer address should be zero"
+        );
+        assertEq(checkData.amount, 0, "Offer amount should be zero");
+        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalOfferAmount - 1 ether + priorityFeeAmount,
+            "User balance should be the same after revert"
+        );
+    }
+    
 }

@@ -1,1149 +1,91 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function revert behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
 import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
+    ErrorsLib as EvvmErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    AsyncNonce
+} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
 
 contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
     function executeBeforeSetUp() internal override {
         evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
     }
 
-    function addBalance(
+    function _addBalance(
         AccountData memory user,
-        address token,
         uint256 priorityFeeAmount
-    ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(user.Address, token, priorityFeeAmount);
-
-        totalPriorityFeeAmount = priorityFeeAmount;
-    }
-
-    /**
-     * Function to test:
-     * bSigAt[variable]: bad signature at
-     * bPaySigAt[variable]: bad payment signature at
-     * some denominations on test can be explicit expleined
-     */
-
-    function test__unit_revert__preRegistrationUsername__bSigAtSigner()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
+    ) private returns (uint256 priorityFee) {
+        evvm.addBalance(
+            user.Address,
+            PRINCIPAL_TOKEN_ADDRESS,
+            priorityFeeAmount
         );
 
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
+        priorityFee = priorityFeeAmount;
+    }
+
+    function test__unit_revert__preRegistrationUsername__InvalidSignatureOnNameService_evvmID()
+        external
+    {
+        uint256 nonceNameService = 1001;
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
+                /* 🢃 different evvmID 🢃 */
+                evvm.getEvvmID() + 1,
                 keccak256(abi.encodePacked("test", uint256(10101))),
-                1001
+                nonceNameService
             )
         );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFeeAmount,
-                0,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
+        bytes memory signatureNameService = Erc191TestBuilder
+            .buildERC191Signature(v, r, s);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bSigAtHashUsernameUser()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("user", uint256(10101))),
-                1001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFeeAmount,
-                0,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bSigAtHashUsernameClowNumber()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("test", uint256(777))),
-                1001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFeeAmount,
-                0,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bSigAtNonceNameService()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("test", uint256(10101))),
-                777
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFeeAmount,
-                0,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bPaySigAtSigner()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("test", uint256(10101))),
-                1001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFeeAmount,
-                0,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bPaySigAtToAddress()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("test", uint256(10101))),
-                1001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFeeAmount,
-                0,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bPaySigAtToIdentity()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("test", uint256(10101))),
-                1001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(0),
-                "nameService",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFeeAmount,
-                0,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bPaySigAtTokenAddress()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("test", uint256(10101))),
-                1001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                ETHER_ADDRESS,
-                totalPriorityFeeAmount,
-                0,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bPaySigAtAmount()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("test", uint256(10101))),
-                1001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                0.1 ether,
-                0,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bPaySigAtPriorityFeeAmount()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("test", uint256(10101))),
-                1001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFeeAmount,
-                0.01 ether,
-                101,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bPaySigAtNonceEVVM()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("test", uint256(10101))),
-                1001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFeeAmount,
-                0,
-                777,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bPaySigAtPriorityFlag()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("test", uint256(10101))),
-                1001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFeeAmount,
-                0,
-                101,
-                false,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__bPaySigAtExecutor()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked("test", uint256(10101))),
-                1001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFeeAmount,
-                0,
-                101,
-                true,
-                address(0)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, ) = nameService.getIdentityBasicMetadata(
-            string.concat(
-                "@",
-                AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked("test", uint256(10101)))
-                )
-            )
-        );
-        assertEq(user, address(0));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__preRegistrationUsername__EVVMnonceAlreadyUsed()
-        external
-    {
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-
-        uint256 totalPriorityFeeAmount = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            MATE_TOKEN_ADDRESS,
-            0.001 ether
-        );
-
-        (
-            signatureNameService,
-            signatureEVVM
-        ) = _execute_makePreRegistrationUsernameSignature(
-                COMMON_USER_NO_STAKER_1,
-                "user",
-                10101,
-                1001,
-                true,
-                0,
-                101,
-                true
-            );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("user", uint256(10101))),
-            1001,
+            nonceNameService,
             signatureNameService,
             0,
-            101,
-            true,
-            signatureEVVM
+            0,
+            false,
+            hex""
         );
-        vm.stopPrank();
 
-        (
-            signatureNameService,
-            signatureEVVM
-        ) = _execute_makePreRegistrationUsernameSignature(
-                COMMON_USER_NO_STAKER_1,
-                "test",
-                10101,
-                1001,
-                true,
-                totalPriorityFeeAmount,
-                202,
-                true
-            );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-        vm.expectRevert();
-        nameService.preRegistrationUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked("test", uint256(10101))),
-            1001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            202,
-            true,
-            signatureEVVM
-        );
         vm.stopPrank();
 
         (address user, ) = nameService.getIdentityBasicMetadata(
@@ -1154,18 +96,306 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 )
             )
         );
-        assertEq(user, address(0));
 
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFeeAmount
+        assertEq(user, address(0), "username should not be preregistered");
+    }
+
+    function test__unit_revert__preRegistrationUsername__InvalidSignatureOnNameService_signer()
+        external
+    {
+        string memory username = "test";
+        uint256 clowNumber = 10101;
+        uint256 nonceNameService = 1001;
+        (
+            bytes memory signatureNameService,
+
+        ) = _execute_makePreRegistrationUsernameSignature(
+                /* 🢃 different signer 🢃 */
+                COMMON_USER_NO_STAKER_2,
+                username,
+                clowNumber,
+                nonceNameService,
+                0,
+                0,
+                false
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.preRegistrationUsername(
+            COMMON_USER_NO_STAKER_1.Address,
+            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            nonceNameService,
+            signatureNameService,
+            0,
+            0,
+            false,
+            hex""
         );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            evvm.getRewardAmount()
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(
+            string.concat(
+                "@",
+                AdvancedStrings.bytes32ToString(
+                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                )
+            )
         );
+
+        assertEq(user, address(0), "username should not be preregistered");
+    }
+
+    function test__unit_revert__preRegistrationUsername__InvalidSignatureOnNameService_nameServiceNonce()
+        external
+    {
+        string memory username = "test";
+        uint256 clowNumber = 10101;
+        uint256 nonceNameService = 1001;
+        (
+            bytes memory signatureNameService,
+
+        ) = _execute_makePreRegistrationUsernameSignature(
+                COMMON_USER_NO_STAKER_1,
+                username,
+                clowNumber,
+                /* 🢃 different nonce 🢃 */
+                nonceNameService + 67,
+                0,
+                0,
+                false
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.preRegistrationUsername(
+            COMMON_USER_NO_STAKER_1.Address,
+            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            nonceNameService,
+            signatureNameService,
+            0,
+            0,
+            false,
+            hex""
+        );
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(
+            string.concat(
+                "@",
+                AdvancedStrings.bytes32ToString(
+                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                )
+            )
+        );
+
+        assertEq(user, address(0), "username should not be preregistered");
+    }
+
+    function test__unit_revert__preRegistrationUsername__InvalidSignatureOnNameService_hashUsername()
+        external
+    {
+        string memory username = "test";
+        uint256 clowNumber = 10101;
+        uint256 nonceNameService = 1001;
+        (
+            bytes memory signatureNameService,
+
+        ) = _execute_makePreRegistrationUsernameSignature(
+                COMMON_USER_NO_STAKER_1,
+                /* 🢃 different hash 🢃 */
+                "wrongusername",
+                67,
+                /**************************/
+                nonceNameService,
+                0,
+                0,
+                false
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.preRegistrationUsername(
+            COMMON_USER_NO_STAKER_1.Address,
+            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            nonceNameService,
+            signatureNameService,
+            0,
+            0,
+            false,
+            hex""
+        );
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(
+            string.concat(
+                "@",
+                AdvancedStrings.bytes32ToString(
+                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                )
+            )
+        );
+
+        assertEq(user, address(0), "username should not be preregistered");
+    }
+
+    function test__unit_revert__preRegistrationUsername__AsyncNonceAlreadyUsed()
+        external
+    {
+        string memory username = "test";
+        uint256 clowNumber = 10101;
+        uint256 nonceNameService = 1001;
+
+        _execute_makePreRegistrationUsername(
+            COMMON_USER_NO_STAKER_1,
+            "testdifferent",
+            67,
+            nonceNameService
+        );
+
+        (
+            bytes memory signatureNameService,
+
+        ) = _execute_makePreRegistrationUsernameSignature(
+                COMMON_USER_NO_STAKER_1,
+                username,
+                clowNumber,
+                /* 🢃 nonce already used 🢃 */
+                nonceNameService,
+                0,
+                0,
+                false
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        nameService.preRegistrationUsername(
+            COMMON_USER_NO_STAKER_1.Address,
+            keccak256(abi.encodePacked(username, clowNumber)),
+            /* 🢃 nonce already used 🢃 */
+            nonceNameService,
+            signatureNameService,
+            0,
+            0,
+            false,
+            hex""
+        );
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(
+            string.concat(
+                "@",
+                AdvancedStrings.bytes32ToString(
+                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                )
+            )
+        );
+
+        assertEq(user, address(0), "username should not be preregistered");
+    }
+
+    function test__unit_revert__preRegistrationUsername__InvalidSignature_fromEvvm()
+        external
+    {
+        _addBalance(COMMON_USER_NO_STAKER_2, 5 ether);
+        string memory username = "test";
+        uint256 clowNumber = 10101;
+        uint256 nonceNameService = 1001;
+        (
+            bytes memory signatureNameService,
+            bytes memory signature_EVVM
+        ) = _execute_makePreRegistrationUsernameSignature(
+                COMMON_USER_NO_STAKER_1,
+                username,
+                clowNumber,
+                nonceNameService,
+                0.0001 ether,
+                6767,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        nameService.preRegistrationUsername(
+            COMMON_USER_NO_STAKER_1.Address,
+            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            nonceNameService,
+            signatureNameService,
+            /* 🢃 different priority fee 🢃 */
+            1 ether,
+            6767,
+            true,
+            signature_EVVM
+        );
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(
+            string.concat(
+                "@",
+                AdvancedStrings.bytes32ToString(
+                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                )
+            )
+        );
+
+        assertEq(user, address(0), "username should not be preregistered");
+    }
+
+    function test__unit_revert__preRegistrationUsername__InsufficientBalance_fromEvvm()
+        external
+    {
+        string memory username = "test";
+        uint256 clowNumber = 10101;
+        uint256 nonceNameService = 1001;
+        (
+            bytes memory signatureNameService,
+            bytes memory signature_EVVM
+        ) = _execute_makePreRegistrationUsernameSignature(
+                COMMON_USER_NO_STAKER_1,
+                username,
+                clowNumber,
+                nonceNameService,
+                0.1 ether,
+                676767,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        /* 🢃 insufficient balance to cover priority fee 🢃 */
+        nameService.preRegistrationUsername(
+            COMMON_USER_NO_STAKER_1.Address,
+            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            nonceNameService,
+            signatureNameService,
+            0.1 ether,
+            676767,
+            true,
+            signature_EVVM
+        );
+
+        vm.stopPrank();
+
+        (address user, ) = nameService.getIdentityBasicMetadata(
+            string.concat(
+                "@",
+                AdvancedStrings.bytes32ToString(
+                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                )
+            )
+        );
+
+        assertEq(user, address(0), "username should not be preregistered");
     }
 }

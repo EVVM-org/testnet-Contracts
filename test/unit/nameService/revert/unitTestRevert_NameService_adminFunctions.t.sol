@@ -1,450 +1,551 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
 import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    ErrorsLib as EvvmErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 
 contract unitTestRevert_NameService_adminFunctions is Test, Constants {
-    AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
-
-    function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
-    }
-
-    function test__unit_revert__proposeAdmin__userIsNotAdmin() external {
+    function test__unit_revert__proposeAdmin__SenderIsNotAdmin() external {
+        /* 🢃 Non admin sender 🢃 */
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
         nameService.proposeAdmin(WILDCARD_USER.Address);
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
             .getAdminFullDetails();
 
-        assertEq(current, ADMIN.Address);
-        assertEq(proposal, address(0));
-        assertEq(timeToAccept, 0);
+        assertEq(
+            current,
+            ADMIN.Address,
+            "Current admin should remain unchanged"
+        );
+        assertEq(proposal, address(0), "Proposal should be zero address");
+        assertEq(timeToAccept, 0, "Time to accept should be zero");
     }
 
-    function test__unit_revert__proposeAdmin__adminProposeAddressZero()
+    function test__unit_revert__proposeAdmin__InvalidAdminProposal_addressZero()
         external
     {
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidAdminProposal.selector);
+        /* 🢃 To address zero 🢃 */
         nameService.proposeAdmin(address(0));
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
             .getAdminFullDetails();
 
-        assertEq(current, ADMIN.Address);
-        assertEq(proposal, address(0));
-        assertEq(timeToAccept, 0);
+        assertEq(
+            current,
+            ADMIN.Address,
+            "Current admin should remain unchanged"
+        );
+        assertEq(proposal, address(0), "Proposal should be zero address");
+        assertEq(timeToAccept, 0, "Time to accept should be zero");
     }
 
-    function test__unit_revert__proposeAdmin__AdminProposeAdmin() external {
+    function test__unit_revert__proposeAdmin__InvalidAdminProposal_currentAdmin()
+        external
+    {
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidAdminProposal.selector);
+        /* 🢃 To current admin 🢃 */
         nameService.proposeAdmin(ADMIN.Address);
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
             .getAdminFullDetails();
 
-        assertEq(current, ADMIN.Address);
-        assertEq(proposal, address(0));
-        assertEq(timeToAccept, 0);
+        assertEq(
+            current,
+            ADMIN.Address,
+            "Current admin should remain unchanged"
+        );
+        assertEq(proposal, address(0), "Proposal should be zero address");
+        assertEq(timeToAccept, 0, "Time to accept should be zero");
     }
 
-    function test__unit_revert__cancelProposeAdmin__userIsNotAdmin() external {
+    function test__unit_revert__cancelProposeAdmin__SenderIsNotAdmin()
+        external
+    {
         vm.startPrank(ADMIN.Address);
         nameService.proposeAdmin(WILDCARD_USER.Address);
         vm.stopPrank();
 
+        /* 🢃 Non admin sender 🢃 */
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
         nameService.cancelProposeAdmin();
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
             .getAdminFullDetails();
 
-        assertEq(current, ADMIN.Address);
-        assertEq(proposal, WILDCARD_USER.Address);
-        assertEq(timeToAccept, block.timestamp + 1 days);
+        assertEq(
+            current,
+            ADMIN.Address,
+            "Current admin should remain unchanged"
+        );
+        assertEq(
+            proposal,
+            WILDCARD_USER.Address,
+            "Proposal should remain unchanged"
+        );
+        assertEq(
+            timeToAccept,
+            block.timestamp + 1 days,
+            "Time to accept should remain unchanged"
+        );
     }
 
-    function test__unit_revert__acceptProposeAdmin__userIsNotProposal()
+    function test__unit_revert__acceptProposeAdmin__SenderIsNotProposedAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
         nameService.proposeAdmin(WILDCARD_USER.Address);
         vm.stopPrank();
-
-        (
-            address currentAdminAfter,
-            address proposalAfter,
-            uint256 timeToAcceptAfter
-        ) = nameService.getAdminFullDetails();
 
         skip(1 days);
 
+        /* 🢃 Non proposed admin sender 🢃 */
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.SenderIsNotProposedAdmin.selector);
         nameService.acceptProposeAdmin();
         vm.stopPrank();
 
-        (
-            address currentAdminBefore,
-            address proposalBefore,
-            uint256 timeToAcceptBefore
-        ) = nameService.getAdminFullDetails();
+        (address current, address proposal, uint256 timeToAccept) = nameService
+            .getAdminFullDetails();
 
-        assertEq(currentAdminBefore, currentAdminAfter);
-        assertEq(proposalBefore, proposalAfter);
-        assertEq(timeToAcceptBefore, timeToAcceptAfter);
+        assertEq(
+            current,
+            ADMIN.Address,
+            "Current admin should remain unchanged"
+        );
+        assertEq(
+            proposal,
+            WILDCARD_USER.Address,
+            "Proposal should remain unchanged"
+        );
+        assertEq(
+            timeToAccept,
+            block.timestamp,
+            "Time to accept should remain unchanged"
+        );
     }
 
-    function test__unit_revert__acceptProposeAdmin__proposalTriesToClaimNotOnTime()
+    function test__unit_revert__acceptProposeAdmin__LockTimeNotExpired()
         external
     {
         vm.startPrank(ADMIN.Address);
         nameService.proposeAdmin(WILDCARD_USER.Address);
         vm.stopPrank();
 
-        (
-            address currentAdminAfter,
-            address proposalAfter,
-            uint256 timeToAcceptAfter
-        ) = nameService.getAdminFullDetails();
-
-        skip(10 hours);
+        /* 🢃 Proposed admin tries to accept before time lock expires 🢃 */
+        skip(1 days - 2 hours);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.LockTimeNotExpired.selector);
         nameService.acceptProposeAdmin();
         vm.stopPrank();
 
+        (address current, address proposal, uint256 timeToAccept) = nameService
+            .getAdminFullDetails();
+
+        assertEq(
+            current,
+            ADMIN.Address,
+            "Current admin should remain unchanged"
+        );
+        assertEq(
+            proposal,
+            WILDCARD_USER.Address,
+            "Proposal should remain unchanged"
+        );
+        assertEq(
+            timeToAccept,
+            block.timestamp + 2 hours,
+            "Time to accept should remain unchanged"
+        );
+    }
+
+    function test__unit_revert__proposeWithdrawPrincipalTokens__SenderIsNotAdmin()
+        external
+    {
+        uint256 balanceBefore = evvm.getBalance(
+            address(nameService),
+            PRINCIPAL_TOKEN_ADDRESS
+        );
+        /* 🢃 Non admin sender 🢃 */
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        nameService.proposeWithdrawPrincipalTokens(1);
+        vm.stopPrank();
+
+        assertEq(
+            evvm.getBalance(address(nameService), PRINCIPAL_TOKEN_ADDRESS),
+            balanceBefore,
+            "Contract principal token balance should remain unchanged"
+        );
+
         (
-            address currentAdminBefore,
-            address proposalBefore,
-            uint256 timeToAcceptBefore
-        ) = nameService.getAdminFullDetails();
+            uint256 proposalAmountToWithdrawTokens,
+            uint256 timeToAcceptAmountToWithdrawTokens
+        ) = nameService.getProposedWithdrawAmountFullDetails();
 
-        assertEq(currentAdminBefore, currentAdminAfter);
-        assertEq(proposalBefore, proposalAfter);
-        assertEq(timeToAcceptBefore, timeToAcceptAfter);
-    }
-
-    function test__unit_revert__proposeWithdrawPrincipalTokens__userNotAdmin()
-        external
-    {
-        uint256 totalInEvvm = evvm.getBalance(
-            address(nameService),
-            MATE_TOKEN_ADDRESS
+        assertEq(
+            proposalAmountToWithdrawTokens,
+            0,
+            "Proposed amount to withdraw tokens should be zero"
         );
-        uint256 removeAmount = totalInEvvm / 10;
-
-        vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert();
-        nameService.proposeWithdrawPrincipalTokens(removeAmount);
-        vm.stopPrank();
-
-        (uint256 amount, uint256 time) = nameService
-            .getProposedWithdrawAmountFullDetails();
-
-        assertEq(amount, 0);
-        assertEq(time, 0);
-    }
-
-    function test__unit_revert__proposeWithdrawPrincipalTokens__adminTriesToClaimMoreThanPermitted()
-        external
-    {
-        uint256 total = evvm.getBalance(
-            address(nameService),
-            MATE_TOKEN_ADDRESS
+        assertEq(
+            timeToAcceptAmountToWithdrawTokens,
+            0,
+            "Time to accept amount to withdraw tokens should be zero"
         );
-
-        vm.startPrank(ADMIN.Address);
-        vm.expectRevert();
-        nameService.proposeWithdrawPrincipalTokens(total);
-        vm.stopPrank();
-
-        (uint256 amount, uint256 time) = nameService
-            .getProposedWithdrawAmountFullDetails();
-
-        assertEq(amount, 0);
-        assertEq(time, 0);
     }
 
-    function test__unit_revert__proposeWithdrawPrincipalTokens__adminClaimZero()
+    function test__unit_revert__proposeWithdrawPrincipalTokens__InvalidWithdrawAmount_zero()
         external
     {
+        uint256 balanceBefore = evvm.getBalance(
+            address(nameService),
+            PRINCIPAL_TOKEN_ADDRESS
+        );
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidWithdrawAmount.selector);
+        /* 🢃 Withdraw amount zero 🢃 */
         nameService.proposeWithdrawPrincipalTokens(0);
         vm.stopPrank();
 
-        (uint256 amount, uint256 time) = nameService
-            .getProposedWithdrawAmountFullDetails();
+        assertEq(
+            evvm.getBalance(address(nameService), PRINCIPAL_TOKEN_ADDRESS),
+            balanceBefore,
+            "Contract principal token balance should remain unchanged"
+        );
 
-        assertEq(amount, 0);
-        assertEq(time, 0);
+        (
+            uint256 proposalAmountToWithdrawTokens,
+            uint256 timeToAcceptAmountToWithdrawTokens
+        ) = nameService.getProposedWithdrawAmountFullDetails();
+
+        assertEq(
+            proposalAmountToWithdrawTokens,
+            0,
+            "Proposed amount to withdraw tokens should be zero"
+        );
+        assertEq(
+            timeToAcceptAmountToWithdrawTokens,
+            0,
+            "Time to accept amount to withdraw tokens should be zero"
+        );
     }
 
-    function test__unit_revert__cancelWithdrawPrincipalTokens__userNotAdmin()
+    function test__unit_revert__proposeWithdrawPrincipalTokens__InvalidWithdrawAmount_full()
         external
     {
-        uint256 totalInEvvm = evvm.getBalance(
+        uint256 balanceBefore = evvm.getBalance(
             address(nameService),
-            MATE_TOKEN_ADDRESS
+            PRINCIPAL_TOKEN_ADDRESS
         );
-        uint256 removeAmount = totalInEvvm / 10;
-
+        /* 🢃 Withdraw full contract balance 🢃 */
+        uint256 contractBalance = balanceBefore;
         vm.startPrank(ADMIN.Address);
-        nameService.proposeWithdrawPrincipalTokens(removeAmount);
+        vm.expectRevert(ErrorsLib.InvalidWithdrawAmount.selector);
+        nameService.proposeWithdrawPrincipalTokens(contractBalance);
         vm.stopPrank();
 
-        vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert();
+        assertEq(
+            evvm.getBalance(address(nameService), PRINCIPAL_TOKEN_ADDRESS),
+            balanceBefore,
+            "Contract principal token balance should remain unchanged"
+        );
+
+        (
+            uint256 proposalAmountToWithdrawTokens,
+            uint256 timeToAcceptAmountToWithdrawTokens
+        ) = nameService.getProposedWithdrawAmountFullDetails();
+
+        assertEq(
+            proposalAmountToWithdrawTokens,
+            0,
+            "Proposed amount to withdraw tokens should be zero"
+        );
+        assertEq(
+            timeToAcceptAmountToWithdrawTokens,
+            0,
+            "Time to accept amount to withdraw tokens should be zero"
+        );
+    }
+
+    function test__unit_revert__cancelWithdrawPrincipalTokens__SenderIsNotAdmin()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        nameService.proposeWithdrawPrincipalTokens(1);
+        vm.stopPrank();
+
+        /* 🢃 Non admin sender 🢃 */
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
         nameService.cancelWithdrawPrincipalTokens();
         vm.stopPrank();
 
-        (uint256 amount, uint256 time) = nameService
-            .getProposedWithdrawAmountFullDetails();
+        (
+            uint256 proposalAmountToWithdrawTokens,
+            uint256 timeToAcceptAmountToWithdrawTokens
+        ) = nameService.getProposedWithdrawAmountFullDetails();
 
-        assertEq(amount, removeAmount);
-        assertEq(time, block.timestamp + 1 days);
+        assertEq(
+            proposalAmountToWithdrawTokens,
+            1,
+            "Proposed amount to withdraw tokens should be unchanged"
+        );
+        assertEq(
+            timeToAcceptAmountToWithdrawTokens,
+            block.timestamp + 1 days,
+            "Time to accept amount to withdraw tokens should be unchanged"
+        );
     }
 
-    function test__unit_revert__claimWithdrawPrincipalTokens__notAdmin()
+    function test__unit_revert__claimWithdrawPrincipalTokens__SenderIsNotAdmin()
         external
     {
-        uint256 totalInEvvm = evvm.getBalance(
-            address(nameService),
-            MATE_TOKEN_ADDRESS
-        );
-        uint256 removeAmount = totalInEvvm / 10;
-
         vm.startPrank(ADMIN.Address);
-        nameService.proposeWithdrawPrincipalTokens(removeAmount);
+        nameService.proposeWithdrawPrincipalTokens(1);
         vm.stopPrank();
-
-        (uint256 amountAfter, uint256 timeAfter) = nameService
-            .getProposedWithdrawAmountFullDetails();
 
         skip(1 days);
 
-        vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert();
+        /* 🢃 Non admin sender 🢃 */
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
         nameService.claimWithdrawPrincipalTokens();
         vm.stopPrank();
 
+        (
+            uint256 proposalAmountToWithdrawTokens,
+            uint256 timeToAcceptAmountToWithdrawTokens
+        ) = nameService.getProposedWithdrawAmountFullDetails();
+
         assertEq(
-            evvm.getBalance(address(nameService), MATE_TOKEN_ADDRESS),
-            totalInEvvm
+            proposalAmountToWithdrawTokens,
+            1,
+            "Proposed amount to withdraw tokens should be unchanged"
         );
-
-        (uint256 amountBefore, uint256 timeBefore) = nameService
-            .getProposedWithdrawAmountFullDetails();
-
-        assertEq(amountBefore, amountAfter);
-        assertEq(timeBefore, timeAfter);
+        assertEq(
+            timeToAcceptAmountToWithdrawTokens,
+            block.timestamp,
+            "Time to accept amount to withdraw tokens should be unchanged"
+        );
     }
 
-    function test__unit_revert__claimWithdrawPrincipalTokens__adminTriesToClaimNotInTime()
+    function test__unit_revert__claimWithdrawPrincipalTokens__LockTimeNotExpired()
         external
     {
-        uint256 totalInEvvm = evvm.getBalance(
-            address(nameService),
-            MATE_TOKEN_ADDRESS
-        );
-        uint256 removeAmount = totalInEvvm / 10;
-
         vm.startPrank(ADMIN.Address);
-        nameService.proposeWithdrawPrincipalTokens(removeAmount);
+        nameService.proposeWithdrawPrincipalTokens(1);
         vm.stopPrank();
 
-        (uint256 amountAfter, uint256 timeAfter) = nameService
-            .getProposedWithdrawAmountFullDetails();
-
-        skip(10 hours);
+        /* 🢃 Admin tries to claim before time lock expires 🢃 */
+        skip(1 days - 2 hours);
 
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.LockTimeNotExpired.selector);
         nameService.claimWithdrawPrincipalTokens();
         vm.stopPrank();
 
+        (
+            uint256 proposalAmountToWithdrawTokens,
+            uint256 timeToAcceptAmountToWithdrawTokens
+        ) = nameService.getProposedWithdrawAmountFullDetails();
+
         assertEq(
-            evvm.getBalance(address(nameService), MATE_TOKEN_ADDRESS),
-            totalInEvvm
+            proposalAmountToWithdrawTokens,
+            1,
+            "Proposed amount to withdraw tokens should be unchanged"
         );
-
-        (uint256 amountBefore, uint256 timeBefore) = nameService
-            .getProposedWithdrawAmountFullDetails();
-
-        assertEq(amountBefore, amountAfter);
-        assertEq(timeBefore, timeAfter);
+        assertEq(
+            timeToAcceptAmountToWithdrawTokens,
+            block.timestamp + 2 hours,
+            "Time to accept amount to withdraw tokens should be unchanged"
+        );
     }
 
-    function test__unit_revert__proposeChangeEvvmAddress__userIsNotAdmin()
+    function test__unit_revert__proposeChangeEvvmAddress__SenderIsNotAdmin()
         external
     {
+        /* 🢃 Non admin sender 🢃 */
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
         nameService.proposeChangeEvvmAddress(WILDCARD_USER.Address);
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
             .getEvvmAddressFullDetails();
 
-        assertEq(current, address(evvm));
-        assertEq(proposal, address(0));
-        assertEq(timeToAccept, 0);
+        assertEq(
+            current,
+            address(evvm),
+            "Current EVVM address should remain unchanged"
+        );
+        assertEq(proposal, address(0), "Proposal should be zero address");
+        assertEq(timeToAccept, 0, "Time to accept should be zero");
     }
 
-    function test__unit_revert__proposeChangeEvvmAddress__adminProposeAddressZero()
+    function test__unit_revert__proposeChangeEvvmAddress__InvalidEvvmAddress()
         external
     {
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidEvvmAddress.selector);
+        /* 🢃 To address zero 🢃 */
         nameService.proposeChangeEvvmAddress(address(0));
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
             .getEvvmAddressFullDetails();
 
-        assertEq(current, address(evvm));
-        assertEq(proposal, address(0));
-        assertEq(timeToAccept, 0);
+        assertEq(
+            current,
+            address(evvm),
+            "Current EVVM address should remain unchanged"
+        );
+        assertEq(proposal, address(0), "Proposal should be zero address");
+        assertEq(timeToAccept, 0, "Time to accept should be zero");
     }
 
-    function test__unit_revert__cancelChangeEvvmAddress__userIsNotAdmin()
+
+    function test__unit_revert__cancelChangeEvvmAddress__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
         nameService.proposeChangeEvvmAddress(WILDCARD_USER.Address);
         vm.stopPrank();
 
-        (
-            address current_after,
-            address proposal_after,
-            uint256 timeToAccept_after
-        ) = nameService.getEvvmAddressFullDetails();
-
+        /* 🢃 Non admin sender 🢃 */
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
         nameService.cancelChangeEvvmAddress();
         vm.stopPrank();
 
-        (
-            address current_before,
-            address proposal_before,
-            uint256 timeToAccept_before
-        ) = nameService.getEvvmAddressFullDetails();
+        (address current, address proposal, uint256 timeToAccept) = nameService
+            .getEvvmAddressFullDetails();
 
-        assertEq(current_before, current_after);
-        assertEq(proposal_before, proposal_after);
-        assertEq(timeToAccept_before, timeToAccept_after);
+        assertEq(
+            current,
+            address(evvm),
+            "Current EVVM address should remain unchanged"
+        );
+        assertEq(
+            proposal,
+            WILDCARD_USER.Address,
+            "Proposal should remain unchanged"
+        );
+        assertEq(
+            timeToAccept,
+            block.timestamp + 1 days,
+            "Time to accept should remain unchanged"
+        );
     }
 
-    function test__unit_revert__acceptChangeEvvmAddress__userIsNotAdmin()
+
+    function test__unit_revert__acceptChangeEvvmAddress__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
         nameService.proposeChangeEvvmAddress(WILDCARD_USER.Address);
         vm.stopPrank();
-
-        (
-            address current_after,
-            address proposal_after,
-            uint256 timeToAccept_after
-        ) = nameService.getEvvmAddressFullDetails();
 
         skip(1 days);
 
+        /* 🢃 Non admin sender 🢃 */
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
         nameService.acceptChangeEvvmAddress();
         vm.stopPrank();
 
-        (
-            address current_before,
-            address proposal_before,
-            uint256 timeToAccept_before
-        ) = nameService.getEvvmAddressFullDetails();
+        (address current, address proposal, uint256 timeToAccept) = nameService
+            .getEvvmAddressFullDetails();
 
-        assertEq(current_before, current_after);
-        assertEq(proposal_before, proposal_after);
-        assertEq(timeToAccept_before, timeToAccept_after);
+        assertEq(
+            current,
+            address(evvm),
+            "Current EVVM address should remain unchanged"
+        );
+        assertEq(
+            proposal,
+            WILDCARD_USER.Address,
+            "Proposal should remain unchanged"
+        );
+        assertEq(
+            timeToAccept,
+            block.timestamp,
+            "Time to accept should remain unchanged"
+        );
     }
 
-    function test__unit_revert__acceptChangeEvvmAddress__adminTriesToAcceptNotOnTime()
+    function test__unit_revert__acceptChangeEvvmAddress__LockTimeNotExpired()
         external
     {
         vm.startPrank(ADMIN.Address);
         nameService.proposeChangeEvvmAddress(WILDCARD_USER.Address);
         vm.stopPrank();
 
-        (
-            address current_after,
-            address proposal_after,
-            uint256 timeToAccept_after
-        ) = nameService.getEvvmAddressFullDetails();
-
-        skip(10 hours);
+        /* 🢃 Admin tries to accept before time lock expires 🢃 */
+        skip(1 days - 2 hours);
 
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.LockTimeNotExpired.selector);
         nameService.acceptChangeEvvmAddress();
         vm.stopPrank();
 
-        (
-            address current_before,
-            address proposal_before,
-            uint256 timeToAccept_before
-        ) = nameService.getEvvmAddressFullDetails();
+        (address current, address proposal, uint256 timeToAccept) = nameService
+            .getEvvmAddressFullDetails();
 
-        assertEq(current_before, current_after);
-        assertEq(proposal_before, proposal_after);
-        assertEq(timeToAccept_before, timeToAccept_after);
+        assertEq(
+            current,
+            address(evvm),
+            "Current EVVM address should remain unchanged"
+        );
+        assertEq(
+            proposal,
+            WILDCARD_USER.Address,
+            "Proposal should remain unchanged"
+        );
+        assertEq(
+            timeToAccept,
+            block.timestamp + 2 hours,
+            "Time to accept should remain unchanged"
+        );
     }
 }

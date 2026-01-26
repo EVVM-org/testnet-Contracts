@@ -1,65 +1,47 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
-
-:::::::::: :::    ::: ::::::::: :::::::::      ::::::::::: :::::::::: :::::::: ::::::::::: 
-:+:        :+:    :+:      :+:       :+:           :+:     :+:       :+:    :+:    :+:     
-+:+        +:+    +:+     +:+       +:+            +:+     +:+       +:+           +:+     
-:#::+::#   +#+    +:+    +#+       +#+             +#+     +#++:++#  +#++:++#++    +#+     
-+#+        +#+    +#+   +#+       +#+              +#+     +#+              +#+    +#+     
-#+#        #+#    #+#  #+#       #+#               #+#     #+#       #+#    #+#    #+#     
-###         ########  ######### #########          ###     ########## ########     ###     
-
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract fuzzTest_NameService_makeOffer is Test, Constants {
-    AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
+    AccountData FISHER_NO_STAKER = WILDCARD_USER;
+    AccountData FISHER_STAKER = COMMON_USER_STAKER;
 
-    function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+    AccountData USER_USERNAME_OWNER = COMMON_USER_NO_STAKER_1;
+    AccountData USER = COMMON_USER_NO_STAKER_2;
+
+    string USERNAME = "alice";
+
+    struct Params {
+        AccountData user;
+        string username;
+        uint256 expiratonDate;
+        uint256 amount;
+        uint256 nonceNameService;
+        bytes signatureNameService;
+        uint256 priorityFee;
+        uint256 nonceEVVM;
+        bool priorityEVVM;
+        bytes signatureEVVM;
     }
 
-    function addBalance(
+    function _addBalance(
         AccountData memory user,
         uint256 offerAmount,
         uint256 priorityFeeAmount
@@ -69,191 +51,225 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
     {
         evvm.addBalance(
             user.Address,
-            MATE_TOKEN_ADDRESS,
+            PRINCIPAL_TOKEN_ADDRESS,
             offerAmount + priorityFeeAmount
         );
-
         totalOfferAmount = offerAmount;
         totalPriorityFeeAmount = priorityFeeAmount;
+    }
 
+    function executeBeforeSetUp() internal override {
         _execute_makeRegistrationUsername(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            777,
-            10101,
-            20202
+            USER_USERNAME_OWNER,
+            USERNAME,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+            )
         );
     }
 
-    /**
-     * Function to test:
-     * PF: Includes priority fee
-     * nPF: No priority fee
-     */
-
-    struct MakeOfferFuzzTestInput_nPF {
-        uint8 nonceNameService;
-        uint8 nonceEVVM;
-        bool priorityFlagEVVM;
-        uint16 clowNumber;
-        uint16 seed;
-        uint128 daysForExpire;
-        uint64 offerAmount;
-        bool electionOne;
-        bool electionTwo;
+    struct Input {
+        uint8 expiratonDateDays;
+        uint32 amount;
+        uint256 nonceNameService;
+        uint32 priorityFee;
+        uint256 nonceAsyncEVVM;
+        bool priorityEVVM;
     }
 
-    struct MakeOfferFuzzTestInput_PF {
-        uint8 nonceNameService;
-        uint8 nonceEVVM;
-        uint32 priorityFeeAmountEVVM;
-        bool priorityFlagEVVM;
-        uint16 clowNumber;
-        uint16 seed;
-        uint128 daysForExpire;
-        uint64 offerAmount;
-        bool electionOne;
-        bool electionTwo;
-    }
-
-    function test__fuzz__makeOffer__nPF(
-        MakeOfferFuzzTestInput_nPF memory input
+    function test__fuzz__preRegistrationUsername__noStaking(
+        Input memory input
     ) external {
-        vm.assume(input.offerAmount > 0 && input.daysForExpire > 0);
-
-        AccountData memory selectedUser = (input.electionOne)
-            ? COMMON_USER_NO_STAKER_2
-            : COMMON_USER_NO_STAKER_3;
-
-        AccountData memory selectedFisher = (input.electionTwo)
-            ? COMMON_USER_NO_STAKER_1
-            : COMMON_USER_STAKER;
-
-        uint256 nonce = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(selectedUser.Address);
-
-        addBalance(selectedUser, input.offerAmount, 0);
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
-                selectedUser,
-                "test",
-                block.timestamp + uint256(input.daysForExpire),
-                input.offerAmount,
-                input.nonceNameService,
-                0,
-                nonce,
-                input.priorityFlagEVVM
-            );
-
-        vm.startPrank(selectedFisher.Address);
-
-        nameService.makeOffer(
-            selectedUser.Address,
-            "test",
-            block.timestamp + input.daysForExpire,
-            input.offerAmount,
-            input.nonceNameService,
-            signatureNameService,
-            0,
-            nonce,
-            input.priorityFlagEVVM,
-            signatureEVVM
+        vm.assume(
+            input.nonceNameService <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
         );
 
+        vm.assume(
+            input.nonceAsyncEVVM <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
+        );
+        vm.assume(input.expiratonDateDays > 1);
+        vm.assume(input.amount > 1000);
+
+        Params memory params = Params({
+            user: USER,
+            username: USERNAME,
+            expiratonDate: block.timestamp +
+                (uint256(input.expiratonDateDays) * 1 days),
+            amount: uint256(input.amount),
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: uint256(input.priorityFee),
+            nonceEVVM: input.priorityEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(USER.Address),
+            priorityEVVM: input.priorityEVVM,
+            signatureEVVM: ""
+        });
+
+        _addBalance(params.user, params.amount, params.priorityFee);
+
+        (
+            params.signatureNameService,
+            params.signatureEVVM
+        ) = _execute_makeMakeOfferSignatures(
+            params.user,
+            params.username,
+            params.expiratonDate,
+            params.amount,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
+        );
+
+        vm.startPrank(FISHER_NO_STAKER.Address);
+        nameService.makeOffer(
+            params.user.Address,
+            params.username,
+            params.expiratonDate,
+            params.amount,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
+        );
         vm.stopPrank();
 
         NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
+            .getSingleOfferOfUsername(USERNAME, 0);
 
-        assertEq(checkData.offerer, selectedUser.Address);
-        assertEq(checkData.amount, ((uint256(input.offerAmount) * 995) / 1000));
+        assertEq(
+            checkData.offerer,
+            params.user.Address,
+            "Error: offerer address not correct"
+        );
         assertEq(
             checkData.expireDate,
-            block.timestamp + uint256(input.daysForExpire)
+            params.expiratonDate,
+            "Error: offer expiration date not correct"
         );
 
-        assertEq(evvm.getBalance(selectedUser.Address, MATE_TOKEN_ADDRESS), 0);
         assertEq(
-            evvm.getBalance(selectedFisher.Address, MATE_TOKEN_ADDRESS),
-            evvm.getRewardAmount() +
-                (uint256(input.offerAmount) * 125) /
-                100_000
+            checkData.amount,
+            ((uint256(params.amount) * 995) / 1000),
+            "Error: offer amount not correct"
+        );
+
+        assertEq(
+            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (evvm.getRewardAmount() +
+                ((uint256(params.amount) * 125) / 100_000) +
+                params.priorityFee),
+            "Error: fisherr balance not correct"
         );
     }
 
-    function test__fuzz__makeOffer__PF(
-        MakeOfferFuzzTestInput_PF memory input
+    function test__fuzz__preRegistrationUsername__staking(
+        Input memory input
     ) external {
-        vm.assume(input.offerAmount > 0 && input.daysForExpire > 0);
-
-        AccountData memory selectedUser = (input.electionOne)
-            ? COMMON_USER_NO_STAKER_2
-            : COMMON_USER_NO_STAKER_3;
-
-        AccountData memory selectedFisher = (input.electionTwo)
-            ? COMMON_USER_NO_STAKER_1
-            : COMMON_USER_STAKER;
-
-        uint256 nonce = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(selectedUser.Address);
-
-        addBalance(
-            selectedUser,
-            input.offerAmount,
-            input.priorityFeeAmountEVVM
+        vm.assume(
+            input.nonceNameService <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
         );
+
+        vm.assume(
+            input.nonceAsyncEVVM <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
+        );
+        vm.assume(input.expiratonDateDays > 1);
+        vm.assume(input.amount > 100);
+
+        Params memory params = Params({
+            user: USER,
+            username: USERNAME,
+            expiratonDate: block.timestamp +
+                (uint256(input.expiratonDateDays) * 1 days),
+            amount: uint256(input.amount),
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: uint256(input.priorityFee),
+            nonceEVVM: input.priorityEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(USER.Address),
+            priorityEVVM: input.priorityEVVM,
+            signatureEVVM: ""
+        });
+
+        _addBalance(params.user, params.amount, params.priorityFee);
+
         (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            params.signatureNameService,
+            params.signatureEVVM
         ) = _execute_makeMakeOfferSignatures(
-                selectedUser,
-                "test",
-                block.timestamp + uint256(input.daysForExpire),
-                input.offerAmount,
-                input.nonceNameService,
-                input.priorityFeeAmountEVVM,
-                nonce,
-                input.priorityFlagEVVM
-            );
-
-        vm.startPrank(selectedFisher.Address);
-
-        nameService.makeOffer(
-            selectedUser.Address,
-            "test",
-            block.timestamp + input.daysForExpire,
-            input.offerAmount,
-            input.nonceNameService,
-            signatureNameService,
-            input.priorityFeeAmountEVVM,
-            nonce,
-            input.priorityFlagEVVM,
-            signatureEVVM
+            params.user,
+            params.username,
+            params.expiratonDate,
+            params.amount,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
         );
 
+        vm.startPrank(FISHER_STAKER.Address);
+        nameService.makeOffer(
+            params.user.Address,
+            params.username,
+            params.expiratonDate,
+            params.amount,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
+        );
         vm.stopPrank();
 
         NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername("test", 0);
+            .getSingleOfferOfUsername(USERNAME, 0);
 
-        assertEq(checkData.offerer, selectedUser.Address);
-        assertEq(checkData.amount, ((uint256(input.offerAmount) * 995) / 1000));
+        assertEq(
+            checkData.offerer,
+            params.user.Address,
+            "Error: offerer address not correct"
+        );
         assertEq(
             checkData.expireDate,
-            block.timestamp + uint256(input.daysForExpire)
+            params.expiratonDate,
+            "Error: offer expiration date not correct"
         );
 
-        assertEq(evvm.getBalance(selectedUser.Address, MATE_TOKEN_ADDRESS), 0);
         assertEq(
-            evvm.getBalance(selectedFisher.Address, MATE_TOKEN_ADDRESS),
-            evvm.getRewardAmount() +
-                (uint256(input.offerAmount) * 125) /
-                100_000 +
-                input.priorityFeeAmountEVVM
+            checkData.amount,
+            ((uint256(params.amount) * 995) / 1000),
+            "Error: offer amount not correct"
+        );
+
+        assertEq(
+            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (evvm.getRewardAmount() +
+                ((uint256(params.amount) * 125) / 100_000) +
+                params.priorityFee),
+            "Error: fisherr balance not correct"
         );
     }
 }

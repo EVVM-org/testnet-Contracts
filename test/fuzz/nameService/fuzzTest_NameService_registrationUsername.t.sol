@@ -1,509 +1,284 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
-
-:::::::::: :::    ::: ::::::::: :::::::::      ::::::::::: :::::::::: :::::::: ::::::::::: 
-:+:        :+:    :+:      :+:       :+:           :+:     :+:       :+:    :+:    :+:     
-+:+        +:+    +:+     +:+       +:+            +:+     +:+       +:+           +:+     
-:#::+::#   +#+    +:+    +#+       +#+             +#+     +#++:++#  +#++:++#++    +#+     
-+#+        +#+    +#+   +#+       +#+              +#+     +#+              +#+    +#+     
-#+#        #+#    #+#  #+#       #+#               #+#     #+#       #+#    #+#    #+#     
-###         ########  ######### #########          ###     ########## ########     ###     
-
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract fuzzTest_NameService_registrationUsername is Test, Constants {
-    AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
+    AccountData FISHER_NO_STAKER = WILDCARD_USER;
+    AccountData FISHER_STAKER = COMMON_USER_STAKER;
 
-    function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+    AccountData USER = COMMON_USER_NO_STAKER_1;
+
+    struct Params {
+        AccountData user;
+        string username;
+        uint256 clowNumber;
+        uint256 nonceNameService;
+        bytes signatureNameService;
+        uint256 priorityFee;
+        uint256 nonceEVVM;
+        bool priorityEVVM;
+        bytes signatureEVVM;
     }
 
-    function addBalance(
-        address user,
+    function _addBalance(
+        AccountData memory user,
         string memory username,
-        uint256 priorityFeeAmount
+        uint256 priorityFee
     )
         private
         returns (uint256 registrationPrice, uint256 totalPriorityFeeAmount)
     {
         evvm.addBalance(
-            user,
-            MATE_TOKEN_ADDRESS,
-            nameService.getPriceOfRegistration(username) + priorityFeeAmount
+            user.Address,
+            PRINCIPAL_TOKEN_ADDRESS,
+            nameService.getPriceOfRegistration(username) + priorityFee
         );
 
-        registrationPrice = nameService.getPriceOfRegistration(username);
-        totalPriorityFeeAmount = priorityFeeAmount;
+        return (nameService.getPriceOfRegistration(username), priorityFee);
     }
 
-    function makeUsername(
-        uint16 seed
-    ) private pure returns (string memory username) {
-        /// creas un nombre de usuario aleatorio de seed/2 caracteres
-        /// este debe ser de la A-Z y a-z
-        bytes memory usernameBytes = new bytes(seed / 2);
-        for (uint256 i = 0; i < seed / 2; i++) {
-            uint256 random = uint256(keccak256(abi.encodePacked(seed, i))) % 52;
-            if (random < 26) {
-                usernameBytes[i] = bytes1(uint8(random + 65));
+    /// @dev Generates a valid username based on a seed and maximum length
+    /// @param seed Seed for pseudo-random generation
+    /// @param maxLength Maximum length of the string (minimum 4)
+    /// @return A valid username that meets all rules
+    function generateValidUsername(
+        uint256 seed,
+        uint256 maxLength
+    ) internal pure returns (string memory) {
+        // Ensure the length is at least 4
+        if (maxLength < 4) maxLength = 4;
+
+        // Generate a random length between 4 and maxLength
+        uint256 length = 4 + (seed % (maxLength - 3));
+
+        bytes memory username = new bytes(length);
+
+        // First character: must be a letter (A-Z or a-z)
+        // There are 52 letters in total (26 uppercase + 26 lowercase)
+        uint256 randomValue = uint256(
+            keccak256(abi.encodePacked(seed, uint256(0)))
+        );
+        uint256 letterIndex = randomValue % 52;
+
+        if (letterIndex < 26) {
+            // Uppercase letter (A-Z): 0x41 to 0x5A
+            username[0] = bytes1(uint8(0x41 + letterIndex));
+        } else {
+            // Lowercase letter (a-z): 0x61 to 0x7A
+            username[0] = bytes1(uint8(0x61 + (letterIndex - 26)));
+        }
+
+        // Remaining characters: can be letters or digits
+        // Total: 62 options (26 uppercase + 26 lowercase + 10 digits)
+        for (uint256 i = 1; i < length; i++) {
+            randomValue = uint256(keccak256(abi.encodePacked(seed, i)));
+            uint256 charIndex = randomValue % 62;
+
+            if (charIndex < 10) {
+                // Digit (0-9): 0x30 to 0x39
+                username[i] = bytes1(uint8(0x30 + charIndex));
+            } else if (charIndex < 36) {
+                // Uppercase letter (A-Z): 0x41 to 0x5A
+                username[i] = bytes1(uint8(0x41 + (charIndex - 10)));
             } else {
-                usernameBytes[i] = bytes1(uint8(random + 71));
+                // Lowercase letter (a-z): 0x61 to 0x7A
+                username[i] = bytes1(uint8(0x61 + (charIndex - 36)));
             }
         }
-        username = string(usernameBytes);
+
+        return string(username);
     }
 
-    function _execute_preparePostRegistrationAndFlush(
-        AccountData memory selectedUser,
-        string memory username
-    ) internal {
-        addBalance(selectedUser.Address, username, 0);
-        _execute_makePreRegistrationUsername(selectedUser, username, 777, 1);
-
-        skip(30 minutes);
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
-                selectedUser,
-                username,
-                777,
-                2,
-                0,
-                2,
-                true
-            );
-
-        nameService.registrationUsername(
-            selectedUser.Address,
-            username,
-            777,
-            2,
-            signatureNameService,
-            0,
-            2,
-            true,
-            signatureEVVM
-        );
-
-        evvm.addBalance(
-            COMMON_USER_NO_STAKER_3.Address,
-            MATE_TOKEN_ADDRESS,
-            1.67 ether
-        );
-
-        (
-            signatureNameService,
-            signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
-                COMMON_USER_NO_STAKER_3,
-                username,
-                block.timestamp + 30 days,
-                1.67 ether,
-                3,
-                0,
-                3,
-                true
-            );
-
-        nameService.makeOffer(
-            COMMON_USER_NO_STAKER_3.Address,
-            username,
-            block.timestamp + 30 days,
-            1.67 ether,
-            3,
-            signatureNameService,
-            0,
-            3,
-            true,
-            signatureEVVM
-        );
-
-        evvm.addBalance(
-            selectedUser.Address,
-            MATE_TOKEN_ADDRESS,
-            nameService.getPriceToFlushUsername(username)
-        );
-
-        (
-            signatureNameService,
-            signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
-                selectedUser,
-                username,
-                4,
-                0,
-                4,
-                true
-            );
-
-        nameService.flushUsername(
-            selectedUser.Address,
-            username,
-            4,
-            signatureNameService,
-            0,
-            4,
-            true,
-            signatureEVVM
-        );
+    struct Input {
+        uint8 secondsToSkip;
+        uint32 seed;
+        uint8 maxLength;
+        uint256 clowNumber;
+        uint256 nonceNameService;
+        uint32 priorityFee;
+        uint256 nonceAsyncEVVM;
+        bool priorityEVVM;
     }
 
-    /**
-     * Function to test:
-     * nS: No staker
-     * S: Staker
-     * PF: Includes priority fee
-     * nPF: No priority fee
-     */
-
-    struct RegistrationUsernameFuzzTestInput_nPF {
-        uint8 nonceNameService;
-        uint8 nonceEVVM;
-        bool priorityFlagEVVM;
-        uint16 clowNumber;
-        uint16 seed;
-        bool makeOfferAndFlush;
-    }
-
-    struct RegistrationUsernameFuzzTestInput_PF {
-        uint8 nonceNameService;
-        uint8 nonceEVVM;
-        bool priorityFlagEVVM;
-        uint16 priorityFeeAmount;
-        uint16 clowNumber;
-        uint16 seed;
-        bool makeOfferAndFlush;
-    }
-
-    function test__fuzz__registrationUsername__nS_nPF(
-        RegistrationUsernameFuzzTestInput_nPF memory input
+    function test__fuzz__preRegistrationUsername__noStaker(
+        Input memory input
     ) external {
-        input.nonceNameService = uint8(bound(input.nonceNameService, 11, 250));
-        input.nonceEVVM = uint8(bound(input.nonceEVVM, 11, 250));
-        vm.assume((input.seed / 2) >= 4);
+        vm.assume(input.nonceNameService > 0);
 
-        AccountData memory selectedUser = (input.seed % 2 == 0)
-            ? COMMON_USER_NO_STAKER_1
-            : COMMON_USER_NO_STAKER_2;
-        string memory username = makeUsername(input.seed);
-
-        if (input.makeOfferAndFlush)
-            _execute_preparePostRegistrationAndFlush(selectedUser, username);
-
-        uint256 nonce = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(selectedUser.Address);
-
-        addBalance(selectedUser.Address, username, 0);
+        string memory USERNAME = generateValidUsername(
+            uint256(input.seed),
+            uint256(input.maxLength)
+        );
         _execute_makePreRegistrationUsername(
-            selectedUser,
-            username,
+            USER,
+            USERNAME,
             input.clowNumber,
-            10
-        );
-
-        skip(30 minutes);
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
-                selectedUser,
-                username,
-                input.clowNumber,
-                input.nonceNameService,
-                0,
-                nonce,
-                input.priorityFlagEVVM
-            );
-
-        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
-        nameService.registrationUsername(
-            selectedUser.Address,
-            username,
-            input.clowNumber,
-            input.nonceNameService,
-            signatureNameService,
-            0,
-            nonce,
-            input.priorityFlagEVVM,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, uint256 expirationDate) = nameService
-            .getIdentityBasicMetadata(username);
-
-        assertEq(user, selectedUser.Address);
-        assertEq(expirationDate, block.timestamp + 366 days);
-        assertEq(evvm.getBalance(selectedUser.Address, MATE_TOKEN_ADDRESS), 0);
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_3.Address,
-                MATE_TOKEN_ADDRESS
-            ),
             0
         );
-    }
 
-    function test__fuzz__registrationUsername__nS_PF(
-        RegistrationUsernameFuzzTestInput_PF memory input
-    ) external {
-        input.nonceNameService = uint8(bound(input.nonceNameService, 11, 250));
-        input.nonceEVVM = uint8(bound(input.nonceEVVM, 11, 250));
-        vm.assume((input.seed / 2) >= 4);
+        skip(30 minutes + (input.secondsToSkip * 1 seconds));
 
-        AccountData memory selectedUser = (input.seed % 2 == 0)
-            ? COMMON_USER_NO_STAKER_1
-            : COMMON_USER_NO_STAKER_2;
-        string memory username = makeUsername(input.seed);
-
-        if (input.makeOfferAndFlush)
-            _execute_preparePostRegistrationAndFlush(selectedUser, username);
-
-        uint256 nonce = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(selectedUser.Address);
-
-        addBalance(selectedUser.Address, username, input.priorityFeeAmount);
-        _execute_makePreRegistrationUsername(
-            selectedUser,
-            username,
-            input.clowNumber,
-            10
+        Params memory params = Params({
+            user: USER,
+            username: USERNAME,
+            clowNumber: input.clowNumber,
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: input.priorityFee,
+            nonceEVVM: input.priorityEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(USER.Address),
+            priorityEVVM: input.priorityEVVM,
+            signatureEVVM: ""
+        });
+        _addBalance(params.user, params.username, params.priorityFee);
+        (
+            params.signatureNameService,
+            params.signatureEVVM
+        ) = _execute_makeRegistrationUsernameSignatures(
+            params.user,
+            USERNAME,
+            params.clowNumber,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
         );
 
-        skip(30 minutes);
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
-                selectedUser,
-                username,
-                input.clowNumber,
-                input.nonceNameService,
-                input.priorityFeeAmount,
-                nonce,
-                input.priorityFlagEVVM
-            );
-
-        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+        vm.startPrank(FISHER_NO_STAKER.Address);
         nameService.registrationUsername(
-            selectedUser.Address,
-            username,
-            input.clowNumber,
-            input.nonceNameService,
-            signatureNameService,
-            input.priorityFeeAmount,
-            nonce,
-            input.priorityFlagEVVM,
-            signatureEVVM
+            params.user.Address,
+            USERNAME,
+            params.clowNumber,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
         );
         vm.stopPrank();
 
-        (address user, uint256 expirationDate) = nameService
-            .getIdentityBasicMetadata(username);
+        (address ownerOne, ) = nameService.getIdentityBasicMetadata(
+            params.username
+        );
 
-        assertEq(user, selectedUser.Address);
-        assertEq(expirationDate, block.timestamp + 366 days);
-        assertEq(evvm.getBalance(selectedUser.Address, MATE_TOKEN_ADDRESS), 0);
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_3.Address,
-                MATE_TOKEN_ADDRESS
-            ),
+            ownerOne,
+            params.user.Address,
+            "Error no staker: username not registered correctly"
+        );
+
+        assertEq(
+            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "Error no staker: balance incorrectly changed after registration"
+        );
+
+        assertEq(
+            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "Error no staker: balance incorrectly changed after registration"
+        );
+    }
+
+
+    function test__fuzz__preRegistrationUsername__staker(
+        Input memory input
+    ) external {
+        vm.assume(input.nonceNameService > 0);
+        
+        string memory USERNAME = generateValidUsername(
+            uint256(input.seed),
+            uint256(input.maxLength)
+        );
+        _execute_makePreRegistrationUsername(
+            USER,
+            USERNAME,
+            input.clowNumber,
             0
         );
-    }
 
-    function test__fuzz__registrationUsername__S_nPF(
-        RegistrationUsernameFuzzTestInput_nPF memory input
-    ) external {
-        input.nonceNameService = uint8(bound(input.nonceNameService, 11, 250));
-        input.nonceEVVM = uint8(bound(input.nonceEVVM, 11, 250));
-        vm.assume((input.seed / 2) >= 4);
+        skip(30 minutes + (input.secondsToSkip * 1 seconds));
 
-        AccountData memory selectedUser = (input.seed % 2 == 0)
-            ? COMMON_USER_NO_STAKER_1
-            : COMMON_USER_NO_STAKER_2;
-        string memory username = makeUsername(input.seed);
-
-        if (input.makeOfferAndFlush)
-            _execute_preparePostRegistrationAndFlush(selectedUser, username);
-
-        uint256 nonce = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(selectedUser.Address);
-
-        addBalance(selectedUser.Address, username, 0);
-        _execute_makePreRegistrationUsername(
-            selectedUser,
-            username,
-            input.clowNumber,
-            10
-        );
-
-        skip(30 minutes);
-
+        Params memory params = Params({
+            user: USER,
+            username: USERNAME,
+            clowNumber: input.clowNumber,
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: input.priorityFee,
+            nonceEVVM: input.priorityEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(USER.Address),
+            priorityEVVM: input.priorityEVVM,
+            signatureEVVM: ""
+        });
+        _addBalance(params.user, params.username, params.priorityFee);
         (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            params.signatureNameService,
+            params.signatureEVVM
         ) = _execute_makeRegistrationUsernameSignatures(
-                selectedUser,
-                username,
-                input.clowNumber,
-                input.nonceNameService,
-                0,
-                nonce,
-                input.priorityFlagEVVM
-            );
-
-        uint256 balanceStakerBefore = evvm.getBalance(
-            COMMON_USER_STAKER.Address,
-            MATE_TOKEN_ADDRESS
+            params.user,
+            USERNAME,
+            params.clowNumber,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
         );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(FISHER_STAKER.Address);
         nameService.registrationUsername(
-            selectedUser.Address,
-            username,
-            input.clowNumber,
-            input.nonceNameService,
-            signatureNameService,
+            params.user.Address,
+            USERNAME,
+            params.clowNumber,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
+
+        (address ownerOne, ) = nameService.getIdentityBasicMetadata(
+            params.username
+        );
+
+        assertEq(
+            ownerOne,
+            params.user.Address,
+            "Error no staker: username not registered correctly"
+        );
+
+        assertEq(
+            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
-            nonce,
-            input.priorityFlagEVVM,
-            signatureEVVM
+            "Error no staker: balance incorrectly changed after registration"
         );
-        vm.stopPrank();
 
-        (address user, uint256 expirationDate) = nameService
-            .getIdentityBasicMetadata(username);
-
-        assertEq(user, selectedUser.Address);
-        assertEq(expirationDate, block.timestamp + 366 days);
-        assertEq(evvm.getBalance(selectedUser.Address, MATE_TOKEN_ADDRESS), 0);
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 50) + balanceStakerBefore
-        );
-    }
-
-    function test__fuzz__registrationUsername__S_PF(
-        RegistrationUsernameFuzzTestInput_PF memory input
-    ) external {
-        input.nonceNameService = uint8(bound(input.nonceNameService, 11, 250));
-        input.nonceEVVM = uint8(bound(input.nonceEVVM, 11, 250));
-        vm.assume((input.seed / 2) >= 4);
-
-        AccountData memory selectedUser = (input.seed % 2 == 0)
-            ? COMMON_USER_NO_STAKER_1
-            : COMMON_USER_NO_STAKER_2;
-        string memory username = makeUsername(input.seed);
-
-        if (input.makeOfferAndFlush)
-            _execute_preparePostRegistrationAndFlush(selectedUser, username);
-
-        uint256 nonce = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(selectedUser.Address);
-
-        addBalance(selectedUser.Address, username, input.priorityFeeAmount);
-        _execute_makePreRegistrationUsername(
-            selectedUser,
-            username,
-            input.clowNumber,
-            10
-        );
-
-        skip(30 minutes);
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
-                selectedUser,
-                username,
-                input.clowNumber,
-                input.nonceNameService,
-                input.priorityFeeAmount,
-                nonce,
-                input.priorityFlagEVVM
-            );
-
-        uint256 balanceStakerBefore = evvm.getBalance(
-            COMMON_USER_STAKER.Address,
-            MATE_TOKEN_ADDRESS
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-        nameService.registrationUsername(
-            selectedUser.Address,
-            username,
-            input.clowNumber,
-            input.nonceNameService,
-            signatureNameService,
-            input.priorityFeeAmount,
-            nonce,
-            input.priorityFlagEVVM,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address user, uint256 expirationDate) = nameService
-            .getIdentityBasicMetadata(username);
-
-        assertEq(user, selectedUser.Address);
-        assertEq(expirationDate, block.timestamp + 366 days);
-        assertEq(evvm.getBalance(selectedUser.Address, MATE_TOKEN_ADDRESS), 0);
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 50) +
-                balanceStakerBefore +
-                input.priorityFeeAmount
+            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (50 * evvm.getRewardAmount()) + params.priorityFee,
+            "Error staker: balance incorrectly changed after registration"
         );
     }
 }

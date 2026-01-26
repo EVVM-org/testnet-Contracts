@@ -1,14 +1,19 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
 
 pragma solidity ^0.8.0;
@@ -138,7 +143,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         // 1. define params
         uint256 nonceP2PSwap = 14569;
         address tokenA = ETHER_ADDRESS;
-        address tokenB = MATE_TOKEN_ADDRESS;
+        address tokenB = PRINCIPAL_TOKEN_ADDRESS;
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
@@ -149,7 +154,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
         addBalance(COMMON_USER_NO_STAKER_2.Address, tokenB, amountB + fee);
-        addBalance(address(p2pSwap), MATE_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -255,7 +260,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         // 1. define params
         uint256 nonceP2PSwap = 14569;
         address tokenA = ETHER_ADDRESS;
-        address tokenB = MATE_TOKEN_ADDRESS;
+        address tokenB = PRINCIPAL_TOKEN_ADDRESS;
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
@@ -266,7 +271,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
         addBalance(COMMON_USER_NO_STAKER_2.Address, tokenB, amountB + fee);
-        addBalance(address(p2pSwap), MATE_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -387,7 +392,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         // 1. define params
         uint256 nonceP2PSwap = 14569;
         address tokenA = ETHER_ADDRESS;
-        address tokenB = MATE_TOKEN_ADDRESS;
+        address tokenB = PRINCIPAL_TOKEN_ADDRESS;
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
@@ -480,7 +485,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         // 1. define params
         uint256 nonceP2PSwap = 14569;
         address tokenA = ETHER_ADDRESS;
-        address tokenB = MATE_TOKEN_ADDRESS;
+        address tokenB = PRINCIPAL_TOKEN_ADDRESS;
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
@@ -491,7 +496,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
         addBalance(COMMON_USER_NO_STAKER_2.Address, tokenB, amountB + fee);
-        addBalance(address(p2pSwap), MATE_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -597,7 +602,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         // 1. define params
         uint256 nonceP2PSwap = 14569;
         address tokenA = ETHER_ADDRESS;
-        address tokenB = MATE_TOKEN_ADDRESS;
+        address tokenB = PRINCIPAL_TOKEN_ADDRESS;
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
@@ -608,7 +613,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
         addBalance(COMMON_USER_NO_STAKER_2.Address, tokenB, amountB + fee);
-        addBalance(address(p2pSwap), MATE_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(

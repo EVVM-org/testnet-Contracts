@@ -1,1444 +1,630 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
 import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
+    ErrorsLib as EvvmErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    AsyncNonce
+} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
 
 contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
-    function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+    uint256 offerID;
 
+    function executeBeforeSetUp() internal override {
         _execute_makeRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
-            777,
-            10101,
-            20202
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+            )
         );
-        makeOffer(
+
+        offerID = _execute_makeMakeOffer(
             COMMON_USER_NO_STAKER_2,
             "test",
             block.timestamp + 30 days,
             0.001 ether,
-            10001,
-            101,
-            true
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
+            ),
+            0,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
+            ),
+            true,
+            COMMON_USER_NO_STAKER_3
         );
     }
 
-    function addBalance(
+    function _addBalance(
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(user.Address, MATE_TOKEN_ADDRESS, priorityFeeAmount);
+        evvm.addBalance(
+            user.Address,
+            PRINCIPAL_TOKEN_ADDRESS,
+            priorityFeeAmount
+        );
 
-        totalPriorityFeeAmount = priorityFeeAmount;
+        return priorityFeeAmount;
     }
 
-    /**
-     * Function to test:
-     * bSigAt[variable]: bad signature at
-     * bPaySigAt[variable]: bad payment signature at
-     * some denominations on test can be explicit expleined
-     */
-
-    /*
-
-    function test__unit_revert__withdrawOffer__bPaySigAt() external {
-        uint256 totalPriorityFee = addBalance(
+    function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_evvmID()
+        external
+    {
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
 
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
+        uint256 nonceNameService = 1001;
+        uint256 nonceEVVM = 2002;
 
-        (v, r, s) = vm.sign(
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
+                /* 🢃 different evvmID 🢃 */
+                evvm.getEvvmID() + 1,
                 "test",
-                0,
-                100010001
+                offerID,
+                nonceNameService
             )
         );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
+        bytes memory signatureNameService = Erc191TestBuilder
+            .buildERC191Signature(v, r, s);
 
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                0,
-                10000001,
-                true,
-                address(nameService)
-            )
+        bytes memory signatureEVVM = _execute_makeSignaturePay(
+            COMMON_USER_NO_STAKER_2,
+            address(nameService),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            0,
+            totalPriorityFee,
+            nonceEVVM,
+            true,
+            address(nameService)
         );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            0,
-            100010001,
+            offerID,
+            nonceNameService,
             signatureNameService,
             totalPriorityFee,
-            10000001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriorityFee,
+            "User balance after withdraw offer reverted is incorrect"
+        );
 
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
+        assertEq(
+            nameService.getSingleOfferOfUsername("test", offerID).offerer,
+            COMMON_USER_NO_STAKER_2.Address,
+            "Offer should remain active after withdraw offer reverted"
+        );
+    }
+
+    function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_signer()
+        external
+    {
+        uint256 totalPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.0001 ether
+        );
+
+        uint256 nonceNameService = 1001;
+        uint256 nonceEVVM = 2002;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeWithdrawOfferSignatures(
+                /* 🢃 different signer 🢃 */
+                COMMON_USER_NO_STAKER_3,
+                "test",
+                offerID,
+                nonceNameService,
+                totalPriorityFee,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.withdrawOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            offerID,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFee,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalPriorityFee
+            totalPriorityFee,
+            "User balance after withdraw offer reverted is incorrect"
         );
+
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            nameService.getSingleOfferOfUsername("test", offerID).offerer,
+            COMMON_USER_NO_STAKER_2.Address,
+            "Offer should remain active after withdraw offer reverted"
         );
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////
-
-    function test__unit_revert__withdrawOffer__() external {
-        uint256 totalPriorityFee = addBalance(
+    function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_username()
+        external
+    {
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
+
+        uint256 nonceNameService = 1001;
+        uint256 nonceEVVM = 2002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeWithdrawOfferSignatures(
                 COMMON_USER_NO_STAKER_2,
-                true,
-                "test",
-                0,
-                100010001,
+                /* 🢃 different username 🢃 */
+                "differentTest",
+                offerID,
+                nonceNameService,
                 totalPriorityFee,
-                10000001,
+                nonceEVVM,
                 true
             );
 
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            0,
-            100010001,
+            offerID,
+            nonceNameService,
             signatureNameService,
             totalPriorityFee,
-            10000001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-    */
-
-    function test__unit_revert__withdrawOffer__bSigAtSigner() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                0,
-                10000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
             totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
+            "User balance after withdraw offer reverted is incorrect"
         );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__bSigAtUsername() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "user",
-                0,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                0,
-                10000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
+            nameService.getSingleOfferOfUsername("test", offerID).offerer,
             COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            "Offer should remain active after withdraw offer reverted"
         );
     }
 
-    function test__unit_revert__withdrawOffer__bSigAtOfferID() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                777,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                0,
-                10000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__bSigAtNonceNameService()
+    function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_offerId()
         external
     {
-        uint256 totalPriorityFee = addBalance(
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
 
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                777
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                0,
-                10000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__bPaySigAtSigner() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                0,
-                10000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__bPaySigAtToAddress() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                0,
-                10000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__bPaySigAtToIdentity() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(0),
-                "nameservice",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                0,
-                10000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__bPaySigAtTokenAddress()
-        external
-    {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                ETHER_ADDRESS,
-                totalPriorityFee,
-                0,
-                10000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__bPaySigAtAmount() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                777,
-                0,
-                10000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__bPaySigAtPriorityFee() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                777,
-                10000001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__bPaySigAtNonceEVVM() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                0,
-                777,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__bPaySigAtPriorityFlag()
-        external
-    {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                0,
-                10000001,
-                false,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__bPaySigAtExecutor() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
-                "test",
-                0,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalPriorityFee,
-                0,
-                10000001,
-                true,
-                address(0)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            100010001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__addressIsNotOfferer() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_3,
-            0.0001 ether
-        );
+        uint256 nonceNameService = 1001;
+        uint256 nonceEVVM = 2002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeWithdrawOfferSignatures(
-                COMMON_USER_NO_STAKER_3,
-                true,
+                COMMON_USER_NO_STAKER_2,
                 "test",
-                0,
-                100010001,
+                /* 🢃 different offerId 🢃 */
+                offerID + 1,
+                nonceNameService,
                 totalPriorityFee,
-                10000001,
+                nonceEVVM,
                 true
             );
 
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.withdrawOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            offerID,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFee,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriorityFee,
+            "User balance after withdraw offer reverted is incorrect"
+        );
+
+        assertEq(
+            nameService.getSingleOfferOfUsername("test", offerID).offerer,
+            COMMON_USER_NO_STAKER_2.Address,
+            "Offer should remain active after withdraw offer reverted"
+        );
+    }
+
+    function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_nameServiceNonce()
+        external
+    {
+        uint256 totalPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.0001 ether
+        );
+
+        uint256 nonceNameService = 1001;
+        uint256 nonceEVVM = 2002;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeWithdrawOfferSignatures(
+                COMMON_USER_NO_STAKER_2,
+                "test",
+                offerID,
+                /* 🢃 different nameServiceNonce 🢃 */
+                nonceNameService + 1,
+                totalPriorityFee,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.withdrawOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            offerID,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFee,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriorityFee,
+            "User balance after withdraw offer reverted is incorrect"
+        );
+
+        assertEq(
+            nameService.getSingleOfferOfUsername("test", offerID).offerer,
+            COMMON_USER_NO_STAKER_2.Address,
+            "Offer should remain active after withdraw offer reverted"
+        );
+    }
+
+    function test__unit_revert__withdrawOffer__UserIsNotOwnerOfOffer()
+        external
+    {
+        uint256 totalPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.0001 ether
+        );
+
+        uint256 nonceNameService = 1001;
+        uint256 nonceEVVM = 2002;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeWithdrawOfferSignatures(
+                /* 🢃 non owner address 🢃 */
+                COMMON_USER_NO_STAKER_3,
+                "test",
+                offerID,
+                nonceNameService,
+                totalPriorityFee,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.UserIsNotOwnerOfOffer.selector);
+        nameService.withdrawOffer(
+            /* 🢃 non owner address 🢃 */
             COMMON_USER_NO_STAKER_3.Address,
             "test",
-            0,
-            100010001,
+            offerID,
+            nonceNameService,
             signatureNameService,
             totalPriorityFee,
-            10000001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_3.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriorityFee
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__withdrawOffer__NonceAlreadyUsed() external {
-        uint256 totalPriorityFee = addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeWithdrawOfferSignatures(
-                COMMON_USER_NO_STAKER_2,
-                true,
-                "test",
-                0,
-                10001,
-                totalPriorityFee,
-                10000001,
-                true
-            );
-
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.withdrawOffer(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            0,
-            10001,
-            signatureNameService,
-            totalPriorityFee,
-            10000001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
-
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalPriorityFee
+            totalPriorityFee,
+            "User balance after withdraw offer reverted is incorrect"
         );
+
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            nameService.getSingleOfferOfUsername("test", offerID).offerer,
+            COMMON_USER_NO_STAKER_2.Address,
+            "Offer should remain active after withdraw offer reverted"
         );
     }
 
-    function test__unit_revert__withdrawOffer__userTriesToCallOutOfBounds()
+    function test__unit_revert__withdrawOffer__AsyncNonceAlreadyUsed()
         external
     {
-        uint256 totalPriorityFee = addBalance(
+        uint256 totalPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.0001 ether
         );
+
+        /* 🢃 reused nonce 🢃 */
+        uint256 nonceNameService = uint256(
+            0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
+        );
+        uint256 nonceEVVM = 2002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeWithdrawOfferSignatures(
                 COMMON_USER_NO_STAKER_2,
-                true,
                 "test",
-                5,
-                100010001,
+                offerID,
+                nonceNameService,
                 totalPriorityFee,
-                10000001,
+                nonceEVVM,
                 true
             );
 
-        NameService.OfferMetadata memory checkDataBefore = nameService
-            .getSingleOfferOfUsername("test", 0);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
+        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            5,
-            100010001,
+            offerID,
+            nonceNameService,
             signatureNameService,
             totalPriorityFee,
-            10000001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkDataAfter = nameService
-            .getSingleOfferOfUsername("test", 0);
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriorityFee,
+            "User balance after withdraw offer reverted is incorrect"
+        );
 
-        assertEq(checkDataAfter.offerer, checkDataBefore.offerer);
-        assertEq(checkDataAfter.amount, checkDataBefore.amount);
-        assertEq(checkDataAfter.expireDate, checkDataBefore.expireDate);
+        assertEq(
+            nameService.getSingleOfferOfUsername("test", offerID).offerer,
+            COMMON_USER_NO_STAKER_2.Address,
+            "Offer should remain active after withdraw offer reverted"
+        );
+    }
+
+    function test__unit_revert__withdrawOffer__InvalidSignature_fromEvvm()
+        external
+    {
+        uint256 totalPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.0001 ether
+        );
+
+        uint256 nonceNameService = 1001;
+        uint256 nonceEVVM = 2002;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeWithdrawOfferSignatures(
+                COMMON_USER_NO_STAKER_2,
+                "test",
+                offerID,
+                nonceNameService,
+                /* 🢃 different totalPriorityFee 🢃 */
+                totalPriorityFee + 50,
+                /* 🢃 different nonceEVVM 🢃 */
+                nonceEVVM + 1,
+                /* 🢃 different priorityFlag 🢃 */
+                false
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        nameService.withdrawOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            offerID,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFee,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalPriorityFee
+            totalPriorityFee,
+            "User balance after withdraw offer reverted is incorrect"
         );
+
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            nameService.getSingleOfferOfUsername("test", offerID).offerer,
+            COMMON_USER_NO_STAKER_2.Address,
+            "Offer should remain active after withdraw offer reverted"
+        );
+    }
+
+    function test__unit_revert__withdrawOffer__InsufficientBalance_fromEvvm()
+        external
+    {
+        uint256 totalPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.0001 ether
+        );
+
+        uint256 nonceNameService = 1001;
+        uint256 nonceEVVM = 2002;
+        /* 🢃 insufficient balance 🢃 */
+        totalPriorityFee += 1 ether;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeWithdrawOfferSignatures(
+                COMMON_USER_NO_STAKER_2,
+                "test",
+                offerID,
+                nonceNameService,
+                totalPriorityFee,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        nameService.withdrawOffer(
+            COMMON_USER_NO_STAKER_2.Address,
+            "test",
+            offerID,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFee,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        totalPriorityFee -= 1 ether;
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_2.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriorityFee,
+            "User balance after withdraw offer reverted is incorrect"
+        );
+
+        assertEq(
+            nameService.getSingleOfferOfUsername("test", offerID).offerer,
+            COMMON_USER_NO_STAKER_2.Address,
+            "Offer should remain active after withdraw offer reverted"
         );
     }
 }

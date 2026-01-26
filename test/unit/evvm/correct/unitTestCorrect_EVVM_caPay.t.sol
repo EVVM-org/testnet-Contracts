@@ -1,88 +1,91 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+/**                                                                                                        
+██  ██ ▄▄  ▄▄ ▄▄ ▄▄▄▄▄▄   ▄▄▄▄▄▄ ▄▄▄▄▄  ▄▄▄▄ ▄▄▄▄▄▄ 
+██  ██ ███▄██ ██   ██       ██   ██▄▄  ███▄▄   ██   
+▀████▀ ██ ▀██ ██   ██       ██   ██▄▄▄ ▄▄██▀   ██   
+                                                    
+                                                    
+                                                    
+ ▄▄▄▄  ▄▄▄  ▄▄▄▄  ▄▄▄▄  ▄▄▄▄▄  ▄▄▄▄ ▄▄▄▄▄▄          
+██▀▀▀ ██▀██ ██▄█▄ ██▄█▄ ██▄▄  ██▀▀▀   ██            
+▀████ ▀███▀ ██ ██ ██ ██ ██▄▄▄ ▀████   ██                                                    
  */
 
 pragma solidity ^0.8.0;
 pragma abicoder v2;
-
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 
 contract unitTestCorrect_EVVM_caPay is Test, Constants {
-    function addBalance(
-        address user,
-        address token,
-        uint256 amount,
-        uint256 priorityFee
-    ) private {
-        evvm.addBalance(user, token, amount + priorityFee);
-    }
+    //function executeBeforeSetUp() internal override {}
 
-    /**
-     * Function to test:
-     * nS: No staker
-     * S: Staker
-     */
+    function _addBalance(
+        address _ca,
+        address _token,
+        uint256 _amount
+    ) private returns (uint256 amount) {
+        evvm.addBalance(_ca, _token, _amount);
+        return (_amount);
+    }
 
     ///@dev because this script behaves like a smart contract we can use caPay
     ///     and disperseCaPay without any problem
 
-    function test__unit_correct__caPay__nS() external {
-        addBalance(address(this), ETHER_ADDRESS, 0.001 ether, 0);
+    function test__unit_correct__caPay__noStaker() external {
+        uint256 amount = _addBalance(address(this), ETHER_ADDRESS, 0.001 ether);
 
-        evvm.caPay(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS, 0.001 ether);
+        evvm.caPay(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS, amount);
 
         assertEq(
             evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
-            0.001 ether
+            amount,
+            "Amount should be recibed"
+        );
+
+        assertEq(
+            evvm.getBalance(address(this), ETHER_ADDRESS),
+            0,
+            "Amount should be deducted"
+        );
+
+        assertEq(
+            evvm.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "ca dont recieve rewards because is not an staker"
         );
     }
 
-    function test__unit_correct__caPay__S() external {
-        addBalance(address(this), ETHER_ADDRESS, 0.001 ether, 0);
+    function test__unit_correct__caPay__staker() external {
+        uint256 amount = _addBalance(address(this), ETHER_ADDRESS, 0.001 ether);
         evvm.setPointStaker(address(this), 0x01);
 
-        evvm.caPay(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS, 0.001 ether);
+        evvm.caPay(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS, amount);
 
         assertEq(
             evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
-            0.001 ether
+            amount,
+            "Amount should be recibed"
         );
+
         assertEq(
-            evvm.getBalance(address(this), MATE_TOKEN_ADDRESS),
-            evvm.getRewardAmount()
+            evvm.getBalance(address(this), ETHER_ADDRESS),
+            0,
+            "Amount should be deducted"
+        );
+
+        assertEq(
+            evvm.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
+            evvm.getRewardAmount(),
+            "ca recieve rewards because is an staker"
         );
     }
 }

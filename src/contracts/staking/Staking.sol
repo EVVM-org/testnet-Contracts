@@ -41,10 +41,14 @@ pragma solidity ^0.8.0;
  * - Estimator integration for yield calculations
  */
 
-import {IEvvm} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
+import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {IEstimator} from "@evvm/testnet-contracts/interfaces/IEstimator.sol";
-import {AsyncNonce} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
-import {StakingStructs} from "@evvm/testnet-contracts/contracts/staking/lib/StakingStructs.sol";
+import {
+    AsyncNonce
+} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+import {
+    StakingStructs
+} from "@evvm/testnet-contracts/contracts/staking/lib/StakingStructs.sol";
 import {ErrorsLib} from "./lib/ErrorsLib.sol";
 import {SignatureUtils} from "./lib/SignatureUtils.sol";
 
@@ -60,10 +64,6 @@ contract Staking is AsyncNonce, StakingStructs {
     uint256 private presaleStakerCount;
     /// @dev Price of one staking main token (5083 main token = 1 staking)
     uint256 private constant PRICE_OF_STAKING = 5083 * (10 ** 18);
-
-    /// @dev Address representing the principal Principal Token
-    address private constant PRINCIPAL_TOKEN_ADDRESS =
-        0x0000000000000000000000000000000000000001;
 
     /// @dev Admin address management with proposal system
     AddressTypeProposal private admin;
@@ -91,7 +91,7 @@ contract Staking is AsyncNonce, StakingStructs {
     /// @dev Mapping to store complete staking history for each user
     mapping(address => HistoryMetadata[]) private userHistory;
 
-    IEvvm private evvm;
+    Evvm private evvm;
     IEstimator private estimator;
 
     /// @dev Modifier to verify access to admin functions
@@ -127,8 +127,22 @@ contract Staking is AsyncNonce, StakingStructs {
 
         goldenFisher.actual = initialGoldenFisher;
 
-        allowPublicStaking.flag = false;
-        allowPresaleStaking.flag = true;
+        /**
+         * @dev Because presale staking is disabled by default
+         *      if you want to enable it, you need to do it via
+         *      this admin functions
+         *
+         *      prepareChangeAllowPresaleStaking()
+         *      prepareChangeAllowPublicStaking()
+         *
+         *      wait TIME_TO_ACCEPT_PROPOSAL
+         *
+         *      confirmChangeAllowPresaleStaking()
+         *      confirmChangeAllowPublicStaking()
+         */
+
+        allowPublicStaking.flag = true;
+        allowPresaleStaking.flag = false;
 
         secondsToUnlockStaking.actual = 0;
 
@@ -152,7 +166,7 @@ contract Staking is AsyncNonce, StakingStructs {
         estimatorAddress.actual = _estimator;
         EVVM_ADDRESS = _evvm;
         breakerSetupEstimatorAndEvvm = 0x00;
-        evvm = IEvvm(_evvm);
+        evvm = Evvm(_evvm);
         estimator = IEstimator(_estimator);
     }
 
@@ -204,11 +218,13 @@ contract Staking is AsyncNonce, StakingStructs {
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
     ) external {
+        if (!allowPresaleStaking.flag || allowPublicStaking.flag)
+            revert ErrorsLib.PresaleStakingDisabled();
+
         if (
-            !SignatureUtils.verifyMessageSignedForStake(
+            !SignatureUtils.verifyMessageSignedForPresaleStake(
                 evvm.getEvvmID(),
                 user,
-                false,
                 isStaking,
                 1,
                 nonce,
@@ -216,12 +232,19 @@ contract Staking is AsyncNonce, StakingStructs {
             )
         ) revert ErrorsLib.InvalidSignatureOnStaking();
 
+        if (!userPresaleStaker[user].isAllow)
+            revert ErrorsLib.UserIsNotPresaleStaker();
+
         verifyAsyncNonce(user, nonce);
 
-        presaleClaims(isStaking, user);
+        uint256 current = userPresaleStaker[user].stakingAmount;
 
-        if (!allowPresaleStaking.flag)
-            revert ErrorsLib.PresaleStakingDisabled();
+        if (isStaking ? current >= 2 : current == 0)
+            revert ErrorsLib.UserPresaleStakerLimitExceeded();
+
+        userPresaleStaker[user].stakingAmount = isStaking
+            ? current + 1
+            : current - 1;
 
         stakingBaseProcess(
             AccountMetadata({Address: user, IsAService: false}),
@@ -234,38 +257,6 @@ contract Staking is AsyncNonce, StakingStructs {
         );
 
         markAsyncNonceAsUsed(user, nonce);
-    }
-
-    /**
-     * @notice Internal function to manage presale staking limits and permissions
-     * @dev Enforces the 2 staking token limit for presale users and tracks staking amounts
-     * @param _isStaking True for staking (increments count), false for unstaking (decrements count)
-     * @param _user Address of the presale user
-     */
-    function presaleClaims(bool _isStaking, address _user) internal {
-        if (allowPublicStaking.flag) {
-            revert ErrorsLib.PresaleStakingDisabled();
-        } else {
-            if (userPresaleStaker[_user].isAllow) {
-                if (_isStaking) {
-                    // staking
-
-                    if (userPresaleStaker[_user].stakingAmount >= 2)
-                        revert ErrorsLib.UserPresaleStakerLimitExceeded();
-
-                    userPresaleStaker[_user].stakingAmount++;
-                } else {
-                    // unstaking
-
-                    if (userPresaleStaker[_user].stakingAmount == 0)
-                        revert ErrorsLib.UserPresaleStakerLimitExceeded();
-
-                    userPresaleStaker[_user].stakingAmount--;
-                }
-            } else {
-                revert ErrorsLib.UserIsNotPresaleStaker();
-            }
-        }
     }
 
     /**
@@ -292,15 +283,12 @@ contract Staking is AsyncNonce, StakingStructs {
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
     ) external {
-        if (!allowPublicStaking.flag) {
-            revert();
-        }
+        if (!allowPublicStaking.flag) revert ErrorsLib.PublicStakingDisabled();
 
         if (
-            !SignatureUtils.verifyMessageSignedForStake(
+            !SignatureUtils.verifyMessageSignedForPublicStake(
                 evvm.getEvvmID(),
                 user,
-                true,
                 isStaking,
                 amountOfStaking,
                 nonce,
@@ -346,11 +334,11 @@ contract Staking is AsyncNonce, StakingStructs {
             amountOfStaking: amountOfStaking,
             amountServiceBeforeStaking: evvm.getBalance(
                 msg.sender,
-                PRINCIPAL_TOKEN_ADDRESS
+                evvm.getPrincipalTokenAddress()
             ),
             amountStakingBeforeStaking: evvm.getBalance(
                 address(this),
-                PRINCIPAL_TOKEN_ADDRESS
+                evvm.getPrincipalTokenAddress()
             )
         });
     }
@@ -372,23 +360,13 @@ contract Staking is AsyncNonce, StakingStructs {
         uint256 totalStakingRequired = PRICE_OF_STAKING *
             serviceStakingData.amountOfStaking;
 
-        uint256 actualServiceBalance = evvm.getBalance(
-            msg.sender,
-            PRINCIPAL_TOKEN_ADDRESS
-        );
-
-        uint256 actualStakingBalance = evvm.getBalance(
-            address(this),
-            PRINCIPAL_TOKEN_ADDRESS
-        );
-
         if (
             serviceStakingData.amountServiceBeforeStaking -
                 totalStakingRequired !=
-            actualServiceBalance &&
+            evvm.getBalance(msg.sender, evvm.getPrincipalTokenAddress()) &&
             serviceStakingData.amountStakingBeforeStaking +
                 totalStakingRequired !=
-            actualStakingBalance
+            evvm.getBalance(address(this), evvm.getPrincipalTokenAddress())
         )
             revert ErrorsLib.ServiceDoesNotFulfillCorrectStakingAmount(
                 totalStakingRequired
@@ -492,8 +470,8 @@ contract Staking is AsyncNonce, StakingStructs {
             if (priorityFee_EVVM != 0 && !account.IsAService)
                 makePay(
                     account.Address,
-                    priorityFee_EVVM,
                     0,
+                    priorityFee_EVVM,
                     priorityFlag_EVVM,
                     nonce_EVVM,
                     signature_EVVM
@@ -506,7 +484,7 @@ contract Staking is AsyncNonce, StakingStructs {
                 amountOfStaking;
 
             makeCaPay(
-                PRINCIPAL_TOKEN_ADDRESS,
+                evvm.getPrincipalTokenAddress(),
                 account.Address,
                 (PRICE_OF_STAKING * amountOfStaking)
             );
@@ -523,12 +501,9 @@ contract Staking is AsyncNonce, StakingStructs {
             })
         );
 
-        if (
-            evvm.isAddressStaker(msg.sender) &&
-            !account.IsAService
-        ) {
+        if (evvm.isAddressStaker(msg.sender) && !account.IsAService) {
             makeCaPay(
-                PRINCIPAL_TOKEN_ADDRESS,
+                evvm.getPrincipalTokenAddress(),
                 msg.sender,
                 (evvm.getRewardAmount() * 2) + priorityFee_EVVM
             );
@@ -578,7 +553,7 @@ contract Staking is AsyncNonce, StakingStructs {
 
                 if (evvm.isAddressStaker(msg.sender)) {
                     makeCaPay(
-                        PRINCIPAL_TOKEN_ADDRESS,
+                        evvm.getPrincipalTokenAddress(),
                         msg.sender,
                         (evvm.getRewardAmount() * 1)
                     );
@@ -613,7 +588,7 @@ contract Staking is AsyncNonce, StakingStructs {
             user,
             address(this),
             "",
-            PRINCIPAL_TOKEN_ADDRESS,
+            evvm.getPrincipalTokenAddress(),
             amount,
             priorityFee,
             nonce,
@@ -648,9 +623,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @param _staker Address to be added to the presale staker list
      */
     function addPresaleStaker(address _staker) external onlyOwner {
-        if (presaleStakerCount > LIMIT_PRESALE_STAKER) {
-            revert();
-        }
+        if (presaleStakerCount > LIMIT_PRESALE_STAKER)
+            revert ErrorsLib.LimitPresaleStakersExceeded();
+
         userPresaleStaker[_staker].isAllow = true;
         presaleStakerCount++;
     }
@@ -662,9 +637,9 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function addPresaleStakers(address[] calldata _stakers) external onlyOwner {
         for (uint256 i = 0; i < _stakers.length; i++) {
-            if (presaleStakerCount > LIMIT_PRESALE_STAKER) {
-                revert();
-            }
+            if (presaleStakerCount > LIMIT_PRESALE_STAKER)
+                revert ErrorsLib.LimitPresaleStakersExceeded();
+
             userPresaleStaker[_stakers[i]].isAllow = true;
             presaleStakerCount++;
         }
@@ -694,11 +669,12 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Can only be called by the proposed admin after the time delay has passed
      */
     function acceptNewAdmin() external {
-        if (
-            msg.sender != admin.proposal || admin.timeToAccept > block.timestamp
-        ) {
-            revert();
-        }
+        if (msg.sender != admin.proposal)
+            revert ErrorsLib.SenderIsNotProposedAdmin();
+
+        if (admin.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+
         admin.actual = admin.proposal;
         admin.proposal = address(0);
         admin.timeToAccept = 0;
@@ -728,9 +704,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Can only be called by the current admin after the 1-day time delay
      */
     function acceptNewGoldenFisher() external onlyOwner {
-        if (goldenFisher.timeToAccept > block.timestamp) {
-            revert();
-        }
+        if (goldenFisher.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+
         goldenFisher.actual = goldenFisher.proposal;
         goldenFisher.proposal = address(0);
         goldenFisher.timeToAccept = 0;
@@ -764,9 +740,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Can only be called by the current admin after the 1-day time delay
      */
     function acceptSetSecondsToUnlockStaking() external onlyOwner {
-        if (secondsToUnlockStaking.timeToAccept > block.timestamp) {
-            revert();
-        }
+        if (secondsToUnlockStaking.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+
         secondsToUnlockStaking.actual = secondsToUnlockStaking.proposal;
         secondsToUnlockStaking.proposal = 0;
         secondsToUnlockStaking.timeToAccept = 0;
@@ -800,9 +776,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Can only be called by the current admin after the 1-day time delay
      */
     function confirmSetSecondsToUnllockFullUnstaking() external onlyOwner {
-        if (secondsToUnllockFullUnstaking.timeToAccept > block.timestamp) {
-            revert();
-        }
+        if (secondsToUnllockFullUnstaking.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+
         secondsToUnllockFullUnstaking.actual = secondsToUnllockFullUnstaking
             .proposal;
         secondsToUnllockFullUnstaking.proposal = 0;
@@ -832,9 +808,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Toggles between enabled/disabled state for public staking after 1-day delay
      */
     function confirmChangeAllowPublicStaking() external onlyOwner {
-        if (allowPublicStaking.timeToAccept > block.timestamp) {
-            revert();
-        }
+        if (allowPublicStaking.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+
         allowPublicStaking = BoolTypeProposal({
             flag: !allowPublicStaking.flag,
             timeToAccept: 0
@@ -864,13 +840,11 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Toggles between enabled/disabled state for presale staking after 1-day delay
      */
     function confirmChangeAllowPresaleStaking() external onlyOwner {
-        if (allowPresaleStaking.timeToAccept > block.timestamp) {
-            revert();
-        }
-        allowPresaleStaking = BoolTypeProposal({
-            flag: !allowPresaleStaking.flag,
-            timeToAccept: 0
-        });
+        if (allowPresaleStaking.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+
+        allowPresaleStaking.flag = !allowPresaleStaking.flag;
+        allowPresaleStaking.timeToAccept = 0;
     }
 
     /**
@@ -880,7 +854,9 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function proposeEstimator(address _estimator) external onlyOwner {
         estimatorAddress.proposal = _estimator;
-        estimatorAddress.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
+        estimatorAddress.timeToAccept =
+            block.timestamp +
+            TIME_TO_ACCEPT_PROPOSAL;
     }
 
     /**
@@ -897,9 +873,9 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Can only be called by the current admin after the 1-day time delay
      */
     function acceptNewEstimator() external onlyOwner {
-        if (estimatorAddress.timeToAccept > block.timestamp) {
-            revert();
-        }
+        if (estimatorAddress.timeToAccept > block.timestamp)
+            revert ErrorsLib.TimeToAcceptProposalNotReached();
+
         estimatorAddress.actual = estimatorAddress.proposal;
         estimatorAddress.proposal = address(0);
         estimatorAddress.timeToAccept = 0;
@@ -1104,7 +1080,7 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev Includes current flag state and any pending changes with timestamps
      * @return BoolTypeProposal struct containing flag and timeToAccept
      */
-    function getAllDataOfAllowPublicStaking()
+    function getAllowPublicStaking()
         external
         view
         returns (BoolTypeProposal memory)
@@ -1126,6 +1102,15 @@ contract Staking is AsyncNonce, StakingStructs {
     }
 
     /**
+     * @notice Gets the unique identifier string for this EVVM instance
+     * @dev Returns the EvvmID used for distinguishing different EVVM deployments
+     * @return Unique EvvmID string
+     */
+    function getEvvmID() external view returns (uint256) {
+        return evvm.getEvvmID();
+    }
+
+    /**
      * @notice Returns the address of the EVVM core contract
      * @dev The EVVM contract handles payments and staker registration
      * @return Address of the EVVM core contract
@@ -1139,8 +1124,8 @@ contract Staking is AsyncNonce, StakingStructs {
      * @dev This is a constant address used to represent the principal token
      * @return Address representing the Principal Token (0x...0001)
      */
-    function getMateAddress() external pure returns (address) {
-        return PRINCIPAL_TOKEN_ADDRESS;
+    function getMateAddress() external view returns (address) {
+        return evvm.getPrincipalTokenAddress();
     }
 
     /**

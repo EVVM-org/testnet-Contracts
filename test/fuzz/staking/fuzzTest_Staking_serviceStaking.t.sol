@@ -1,72 +1,41 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for 
- * @notice some functions has evvm functions that are implemented
- *         and dosent need to be tested here
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants, MockContractToStake} from "test/Constants.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 contract fuzzTest_Staking_serviceStaking is Test, Constants {
     MockContractToStake mockContract;
 
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
-
-        vm.startPrank(ADMIN.Address);
-
-        staking.prepareChangeAllowPublicStaking();
-        skip(1 days);
-        staking.confirmChangeAllowPublicStaking();
-
-        vm.stopPrank();
-
         mockContract = new MockContractToStake(address(staking));
 
-        giveMateToExecute(address(mockContract), 10);
+        _addBalance(address(mockContract), 10);
 
         mockContract.stake(10);
     }
 
-    function giveMateToExecute(
+    function _addBalance(
         address user,
         uint256 stakingAmount
     ) private returns (uint256 totalOfMate) {
         evvm.addBalance(
             user,
-            MATE_TOKEN_ADDRESS,
+            PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking() * stakingAmount)
         );
 
@@ -97,18 +66,17 @@ contract fuzzTest_Staking_serviceStaking is Test, Constants {
 
             if (input[i].isStaking) {
                 if (
-                    evvm.getBalance(address(mockContract), MATE_TOKEN_ADDRESS) <
-                    staking.priceOfStaking() * input[i].amount
+                    evvm.getBalance(
+                        address(mockContract),
+                        PRINCIPAL_TOKEN_ADDRESS
+                    ) < staking.priceOfStaking() * input[i].amount
                 ) {
                     uint256 totalOfStakeNeeded = input[i].amount -
                         (evvm.getBalance(
                             address(mockContract),
-                            MATE_TOKEN_ADDRESS
+                            PRINCIPAL_TOKEN_ADDRESS
                         ) / staking.priceOfStaking());
-                    giveMateToExecute(
-                        address(mockContract),
-                        totalOfStakeNeeded
-                    );
+                    _addBalance(address(mockContract), totalOfStakeNeeded);
                 }
 
                 if (staking.getUserAmountStaked(address(mockContract)) == 0)
@@ -140,23 +108,34 @@ contract fuzzTest_Staking_serviceStaking is Test, Constants {
             Staking.HistoryMetadata memory history = staking
                 .getAddressHistoryByIndex(address(mockContract), counterTx);
 
-            assertEq(history.timestamp, block.timestamp);
+            assertEq(
+                history.timestamp,
+                block.timestamp,
+                "Error: timestamp in history is not correct"
+            );
             assertEq(
                 history.transactionType,
                 input[i].isStaking
                     ? DEPOSIT_HISTORY_SMATE_IDENTIFIER
-                    : WITHDRAW_HISTORY_SMATE_IDENTIFIER
+                    : WITHDRAW_HISTORY_SMATE_IDENTIFIER,
+                "Error: transactionType in history is not correct"
             );
-            assertEq(history.amount, input[i].amount);
+            assertEq(
+                history.amount,
+                input[i].amount,
+                "Error: amount in history is not correct"
+            );
             if (input[i].isStaking)
                 assertEq(
                     history.totalStaked,
-                    amountStakingBefore + input[i].amount
+                    amountStakingBefore + input[i].amount,
+                    "Error: totalStaked in history is not correct"
                 );
             else
                 assertEq(
                     history.totalStaked,
-                    amountStakingBefore - input[i].amount
+                    amountStakingBefore - input[i].amount,
+                    "Error: totalStaked in history is not correct"
                 );
         }
     }

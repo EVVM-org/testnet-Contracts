@@ -1,49 +1,34 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function revert behavior
- * @notice some functions has evvm functions that are implemented
- *         and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
 pragma solidity ^0.8.0;
 pragma abicoder v2;
-
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Constants} from "test/Constants.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 
 contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
-    
+    Evvm public evvmMock;
     AccountData COMMON_USER = WILDCARD_USER;
 
     function setUp() public override {
@@ -82,10 +67,6 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
         executeBeforeSetUp();
     }
 
-    function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
-    }
-
     function addBalance(address user, address token, uint256 amount) private {
         evvm.addBalance(user, token, amount);
     }
@@ -98,94 +79,146 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
      *
      */
 
-    function test__unit_revert__proposeOwner__nAdm() external {
-        vm.startPrank(COMMON_USER.Address);
+    function test__unit_revert__constructor__AddressCantBeZero() external {
+        uint256 sizeOfOpcode;
+        address addressEvvmMock;
+        vm.expectRevert(ErrorsLib.AddressCantBeZero.selector);
+        evvmMock = new Evvm(
+            address(0),
+            address(staking),
+            EvvmStructs.EvvmMetadata({
+                EvvmName: "EVVM",
+                EvvmID: 0,
+                principalTokenName: "EVVM Staking Token",
+                principalTokenSymbol: "EVVM-STK",
+                principalTokenAddress: 0x0000000000000000000000000000000000000001,
+                totalSupply: 2033333333000000000000000000,
+                eraTokens: 2033333333000000000000000000 / 2,
+                reward: 5000000000000000000
+            })
+        );
 
-        vm.expectRevert();
-        evvm.proposeAdmin(COMMON_USER.Address);
+        addressEvvmMock = address(evvmMock);
 
+        assembly {
+            /// @dev check the size of the opcode of the address
+            sizeOfOpcode := extcodesize(addressEvvmMock)
+        }
+
+        assertEq(
+            sizeOfOpcode,
+            0,
+            "Evvm should not be deployed with zero address as admin"
+        );
+
+        vm.expectRevert(ErrorsLib.AddressCantBeZero.selector);
+        evvmMock = new Evvm(
+            ADMIN.Address,
+            address(0),
+            EvvmStructs.EvvmMetadata({
+                EvvmName: "EVVM",
+                EvvmID: 0,
+                principalTokenName: "EVVM Staking Token",
+                principalTokenSymbol: "EVVM-STK",
+                principalTokenAddress: 0x0000000000000000000000000000000000000001,
+                totalSupply: 2033333333000000000000000000,
+                eraTokens: 2033333333000000000000000000 / 2,
+                reward: 5000000000000000000
+            })
+        );
+
+        addressEvvmMock = address(evvmMock);
+
+        assembly {
+            /// @dev check the size of the opcode of the address
+            sizeOfOpcode := extcodesize(addressEvvmMock)
+        }
+
+        assertEq(
+            sizeOfOpcode,
+            0,
+            "Evvm should not be deployed with zero address as staking contract"
+        );
+    }
+
+    function test__unit_revert__setEvvmID__SenderIsNotAdmin() external {
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        evvm.setEvvmID(1);
         vm.stopPrank();
     }
 
-    function test__unit_revert__proposeOwner__adminProposeHimself() external {
+    function test__unit_revert__setEvvmID__WindowExpired() external {
         vm.startPrank(ADMIN.Address);
+        evvm.setEvvmID(1);
+        skip(26 hours);
+        vm.expectRevert(ErrorsLib.WindowExpired.selector);
+        evvm.setEvvmID(67);
+        vm.stopPrank();
+    }
 
-        vm.expectRevert();
+    function test__unit_revert__proposeAdmin__SenderIsNotAdmin() external {
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        evvm.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__proposeAdmin__IncorrectAddressInput() external {
+        vm.startPrank(ADMIN.Address);
+        vm.expectRevert(ErrorsLib.IncorrectAddressInput.selector);
+        evvm.proposeAdmin(address(0));
+        vm.stopPrank();
+
+        vm.startPrank(ADMIN.Address);
+        vm.expectRevert(ErrorsLib.IncorrectAddressInput.selector);
         evvm.proposeAdmin(ADMIN.Address);
-
         vm.stopPrank();
     }
 
-    function test__unit_revert__acceptOwner__notInTime() external {
+    function test__unit_revert__rejectProposalAdmin__SenderIsNotAdmin()
+        external
+    {
         vm.startPrank(ADMIN.Address);
 
-        evvm.proposeAdmin(COMMON_USER.Address);
+        evvm.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
 
         vm.stopPrank();
 
-        vm.warp(block.timestamp + 10 hours);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.startPrank(COMMON_USER.Address);
-
-        vm.expectRevert();
-        evvm.acceptAdmin();
-
-        vm.stopPrank();
-    }
-
-    function test__unit_revert__acceptOwner__nNewAdm() external {
-        vm.startPrank(ADMIN.Address);
-
-        evvm.proposeAdmin(COMMON_USER.Address);
-
-        vm.stopPrank();
-
-        vm.warp(block.timestamp + 1 days);
-
-        vm.startPrank(ADMIN.Address);
-
-        vm.expectRevert();
-        evvm.acceptAdmin();
-
-        vm.stopPrank();
-    }
-
-    function test__unit_revert__rejectProposalOwner__nAdm() external {
-        vm.startPrank(ADMIN.Address);
-
-        evvm.proposeAdmin(COMMON_USER.Address);
-
-        vm.stopPrank();
-
-        vm.warp(block.timestamp + 10 hours);
-
-        vm.startPrank(COMMON_USER.Address);
-
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
         evvm.rejectProposalAdmin();
 
         vm.stopPrank();
     }
 
-    function test__unit_revert__setEvvmID__nAdm() external {
-        vm.startPrank(COMMON_USER.Address);
+    function test__unit_revert__acceptAdmin__TimeLockNotExpired() external {
+        vm.startPrank(ADMIN.Address);
 
-        vm.expectRevert();
-        evvm.setEvvmID(888);
+        evvm.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
+
+        vm.stopPrank();
+
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+
+        vm.expectRevert(ErrorsLib.TimeLockNotExpired.selector);
+        evvm.acceptAdmin();
 
         vm.stopPrank();
     }
 
-    function test__unit_revert__setEvvmID__WindowToChangeEvvmIDExpired()
+    function test__unit_revert__acceptAdmin__SenderIsNotTheProposedAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
 
-        evvm.setEvvmID(888);
+        evvm.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
 
-        skip(24 hours + 1 seconds);
-        vm.expectRevert();
-        evvm.setEvvmID(777);
+        skip(200 days);
+
+        vm.expectRevert(ErrorsLib.SenderIsNotTheProposedAdmin.selector);
+        evvm.acceptAdmin();
 
         vm.stopPrank();
     }

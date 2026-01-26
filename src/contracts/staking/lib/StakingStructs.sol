@@ -2,6 +2,18 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 pragma solidity ^0.8.0;
+/**
+ * @title StakingStructs
+ * @author Mate Labs
+ * @notice Abstract contract containing all data structures used by the Staking contract
+ * @dev This contract is exclusive to the Staking.sol contract and defines the data
+ * structures for managing staking operations, governance proposals, and user history.
+ *
+ * Structure Categories:
+ * - Staker Metadata: presaleStakerMetadata, HistoryMetadata
+ * - Governance Proposals: AddressTypeProposal, UintTypeProposal, BoolTypeProposal
+ * - Service Staking: ServiceStakingMetadata, AccountMetadata
+ */
 
 abstract contract StakingStructs {
     /**

@@ -1,159 +1,129 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function revert behavior
- * @notice some functions has evvm functions that are implemented
- *         and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Constants} from "test/Constants.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 
 contract unitTestRevert_EVVM_disperseCaPay is Test, Constants {
-    AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
+    //function executeBeforeSetUp() internal override {}
 
-    function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+    function _addBalance(
+        address _ca,
+        address _token,
+        uint256 _amount
+    ) private returns (uint256 amount) {
+        evvm.addBalance(_ca, _token, _amount);
+        return (_amount);
     }
 
-    function addBalance(address user, address token, uint256 amount) private {
-        evvm.addBalance(user, token, amount);
-    }
-
-    /**
-     * Function to test:
-     * nS: No staker
-     * S: Staker
-     */
-
-    function test__unit_revert__disperseCaPay__addressHasZeroOpcode() external {
-        addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, 0.02 ether);
+    function test__unit_revert__disperseCaPay__NotAnCA() external {
+        (uint256 amount)  = _addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, 0.1 ether);
 
         EvvmStructs.DisperseCaPayMetadata[]
-            memory toData = new EvvmStructs.DisperseCaPayMetadata[](2);
+            memory toData = new EvvmStructs.DisperseCaPayMetadata[](1);
 
         toData[0] = EvvmStructs.DisperseCaPayMetadata({
-            amount: 0.01 ether,
+            amount: amount,
             toAddress: COMMON_USER_NO_STAKER_2.Address
-        });
-
-        toData[1] = EvvmStructs.DisperseCaPayMetadata({
-            amount: 0.01 ether,
-            toAddress: COMMON_USER_NO_STAKER_3.Address
         });
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-
-        vm.expectRevert();
-        evvm.disperseCaPay(toData, ETHER_ADDRESS, 0.02 ether);
-
+        vm.expectRevert(ErrorsLib.NotAnCA.selector);
+        evvm.disperseCaPay(toData, ETHER_ADDRESS, amount);
         vm.stopPrank();
-
+    
         assertEq(
             evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
-            0.02 ether
+            amount,
+            "Amount should not be deducted because of revert"
+        );
+        assertEq(
+            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            0,
+            "Recipient balance should not change because of revert"
         );
     }
 
-    function test__unit_revert__disperseCaPay__addressHasLessThanAmount()
-        external
-    {
-        addBalance(address(this), ETHER_ADDRESS, 0.002 ether);
+    function test__unit_revert__disperseCaPay__InsufficientBalance() external {
+        (uint256 amount)  = _addBalance(address(this), ETHER_ADDRESS, 0.1 ether);
 
         EvvmStructs.DisperseCaPayMetadata[]
-            memory toData = new EvvmStructs.DisperseCaPayMetadata[](2);
+            memory toData = new EvvmStructs.DisperseCaPayMetadata[](1);
 
         toData[0] = EvvmStructs.DisperseCaPayMetadata({
-            amount: 0.01 ether,
+            amount: amount*2,
             toAddress: COMMON_USER_NO_STAKER_2.Address
         });
 
-        toData[1] = EvvmStructs.DisperseCaPayMetadata({
-            amount: 0.01 ether,
-            toAddress: COMMON_USER_NO_STAKER_3.Address
-        });
-
-        vm.expectRevert();
-        evvm.disperseCaPay(toData, ETHER_ADDRESS, 0.02 ether);
-
-        assertEq(evvm.getBalance(address(this), ETHER_ADDRESS), 0.002 ether);
+        vm.expectRevert(ErrorsLib.InsufficientBalance.selector);
+        // Becase this test script is tecnially a CA, we can call caPay directly
+        evvm.disperseCaPay(toData, ETHER_ADDRESS, amount*2);
+    
+        assertEq(
+            evvm.getBalance(address(this), ETHER_ADDRESS),
+            amount,
+            "Amount should not be deducted because of revert"
+        );
+        assertEq(
+            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            0,
+            "Recipient balance should not change because of revert"
+        );
     }
 
-    function test__unit_revert__disperseCaPay__AmountDeclaredLessThanMetadataTot()
-        external
-    {
-        addBalance(address(this), ETHER_ADDRESS, 0.02 ether);
+    function test__unit_revert__disperseCaPay__InvalidAmount() external {
+        (uint256 amount)  = _addBalance(address(this), ETHER_ADDRESS, 0.1 ether);
 
         EvvmStructs.DisperseCaPayMetadata[]
             memory toData = new EvvmStructs.DisperseCaPayMetadata[](2);
 
         toData[0] = EvvmStructs.DisperseCaPayMetadata({
-            amount: 0.1 ether,
+            amount: amount/5,
             toAddress: COMMON_USER_NO_STAKER_2.Address
         });
 
         toData[1] = EvvmStructs.DisperseCaPayMetadata({
-            amount: 0.1 ether,
-            toAddress: COMMON_USER_NO_STAKER_3.Address
-        });
-
-        vm.expectRevert();
-        evvm.disperseCaPay(toData, ETHER_ADDRESS, 0.02 ether);
-
-        assertEq(evvm.getBalance(address(this), ETHER_ADDRESS), 0.02 ether);
-    }
-
-    function test__unit_revert__disperseCaPay__MetadataTotLessThanAmountDeclared()
-        external
-    {
-        addBalance(address(this), ETHER_ADDRESS, 0.02 ether);
-
-        EvvmStructs.DisperseCaPayMetadata[]
-            memory toData = new EvvmStructs.DisperseCaPayMetadata[](2);
-
-        toData[0] = EvvmStructs.DisperseCaPayMetadata({
-            amount: 0.01 ether,
+            amount: amount/5,
             toAddress: COMMON_USER_NO_STAKER_2.Address
         });
 
-        toData[1] = EvvmStructs.DisperseCaPayMetadata({
-            amount: 0.01 ether,
-            toAddress: COMMON_USER_NO_STAKER_3.Address
-        });
-
-        vm.expectRevert();
-        evvm.disperseCaPay(toData, ETHER_ADDRESS, 0.2 ether);
-
-        assertEq(evvm.getBalance(address(this), ETHER_ADDRESS), 0.02 ether);
+        vm.expectRevert(ErrorsLib.InvalidAmount.selector);
+        // Becase this test script is tecnially a CA, we can call caPay directly
+        evvm.disperseCaPay(toData, ETHER_ADDRESS, amount);
+    
+        assertEq(
+            evvm.getBalance(address(this), ETHER_ADDRESS),
+            amount,
+            "Amount should not be deducted because of revert"
+        );
+        assertEq(
+            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            0,
+            "Recipient balance should not change because of revert"
+        );
     }
 }

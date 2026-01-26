@@ -1,20 +1,14 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
-
-:::::::::: :::    ::: ::::::::: :::::::::      ::::::::::: :::::::::: :::::::: ::::::::::: 
-:+:        :+:    :+:      :+:       :+:           :+:     :+:       :+:    :+:    :+:     
-+:+        +:+    +:+     +:+       +:+            +:+     +:+       +:+           +:+     
-:#::+::#   +#+    +:+    +#+       +#+             +#+     +#++:++#  +#++:++#++    +#+     
-+#+        +#+    +#+   +#+       +#+              +#+     +#+              +#+    +#+     
-#+#        #+#    #+#  #+#       #+#               #+#     #+#       #+#    #+#    #+#     
-###         ########  ######### #########          ###     ########## ########     ###     
-
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
 
 pragma solidity ^0.8.0;
@@ -157,9 +151,9 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         // alternate tokens
         address tokenA = input.tokenScenario
             ? ETHER_ADDRESS
-            : MATE_TOKEN_ADDRESS;
+            : PRINCIPAL_TOKEN_ADDRESS;
         address tokenB = input.tokenScenario
-            ? MATE_TOKEN_ADDRESS
+            ? PRINCIPAL_TOKEN_ADDRESS
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
@@ -179,7 +173,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         // fund account
         addBalance(
             COMMON_USER_NO_STAKER_1.Address,
-            MATE_TOKEN_ADDRESS,
+            PRINCIPAL_TOKEN_ADDRESS,
             priorityFee
         );
         addBalance(
@@ -190,7 +184,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         // fund contract for reward distribution
         addBalance(
             address(p2pSwap),
-            MATE_TOKEN_ADDRESS,
+            PRINCIPAL_TOKEN_ADDRESS,
             initialContractBalance
         );
 
@@ -246,7 +240,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
                 evvm.getEvvmID(),
                 address(p2pSwap),
                 "",
-                MATE_TOKEN_ADDRESS,
+                PRINCIPAL_TOKEN_ADDRESS,
                 0,
                 priorityFee,
                 nextNonceEvvm,
@@ -281,17 +275,26 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA),
             input.amountA
         );
-        if (tokenA == MATE_TOKEN_ADDRESS) {
-            assertEq(
-                evvm.getBalance(address(p2pSwap), tokenA),
-                initialContractBalance
-            );
+        if (tokenA == PRINCIPAL_TOKEN_ADDRESS) {
+            // When tokenA is PRINCIPAL_TOKEN and hasPriorityFee is true, 
+            // the contract accumulates one extra reward from the pay operation flow
+            if (input.hasPriorityFee) {
+                assertEq(
+                    evvm.getBalance(address(p2pSwap), tokenA),
+                    initialContractBalance + evvm.getRewardAmount()
+                );
+            } else {
+                assertEq(
+                    evvm.getBalance(address(p2pSwap), tokenA),
+                    initialContractBalance
+                );
+            }
         } else {
             assertEq(evvm.getBalance(address(p2pSwap), tokenA), 0);
         }
 
         if (input.hasPriorityFee) {
-            if (tokenA == MATE_TOKEN_ADDRESS) {
+            if (tokenA == PRINCIPAL_TOKEN_ADDRESS) {
                 assertEq(
                     evvm.getBalance(COMMON_USER_STAKER.Address, tokenA),
                     priorityFee +

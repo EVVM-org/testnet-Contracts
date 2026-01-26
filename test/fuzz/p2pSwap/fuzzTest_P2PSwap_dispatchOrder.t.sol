@@ -1,20 +1,14 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
-
-:::::::::: :::    ::: ::::::::: :::::::::      ::::::::::: :::::::::: :::::::: ::::::::::: 
-:+:        :+:    :+:      :+:       :+:           :+:     :+:       :+:    :+:    :+:     
-+:+        +:+    +:+     +:+       +:+            +:+     +:+       +:+           +:+     
-:#::+::#   +#+    +:+    +#+       +#+             +#+     +#++:++#  +#++:++#++    +#+     
-+#+        +#+    +#+   +#+       +#+              +#+     +#+              +#+    +#+     
-#+#        #+#    #+#  #+#       #+#               #+#     #+#       #+#    #+#    #+#     
-###         ########  ######### #########          ###     ########## ########     ###     
-
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
 
 pragma solidity ^0.8.0;
@@ -159,9 +153,9 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         // 1. define params
         address tokenA = input.tokenScenario
             ? ETHER_ADDRESS
-            : MATE_TOKEN_ADDRESS;
+            : PRINCIPAL_TOKEN_ADDRESS;
         address tokenB = input.tokenScenario
-            ? MATE_TOKEN_ADDRESS
+            ? PRINCIPAL_TOKEN_ADDRESS
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
@@ -175,7 +169,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             tokenB,
             input.amountB + fee + priorityFee
         );
-        addBalance(address(p2pSwap), MATE_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -286,7 +280,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
 
         uint256 executorAmount = 0;
 
-        if (tokenB == MATE_TOKEN_ADDRESS) {
+        if (tokenB == PRINCIPAL_TOKEN_ADDRESS) {
             executorAmount += (fee * 1000) / 10_000;
             executorAmount += priorityFee;
         }
@@ -294,7 +288,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         executorAmount += 4 * evvm.getRewardAmount(); // from dispatchOrder
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
+            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             executorAmount
         );
     }
@@ -308,9 +302,9 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         // 1. define params
         address tokenA = input.tokenScenario
             ? ETHER_ADDRESS
-            : MATE_TOKEN_ADDRESS;
+            : PRINCIPAL_TOKEN_ADDRESS;
         address tokenB = input.tokenScenario
-            ? MATE_TOKEN_ADDRESS
+            ? PRINCIPAL_TOKEN_ADDRESS
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
@@ -335,7 +329,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             tokenB,
             input.amountB + fee + priorityFee
         );
-        addBalance(address(p2pSwap), MATE_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -447,7 +441,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
 
         uint256 executorAmount = 0;
 
-        if (tokenB == MATE_TOKEN_ADDRESS) {
+        if (tokenB == PRINCIPAL_TOKEN_ADDRESS) {
             executorAmount += (fee * 1000) / 10_000;
             executorAmount += priorityFee;
         }
@@ -455,7 +449,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         executorAmount += 4 * evvm.getRewardAmount(); // from dispatchOrder
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
+            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             executorAmount
         );
     }

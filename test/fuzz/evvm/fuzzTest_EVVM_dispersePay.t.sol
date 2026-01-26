@@ -1,213 +1,120 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
-
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Constants} from "test/Constants.sol";
-import {EvvmStructs} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {NameServiceStructs} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
-import {NameService} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {Erc191TestBuilder} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {Estimator} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {EvvmStorage} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {Treasury} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import {
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 
 contract fuzzTest_EVVM_dispersePay is Test, Constants, EvvmStructs {
-
-    
-    
-    
-    
-
-    AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
-
     function executeBeforeSetUp() internal override {
+        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x00);
+    }
 
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+    function _makeRandomUsername(
+        uint16 seed
+    ) private returns (string memory username) {
+        // Generate a length between 4 and 12 characters (inclusive)
+        uint256 minLen = 4;
+        uint256 maxExtra = 8; // allows lengths from 4 to 12
+        uint256 len = minLen + (uint256(seed) % (maxExtra + 1));
 
+        bytes memory usernameBytes = new bytes(len);
+
+        // Ensure first character is a letter (A-Z or a-z)
+        uint256 r0 = uint256(keccak256(abi.encodePacked(seed, "first"))) % 52;
+        usernameBytes[0] = r0 < 26
+            ? bytes1(uint8(r0 + 65))
+            : bytes1(uint8(r0 + 71));
+
+        // Fill remaining characters with digits (0-9), uppercase (A-Z) or lowercase (a-z)
+        for (uint256 i = 1; i < len; i++) {
+            uint256 r = uint256(keccak256(abi.encodePacked(seed, i))) % 62;
+            if (r < 10) {
+                usernameBytes[i] = bytes1(uint8(48 + r)); // '0'..'9'
+            } else if (r < 36) {
+                usernameBytes[i] = bytes1(uint8(65 + (r - 10))); // 'A'..'Z'
+            } else {
+                usernameBytes[i] = bytes1(uint8(97 + (r - 36))); // 'a'..'z'
+            }
+        }
+
+        username = string(usernameBytes);
+
+        // Register the username for the test user
         _execute_makeRegistrationUsername(
             COMMON_USER_NO_STAKER_2,
-            "dummy",
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2)
+            username,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+            )
         );
     }
 
-    function addBalance(
-        address user,
-        address token,
-        uint256 amount,
-        uint256 priorityFee
-    ) private {
-        evvm.addBalance(user, token, amount + priorityFee);
+    function _addBalance(
+        AccountData memory _user,
+        address _token,
+        uint256 _amount,
+        uint256 _priorityFee
+    ) private returns (uint256 amount, uint256 priorityFee) {
+        evvm.addBalance(_user.Address, _token, _amount + _priorityFee);
+        return (_amount, _priorityFee);
     }
 
-    
-
-    /**
-     * Function to test: dispersePay
-
-     * PF: Includes priority fee
-     * nPF: No priority fee
-
-     */
-
-    struct DispersePayFuzzTestInput_nPF {
-        bool useToAddress;
-        bool useExecutor;
-        bool useStaker;
-        address token;
-        uint16 amountA;
-        uint16 amountB;
-        uint176 nonce;
-        bool priorityFlag;
-    }
-
-    struct DispersePayFuzzTestInput_PF {
-        bool useToAddress;
-        bool useExecutor;
-        bool useStaker;
+    struct PayInputs {
+        bool usingExecutor;
+        bool isUsingAsyncNonce;
+        bool isExecutorStaker;
+        address toAddressA;
         address token;
         uint16 amountA;
         uint16 amountB;
         uint16 priorityFee;
-        uint176 nonce;
-        bool priorityFlag;
+        address executor;
+        uint136 asyncNonce;
+        uint16 seedUsername;
     }
 
-    function test__fuzz__dispersePay__nPF(
-        DispersePayFuzzTestInput_nPF memory input
-    ) external {
+    function test__fuzz__dispersePay(PayInputs memory input) external {
         vm.assume(
             input.amountA > 0 &&
                 input.amountB > 0 &&
-                input.token != MATE_TOKEN_ADDRESS
+                input.token != PRINCIPAL_TOKEN_ADDRESS &&
+                input.executor != input.toAddressA &&
+                input.executor != COMMON_USER_NO_STAKER_2.Address &&
+                input.executor != COMMON_USER_NO_STAKER_1.Address &&
+                input.toAddressA != COMMON_USER_NO_STAKER_1.Address &&
+                input.toAddressA != COMMON_USER_NO_STAKER_2.Address
         );
 
-        uint256 totalAmount = uint256(input.amountA) + uint256(input.amountB);
+        string memory username = _makeRandomUsername(input.seedUsername);
 
-        AccountData memory selectedExecuter = input.useStaker
-            ? COMMON_USER_STAKER
-            : COMMON_USER_NO_STAKER_3;
-
-        uint256 nonce = input.priorityFlag
-            ? input.nonce
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
-
-        addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            input.token,
-            totalAmount,
-            0
-        );
-
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
-
-        toData[0] = EvvmStructs.DispersePayMetadata({
-            amount: input.amountA,
-            to_address: COMMON_USER_NO_STAKER_3.Address,
-            to_identity: ""
-        });
-
-        toData[1] = EvvmStructs.DispersePayMetadata({
-            amount: input.amountB,
-            to_address: address(0),
-            to_identity: "dummy"
-        });
-
-        bytes memory signatureEVVM = _execute_makeDispersePaySignature(
+        (uint256 amount, uint256 priorityFee) = _addBalance(
             COMMON_USER_NO_STAKER_1,
-            toData,
             input.token,
-            totalAmount,
-            0,
-            nonce,
-            input.priorityFlag,
-            input.useExecutor ? selectedExecuter.Address : address(0)
-        );
-
-        vm.startPrank(selectedExecuter.Address);
-
-        evvm.dispersePay(
-            COMMON_USER_NO_STAKER_1.Address,
-            toData,
-            input.token,
-            totalAmount,
-            0,
-            nonce,
-            input.priorityFlag,
-            input.useExecutor ? selectedExecuter.Address : address(0),
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, input.token),
-            0
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, input.token),
-            input.amountB
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_3.Address, input.token),
-            input.amountA
-        );
-
-        if (selectedExecuter.Address == COMMON_USER_STAKER.Address) {
-            assertEq(
-                evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-                evvm.getRewardAmount()
-            );
-        }
-    }
-
-    function test__fuzz__dispersePay__PF(
-        DispersePayFuzzTestInput_PF memory input
-    ) external {
-        vm.assume(
-            input.amountA > 0 &&
-                input.amountB > 0 &&
-                input.priorityFee > 0 &&
-                input.token != MATE_TOKEN_ADDRESS
-        );
-
-        uint256 totalAmount = uint256(input.amountA) + uint256(input.amountB);
-
-        AccountData memory selectedExecuter = input.useStaker
-            ? COMMON_USER_STAKER
-            : COMMON_USER_NO_STAKER_3;
-
-        uint256 nonce = input.priorityFlag
-            ? input.nonce
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
-
-        addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            input.token,
-            totalAmount,
+            uint256(input.amountA) + uint256(input.amountB),
             input.priorityFee
         );
 
@@ -216,68 +123,77 @@ contract fuzzTest_EVVM_dispersePay is Test, Constants, EvvmStructs {
 
         toData[0] = EvvmStructs.DispersePayMetadata({
             amount: input.amountA,
-            to_address: COMMON_USER_NO_STAKER_3.Address,
+            to_address: input.toAddressA,
             to_identity: ""
         });
 
         toData[1] = EvvmStructs.DispersePayMetadata({
             amount: input.amountB,
             to_address: address(0),
-            to_identity: "dummy"
+            to_identity: username
         });
+
+        uint256 nonce = input.isUsingAsyncNonce
+            ? input.asyncNonce
+            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
 
         bytes memory signatureEVVM = _execute_makeDispersePaySignature(
             COMMON_USER_NO_STAKER_1,
             toData,
             input.token,
-            totalAmount,
-            input.priorityFee,
+            amount,
+            priorityFee,
             nonce,
-            input.priorityFlag,
-            input.useExecutor ? selectedExecuter.Address : address(0)
+            input.isUsingAsyncNonce,
+            input.usingExecutor ? input.executor : address(0)
         );
 
-        vm.startPrank(selectedExecuter.Address);
-
+        evvm.setPointStaker(
+            input.executor,
+            input.isExecutorStaker ? bytes1(0x01) : bytes1(0x00)
+        );
+        vm.startPrank(input.executor);
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             input.token,
-            totalAmount,
-            input.priorityFee,
+            amount,
+            priorityFee,
             nonce,
-            input.priorityFlag,
-            input.useExecutor ? selectedExecuter.Address : address(0),
+            input.isUsingAsyncNonce,
+            input.usingExecutor ? input.executor : address(0),
             signatureEVVM
         );
-
         vm.stopPrank();
 
         assertEq(
             evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, input.token),
-            (input.useStaker ? 0 : input.priorityFee)
+            input.isExecutorStaker ? 0 : priorityFee,
+            "Sender balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_3.Address, input.token),
-            input.amountA
+            evvm.getBalance(input.toAddressA, input.token),
+            input.amountA,
+            "Balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
             evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, input.token),
-            input.amountB
+            input.amountB,
+            "Balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
-        if (selectedExecuter.Address == COMMON_USER_STAKER.Address) {
-            assertEq(
-                evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-                evvm.getRewardAmount()
-            );
+        assertEq(
+            evvm.getBalance(input.executor, input.token),
+            input.isExecutorStaker ? uint256(priorityFee) : 0,
+            "Executor balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
+        );
 
-            assertEq(
-                evvm.getBalance(COMMON_USER_STAKER.Address, input.token),
-                input.priorityFee
-            );
-        }
+        assertEq(
+            evvm.getBalance(input.executor, PRINCIPAL_TOKEN_ADDRESS),
+            input.isExecutorStaker ? evvm.getRewardAmount() : 0,
+            "Executor balance after check if executor should not or should recieve rewards incorrect"
+        );
     }
 }

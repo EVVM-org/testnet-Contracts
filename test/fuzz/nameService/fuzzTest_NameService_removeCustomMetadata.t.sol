@@ -1,576 +1,285 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
-
-:::::::::: :::    ::: ::::::::: :::::::::      ::::::::::: :::::::::: :::::::: ::::::::::: 
-:+:        :+:    :+:      :+:       :+:           :+:     :+:       :+:    :+:    :+:     
-+:+        +:+    +:+     +:+       +:+            +:+     +:+       +:+           +:+     
-:#::+::#   +#+    +:+    +#+       +#+             +#+     +#++:++#  +#++:++#++    +#+     
-+#+        +#+    +#+   +#+       +#+              +#+     +#+              +#+    +#+     
-#+#        #+#    #+#  #+#       #+#               #+#     #+#       #+#    #+#    #+#     
-###         ########  ######### #########          ###     ########## ########     ###     
-
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
-    AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
+    AccountData FISHER_NO_STAKER = WILDCARD_USER;
+    AccountData FISHER_STAKER = COMMON_USER_STAKER;
 
-    uint256 constant MAX_AMOUNT_SLOTS_REGISTERED = uint256(type(uint8).max) + 1;
+    AccountData USER_USERNAME_OWNER = COMMON_USER_NO_STAKER_1;
+
+    string USERNAME = "alice";
+
+    struct Params {
+        AccountData user;
+        string identity;
+        uint256 key;
+        uint256 nonceNameService;
+        bytes signatureNameService;
+        uint256 priorityFee;
+        uint256 nonceEVVM;
+        bool priorityEVVM;
+        bytes signatureEVVM;
+    }
 
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
-
         _execute_makeRegistrationUsername(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-                uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2)
+            USER_USERNAME_OWNER,
+            USERNAME,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+            )
         );
 
-        for (uint256 i = 0; i < MAX_AMOUNT_SLOTS_REGISTERED; i++) {
+        for (uint256 i = 0; i < 100; i++) {
             _execute_makeAddCustomMetadata(
-                COMMON_USER_NO_STAKER_1,
-                "test",
+                USER_USERNAME_OWNER,
+                USERNAME,
                 string.concat("test>", AdvancedStrings.uintToString(i)),
-                uint256(type(uint32).max) + 1 + i,
-                uint256(type(uint32).max) + 1 + i,
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                ) + i,
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                ) + i,
                 true
             );
         }
     }
 
-    function addBalance(
+    function _addBalance(
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
         evvm.addBalance(
             user.Address,
-            MATE_TOKEN_ADDRESS,
+            PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToRemoveCustomMetadata() + priorityFeeAmount
         );
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    /**
-     * Function to test:
-     * nS: No staker
-     * S: Staker
-     * PF: Includes priority fee
-     * nPF: No priority fee
-     */
-
-    struct RemoveCustomMetadataFuzzTestInput_nPF {
-        uint8 indexToRemove;
-        uint32 nonceNameService;
-        uint32 nonceEVVM;
-        bool priorityFlagEVVM;
+    struct Input {
+        string identity;
+        uint16 key;
+        uint256 nonceNameService;
+        uint32 priorityFee;
+        uint256 nonceAsyncEVVM;
+        bool priorityEVVM;
     }
 
-    struct RemoveCustomMetadataFuzzTestInput_PF {
-        uint8 indexToRemove;
-        uint32 nonceNameService;
-        uint32 nonceEVVM;
-        uint16 priorityFeeAmountEVVM;
-        bool priorityFlagEVVM;
-    }
-
-    function test__fuzz__removeCustomMetadata__nS_nPF(
-        RemoveCustomMetadataFuzzTestInput_nPF memory input
+    function test__fuzz__removeCustomMetadata__noStaking(
+        Input memory input
     ) external {
+        input.key = uint16(bound(uint256(input.key), 0, 98));
         vm.assume(
-            input.nonceNameService > uint256(type(uint8).max) &&
-                input.nonceEVVM > uint256(type(uint8).max)
+            input.nonceNameService <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
+        );
+        vm.assume(
+            input.nonceAsyncEVVM <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
         );
 
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
+        Params memory params = Params({
+            user: USER_USERNAME_OWNER,
+            identity: USERNAME,
+            key: uint256(input.key),
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: input.priorityFee,
+            nonceEVVM: input.priorityEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            priorityEVVM: input.priorityEVVM,
+            signatureEVVM: ""
+        });
 
-        uint256 priorityFeeAmountEVVM = addBalance(COMMON_USER_NO_STAKER_1, 0);
+        _addBalance(params.user, params.priorityFee);
 
         (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            params.signatureNameService,
+            params.signatureEVVM
         ) = _execute_makeRemoveCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "test",
-                input.indexToRemove,
-                input.nonceNameService,
-                priorityFeeAmountEVVM,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
+            params.user,
+            params.identity,
+            params.key,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
+        );
 
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.startPrank(FISHER_NO_STAKER.Address);
 
         nameService.removeCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            input.indexToRemove,
-            input.nonceNameService,
-            signatureNameService,
-            priorityFeeAmountEVVM,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            signatureEVVM
+            params.user.Address,
+            params.identity,
+            params.key,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", input.indexToRemove);
-
-        console2.log("customMetadata: ", customMetadata);
-
-        if (input.indexToRemove != type(uint8).max) {
-            assertEq(
-                bytes(customMetadata).length,
-                bytes(
-                    string.concat(
-                        "test>",
-                        AdvancedStrings.uintToString(input.indexToRemove + 1)
-                    )
-                ).length
-            );
-            assertEq(
-                keccak256(bytes(customMetadata)),
-                keccak256(
-                    bytes(
-                        string.concat(
-                            "test>",
-                            AdvancedStrings.uintToString(
-                                input.indexToRemove + 1
-                            )
-                        )
-                    )
-                )
-            );
-        } else {
-            assertEq(bytes(customMetadata).length, bytes("").length);
-            assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("")));
-        }
+        string memory customMetadata1 = nameService
+            .getSingleCustomMetadataOfIdentity(params.identity, params.key);
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+            customMetadata1,
+            string.concat(
+                "test>",
+                AdvancedStrings.uintToString(uint256(input.key) + 1)
             ),
-            0
-        );
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
+            "custom metadata incorrectly removed"
         );
 
         assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity("test"),
-            MAX_AMOUNT_SLOTS_REGISTERED - 1
+            nameService.getCustomMetadataMaxSlotsOfIdentity(params.identity),
+            99,
+            "custom metadata max slots incorrectly changed after removal"
         );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            0
+            0,
+            "user balance incorrectly changed after removing custom metadata"
         );
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
+            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "fisher balance incorrectly changed after removing custom metadata"
         );
     }
 
-    function test__fuzz__removeCustomMetadata__nS_PF(
-        RemoveCustomMetadataFuzzTestInput_PF memory input
+    function test__fuzz__removeCustomMetadata__staking(
+        Input memory input
     ) external {
+        input.key = uint16(bound(uint256(input.key), 0, 98));
         vm.assume(
-            input.nonceNameService > uint256(type(uint8).max) &&
-                input.nonceEVVM > uint256(type(uint8).max)
+            input.nonceNameService <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
+        );
+        vm.assume(
+            input.nonceAsyncEVVM <
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                )
         );
 
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
+        Params memory params = Params({
+            user: USER_USERNAME_OWNER,
+            identity: USERNAME,
+            key: uint256(input.key),
+            nonceNameService: input.nonceNameService,
+            signatureNameService: "",
+            priorityFee: input.priorityFee,
+            nonceEVVM: input.priorityEVVM
+                ? input.nonceAsyncEVVM
+                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            priorityEVVM: input.priorityEVVM,
+            signatureEVVM: ""
+        });
 
-        uint256 priorityFeeAmountEVVM = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            input.priorityFeeAmountEVVM
-        );
+        _addBalance(params.user, params.priorityFee);
 
         (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            params.signatureNameService,
+            params.signatureEVVM
         ) = _execute_makeRemoveCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "test",
-                input.indexToRemove,
-                input.nonceNameService,
-                priorityFeeAmountEVVM,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
+            params.user,
+            params.identity,
+            params.key,
+            params.nonceNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM
+        );
 
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.startPrank(FISHER_STAKER.Address);
 
         nameService.removeCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            input.indexToRemove,
-            input.nonceNameService,
-            signatureNameService,
-            priorityFeeAmountEVVM,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            signatureEVVM
+            params.user.Address,
+            params.identity,
+            params.key,
+            params.nonceNameService,
+            params.signatureNameService,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityEVVM,
+            params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", input.indexToRemove);
-
-        console2.log("customMetadata: ", customMetadata);
-
-        if (input.indexToRemove != type(uint8).max) {
-            assertEq(
-                bytes(customMetadata).length,
-                bytes(
-                    string.concat(
-                        "test>",
-                        AdvancedStrings.uintToString(input.indexToRemove + 1)
-                    )
-                ).length
-            );
-            assertEq(
-                keccak256(bytes(customMetadata)),
-                keccak256(
-                    bytes(
-                        string.concat(
-                            "test>",
-                            AdvancedStrings.uintToString(
-                                input.indexToRemove + 1
-                            )
-                        )
-                    )
-                )
-            );
-        } else {
-            assertEq(bytes(customMetadata).length, bytes("").length);
-            assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("")));
-        }
+        string memory customMetadata1 = nameService
+            .getSingleCustomMetadataOfIdentity(params.identity, params.key);
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+            customMetadata1,
+            string.concat(
+                "test>",
+                AdvancedStrings.uintToString(uint256(input.key) + 1)
             ),
-            0
-        );
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
+            "custom metadata incorrectly removed"
         );
 
         assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity("test"),
-            MAX_AMOUNT_SLOTS_REGISTERED - 1
+            nameService.getCustomMetadataMaxSlotsOfIdentity(params.identity),
+            99,
+            "custom metadata max slots incorrectly changed after removal"
         );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            0
+            0,
+            "user balance incorrectly changed after removing custom metadata"
         );
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
-        );
-    }
-
-    function test__fuzz__removeCustomMetadata__S_nPF(
-        RemoveCustomMetadataFuzzTestInput_nPF memory input
-    ) external {
-        vm.assume(
-            input.nonceNameService > uint256(type(uint8).max) &&
-                input.nonceEVVM > uint256(type(uint8).max)
-        );
-
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
-
-        uint256 priorityFeeAmountEVVM = addBalance(COMMON_USER_NO_STAKER_1, 0);
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", input.indexToRemove);
-
-        console2.log("customMetadata: ", customMetadata);
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "test",
-                input.indexToRemove,
-                input.nonceNameService,
-                priorityFeeAmountEVVM,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        nameService.removeCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            input.indexToRemove,
-            input.nonceNameService,
-            signatureNameService,
-            priorityFeeAmountEVVM,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        customMetadata = nameService.getSingleCustomMetadataOfIdentity(
-            "test",
-            input.indexToRemove
-        );
-
-        console2.log("customMetadata: ", customMetadata);
-
-        if (input.indexToRemove != type(uint8).max) {
-            assertEq(
-                bytes(customMetadata).length,
-                bytes(
-                    string.concat(
-                        "test>",
-                        AdvancedStrings.uintToString(input.indexToRemove + 1)
-                    )
-                ).length
-            );
-            assertEq(
-                keccak256(bytes(customMetadata)),
-                keccak256(
-                    bytes(
-                        string.concat(
-                            "test>",
-                            AdvancedStrings.uintToString(
-                                input.indexToRemove + 1
-                            )
-                        )
-                    )
-                )
-            );
-        } else {
-            assertEq(bytes(customMetadata).length, bytes("").length);
-            assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("")));
-        }
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
-        );
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
-        );
-
-        assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity("test"),
-            MAX_AMOUNT_SLOTS_REGISTERED - 1
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            (5 * evvm.getRewardAmount()) + priorityFeeAmountEVVM
-        );
-    }
-
-    function test__fuzz__removeCustomMetadata__S_PF(
-        RemoveCustomMetadataFuzzTestInput_PF memory input
-    ) external {
-        vm.assume(
-            input.nonceNameService > uint256(type(uint8).max) &&
-                input.nonceEVVM > uint256(type(uint8).max)
-        );
-
-        uint256 nonceEvvm = input.priorityFlagEVVM
-            ? input.nonceEVVM
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
-
-        uint256 priorityFeeAmountEVVM = addBalance(
-            COMMON_USER_NO_STAKER_1,
-            input.priorityFeeAmountEVVM
-        );
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "test",
-                input.indexToRemove,
-                input.nonceNameService,
-                priorityFeeAmountEVVM,
-                nonceEvvm,
-                input.priorityFlagEVVM
-            );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        nameService.removeCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            input.indexToRemove,
-            input.nonceNameService,
-            signatureNameService,
-            priorityFeeAmountEVVM,
-            nonceEvvm,
-            input.priorityFlagEVVM,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", input.indexToRemove);
-
-        console2.log("customMetadata: ", customMetadata);
-
-        if (input.indexToRemove != type(uint8).max) {
-            assertEq(
-                bytes(customMetadata).length,
-                bytes(
-                    string.concat(
-                        "test>",
-                        AdvancedStrings.uintToString(input.indexToRemove + 1)
-                    )
-                ).length
-            );
-            assertEq(
-                keccak256(bytes(customMetadata)),
-                keccak256(
-                    bytes(
-                        string.concat(
-                            "test>",
-                            AdvancedStrings.uintToString(
-                                input.indexToRemove + 1
-                            )
-                        )
-                    )
-                )
-            );
-        } else {
-            assertEq(bytes(customMetadata).length, bytes("").length);
-            assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("")));
-        }
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
-        );
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
-        );
-
-        assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity("test"),
-            MAX_AMOUNT_SLOTS_REGISTERED - 1
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            (5 * evvm.getRewardAmount()) + priorityFeeAmountEVVM
+            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (5 * evvm.getRewardAmount()) + uint256(params.priorityFee),
+            "fisher balance incorrectly changed after removing custom metadata"
         );
     }
 }

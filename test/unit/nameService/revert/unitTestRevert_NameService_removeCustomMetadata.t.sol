@@ -1,89 +1,79 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
 import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
+    ErrorsLib as EvvmErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    AsyncNonce
+} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
 
 contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
-    function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+    uint256 offerID;
 
+    string constant USERNAME = "test";
+    uint256 constant INDEX_CUSTOM_METADATA = 0;
+    string constant CUSTOM_METADATA_VALUE_0 = "test>0";
+
+    function executeBeforeSetUp() internal override {
         _execute_makeRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
-            "test",
-            777,
-            10101,
-            20202
+            USERNAME,
+            1,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+            )
         );
 
         _execute_makeAddCustomMetadata(
             COMMON_USER_NO_STAKER_1,
-            "test",
-            "test>1",
-            11,
-            11,
-            true
-        );
-        _execute_makeAddCustomMetadata(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            "test>2",
-            22,
-            22,
-            true
-        );
-        _execute_makeAddCustomMetadata(
-            COMMON_USER_NO_STAKER_1,
-            "test",
-            "test>3",
-            33,
-            33,
+            USERNAME,
+            CUSTOM_METADATA_VALUE_0,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+            ),
             true
         );
     }
 
-    function addBalance(
+    function _addBalance(
         AccountData memory user,
         uint256 priorityFeeAmount
     )
@@ -95,7 +85,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
     {
         evvm.addBalance(
             user.Address,
-            MATE_TOKEN_ADDRESS,
+            PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToRemoveCustomMetadata() + priorityFeeAmount
         );
 
@@ -104,207 +94,190 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    /**
-     * Function to test:
-     * bSigAt[variable]: bad signature at
-     * bPaySigAt[variable]: bad payment signature at
-     * some denominations on test can be explicit expleined
-     */
-
-    /*
-    function test__unit_revert__removeCustomMetadata__bSigAt() external {
+    function test__unit_revert__removeCustomMetadata__InvalidSignatureOnNameService_evvmID()
+        external
+    {
         (
             uint256 totalPriceRemovedCustomMetadata,
             uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        uint256 nonceNameService = 10001;
+        uint256 nonceEVVM = 20002;
 
         bytes memory signatureNameService;
         bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
 
-        (v, r, s) = vm.sign(
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRemoveCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                1,
-                100010001
+                /* 🢃 different evvmID 🢃 */
+                evvm.getEvvmID() + 1,
+                USERNAME,
+                INDEX_CUSTOM_METADATA,
+                nonceNameService
             )
         );
+
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                nameService.getPriceToRemoveCustomMetadata(),
-                totalPriorityFeeAmount,
-                100010001,
-                true,
-                address(nameService)
-            )
+        signatureEVVM = _execute_makeSignaturePay(
+            COMMON_USER_NO_STAKER_1,
+            address(nameService),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            nameService.getPriceToRemoveCustomMetadata(),
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            address(nameService)
         );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1,
-            100010001,
+            USERNAME,
+            INDEX_CUSTOM_METADATA,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            100010001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata = nameService.getSingleCustomMetadataOfIdentity(
-            "test",
-            1
+        string memory customMetadata = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, INDEX_CUSTOM_METADATA);
+
+        assertEq(
+            keccak256(bytes(customMetadata)),
+            keccak256(bytes(CUSTOM_METADATA_VALUE_0)),
+            "custom metadata should not be removed"
         );
 
-        assertEq(bytes(customMetadata).length, bytes("test>2").length);
-        assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("test>2")));
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 3);
+        assertEq(
+            nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME),
+            1,
+            "max custom metadata slots should remain unchanged"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount,
+            "user balance should remain unchanged"
         );
     }
 
-    //////////////////////////////////////////////////////////////////////
-
-    function test__unit_revert__removeCustomMetadata__S_PF() external {
+    function test__unit_revert__removeCustomMetadata__InvalidSignatureOnNameService_signer()
+        external
+    {
         (
             uint256 totalPriceRemovedCustomMetadata,
             uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        uint256 nonceNameService = 10001;
+        uint256 nonceEVVM = 20002;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeRemoveCustomMetadataSignatures(
+                /* 🢃 different signer 🢃 */
+                COMMON_USER_NO_STAKER_2,
+                USERNAME,
+                INDEX_CUSTOM_METADATA,
+                nonceNameService,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.removeCustomMetadata(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            INDEX_CUSTOM_METADATA,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        string memory customMetadata = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, INDEX_CUSTOM_METADATA);
+
+        assertEq(
+            keccak256(bytes(customMetadata)),
+            keccak256(bytes(CUSTOM_METADATA_VALUE_0)),
+            "custom metadata should not be removed"
+        );
+
+        assertEq(
+            nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME),
+            1,
+            "max custom metadata slots should remain unchanged"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount,
+            "user balance should remain unchanged"
+        );
+    }
+
+    function test__unit_revert__removeCustomMetadata__InvalidSignatureOnNameService_username()
+        external
+    {
+        (
+            uint256 totalPriceRemovedCustomMetadata,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        uint256 nonceNameService = 10001;
+        uint256 nonceEVVM = 20002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeRemoveCustomMetadataSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "test",
-                1,
-                100010001,
+                /* 🢃 different username 🢃 */
+                "differentUsername",
+                INDEX_CUSTOM_METADATA,
+                nonceNameService,
                 totalPriorityFeeAmount,
-                100010001,
+                nonceEVVM,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1,
-            100010001,
+            USERNAME,
+            INDEX_CUSTOM_METADATA,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            100010001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService.getSingleCustomMetadataOfIdentity(
-            "test",
-            1
-        );
-
-        assertEq(bytes(customMetadata).length, bytes("test>2").length);
-        assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("test>2")));
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 3);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-    */
-
-    function test__unit_revert__removeCustomMetadata__bSigAtSigner() external {
-        (
-            uint256 totalPriceRemovedCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRemoveCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                1,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                nameService.getPriceToRemoveCustomMetadata(),
-                totalPriorityFeeAmount,
-                100010001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.removeCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1,
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            100010001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
@@ -312,297 +285,66 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         vm.stopPrank();
 
         string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 1);
+            .getSingleCustomMetadataOfIdentity(USERNAME, INDEX_CUSTOM_METADATA);
 
-        assertEq(bytes(customMetadata).length, bytes("test>2").length);
-        assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("test>2")));
+        assertEq(
+            keccak256(bytes(customMetadata)),
+            keccak256(bytes(CUSTOM_METADATA_VALUE_0)),
+            "custom metadata should not be removed"
+        );
 
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 3);
+        assertEq(
+            nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME),
+            1,
+            "max custom metadata slots should remain unchanged"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount,
+            "user balance should remain unchanged"
         );
     }
 
-    function test__unit_revert__removeCustomMetadata__bSigAtUsername()
+    function test__unit_revert__removeCustomMetadata__InvalidSignatureOnNameService_key()
         external
     {
         (
             uint256 totalPriceRemovedCustomMetadata,
             uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRemoveCustomMetadata(
-                evvm.getEvvmID(),
-                "user",
-                1,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                nameService.getPriceToRemoveCustomMetadata(),
-                totalPriorityFeeAmount,
-                100010001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.removeCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1,
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            100010001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 1);
-
-        assertEq(bytes(customMetadata).length, bytes("test>2").length);
-        assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("test>2")));
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 3);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__removeCustomMetadata__bSigAtIndex() external {
-        (
-            uint256 totalPriceRemovedCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRemoveCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                777,
-                100010001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                nameService.getPriceToRemoveCustomMetadata(),
-                totalPriorityFeeAmount,
-                100010001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.removeCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1,
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            100010001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 1);
-
-        assertEq(bytes(customMetadata).length, bytes("test>2").length);
-        assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("test>2")));
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 3);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__removeCustomMetadata__bSigAtNonceNameService()
-        external
-    {
-        (
-            uint256 totalPriceRemovedCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRemoveCustomMetadata(
-                evvm.getEvvmID(),
-                "test",
-                1,
-                777
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                nameService.getPriceToRemoveCustomMetadata(),
-                totalPriorityFeeAmount,
-                100010001,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.removeCustomMetadata(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1,
-            100010001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            100010001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 1);
-
-        assertEq(bytes(customMetadata).length, bytes("test>2").length);
-        assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("test>2")));
-
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 3);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__removeCustomMetadata__notOwnerOfUsername()
-        external
-    {
-        (
-            uint256 totalPriceRemovedCustomMetadata,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_2, 0.0001 ether);
+        uint256 nonceNameService = 10001;
+        uint256 nonceEVVM = 20002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeRemoveCustomMetadataSignatures(
-                COMMON_USER_NO_STAKER_2,
-                "test",
-                1,
-                100010001,
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                /* 🢃 different key 🢃 */
+                INDEX_CUSTOM_METADATA + 1,
+                nonceNameService,
                 totalPriorityFeeAmount,
-                100010001,
+                nonceEVVM,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.removeCustomMetadata(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            1,
-            100010001,
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            INDEX_CUSTOM_METADATA,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            100010001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
@@ -610,59 +352,206 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         vm.stopPrank();
 
         string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 1);
+            .getSingleCustomMetadataOfIdentity(USERNAME, INDEX_CUSTOM_METADATA);
 
-        assertEq(bytes(customMetadata).length, bytes("test>2").length);
-        assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("test>2")));
+        assertEq(
+            keccak256(bytes(customMetadata)),
+            keccak256(bytes(CUSTOM_METADATA_VALUE_0)),
+            "custom metadata should not be removed"
+        );
 
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 3);
+        assertEq(
+            nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME),
+            1,
+            "max custom metadata slots should remain unchanged"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount,
+            "user balance should remain unchanged"
+        );
+    }
+
+    function test__unit_revert__removeCustomMetadata__InvalidSignatureOnNameService_nonce()
+        external
+    {
+        (
+            uint256 totalPriceRemovedCustomMetadata,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        uint256 nonceNameService = 10001;
+        uint256 nonceEVVM = 20002;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeRemoveCustomMetadataSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                INDEX_CUSTOM_METADATA,
+                /* 🢃 different nonce 🢃 */
+                nonceNameService + 1,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.removeCustomMetadata(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            INDEX_CUSTOM_METADATA,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        string memory customMetadata = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, INDEX_CUSTOM_METADATA);
+
+        assertEq(
+            keccak256(bytes(customMetadata)),
+            keccak256(bytes(CUSTOM_METADATA_VALUE_0)),
+            "custom metadata should not be removed"
+        );
+
+        assertEq(
+            nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME),
+            1,
+            "max custom metadata slots should remain unchanged"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount,
+            "user balance should remain unchanged"
+        );
+    }
+
+    function test__unit_revert__removeCustomMetadata__UserIsNotOwnerOfIdentity()
+        external
+    {
+        (
+            uint256 totalPriceRemovedCustomMetadata,
+            uint256 totalPriorityFeeAmount
+        ) = /* 🢃 different user 🢃 */ _addBalance(
+                COMMON_USER_NO_STAKER_2,
+                0.0001 ether
+            );
+
+        uint256 nonceNameService = 10001;
+        uint256 nonceEVVM = 20002;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeRemoveCustomMetadataSignatures(
+                /* 🢃 different user 🢃 */
+                COMMON_USER_NO_STAKER_2,
+                USERNAME,
+                INDEX_CUSTOM_METADATA,
+                nonceNameService,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(ErrorsLib.UserIsNotOwnerOfIdentity.selector);
+        nameService.removeCustomMetadata(
+            /* 🢃 different user 🢃 */
+            COMMON_USER_NO_STAKER_2.Address,
+            USERNAME,
+            INDEX_CUSTOM_METADATA,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        string memory customMetadata = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, INDEX_CUSTOM_METADATA);
+
+        assertEq(
+            keccak256(bytes(customMetadata)),
+            keccak256(bytes(CUSTOM_METADATA_VALUE_0)),
+            "custom metadata should not be removed"
+        );
+
+        assertEq(
+            nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME),
+            1,
+            "max custom metadata slots should remain unchanged"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount,
+            "user balance should remain unchanged"
         );
     }
 
-    function test__unit_revert__removeCustomMetadata__nonceAlreadyUsed()
+    function test__unit_revert__removeCustomMetadata__AsyncNonceAlreadyUsed()
         external
     {
         (
             uint256 totalPriceRemovedCustomMetadata,
             uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        /* 🢃 reused nonce 🢃 */
+        uint256 nonceNameService = uint256(
+            0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+        );
+        uint256 nonceEVVM = 20002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeRemoveCustomMetadataSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "test",
-                1,
-                11,
+                USERNAME,
+                INDEX_CUSTOM_METADATA,
+                nonceNameService,
                 totalPriorityFeeAmount,
-                100010001,
+                nonceEVVM,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1,
-            11,
+            USERNAME,
+            INDEX_CUSTOM_METADATA,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            100010001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
@@ -670,110 +559,125 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         vm.stopPrank();
 
         string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 1);
+            .getSingleCustomMetadataOfIdentity(USERNAME, INDEX_CUSTOM_METADATA);
 
-        assertEq(bytes(customMetadata).length, bytes("test>2").length);
-        assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("test>2")));
+        assertEq(
+            keccak256(bytes(customMetadata)),
+            keccak256(bytes(CUSTOM_METADATA_VALUE_0)),
+            "custom metadata should not be removed"
+        );
 
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 3);
+        assertEq(
+            nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME),
+            1,
+            "max custom metadata slots should remain unchanged"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount,
+            "user balance should remain unchanged"
         );
     }
 
-    function test__unit_revert__removeCustomMetadata__indexMoreThanMax()
-        external
-    {
+    function test__unit_revert__removeCustomMetadata__InvalidKey() external {
         (
             uint256 totalPriceRemovedCustomMetadata,
             uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        uint256 nonceNameService = 10001;
+        uint256 nonceEVVM = 20002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeRemoveCustomMetadataSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "test",
-                777,
-                100010001,
+                USERNAME,
+                /* 🢃 invalid key 🢃 */
+                INDEX_CUSTOM_METADATA + 1,
+                nonceNameService,
                 totalPriorityFeeAmount,
-                100010001,
+                nonceEVVM,
                 true
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidKey.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            777,
-            100010001,
+            USERNAME,
+            /* 🢃 invalid key 🢃 */
+            INDEX_CUSTOM_METADATA + 1,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            100010001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 3);
+        assertEq(
+            nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME),
+            1,
+            "max custom metadata slots should remain unchanged"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount,
+            "user balance should remain unchanged"
         );
     }
 
-    function test__unit_revert__removeCustomMetadata__userDontHaveFunds()
+    function test__unit_revert__removeCustomMetadata__InvalidSignature_fromEvvm()
         external
     {
-        uint256 totalPriorityFeeAmount = 0;
+        (
+            uint256 totalPriceRemovedCustomMetadata,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
+
+        uint256 nonceNameService = 10001;
+        uint256 nonceEVVM = 20002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeRemoveCustomMetadataSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "test",
-                1,
-                100010001,
-                totalPriorityFeeAmount,
-                100010001,
-                true
+                USERNAME,
+                INDEX_CUSTOM_METADATA,
+                nonceNameService,
+                /* 🢃 different totalPriorityFee 🢃 */
+                totalPriorityFeeAmount + 50,
+                /* 🢃 different nonceEVVM 🢃 */
+                nonceEVVM + 1,
+                /* 🢃 different priorityFlag 🢃 */
+                false
             );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1,
-            100010001,
+            USERNAME,
+            INDEX_CUSTOM_METADATA,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            100010001,
+            nonceEVVM,
             true,
             signatureEVVM
         );
@@ -781,24 +685,88 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         vm.stopPrank();
 
         string memory customMetadata = nameService
-            .getSingleCustomMetadataOfIdentity("test", 1);
+            .getSingleCustomMetadataOfIdentity(USERNAME, INDEX_CUSTOM_METADATA);
 
-        assertEq(bytes(customMetadata).length, bytes("test>2").length);
-        assertEq(keccak256(bytes(customMetadata)), keccak256(bytes("test>2")));
+        assertEq(
+            keccak256(bytes(customMetadata)),
+            keccak256(bytes(CUSTOM_METADATA_VALUE_0)),
+            "custom metadata should not be removed"
+        );
 
-        assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity("test"), 3);
+        assertEq(
+            nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME),
+            1,
+            "max custom metadata slots should remain unchanged"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            0
+            totalPriceRemovedCustomMetadata + totalPriorityFeeAmount,
+            "user balance should remain unchanged"
+        );
+    }
+
+    function test__unit_revert__removeCustomMetadata__InsufficientBalance_fromEvvm()
+        external
+    {
+        uint256 nonceNameService = 10001;
+        uint256 nonceEVVM = 20002;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeRemoveCustomMetadataSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                INDEX_CUSTOM_METADATA,
+                nonceNameService,
+                1 ether,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        nameService.removeCustomMetadata(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            INDEX_CUSTOM_METADATA,
+            nonceNameService,
+            signatureNameService,
+            1 ether,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        string memory customMetadata = nameService
+            .getSingleCustomMetadataOfIdentity(USERNAME, INDEX_CUSTOM_METADATA);
+
+        assertEq(
+            keccak256(bytes(customMetadata)),
+            keccak256(bytes(CUSTOM_METADATA_VALUE_0)),
+            "custom metadata should not be removed"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME),
+            1,
+            "max custom metadata slots should remain unchanged"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "user balance should remain unchanged"
         );
     }
 }

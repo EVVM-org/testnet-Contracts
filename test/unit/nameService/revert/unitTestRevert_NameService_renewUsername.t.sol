@@ -1,55 +1,66 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
-
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+    ErrorsLib as EvvmErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    AsyncNonce
+} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
 
 contract unitTestRevert_NameService_renewUsername is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
-    function addBalance(
+    uint256 offerID;
+
+    string constant USERNAME = "test";
+
+    function executeBeforeSetUp() internal override {
+        _execute_makeRegistrationUsername(
+            COMMON_USER_NO_STAKER_1,
+            USERNAME,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+            )
+        );
+    }
+
+    function _addBalance(
         AccountData memory user,
         string memory username,
         uint256 priorityFeeAmount
@@ -59,7 +70,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
     {
         evvm.addBalance(
             user.Address,
-            MATE_TOKEN_ADDRESS,
+            PRINCIPAL_TOKEN_ADDRESS,
             nameService.seePriceToRenew(username) + priorityFeeAmount
         );
 
@@ -67,202 +78,178 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    /**
-     * Function to test:
-     * bSigAt[variable]: bad signature at
-     * bPaySigAt[variable]: bad payment signature at
-     * some denominations on test can be explicit expleined
-     */
-
-    /*
-    function test__unit_revert__renewUsername__bPaySigAt() external {
+    function test__unit_revert__renewUsername__InvalidSignatureOnNameService_evvmID()
+        external
+    {
         (
             uint256 totalRenewalAmount,
             uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
 
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
+        uint256 nonceNameService = 11111111;
+        uint256 nonceEVVM = 22222222;
 
-        (v, r, s) = vm.sign(
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                1000001000001
+                /* 🢃 different evvmID 🢃 */
+                evvm.getEvvmID() + 1,
+                USERNAME,
+                nonceNameService
             )
         );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
+        bytes memory signatureNameService = Erc191TestBuilder
+            .buildERC191Signature(v, r, s);
 
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalRenewalAmount,
-                totalPriorityFeeAmount,
-                11111111,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService.getIdentityBasicMetadata(
-            "test"
+        bytes memory signatureEVVM = _execute_makeSignaturePay(
+            COMMON_USER_NO_STAKER_1,
+            address(nameService),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            nameService.seePriceToRenew(USERNAME),
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            address(nameService)
         );
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        (, uint256 beforeUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
 
-        vm.expectRevert();
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
+            USERNAME,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            11111111,
+            nonceEVVM,
             true,
             signatureEVVM
         );
 
         vm.stopPrank();
 
-        (, uint256 afterUsernameExpirationTime) = nameService.getIdentityBasicMetadata(
-            "test"
-        );
+        (, uint256 afterUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
 
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
+        assertEq(
+            afterUsernameExpirationTime,
+            beforeUsernameExpirationTime,
+            "username expiration time should not change"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalRenewalAmount + totalPriorityFeeAmount,
+            "user balance should not change"
         );
     }
 
-    ///////////
-
-    function test__unit_revert__renewUsername__() external {
+    function test__unit_revert__renewUsername__InvalidSignatureOnNameService_signer()
+        external
+    {
         (
             uint256 totalRenewalAmount,
             uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
+
+        uint256 nonceNameService = 11111111;
+        uint256 nonceEVVM = 22222222;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeRenewUsernameSignatures(
+                /* 🢃 different signer 🢃 */
+                COMMON_USER_NO_STAKER_2,
+                USERNAME,
+                nonceNameService,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        (, uint256 beforeUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        nameService.renewUsername(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        (, uint256 afterUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            afterUsernameExpirationTime,
+            beforeUsernameExpirationTime,
+            "username expiration time should not change"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalRenewalAmount + totalPriorityFeeAmount,
+            "user balance should not change"
+        );
+    }
+
+    function test__unit_revert__renewUsername__InvalidSignatureOnNameService_username()
+        external
+    {
+        (
+            uint256 totalRenewalAmount,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
+
+        uint256 nonceNameService = 11111111;
+        uint256 nonceEVVM = 22222222;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeRenewUsernameSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "test",
-                1000001000001,
+                /* 🢃 different username 🢃 */
+                "differentUsername",
+                nonceNameService,
                 totalPriorityFeeAmount,
-                11111111,
+                nonceEVVM,
                 true
             );
 
-        (, uint256 beforeUsernameExpirationTime) = nameService.getIdentityBasicMetadata(
-            "test"
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService.getIdentityBasicMetadata(
-            "test"
-        );
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-    */
-
-    function test__unit_revert__renewUsername__bSigAtSigner() external {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                1000001000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalRenewalAmount,
-                totalPriorityFeeAmount,
-                11111111,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
         (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
+            .getIdentityBasicMetadata(USERNAME);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
+            USERNAME,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            11111111,
+            nonceEVVM,
             true,
             signatureEVVM
         );
@@ -270,885 +257,61 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         vm.stopPrank();
 
         (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
+            .getIdentityBasicMetadata(USERNAME);
 
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
+        assertEq(
+            afterUsernameExpirationTime,
+            beforeUsernameExpirationTime,
+            "username expiration time should not change"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalRenewalAmount + totalPriorityFeeAmount,
+            "user balance should not change"
         );
     }
 
-    function test__unit_revert__renewUsername__bSigAtUsername() external {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "user",
-                1000001000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalRenewalAmount,
-                totalPriorityFeeAmount,
-                11111111,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__bSigAtNonceNameService()
+    function test__unit_revert__renewUsername__InvalidSignatureOnNameService_nameServiceNonce()
         external
     {
         (
             uint256 totalRenewalAmount,
             uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
 
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                777
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalRenewalAmount,
-                totalPriorityFeeAmount,
-                11111111,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__bPaySigAtSigner() external {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                1000001000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalRenewalAmount,
-                totalPriorityFeeAmount,
-                11111111,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__bPaySigAtToAddress() external {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                1000001000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalRenewalAmount,
-                totalPriorityFeeAmount,
-                11111111,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__bPaySigAtToIdentity() external {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                1000001000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(0),
-                "nameservice",
-                MATE_TOKEN_ADDRESS,
-                totalRenewalAmount,
-                totalPriorityFeeAmount,
-                11111111,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__bPaySigAtTokenAddress()
-        external
-    {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                1000001000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                ETHER_ADDRESS,
-                totalRenewalAmount,
-                totalPriorityFeeAmount,
-                11111111,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__bPaySigAtAmount() external {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                1000001000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                1,
-                totalPriorityFeeAmount,
-                11111111,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__bPaySigAtPriorityFee() external {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                1000001000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalRenewalAmount,
-                1 ether,
-                11111111,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__bPaySigAtNonceEVVM() external {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                1000001000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalRenewalAmount,
-                totalPriorityFeeAmount,
-                777,
-                true,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__bPaySigAtPriorityFlag()
-        external
-    {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                1000001000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalRenewalAmount,
-                totalPriorityFeeAmount,
-                11111111,
-                false,
-                address(nameService)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__bPaySigAtExecutor() external {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        bytes memory signatureNameService;
-        bytes memory signatureEVVM;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
-                "test",
-                1000001000001
-            )
-        );
-        signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(nameService),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalRenewalAmount,
-                totalPriorityFeeAmount,
-                11111111,
-                true,
-                address(0)
-            )
-        );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__userIsNotTheOwner() external {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_2, "test", 0.001 ether);
+        uint256 nonceNameService = 11111111;
+        uint256 nonceEVVM = 22222222;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeRenewUsernameSignatures(
-                COMMON_USER_NO_STAKER_2,
-                "test",
-                1000001000001,
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                /* 🢃 different nonce 🢃 */
+                nonceNameService + 67,
                 totalPriorityFeeAmount,
-                11111111,
+                nonceEVVM,
                 true
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
+            .getIdentityBasicMetadata(USERNAME);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
         nameService.renewUsername(
-            COMMON_USER_NO_STAKER_2.Address,
-            "test",
-            1000001000001,
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            11111111,
+            nonceEVVM,
             true,
             signatureEVVM
         );
@@ -1156,225 +319,210 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         vm.stopPrank();
 
         (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
+            .getIdentityBasicMetadata(USERNAME);
 
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
+        assertEq(
+            afterUsernameExpirationTime,
+            beforeUsernameExpirationTime,
+            "username expiration time should not change"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalRenewalAmount + totalPriorityFeeAmount,
+            "user balance should not change"
+        );
+    }
+
+    function test__unit_revert__renewUsername__IdentityIsNotAUsername()
+        external
+    {
+        _execute_makePreRegistrationUsername(
+            COMMON_USER_NO_STAKER_1,
+            "testrevert",
+            67,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffA
+            )
+        );
+
+        /* 🢃 flagNotAUsername == 0x01 🢃 */
+        string memory invalidUsername = string.concat(
+            "@",
+            AdvancedStrings.bytes32ToString(
+                keccak256(abi.encodePacked("testrevert", uint256(67)))
+            )
+        );
+
+        (
+            uint256 totalRenewalAmount,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, invalidUsername, 0.001 ether);
+
+        uint256 nonceNameService = 11111111;
+        uint256 nonceEVVM = 22222222;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeRenewUsernameSignatures(
+                COMMON_USER_NO_STAKER_1,
+                invalidUsername,
+                nonceNameService,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.IdentityIsNotAUsername.selector);
+        nameService.renewUsername(
+            COMMON_USER_NO_STAKER_1.Address,
+            invalidUsername,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalRenewalAmount + totalPriorityFeeAmount,
+            "user balance should not change"
+        );
+    }
+
+    function test__unit_revert__renewUsername__UserIsNotOwnerOfIdentity()
+        external
+    {
+        (
+            uint256 totalRenewalAmount,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_2, USERNAME, 0.001 ether);
+
+        uint256 nonceNameService = 11111111;
+        uint256 nonceEVVM = 22222222;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeRenewUsernameSignatures(
+                /* 🢃 different user 🢃 */
+                COMMON_USER_NO_STAKER_2,
+                USERNAME,
+                nonceNameService,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        (, uint256 beforeUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(ErrorsLib.UserIsNotOwnerOfIdentity.selector);
+        nameService.renewUsername(
+            /* 🢃 different user 🢃 */
+            COMMON_USER_NO_STAKER_2.Address,
+            USERNAME,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        (, uint256 afterUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            afterUsernameExpirationTime,
+            beforeUsernameExpirationTime,
+            "username expiration time should not change"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+            totalRenewalAmount + totalPriorityFeeAmount,
+            "user balance should not change"
         );
     }
 
-    function test__unit_revert__renewUsername__nonceAlreadyUsed() external {
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "test", 0.001 ether);
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "test",
-                10101,
-                totalPriorityFeeAmount,
-                11111111,
-                true
-            );
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test",
-            10101,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__notAUsername() external {
-        _execute_makePreRegistrationUsername(
-            COMMON_USER_NO_STAKER_1,
-            "notausername",
-            777,
-            999
-        );
-
-        (
-            uint256 totalRenewalAmount,
-            uint256 totalPriorityFeeAmount
-        ) = addBalance(
-                COMMON_USER_NO_STAKER_1,
-                string.concat(
-                    "@",
-                    AdvancedStrings.bytes32ToString(
-                        keccak256(
-                            abi.encodePacked("notausername", uint256(777))
-                        )
-                    )
-                ),
-                0.001 ether
-            );
-
-        (
-            bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
-                COMMON_USER_NO_STAKER_1,
-                "test@mail.com",
-                1000001000001,
-                totalPriorityFeeAmount,
-                11111111,
-                true
-            );
-
-        (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test@mail.com");
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        nameService.renewUsername(
-            COMMON_USER_NO_STAKER_1.Address,
-            "test@mail.com",
-            1000001000001,
-            signatureNameService,
-            totalPriorityFeeAmount,
-            11111111,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("test@mail.com");
-
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalRenewalAmount + totalPriorityFeeAmount
-        );
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__renewUsername__expirationDateMoreThan100Years()
+    function test__unit_revert__renewUsername__RenewalTimeLimitExceeded()
         external
     {
-
-        _execute_makeRegistrationUsername(
-            COMMON_USER_NO_STAKER_1,
-            "user",
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1),
-            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2)
+        uint256 nonceLoop = uint256(
+            0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000
         );
-    
         for (uint256 i = 0; i < 99; i++) {
-            addBalance(COMMON_USER_NO_STAKER_1, "user", 0);
-
-            (
-                bytes memory _signatureNameService,
-                bytes memory _signatureEVVM
-            ) = _execute_makeRenewUsernameSignatures(
-                    COMMON_USER_NO_STAKER_1,
-                    "user",
-                    1000001000001000000 + i,
-                    0,
-                    1000001000001000000 + i,
-                    true
-                );
-
-            vm.startPrank(COMMON_USER_STAKER.Address);
-
-            
-            nameService.renewUsername(
+            evvm.addBalance(
                 COMMON_USER_NO_STAKER_1.Address,
-                "user",
-                1000001000001000000 + i,
-                _signatureNameService,
-                0,
-                1000001000001000000 + i,
-                true,
-                _signatureEVVM
+                PRINCIPAL_TOKEN_ADDRESS,
+                nameService.seePriceToRenew(USERNAME)
             );
 
-            vm.stopPrank();
+            _execute_makeRenewUsername(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                nonceLoop + i,
+                0,
+                nonceLoop + i,
+                true,
+                COMMON_USER_NO_STAKER_3
+            );
         }
 
         (
             uint256 totalRenewalAmount,
             uint256 totalPriorityFeeAmount
-        ) = addBalance(COMMON_USER_NO_STAKER_1, "user", 0.001 ether);
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
+
+        uint256 nonceNameService = 11111111;
+        uint256 nonceEVVM = 22222222;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _execute_makeRenewUsernameSignatures(
                 COMMON_USER_NO_STAKER_1,
-                "user",
-                1000001000001,
+                USERNAME,
+                nonceNameService,
                 totalPriorityFeeAmount,
-                11111111,
+                nonceEVVM,
                 true
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("user");
+            .getIdentityBasicMetadata(USERNAME);
 
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.RenewalTimeLimitExceeded.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
-            "user",
-            1000001000001,
+            USERNAME,
+            nonceNameService,
             signatureNameService,
             totalPriorityFeeAmount,
-            11111111,
+            nonceEVVM,
             true,
             signatureEVVM
         );
@@ -1382,17 +530,203 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         vm.stopPrank();
 
         (, uint256 afterUsernameExpirationTime) = nameService
-            .getIdentityBasicMetadata("user");
+            .getIdentityBasicMetadata(USERNAME);
 
-        assertEq(afterUsernameExpirationTime, beforeUsernameExpirationTime);
+        assertEq(
+            afterUsernameExpirationTime,
+            beforeUsernameExpirationTime,
+            "username expiration time should not change"
+        );
 
         assertEq(
             evvm.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+                PRINCIPAL_TOKEN_ADDRESS
             ),
-            totalRenewalAmount + totalPriorityFeeAmount
+            totalRenewalAmount + totalPriorityFeeAmount,
+            "user balance should not change"
         );
-        
     }
+
+
+    function test__unit_revert__renewUsername__AsyncNonceAlreadyUsed() external {
+        (
+            uint256 totalRenewalAmount,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
+
+        /* 🢃 reused nonce 🢃 */
+        uint256 nonceNameService = uint256(
+            0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+        );
+        uint256 nonceEVVM = 22222222;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeRenewUsernameSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                nonceNameService,
+                totalPriorityFeeAmount,
+                nonceEVVM,
+                true
+            );
+
+        (, uint256 beforeUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        nameService.renewUsername(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        (, uint256 afterUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            afterUsernameExpirationTime,
+            beforeUsernameExpirationTime,
+            "username expiration time should not change"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalRenewalAmount + totalPriorityFeeAmount,
+            "user balance should not change"
+        );
+    }
+
+    
+    function test__unit_revert__renewUsername__InvalidSignature_fromEvvm() external {
+        (
+            uint256 totalRenewalAmount,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
+
+        uint256 nonceNameService = 11111111;
+        uint256 nonceEVVM = 22222222;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeRenewUsernameSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                nonceNameService,
+                /* 🢃 different totalPriorityFee 🢃 */
+                totalPriorityFeeAmount + 50,
+                /* 🢃 different nonceEVVM 🢃 */
+                nonceEVVM + 1,
+                /* 🢃 different priorityFlag 🢃 */
+                false
+            );
+
+        (, uint256 beforeUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        nameService.renewUsername(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            nonceNameService,
+            signatureNameService,
+            totalPriorityFeeAmount,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        (, uint256 afterUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            afterUsernameExpirationTime,
+            beforeUsernameExpirationTime,
+            "username expiration time should not change"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            totalRenewalAmount + totalPriorityFeeAmount,
+            "user balance should not change"
+        );
+    }
+
+    function test__unit_revert__renewUsername__InsufficientBalance_fromEvvm() external {
+
+        uint256 nonceNameService = 11111111;
+        uint256 nonceEVVM = 22222222;
+
+        (
+            bytes memory signatureNameService,
+            bytes memory signatureEVVM
+        ) = _execute_makeRenewUsernameSignatures(
+                COMMON_USER_NO_STAKER_1,
+                USERNAME,
+                nonceNameService,
+                0,
+                nonceEVVM,
+                true
+            );
+
+        (, uint256 beforeUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+
+        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        nameService.renewUsername(
+            COMMON_USER_NO_STAKER_1.Address,
+            USERNAME,
+            nonceNameService,
+            signatureNameService,
+            0,
+            nonceEVVM,
+            true,
+            signatureEVVM
+        );
+
+        vm.stopPrank();
+
+        (, uint256 afterUsernameExpirationTime) = nameService
+            .getIdentityBasicMetadata(USERNAME);
+
+        assertEq(
+            afterUsernameExpirationTime,
+            beforeUsernameExpirationTime,
+            "username expiration time should not change"
+        );
+
+        assertEq(
+            evvm.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "user balance should not change"
+        );
+    }
+    
 }

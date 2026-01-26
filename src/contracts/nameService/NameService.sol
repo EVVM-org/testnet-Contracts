@@ -56,7 +56,7 @@ pragma solidity ^0.8.0;
  * - Marketplace takes 0.5% fee on username sales
  */
 
-import {IEvvm} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
+import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -79,10 +79,6 @@ import {
 contract NameService is AsyncNonce, NameServiceStructs {
     /// @dev Time delay constant for accepting proposals
     uint256 constant TIME_TO_ACCEPT_PROPOSAL = 1 days;
-
-    /// @dev Constant address representing the Principal Token in the EVVM ecosystem
-    address private constant PRINCIPAL_TOKEN_ADDRESS =
-        0x0000000000000000000000000000000000000001;
 
     /// @dev Amount of Principal Tokens locked in pending marketplace offers
     uint256 private principalTokenTokenLockedForWithdrawOffers;
@@ -108,19 +104,12 @@ contract NameService is AsyncNonce, NameServiceStructs {
     mapping(string username => IdentityBaseMetadata basicMetadata)
         private identityDetails;
 
-    IEvvm private evvm;
+    /// @dev Instance of the EVVM core contract for payment processing and token operations
+    Evvm private evvm;
 
     /// @dev Restricts function access to the current admin address only
     modifier onlyAdmin() {
         if (msg.sender != admin.current) revert ErrorsLib.SenderIsNotAdmin();
-
-        _;
-    }
-
-    /// @dev Verifies that the caller owns the specified identity/username
-    modifier onlyOwnerOfIdentity(address _user, string memory _identity) {
-        if (identityDetails[_identity].owner != _user)
-            revert ErrorsLib.UserIsNotOwnerOfIdentity();
 
         _;
     }
@@ -134,7 +123,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
     constructor(address _evvmAddress, address _initialOwner) {
         evvmAddress.current = _evvmAddress;
         admin.current = _initialOwner;
-        evvm = IEvvm(_evvmAddress);
+        evvm = Evvm(_evvmAddress);
     }
 
     /**
@@ -161,7 +150,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
     ) external {
         if (
             !SignatureUtils.verifyMessageSignedForPreRegistrationUsername(
-                IEvvm(evvmAddress.current).getEvvmID(),
+                evvm.getEvvmID(),
                 user,
                 hashPreRegisteredUsername,
                 nonce,
@@ -171,8 +160,8 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         verifyAsyncNonce(user, nonce);
 
-        if (priorityFee_EVVM > 0) {
-            makePay(
+        if (priorityFee_EVVM > 0)
+            requestPay(
                 user,
                 0,
                 priorityFee_EVVM,
@@ -180,14 +169,13 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 priorityFlag_EVVM,
                 signature_EVVM
             );
-        }
 
-        string memory key = string.concat(
-            "@",
-            AdvancedStrings.bytes32ToString(hashPreRegisteredUsername)
-        );
-
-        identityDetails[key] = IdentityBaseMetadata({
+        identityDetails[
+            string.concat(
+                "@",
+                AdvancedStrings.bytes32ToString(hashPreRegisteredUsername)
+            )
+        ] = IdentityBaseMetadata({
             owner: user,
             expireDate: block.timestamp + 30 minutes,
             customMetadataMaxSlots: 0,
@@ -197,12 +185,8 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         markAsyncNonceAsUsed(user, nonce);
 
-        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender)) {
-            makeCaPay(
-                msg.sender,
-                IEvvm(evvmAddress.current).getRewardAmount() + priorityFee_EVVM
-            );
-        }
+        if (evvm.isAddressStaker(msg.sender))
+            makeCaPay(msg.sender, evvm.getRewardAmount() + priorityFee_EVVM);
     }
 
     /**
@@ -230,16 +214,8 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature_EVVM
     ) external {
         if (
-            admin.current != user &&
-            !IdentityValidation.isValidUsername(username)
-        ) revert ErrorsLib.InvalidUsername();
-
-        if (!isUsernameAvailable(username))
-            revert ErrorsLib.UsernameAlreadyRegistered();
-
-        if (
             !SignatureUtils.verifyMessageSignedForRegistrationUsername(
-                IEvvm(evvmAddress.current).getEvvmID(),
+                evvm.getEvvmID(),
                 user,
                 username,
                 clowNumber,
@@ -248,9 +224,17 @@ contract NameService is AsyncNonce, NameServiceStructs {
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
 
+        if (
+            admin.current != user &&
+            !IdentityValidation.isValidUsername(username)
+        ) revert ErrorsLib.InvalidUsername();
+
+        if (!isUsernameAvailable(username))
+            revert ErrorsLib.UsernameAlreadyRegistered();
+
         verifyAsyncNonce(user, nonce);
 
-        makePay(
+        requestPay(
             user,
             getPriceOfRegistration(username),
             priorityFee_EVVM,
@@ -279,13 +263,11 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         markAsyncNonceAsUsed(user, nonce);
 
-        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender)) {
+        if (evvm.isAddressStaker(msg.sender))
             makeCaPay(
                 msg.sender,
-                (50 * IEvvm(evvmAddress.current).getRewardAmount()) +
-                    priorityFee_EVVM
+                (50 * evvm.getRewardAmount()) + priorityFee_EVVM
             );
-        }
 
         delete identityDetails[_key];
     }
@@ -318,15 +300,8 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature_EVVM
     ) external returns (uint256 offerID) {
         if (
-            identityDetails[username].flagNotAUsername == 0x01 ||
-            !verifyIfIdentityExists(username) ||
-            amount == 0 ||
-            expireDate <= block.timestamp
-        ) revert ErrorsLib.PreRegistrationNotValid();
-
-        if (
             !SignatureUtils.verifyMessageSignedForMakeOffer(
-                IEvvm(evvmAddress.current).getEvvmID(),
+                evvm.getEvvmID(),
                 user,
                 username,
                 expireDate,
@@ -336,9 +311,19 @@ contract NameService is AsyncNonce, NameServiceStructs {
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
 
+        if (
+            identityDetails[username].flagNotAUsername == 0x01 ||
+            !verifyIfIdentityExists(username)
+        ) revert ErrorsLib.InvalidUsername();
+
+        if (expireDate <= block.timestamp)
+            revert ErrorsLib.CannotBeBeforeCurrentTime();
+
+        if (amount == 0) revert ErrorsLib.AmountMustBeGreaterThanZero();
+
         verifyAsyncNonce(user, nonce);
 
-        makePay(
+        requestPay(
             user,
             amount,
             priorityFee_EVVM,
@@ -347,24 +332,26 @@ contract NameService is AsyncNonce, NameServiceStructs {
             signature_EVVM
         );
 
-        while (usernameOffers[username][offerID].offerer != address(0)) {
+        while (usernameOffers[username][offerID].offerer != address(0))
             offerID++;
-        }
+
+        uint256 amountToOffer = ((amount * 995) / 1000);
 
         usernameOffers[username][offerID] = OfferMetadata({
             offerer: user,
             expireDate: expireDate,
-            amount: ((amount * 995) / 1000)
+            amount: amountToOffer
         });
 
         makeCaPay(
             msg.sender,
-            IEvvm(evvmAddress.current).getRewardAmount() +
+            evvm.getRewardAmount() +
                 ((amount * 125) / 100_000) +
                 priorityFee_EVVM
         );
+
         principalTokenTokenLockedForWithdrawOffers +=
-            ((amount * 995) / 1000) +
+            amountToOffer +
             (amount / 800);
 
         if (offerID > identityDetails[username].offerMaxSlots) {
@@ -400,12 +387,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
     ) external {
-        if (usernameOffers[username][offerID].offerer != user)
-            revert ErrorsLib.UserIsNotOwnerOfOffer();
-
         if (
             !SignatureUtils.verifyMessageSignedForWithdrawOffer(
-                IEvvm(evvmAddress.current).getEvvmID(),
+                evvm.getEvvmID(),
                 user,
                 username,
                 offerID,
@@ -414,10 +398,13 @@ contract NameService is AsyncNonce, NameServiceStructs {
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
 
+        if (usernameOffers[username][offerID].offerer != user)
+            revert ErrorsLib.UserIsNotOwnerOfOffer();
+
         verifyAsyncNonce(user, nonce);
 
-        if (priorityFee_EVVM > 0) {
-            makePay(
+        if (priorityFee_EVVM > 0)
+            requestPay(
                 user,
                 0,
                 priorityFee_EVVM,
@@ -425,7 +412,6 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 priorityFlag_EVVM,
                 signature_EVVM
             );
-        }
 
         makeCaPay(user, usernameOffers[username][offerID].amount);
 
@@ -433,7 +419,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         makeCaPay(
             msg.sender,
-            IEvvm(evvmAddress.current).getRewardAmount() +
+            evvm.getRewardAmount() +
                 ((usernameOffers[username][offerID].amount * 1) / 796) +
                 priorityFee_EVVM
         );
@@ -468,15 +454,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, username) {
-        if (
-            usernameOffers[username][offerID].offerer == address(0) ||
-            usernameOffers[username][offerID].expireDate < block.timestamp
-        ) revert ErrorsLib.AcceptOfferVerificationFailed();
-
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForAcceptOffer(
-                IEvvm(evvmAddress.current).getEvvmID(),
+                evvm.getEvvmID(),
                 user,
                 username,
                 offerID,
@@ -485,10 +466,18 @@ contract NameService is AsyncNonce, NameServiceStructs {
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
 
+        if (identityDetails[username].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+
+        if (
+            usernameOffers[username][offerID].offerer == address(0) ||
+            usernameOffers[username][offerID].expireDate < block.timestamp
+        ) revert ErrorsLib.OfferInactive();
+
         verifyAsyncNonce(user, nonce);
 
         if (priorityFee_EVVM > 0) {
-            makePay(
+            requestPay(
                 user,
                 0,
                 priorityFee_EVVM,
@@ -505,10 +494,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         usernameOffers[username][offerID].offerer = address(0);
 
-        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender)) {
+        if (evvm.isAddressStaker(msg.sender)) {
             makeCaPay(
                 msg.sender,
-                (IEvvm(evvmAddress.current).getRewardAmount()) +
+                (evvm.getRewardAmount()) +
                     (((usernameOffers[username][offerID].amount * 1) / 199) /
                         4) +
                     priorityFee_EVVM
@@ -550,15 +539,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, username) {
-        if (
-            identityDetails[username].flagNotAUsername == 0x01 ||
-            identityDetails[username].expireDate > block.timestamp + 36500 days
-        ) revert ErrorsLib.RenewUsernameVerificationFailed();
-
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForRenewUsername(
-                IEvvm(evvmAddress.current).getEvvmID(),
+                evvm.getEvvmID(),
                 user,
                 username,
                 nonce,
@@ -566,11 +550,20 @@ contract NameService is AsyncNonce, NameServiceStructs {
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
 
+        if (identityDetails[username].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+
+        if (identityDetails[username].flagNotAUsername == 0x01)
+            revert ErrorsLib.IdentityIsNotAUsername();
+
+        if (identityDetails[username].expireDate > block.timestamp + 36500 days)
+            revert ErrorsLib.RenewalTimeLimitExceeded();
+
         verifyAsyncNonce(user, nonce);
 
         uint256 priceOfRenew = seePriceToRenew(username);
 
-        makePay(
+        requestPay(
             user,
             priceOfRenew,
             priorityFee_EVVM,
@@ -579,10 +572,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
             signature_EVVM
         );
 
-        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender)) {
+        if (evvm.isAddressStaker(msg.sender)) {
             makeCaPay(
                 msg.sender,
-                IEvvm(evvmAddress.current).getRewardAmount() +
+                evvm.getRewardAmount() +
                     ((priceOfRenew * 50) / 100) +
                     priorityFee_EVVM
             );
@@ -629,12 +622,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, identity) {
-        if (bytes(value).length == 0) revert ErrorsLib.EmptyCustomMetadata();
-
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForAddCustomMetadata(
-                IEvvm(evvmAddress.current).getEvvmID(),
+                evvm.getEvvmID(),
                 user,
                 identity,
                 value,
@@ -643,9 +634,14 @@ contract NameService is AsyncNonce, NameServiceStructs {
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
 
+        if (identityDetails[identity].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+
+        if (bytes(value).length == 0) revert ErrorsLib.EmptyCustomMetadata();
+
         verifyAsyncNonce(user, nonce);
 
-        makePay(
+        requestPay(
             user,
             getPriceToAddCustomMetadata(),
             priorityFee_EVVM,
@@ -654,10 +650,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
             signature_EVVM
         );
 
-        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender)) {
+        if (evvm.isAddressStaker(msg.sender)) {
             makeCaPay(
                 msg.sender,
-                (5 * IEvvm(evvmAddress.current).getRewardAmount()) +
+                (5 * evvm.getRewardAmount()) +
                     ((getPriceToAddCustomMetadata() * 50) / 100) +
                     priorityFee_EVVM
             );
@@ -694,10 +690,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, identity) {
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForRemoveCustomMetadata(
-                IEvvm(evvmAddress.current).getEvvmID(),
+                evvm.getEvvmID(),
                 user,
                 identity,
                 key,
@@ -706,12 +702,15 @@ contract NameService is AsyncNonce, NameServiceStructs {
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
 
-        verifyAsyncNonce(user, nonce);
+        if (identityDetails[identity].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
 
         if (identityDetails[identity].customMetadataMaxSlots <= key)
             revert ErrorsLib.InvalidKey();
 
-        makePay(
+        verifyAsyncNonce(user, nonce);
+
+        requestPay(
             user,
             getPriceToRemoveCustomMetadata(),
             priorityFee_EVVM,
@@ -736,15 +735,16 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 identityDetails[identity].customMetadataMaxSlots
             ];
         }
+
         identityDetails[identity].customMetadataMaxSlots--;
+
         markAsyncNonceAsUsed(user, nonce);
-        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender)) {
+
+        if (evvm.isAddressStaker(msg.sender))
             makeCaPay(
                 msg.sender,
-                (5 * IEvvm(evvmAddress.current).getRewardAmount()) +
-                    priorityFee_EVVM
+                (5 * evvm.getRewardAmount()) + priorityFee_EVVM
             );
-        }
     }
 
     /**
@@ -768,10 +768,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, identity) {
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForFlushCustomMetadata(
-                IEvvm(evvmAddress.current).getEvvmID(),
+                evvm.getEvvmID(),
                 user,
                 identity,
                 nonce,
@@ -779,12 +779,15 @@ contract NameService is AsyncNonce, NameServiceStructs {
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
 
-        verifyAsyncNonce(user, nonce);
+        if (identityDetails[identity].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
 
         if (identityDetails[identity].customMetadataMaxSlots == 0)
             revert ErrorsLib.EmptyCustomMetadata();
 
-        makePay(
+        verifyAsyncNonce(user, nonce);
+
+        requestPay(
             user,
             getPriceToFlushCustomMetadata(identity),
             priorityFee_EVVM,
@@ -801,10 +804,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
             delete identityCustomMetadata[identity][i];
         }
 
-        if (IEvvm(evvmAddress.current).isAddressStaker(msg.sender)) {
+        if (evvm.isAddressStaker(msg.sender)) {
             makeCaPay(
                 msg.sender,
-                ((5 * IEvvm(evvmAddress.current).getRewardAmount()) *
+                ((5 * evvm.getRewardAmount()) *
                     identityDetails[identity].customMetadataMaxSlots) +
                     priorityFee_EVVM
             );
@@ -835,15 +838,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 nonce_EVVM,
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
-    ) external onlyOwnerOfIdentity(user, username) {
-        if (
-            block.timestamp >= identityDetails[username].expireDate ||
-            identityDetails[username].flagNotAUsername == 0x01
-        ) revert ErrorsLib.FlushUsernameVerificationFailed();
-
+    ) external {
         if (
             !SignatureUtils.verifyMessageSignedForFlushUsername(
-                IEvvm(evvmAddress.current).getEvvmID(),
+                evvm.getEvvmID(),
                 user,
                 username,
                 nonce,
@@ -851,9 +849,18 @@ contract NameService is AsyncNonce, NameServiceStructs {
             )
         ) revert ErrorsLib.InvalidSignatureOnNameService();
 
+        if (identityDetails[username].owner != user)
+            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+
+        if (block.timestamp >= identityDetails[username].expireDate)
+            revert ErrorsLib.OwnershipExpired();
+
+        if (identityDetails[username].flagNotAUsername == 0x01)
+            revert ErrorsLib.IdentityIsNotAUsername();
+
         verifyAsyncNonce(user, nonce);
 
-        makePay(
+        requestPay(
             user,
             getPriceToFlushUsername(username),
             priorityFee_EVVM,
@@ -872,7 +879,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
         makeCaPay(
             msg.sender,
-            ((5 * IEvvm(evvmAddress.current).getRewardAmount()) *
+            ((5 * evvm.getRewardAmount()) *
                 identityDetails[username].customMetadataMaxSlots) +
                 priorityFee_EVVM
         );
@@ -895,9 +902,8 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param _adminToPropose Address of the proposed new admin
      */
     function proposeAdmin(address _adminToPropose) public onlyAdmin {
-        if (_adminToPropose == address(0) || _adminToPropose == admin.current) {
-            revert();
-        }
+        if (_adminToPropose == address(0) || _adminToPropose == admin.current)
+            revert ErrorsLib.InvalidAdminProposal();
 
         admin.proposal = _adminToPropose;
         admin.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
@@ -917,12 +923,11 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @dev Can only be called by the proposed admin after the time delay has passed
      */
     function acceptProposeAdmin() public {
-        if (admin.proposal != msg.sender) {
-            revert();
-        }
-        if (block.timestamp < admin.timeToAccept) {
-            revert();
-        }
+        if (admin.proposal != msg.sender)
+            revert ErrorsLib.SenderIsNotProposedAdmin();
+
+        if (block.timestamp < admin.timeToAccept)
+            revert ErrorsLib.LockTimeNotExpired();
 
         admin = AddressTypeProposal({
             current: admin.proposal,
@@ -938,17 +943,14 @@ contract NameService is AsyncNonce, NameServiceStructs {
      */
     function proposeWithdrawPrincipalTokens(uint256 _amount) public onlyAdmin {
         if (
-            IEvvm(evvmAddress.current).getBalance(
-                address(this),
-                PRINCIPAL_TOKEN_ADDRESS
-            ) -
+            evvm.getBalance(address(this), evvm.getPrincipalTokenAddress()) -
                 (5083 +
-                    IEvvm(evvmAddress.current).getRewardAmount() +
+                    evvm.getRewardAmount() +
                     principalTokenTokenLockedForWithdrawOffers) <
             _amount ||
             _amount == 0
         ) {
-            revert();
+            revert ErrorsLib.InvalidWithdrawAmount();
         }
 
         amountToWithdrawTokens.proposal = _amount;
@@ -971,9 +973,8 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @dev Can only be called after the time delay has passed
      */
     function claimWithdrawPrincipalTokens() public onlyAdmin {
-        if (block.timestamp < amountToWithdrawTokens.timeToAccept) {
-            revert();
-        }
+        if (block.timestamp < amountToWithdrawTokens.timeToAccept)
+            revert ErrorsLib.LockTimeNotExpired();
 
         makeCaPay(admin.current, amountToWithdrawTokens.proposal);
 
@@ -989,9 +990,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
     function proposeChangeEvvmAddress(
         address _newEvvmAddress
     ) public onlyAdmin {
-        if (_newEvvmAddress == address(0)) {
-            revert();
-        }
+        if (_newEvvmAddress == address(0))
+            revert ErrorsLib.InvalidEvvmAddress();
+
         evvmAddress.proposal = _newEvvmAddress;
         evvmAddress.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
     }
@@ -1010,16 +1011,16 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @dev Can only be called after the time delay has passed
      */
     function acceptChangeEvvmAddress() public onlyAdmin {
-        if (block.timestamp < evvmAddress.timeToAccept) {
-            revert();
-        }
+        if (block.timestamp < evvmAddress.timeToAccept)
+            revert ErrorsLib.LockTimeNotExpired();
+
         evvmAddress = AddressTypeProposal({
             current: evvmAddress.proposal,
             proposal: address(0),
             timeToAccept: 0
         });
 
-        evvm = IEvvm(evvmAddress.current);
+        evvm = Evvm(evvmAddress.current);
     }
 
     //█ Utility Functions ████████████████████████████████████████████████████████████████████████
@@ -1036,7 +1037,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param priorityFlag True for async payment, false for sync payment
      * @param signature Signature authorizing the payment
      */
-    function makePay(
+    function requestPay(
         address user,
         uint256 amount,
         uint256 priorityFee,
@@ -1044,11 +1045,11 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bool priorityFlag,
         bytes memory signature
     ) internal {
-        IEvvm(evvmAddress.current).pay(
+        evvm.pay(
             user,
             address(this),
             "",
-            PRINCIPAL_TOKEN_ADDRESS,
+            evvm.getPrincipalTokenAddress(),
             amount,
             priorityFee,
             nonce,
@@ -1065,7 +1066,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param amount Amount of Principal Tokens to distribute
      */
     function makeCaPay(address user, uint256 amount) internal {
-        IEvvm(evvmAddress.current).caPay(user, PRINCIPAL_TOKEN_ADDRESS, amount);
+        evvm.caPay(user, evvm.getPrincipalTokenAddress(), amount);
     }
 
     //█ Username Hashing Functions ███████████████████████████████████████████████████████████████████
@@ -1201,14 +1202,14 @@ contract NameService is AsyncNonce, NameServiceStructs {
             if (price == 0) {
                 price = 500 * 10 ** 18;
             } else {
-                uint256 principalTokenReward = IEvvm(evvmAddress.current)
-                    .getRewardAmount();
+                uint256 principalTokenReward = evvm.getRewardAmount();
+                
                 price = ((price * 5) / 1000) > (500000 * principalTokenReward)
                     ? (500000 * principalTokenReward)
                     : ((price * 5) / 1000);
             }
         } else {
-            price = 500_000 * IEvvm(evvmAddress.current).getRewardAmount();
+            price = 500_000 * evvm.getRewardAmount();
         }
     }
 
@@ -1218,7 +1219,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @return price Cost in Principal Tokens (10x current reward amount)
      */
     function getPriceToAddCustomMetadata() public view returns (uint256 price) {
-        price = 10 * IEvvm(evvmAddress.current).getRewardAmount();
+        price = 10 * evvm.getRewardAmount();
     }
 
     /**
@@ -1231,7 +1232,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         view
         returns (uint256 price)
     {
-        price = 10 * IEvvm(evvmAddress.current).getRewardAmount();
+        price = 10 * evvm.getRewardAmount();
     }
 
     /**
@@ -1244,7 +1245,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         string memory _identity
     ) public view returns (uint256 price) {
         price =
-            (10 * IEvvm(evvmAddress.current).getRewardAmount()) *
+            (10 * evvm.getRewardAmount()) *
             identityDetails[_identity].customMetadataMaxSlots;
     }
 
@@ -1258,9 +1259,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
         string memory _identity
     ) public view returns (uint256 price) {
         price =
-            ((10 * IEvvm(evvmAddress.current).getRewardAmount()) *
+            ((10 * evvm.getRewardAmount()) *
                 identityDetails[_identity].customMetadataMaxSlots) +
-            IEvvm(evvmAddress.current).getRewardAmount();
+            evvm.getRewardAmount();
     }
 
     //█ Identity Availability Functions ██████████████████████████████████████████████████████████████
@@ -1430,7 +1431,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         return
             identityDetails[username].offerMaxSlots > 0
                 ? seePriceToRenew(username)
-                : IEvvm(evvmAddress.current).getRewardAmount() * 100;
+                : evvm.getRewardAmount() * 100;
     }
 
     //█ Administrative Getters ███████████████████████████████████████████████████████████████████████
@@ -1481,6 +1482,15 @@ contract NameService is AsyncNonce, NameServiceStructs {
             amountToWithdrawTokens.proposal,
             amountToWithdrawTokens.timeToAccept
         );
+    }
+
+    /**
+     * @notice Gets the unique identifier string for this EVVM instance
+     * @dev Returns the EvvmID used for distinguishing different EVVM deployments
+     * @return Unique EvvmID string
+     */
+    function getEvvmID() external view returns (uint256) {
+        return evvm.getEvvmID();
     }
 
     /**

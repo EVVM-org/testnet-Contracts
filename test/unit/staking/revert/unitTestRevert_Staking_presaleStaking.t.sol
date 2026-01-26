@@ -1,2018 +1,1004 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 /**
- ____ ____ ____ ____ _________ ____ ____ ____ ____ 
-||U |||N |||I |||T |||       |||T |||E |||S |||T ||
-||__|||__|||__|||__|||_______|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/_______\|/__\|/__\|/__\|/__\|
-
- * @title unit test for 
- * @notice some functions has evvm functions that are implemented
- *         and dosent need to be tested here
+ ____ ___      .__  __      __                  __   
+|    |   \____ |___/  |_  _/  |_  ____   ______/  |_ 
+|    |   /    \|  \   __\ \   ___/ __ \ /  ___\   __\
+|    |  |   |  |  ||  |    |  | \  ___/ \___ \ |  |  
+|______/|___|  |__||__|    |__|  \___  /____  >|__|  
+             \/                      \/     \/       
+                                  __                 
+_______  _______  __ ____________/  |_               
+\_  __ _/ __ \  \/ _/ __ \_  __ \   __\              
+ |  | \\  ___/\   /\  ___/|  | \/|  |                
+ |__|   \___  >\_/  \___  |__|   |__|                
+            \/          \/                                                                                 
  */
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants} from "test/Constants.sol";
-import {EvvmStructs} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {NameService} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {Erc191TestBuilder} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {Estimator} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {EvvmStorage} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {Treasury} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/contracts/staking/lib/ErrorsLib.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    ErrorsLib as EvvmErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+import {
+    AsyncNonce
+} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
 
 contract unitTestRevert_Staking_presaleStaking is Test, Constants {
-
-    
-    
-    
-    
-
     function executeBeforeSetUp() internal override {
-
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
-
+        /**
+         *  @dev Because presale staking is disabled by default in 
+                 testnet contracts, we need to enable it here
+         */
         vm.startPrank(ADMIN.Address);
 
+        staking.proposeSetSecondsToUnlockStaking(1 days);
+        staking.prepareChangeAllowPresaleStaking();
+        staking.prepareChangeAllowPublicStaking();
+
+        skip(1 days);
+
+        staking.confirmChangeAllowPresaleStaking();
+        staking.confirmChangeAllowPublicStaking();
+        staking.acceptSetSecondsToUnlockStaking();
+
+        assertFalse(
+            staking.getAllowPublicStaking().flag,
+            "public staking was not disabled in setup"
+        );
+        assertTrue(
+            staking.getAllowPresaleStaking().flag,
+            "presale staking was not enabled in setup"
+        );
+
+        ///@dev Adding a presale staker to be able to execute
+        ///     presale staking tests
         staking.addPresaleStaker(COMMON_USER_NO_STAKER_1.Address);
         vm.stopPrank();
     }
 
-    function giveMateToExecute(
+    function _addBalance(
         address user,
-        uint256 stakingAmount,
         uint256 priorityFee
-    ) private returns (uint256 totalOfMate, uint256 totalOfPriorityFee) {
+    ) private returns (uint256 amount, uint256 amountPriorityFee) {
         evvm.addBalance(
             user,
-            MATE_TOKEN_ADDRESS,
-            (staking.priceOfStaking() * stakingAmount) + priorityFee
+            PRINCIPAL_TOKEN_ADDRESS,
+            (staking.priceOfStaking()) + priorityFee
         );
-
-        totalOfMate = (staking.priceOfStaking() * stakingAmount);
-        totalOfPriorityFee = priorityFee;
+        return (staking.priceOfStaking(), priorityFee);
     }
 
-    function getAmountOfRewardsPerExecution(
-        uint256 numberOfTx
-    ) private view returns (uint256) {
-        return (evvm.getRewardAmount() * 2) * numberOfTx;
+    struct Params {
+        AccountData user;
+        bool isStaking;
+        uint256 nonceStake;
+        uint256 _amountInPrincipal;
+        bytes signatureStake;
+        uint256 priorityFee;
+        uint256 nonceEVVM;
+        bool priorityFlagEVVM;
+        bytes signatureEVVM;
     }
 
-    function makeSignature(
-        bool isStaking,
-        uint256 priorityFee,
-        uint256 nonceEVVM,
-        bool priorityEVVM,
-        uint256 nonceSmate
-    )
-        private
-        view
-        returns (bytes memory signatureEVVM, bytes memory signatureStaking)
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        if (isStaking) {
-            (v, r, s) = vm.sign(
-                COMMON_USER_NO_STAKER_1.PrivateKey,
-                Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                    address(staking),
-                    "",
-                    MATE_TOKEN_ADDRESS,
-                    staking.priceOfStaking() * 1,
-                    priorityFee,
-                    nonceEVVM,
-                    priorityEVVM,
-                    address(staking)
-                )
-            );
-        } else {
-            (v, r, s) = vm.sign(
-                COMMON_USER_NO_STAKER_1.PrivateKey,
-                Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                    address(staking),
-                    "",
-                    MATE_TOKEN_ADDRESS,
-                    priorityFee,
-                    0,
-                    nonceEVVM,
-                    priorityEVVM,
-                    address(staking)
-                )
-            );
-        }
-
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                isStaking,
-                1,
-                nonceSmate
-            )
-        );
-        signatureStaking = Erc191TestBuilder.buildERC191Signature(v, r, s);
-    }
-
-    /**
-     * Function to test:
-     * nGU: nonGoldenUser
-     * bPaySigAt[section]: incorrect payment signature // bad signature
-     * bStakeSigAt[section]: incorrect stake signature // bad signature
-     * wValAt[section]: wrong value
-     * some denominations on test can be explicit expleined
-     */
-
-    function test__unitRevert__presaleStaking__bPaySigAtSigner() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__bPaySigAtToAddress() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    /*
-     ! note: if staking in the future has a NameService identity, then rework
-     !       this test
-     */
-    function test__unitRevert__presaleStaking__bPaySigAtToIdentity() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(0),
-                "smate",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__bPaySigAtTokenAddress()
+    function test__unit_revert__presaleStaking__PresaleStakingDisabled_allowPresaleStaking()
         external
     {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                ETHER_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
+        /* 🢃 Disabling presale staking 🢃 */
+        vm.startPrank(ADMIN.Address);
+        staking.prepareChangeAllowPresaleStaking();
+        skip(1 days);
+        staking.confirmChangeAllowPresaleStaking();
         vm.stopPrank();
 
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
             ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__bPaySigAtAmount() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                777,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__bPaySigAtPriorityFee() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                777,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__bPaySigAtNonce() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                11111,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__bPaySigAtPriorityFlag()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                false,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__bPaySigAtExecutor() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(0)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__bStakeSigAtSigner() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__bStakeSigAtIsStakingFlag()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                false,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__bStakeSigAtAmount() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                10,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__bStakeSigAtNonce() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),true, 1, 111)
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    /*
-    function test__unitRevert__presaleStaking__() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-                staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_STAKER.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            0
-        );
-    }
-    */
-
-    function test__unitRevert__presaleStaking__notAPresaleStakingr() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_2.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_2.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_2.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_2.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_2.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__nonceAlreadyUsed() external {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureEVVM;
-        bytes memory signatureStaking;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            2,
-            0
-        );
-
-        (signatureEVVM, signatureStaking) = makeSignature(
-            true,
-            0,
-            100,
-            true,
-            1001001
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
+        );
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.PresaleStakingDisabled.selector);
         staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            0,
-            100,
-            true,
-            signatureEVVM
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
         );
         vm.stopPrank();
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        signatureStaking = Erc191TestBuilder.buildERC191Signature(v, r, s);
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            (totalOfMate / 2) + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
     }
 
-    function test__unitRevert__presaleStaking__allowExternalStakingIsFalse()
+    function test__unit_revert__presaleStaking__PresaleStakingDisabled_allowPublicStaking()
         external
     {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
+        /* 🢃 Enable public staking 🢃 */
         vm.startPrank(ADMIN.Address);
-
         staking.prepareChangeAllowPublicStaking();
         skip(1 days);
         staking.confirmChangeAllowPublicStaking();
         vm.stopPrank();
 
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            1,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
             ),
-            totalOfMate + totalOfPriorityFee
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
         );
 
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
         );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.PresaleStakingDisabled.selector);
+        staking.presaleStaking(
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
     }
 
-    function test__unitRevert__presaleStaking__userTriesToStakeMoreThanOne()
+    function test__unit_revert__presaleStaking__PresaleStakingDisabled_bothFlags()
         external
     {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            2,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                true,
-                2,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__userStakeMoreThanTheLimit()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        bytes memory signatureEVVM;
-        bytes memory signatureStaking;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            3,
-            0
-        );
-
-        (signatureEVVM, signatureStaking) = makeSignature(
-            true,
-            0,
-            100,
-            true,
-            100
-        );
-
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            100,
-            signatureStaking,
-            0,
-            100,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (signatureEVVM, signatureStaking) = makeSignature(
-            true,
-            0,
-            101,
-            true,
-            101
-        );
-
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            101,
-            signatureStaking,
-            0,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (signatureEVVM, signatureStaking) = makeSignature(
-            true,
-            0,
-            102,
-            true,
-            102
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            102,
-            signatureStaking,
-            totalOfPriorityFee,
-            102,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            (totalOfMate / 3) + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unitRevert__presaleStaking__userUnstakeWithoutStaking()
-        external
-    {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            0,
-            0
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(staking),
-                "",
-                MATE_TOKEN_ADDRESS,
-                totalOfMate,
-                totalOfPriorityFee,
-                10001,
-                true,
-                address(staking)
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
-                false,
-                1,
-                1001001
-            )
-        );
-        bytes memory signatureStaking = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(COMMON_USER_STAKER.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            false,
-            1001001,
-            signatureStaking,
-            totalOfPriorityFee,
-            10001,
-            true,
-            signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            totalOfMate + totalOfPriorityFee
-        );
-
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, MATE_TOKEN_ADDRESS),
-            0
-        );
-    }
-
-    function test__unit_revert__presaleStaking_AsyncExecution__fullUnstakeDosentRespectTimeLimit()
-        external
-    {
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
-            COMMON_USER_NO_STAKER_1.Address,
-            2,
-            0
-        );
-
-        bytes memory signatureEVVM;
-        bytes memory signatureStaking;
-
-        (signatureEVVM, signatureStaking) = makeSignature(
-            true,
-            0,
-            100,
-            true,
-            100
-        );
-
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            100,
-            signatureStaking,
-            0,
-            100,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (signatureEVVM, signatureStaking) = makeSignature(
-            true,
-            0,
-            101,
-            true,
-            101
-        );
-
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            101,
-            signatureStaking,
-            0,
-            101,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (signatureEVVM, signatureStaking) = makeSignature(
-            false,
-            0,
-            102,
-            true,
-            102
-        );
-
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            false,
-            102,
-            signatureStaking,
-            0,
-            102,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        (signatureEVVM, signatureStaking) = makeSignature(
-            false,
-            0,
-            103,
-            true,
-            103
-        );
-
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-
-        vm.expectRevert();
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            false,
-            103,
-            signatureStaking,
-            0,
-            103,
-            true,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        assert(evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
-            ),
-            (totalOfMate / 2) + totalOfPriorityFee
-        );
-    }
-
-    function test__unit_revert__presaleStaking_AsyncExecution__notInTimeToRestake()
-        external
-    {
+        /* 🢃 Changing flags 🢃 */
         vm.startPrank(ADMIN.Address);
-        staking.proposeSetSecondsToUnlockStaking(5 days);
+        staking.prepareChangeAllowPublicStaking();
+        staking.prepareChangeAllowPublicStaking();
         skip(1 days);
-        staking.acceptSetSecondsToUnlockStaking();
+        staking.confirmChangeAllowPresaleStaking();
+        staking.confirmChangeAllowPublicStaking();
         vm.stopPrank();
 
-        (uint256 totalOfMate, uint256 totalOfPriorityFee) = giveMateToExecute(
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
+        );
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.PresaleStakingDisabled.selector);
+        staking.presaleStaking(
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_evvmID()
+        external
+    {
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            params.user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
+                /* 🢃 Diferent EvvmID 🢃 */
+                evvm.getEvvmID() + 1,
+                params.isStaking,
+                1,
+                params.nonceStake
+            )
+        );
+        params.signatureStake = Erc191TestBuilder.buildERC191Signature(v, r, s);
+
+        params.signatureEVVM = _execute_makeSignaturePay(
+            params.user,
+            address(staking),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            staking.priceOfStaking(),
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            address(staking)
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        staking.presaleStaking(
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_signer()
+        external
+    {
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
+        );
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            /* 🢃 Different Signer 🢃 */
+            COMMON_USER_NO_STAKER_2,
+            params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        staking.presaleStaking(
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_isStaking()
+        external
+    {
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
+        );
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            /* 🢃 Different flag isStaking 🢃 */
+            !params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        staking.presaleStaking(
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_amountOfStaking()
+        external
+    {
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            params.user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
+                evvm.getEvvmID(),
+                params.isStaking,
+                /* 🢃 Different amount of staking 🢃 */
+                67,
+                params.nonceStake
+            )
+        );
+        params.signatureStake = Erc191TestBuilder.buildERC191Signature(v, r, s);
+
+        params.signatureEVVM = _execute_makeSignaturePay(
+            params.user,
+            address(staking),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            staking.priceOfStaking(),
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            address(staking)
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        staking.presaleStaking(
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_nonce()
+        external
+    {
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
+        );
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            params.isStaking,
+            /* 🢃 Different nonce 🢃 */
+            params.nonceStake + 1,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        staking.presaleStaking(
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__presaleStaking__UserIsNotPresaleStaker()
+        external
+    {
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_2,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_2.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
+        );
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.UserIsNotPresaleStaker.selector);
+        staking.presaleStaking(
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__presaleStaking__AsyncNonceAlreadyUsed()
+        external
+    {   
+        _addBalance(
             COMMON_USER_NO_STAKER_1.Address,
-            2,
             0
         );
-
-        bytes memory signatureEVVM;
-        bytes memory signatureStaking;
-
-        (signatureEVVM, signatureStaking) = makeSignature(
+        _execute_makePresaleStaking(
+            COMMON_USER_NO_STAKER_1,
             true,
+            1000001000001,
             0,
-            100,
-            true,
-            100
+            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            false,
+            GOLDEN_STAKER
+        );
+
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
+        );
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
         staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            100,
-            signatureStaking,
-            0,
-            100,
-            true,
-            signatureEVVM
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
         );
         vm.stopPrank();
+    }
 
-        (signatureEVVM, signatureStaking) = makeSignature(
-            true,
-            0,
-            101,
-            true,
-            101
+    function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_zero()
+        external
+    {
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: false,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.UserPresaleStakerLimitExceeded.selector);
         staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            101,
-            signatureStaking,
-            0,
-            101,
-            true,
-            signatureEVVM
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
         );
         vm.stopPrank();
+    }
 
-        (signatureEVVM, signatureStaking) = makeSignature(
-            false,
-            0,
-            102,
+    function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_maxLimit()
+        external
+    {
+        _addBalance(
+            COMMON_USER_NO_STAKER_1.Address,
+            0
+        );
+        _execute_makePresaleStaking(
+            COMMON_USER_NO_STAKER_1,
             true,
-            102
+            111,
+            0,
+            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            false,
+            GOLDEN_STAKER
+        );
+        _addBalance(
+            COMMON_USER_NO_STAKER_1.Address,
+            0
+        );
+        _execute_makePresaleStaking(
+            COMMON_USER_NO_STAKER_1,
+            true,
+            222,
+            0,
+            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            false,
+            GOLDEN_STAKER
+        );
+
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
+        );
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.UserPresaleStakerLimitExceeded.selector);
         staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            false,
-            102,
-            signatureStaking,
-            0,
-            102,
-            true,
-            signatureEVVM
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
         );
         vm.stopPrank();
+    }
 
-        (signatureEVVM, signatureStaking) = makeSignature(
-            false,
-            0,
-            103,
+    function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_AddressMustWaitToFullUnstake()
+        external
+    {
+        _addBalance(
+            COMMON_USER_NO_STAKER_1.Address,
+            0
+        );
+        _execute_makePresaleStaking(
+            COMMON_USER_NO_STAKER_1,
             true,
-            103
+            111,
+            0,
+            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            false,
+            GOLDEN_STAKER
+        );
+
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: false,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
+        );
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(ErrorsLib.AddressMustWaitToFullUnstake.selector);
+        staking.presaleStaking(
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_AddressMustWaitToStakeAgain()
+        external
+    {
+        _addBalance(
+            COMMON_USER_NO_STAKER_1.Address,
+            0
+        );
+        _execute_makePresaleStaking(
+            COMMON_USER_NO_STAKER_1,
+            true,
+            111,
+            0,
+            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            false,
+            GOLDEN_STAKER
         );
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
+        _execute_makePresaleStaking(
+            COMMON_USER_NO_STAKER_1,
             false,
-            103,
-            signatureStaking,
+            222,
             0,
-            103,
-            true,
-            signatureEVVM
+            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            false,
+            GOLDEN_STAKER
         );
-        vm.stopPrank();
 
-        (signatureEVVM, signatureStaking) = makeSignature(
-            true,
-            0,
-            104,
-            true,
-            104
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert();
+        vm.expectRevert(ErrorsLib.AddressMustWaitToStakeAgain.selector);
         staking.presaleStaking(
-            COMMON_USER_NO_STAKER_1.Address,
-            true,
-            104,
-            signatureStaking,
-            0,
-            104,
-            true,
-            signatureEVVM
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
         );
         vm.stopPrank();
+    }
 
-        assert(!evvm.isAddressStaker(COMMON_USER_NO_STAKER_1.Address));
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                MATE_TOKEN_ADDRESS
+    function test__unit_revert__presaleStaking__InvalidSignature_onEvvm()
+        external
+    {
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
             ),
-            totalOfMate + totalOfPriorityFee
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (params._amountInPrincipal, ) = _addBalance(
+            params.user.Address,
+            params.priorityFee
         );
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            params.user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForPresaleStaking(
+                evvm.getEvvmID(),
+                params.isStaking,
+                1,
+                params.nonceStake
+            )
+        );
+        params.signatureStake = Erc191TestBuilder.buildERC191Signature(v, r, s);
+
+        params.signatureEVVM = _execute_makeSignaturePay(
+            params.user,
+            address(staking),
+            "",
+            PRINCIPAL_TOKEN_ADDRESS,
+            /* 🢃 Diferent amount 🢃 */
+            staking.priceOfStaking() + 1,
+            /* 🢃 Diferent priority fee 🢃 */
+            params.priorityFee + 1,
+            /* 🢃 Diferent nonce 🢃 */
+            params.nonceEVVM + 1,
+            params.priorityFlagEVVM,
+            address(staking)
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        staking.presaleStaking(
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__presaleStaking__InsufficientBalance_onEvvm()
+        external
+    {
+        Params memory params = Params({
+            user: COMMON_USER_NO_STAKER_1,
+            isStaking: true,
+            nonceStake: 1000001000001,
+            signatureStake: "",
+            priorityFee: 0,
+            nonceEVVM: evvm.getNextCurrentSyncNonce(
+                COMMON_USER_NO_STAKER_1.Address
+            ),
+            priorityFlagEVVM: false,
+            signatureEVVM: "",
+            _amountInPrincipal: 0
+        });
+
+        (
+            params.signatureStake,
+            params.signatureEVVM
+        ) = _execute_makePresaleStakingSignature(
+            params.user,
+            params.isStaking,
+            params.nonceStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
+        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        staking.presaleStaking(
+            params.user.Address,
+            params.isStaking,
+            params.nonceStake,
+            params.signatureStake,
+            params.priorityFee,
+            params.nonceEVVM,
+            params.priorityFlagEVVM,
+            params.signatureEVVM
+        );
+        vm.stopPrank();
     }
 }

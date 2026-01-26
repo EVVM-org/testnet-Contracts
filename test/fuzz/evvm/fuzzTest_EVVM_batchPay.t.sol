@@ -1,54 +1,26 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**
-
-:::::::::: :::    ::: ::::::::: :::::::::      ::::::::::: :::::::::: :::::::: ::::::::::: 
-:+:        :+:    :+:      :+:       :+:           :+:     :+:       :+:    :+:    :+:     
-+:+        +:+    +:+     +:+       +:+            +:+     +:+       +:+           +:+     
-:#::+::#   +#+    +:+    +#+       +#+             +#+     +#++:++#  +#++:++#++    +#+     
-+#+        +#+    +#+   +#+       +#+              +#+     +#+              +#+    +#+     
-#+#        #+#    #+#  #+#       #+#               #+#     #+#       #+#    #+#    #+#     
-###         ########  ######### #########          ###     ########## ########     ###     
-
- * @title unit test for EVVM function correct behavior
- * @notice some functions has evvm functions that are implemented
- *         for payment and dosent need to be tested here
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
 pragma solidity ^0.8.0;
 pragma abicoder v2;
-
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+    ErrorsLib
+} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
 
 contract fuzzTest_EVVM_payMultiple is Test, Constants, EvvmStructs {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -110,9 +82,11 @@ contract fuzzTest_EVVM_payMultiple is Test, Constants, EvvmStructs {
             input.amount[0] > 0 &&
                 input.amount[1] > 0 &&
                 input.token[0] != input.token[1] &&
-                input.token[0] != MATE_TOKEN_ADDRESS &&
-                input.token[1] != MATE_TOKEN_ADDRESS &&
-                !(input.priorityFlag[0] && input.priorityFlag[1] && input.nonce[0] == input.nonce[1])
+                input.token[0] != PRINCIPAL_TOKEN_ADDRESS &&
+                input.token[1] != PRINCIPAL_TOKEN_ADDRESS &&
+                !(input.priorityFlag[0] &&
+                    input.priorityFlag[1] &&
+                    input.nonce[0] == input.nonce[1])
         );
 
         EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](2);
@@ -198,9 +172,8 @@ contract fuzzTest_EVVM_payMultiple is Test, Constants, EvvmStructs {
         }
 
         vm.startPrank(FISHER.Address);
-        (uint256 successfulTransactions, bool[] memory status) = evvm.payMultiple(
-            payData
-        );
+        (uint256 successfulTransactions, bool[] memory status) = evvm
+            .payMultiple(payData);
         vm.stopPrank();
 
         assertEq(successfulTransactions, 2);
@@ -228,7 +201,7 @@ contract fuzzTest_EVVM_payMultiple is Test, Constants, EvvmStructs {
             }
 
             assertEq(
-                evvm.getBalance(FISHER.Address, MATE_TOKEN_ADDRESS),
+                evvm.getBalance(FISHER.Address, PRINCIPAL_TOKEN_ADDRESS),
                 evvm.getRewardAmount() * 2,
                 "executor did not receive correct reward"
             );
@@ -246,7 +219,7 @@ contract fuzzTest_EVVM_payMultiple is Test, Constants, EvvmStructs {
             assertEq(
                 evvm.getBalance(
                     COMMON_USER_NO_STAKER_3.Address,
-                    MATE_TOKEN_ADDRESS
+                    PRINCIPAL_TOKEN_ADDRESS
                 ),
                 0
             );
