@@ -534,7 +534,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "testrevert",
             67,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffA
+                0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00
             )
         );
 
