@@ -80,10 +80,6 @@ contract NameService is AsyncNonce, NameServiceStructs {
     /// @dev Time delay constant for accepting proposals
     uint256 constant TIME_TO_ACCEPT_PROPOSAL = 1 days;
 
-    /// @dev Constant address representing the Principal Token in the EVVM ecosystem
-    address private constant PRINCIPAL_TOKEN_ADDRESS =
-        0x0000000000000000000000000000000000000001;
-
     /// @dev Amount of Principal Tokens locked in pending marketplace offers
     uint256 private principalTokenTokenLockedForWithdrawOffers;
 
@@ -947,7 +943,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      */
     function proposeWithdrawPrincipalTokens(uint256 _amount) public onlyAdmin {
         if (
-            evvm.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS) -
+            evvm.getBalance(address(this), evvm.getPrincipalTokenAddress()) -
                 (5083 +
                     evvm.getRewardAmount() +
                     principalTokenTokenLockedForWithdrawOffers) <
@@ -1053,7 +1049,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
             user,
             address(this),
             "",
-            PRINCIPAL_TOKEN_ADDRESS,
+            evvm.getPrincipalTokenAddress(),
             amount,
             priorityFee,
             nonce,
@@ -1070,7 +1066,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param amount Amount of Principal Tokens to distribute
      */
     function makeCaPay(address user, uint256 amount) internal {
-        evvm.caPay(user, PRINCIPAL_TOKEN_ADDRESS, amount);
+        evvm.caPay(user, evvm.getPrincipalTokenAddress(), amount);
     }
 
     //█ Username Hashing Functions ███████████████████████████████████████████████████████████████████

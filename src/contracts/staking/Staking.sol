@@ -65,10 +65,6 @@ contract Staking is AsyncNonce, StakingStructs {
     /// @dev Price of one staking main token (5083 main token = 1 staking)
     uint256 private constant PRICE_OF_STAKING = 5083 * (10 ** 18);
 
-    /// @dev Address representing the principal Principal Token
-    address private constant PRINCIPAL_TOKEN_ADDRESS =
-        0x0000000000000000000000000000000000000001;
-
     /// @dev Admin address management with proposal system
     AddressTypeProposal private admin;
     /// @dev Golden Fisher address management with proposal system
@@ -338,11 +334,11 @@ contract Staking is AsyncNonce, StakingStructs {
             amountOfStaking: amountOfStaking,
             amountServiceBeforeStaking: evvm.getBalance(
                 msg.sender,
-                PRINCIPAL_TOKEN_ADDRESS
+                evvm.getPrincipalTokenAddress()
             ),
             amountStakingBeforeStaking: evvm.getBalance(
                 address(this),
-                PRINCIPAL_TOKEN_ADDRESS
+                evvm.getPrincipalTokenAddress()
             )
         });
     }
@@ -367,10 +363,10 @@ contract Staking is AsyncNonce, StakingStructs {
         if (
             serviceStakingData.amountServiceBeforeStaking -
                 totalStakingRequired !=
-            evvm.getBalance(msg.sender, PRINCIPAL_TOKEN_ADDRESS) &&
+            evvm.getBalance(msg.sender, evvm.getPrincipalTokenAddress()) &&
             serviceStakingData.amountStakingBeforeStaking +
                 totalStakingRequired !=
-            evvm.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS)
+            evvm.getBalance(address(this), evvm.getPrincipalTokenAddress())
         )
             revert ErrorsLib.ServiceDoesNotFulfillCorrectStakingAmount(
                 totalStakingRequired
@@ -488,7 +484,7 @@ contract Staking is AsyncNonce, StakingStructs {
                 amountOfStaking;
 
             makeCaPay(
-                PRINCIPAL_TOKEN_ADDRESS,
+                evvm.getPrincipalTokenAddress(),
                 account.Address,
                 (PRICE_OF_STAKING * amountOfStaking)
             );
@@ -507,7 +503,7 @@ contract Staking is AsyncNonce, StakingStructs {
 
         if (evvm.isAddressStaker(msg.sender) && !account.IsAService) {
             makeCaPay(
-                PRINCIPAL_TOKEN_ADDRESS,
+                evvm.getPrincipalTokenAddress(),
                 msg.sender,
                 (evvm.getRewardAmount() * 2) + priorityFee_EVVM
             );
@@ -557,7 +553,7 @@ contract Staking is AsyncNonce, StakingStructs {
 
                 if (evvm.isAddressStaker(msg.sender)) {
                     makeCaPay(
-                        PRINCIPAL_TOKEN_ADDRESS,
+                        evvm.getPrincipalTokenAddress(),
                         msg.sender,
                         (evvm.getRewardAmount() * 1)
                     );
@@ -592,7 +588,7 @@ contract Staking is AsyncNonce, StakingStructs {
             user,
             address(this),
             "",
-            PRINCIPAL_TOKEN_ADDRESS,
+            evvm.getPrincipalTokenAddress(),
             amount,
             priorityFee,
             nonce,
@@ -1129,7 +1125,7 @@ contract Staking is AsyncNonce, StakingStructs {
      * @return Address representing the Principal Token (0x...0001)
      */
     function getMateAddress() external pure returns (address) {
-        return PRINCIPAL_TOKEN_ADDRESS;
+        return evvm.getPrincipalTokenAddress();
     }
 
     /**
