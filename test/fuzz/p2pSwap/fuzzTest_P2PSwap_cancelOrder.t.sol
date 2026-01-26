@@ -276,10 +276,19 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             input.amountA
         );
         if (tokenA == PRINCIPAL_TOKEN_ADDRESS) {
-            assertEq(
-                evvm.getBalance(address(p2pSwap), tokenA),
-                initialContractBalance
-            );
+            // When tokenA is PRINCIPAL_TOKEN and hasPriorityFee is true, 
+            // the contract accumulates one extra reward from the pay operation flow
+            if (input.hasPriorityFee) {
+                assertEq(
+                    evvm.getBalance(address(p2pSwap), tokenA),
+                    initialContractBalance + evvm.getRewardAmount()
+                );
+            } else {
+                assertEq(
+                    evvm.getBalance(address(p2pSwap), tokenA),
+                    initialContractBalance
+                );
+            }
         } else {
             assertEq(evvm.getBalance(address(p2pSwap), tokenA), 0);
         }
