@@ -65,6 +65,9 @@ export async function checkCrossChainSupport(
           `User opted to not add Hyperlane data.`,
           `Cross-chain deployment cannot proceed without it.`
         );
+      } else {
+        auxChainData.Hyperlane.DomainId = 0;
+        auxChainData.Hyperlane.MailboxAddress = "0x0000000000000000000000000000000000000000";
       }
     }
   }
@@ -101,6 +104,9 @@ export async function checkCrossChainSupport(
           `User opted to not add LayerZero data.`,
           `Cross-chain deployment cannot proceed without it.`
         );
+      } else {
+        auxChainData.LayerZero.EId = 0;
+        auxChainData.LayerZero.EndpointAddress = "0x0000000000000000000000000000000000000000";
       }
     }
   }
@@ -142,6 +148,10 @@ export async function checkCrossChainSupport(
           `User opted to not add Axelar data.`,
           `Cross-chain deployment cannot proceed without it.`
         );
+      } else {
+        auxChainData.Axelar.ChainName = "";
+        auxChainData.Axelar.Gateway = "0x0000000000000000000000000000000000000000";
+        auxChainData.Axelar.GasService = "0x0000000000000000000000000000000000000000";
       }
     }
   }
