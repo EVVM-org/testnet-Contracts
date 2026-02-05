@@ -35,7 +35,7 @@ abstract contract EvvmStructs {
      * @param amount Amount of tokens to transfer to the recipient
      * @param priorityFee Additional fee paid to staker for transaction processing
      * @param nonce Transaction nonce for replay protection
-     * @param priorityFlag False for sync nonce (sequential), true for async nonce (flexible)
+     * @param isAsyncExec False for sync nonce (sequential), true for async nonce (flexible)
      * @param executor Address authorized to execute this transaction (address(0) = any)
      * @param signature EIP-191 signature authorizing this payment
      */
@@ -47,7 +47,7 @@ abstract contract EvvmStructs {
         uint256 amount;
         uint256 priorityFee;
         uint256 nonce;
-        bool priorityFlag;
+        bool isAsyncExec;
         address executor;
         bytes signature;
     }
@@ -62,7 +62,7 @@ abstract contract EvvmStructs {
      * @param totalAmount Total amount being distributed (must equal sum of toData amounts)
      * @param priorityFee Fee paid to staker for processing the distribution
      * @param nonce Transaction nonce for replay protection
-     * @param priorityFlag False for sync nonce, true for async nonce
+     * @param isAsyncExec False for sync nonce, true for async nonce
      * @param executor Address authorized to execute this distribution (address(0) = any)
      * @param signature EIP-191 signature authorizing this distribution
      */
@@ -73,7 +73,7 @@ abstract contract EvvmStructs {
         uint256 totalAmount;
         uint256 priorityFee;
         uint256 nonce;
-        bool priorityFlag;
+        bool isAsyncExec;
         address executor;
         bytes signature;
     }

@@ -712,7 +712,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 10 ether,
                 /* 🢃 different nonceEVVM 🢃 */
                 6767676767,
-                /* 🢃 different priorityFlag 🢃 */
+                /* 🢃 different isAsyncExec 🢃 */
                 false
             );
 

@@ -73,7 +73,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
@@ -115,7 +115,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -132,7 +132,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -160,7 +160,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
         uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         // Fund user1 with amountA + priorityFee
         addBalance(
@@ -210,7 +210,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -228,7 +228,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -257,7 +257,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
         uint256 nonceEVVM = 432423;
-        bool priorityFlag = true;
+        bool isAsyncExec = true;
 
         // Fund user1 with amountA + priorityFee
         addBalance(
@@ -307,7 +307,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -325,7 +325,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -354,7 +354,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 45546564;
-        bool priorityFlag = true;
+        bool isAsyncExec = true;
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
@@ -396,7 +396,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -413,7 +413,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();

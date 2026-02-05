@@ -94,7 +94,7 @@ interface IStaking {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external;
     function priceOfStaking() external pure returns (uint256);
@@ -110,7 +110,7 @@ interface IStaking {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external;
     function rejectProposalAdmin() external;

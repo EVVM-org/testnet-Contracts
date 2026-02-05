@@ -622,7 +622,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 totalPriorityFeeAmount + 50,
                 /* 🢃 different nonceEVVM 🢃 */
                 nonceEVVM + 1,
-                /* 🢃 different priorityFlag 🢃 */
+                /* 🢃 different isAsyncExec 🢃 */
                 false
             );
 

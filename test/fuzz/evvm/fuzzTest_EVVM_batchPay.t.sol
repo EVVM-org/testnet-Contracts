@@ -72,7 +72,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
         uint16[2] amount;
         uint16[2] priorityFee;
         uint176[2] nonce;
-        bool[2] priorityFlag;
+        bool[2] isAsyncExec;
     }
 
     function test__fuzz__batchPay(
@@ -84,8 +84,8 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
                 input.token[0] != input.token[1] &&
                 input.token[0] != PRINCIPAL_TOKEN_ADDRESS &&
                 input.token[1] != PRINCIPAL_TOKEN_ADDRESS &&
-                !(input.priorityFlag[0] &&
-                    input.priorityFlag[1] &&
+                !(input.isAsyncExec[0] &&
+                    input.isAsyncExec[1] &&
                     input.nonce[0] == input.nonce[1])
         );
 
@@ -106,10 +106,10 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
             input.token[0],
             input.amount[0],
             input.priorityFee[0],
-            input.priorityFlag[0]
+            input.isAsyncExec[0]
                 ? input.nonce[0]
                 : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            input.priorityFlag[0],
+            input.isAsyncExec[0],
             input.useExecutor[0] ? FISHER.Address : address(0)
         );
 
@@ -122,10 +122,10 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
             input.token[1],
             input.amount[1],
             input.priorityFee[1],
-            input.priorityFlag[1]
+            input.isAsyncExec[1]
                 ? input.nonce[1]
                 : (
-                    input.priorityFlag[0] == false
+                    input.isAsyncExec[0] == false
                         ? evvm.getNextCurrentSyncNonce(
                             COMMON_USER_NO_STAKER_1.Address
                         ) + 1
@@ -133,7 +133,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
                             COMMON_USER_NO_STAKER_1.Address
                         )
                 ),
-            input.priorityFlag[1],
+            input.isAsyncExec[1],
             input.useExecutor[1] ? FISHER.Address : address(0)
         );
 
@@ -154,10 +154,10 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
                 token: input.token[i],
                 amount: input.amount[i],
                 priorityFee: input.priorityFee[i],
-                nonce: input.priorityFlag[i]
+                nonce: input.isAsyncExec[i]
                     ? input.nonce[i]
                     : (
-                        input.priorityFlag[0] == false && i == 1
+                        input.isAsyncExec[0] == false && i == 1
                             ? evvm.getNextCurrentSyncNonce(
                                 COMMON_USER_NO_STAKER_1.Address
                             ) + 1
@@ -165,7 +165,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
                                 COMMON_USER_NO_STAKER_1.Address
                             )
                     ),
-                priorityFlag: input.priorityFlag[i],
+                isAsyncExec: input.isAsyncExec[i],
                 executor: input.useExecutor[i] ? FISHER.Address : address(0),
                 signature: signature[i]
             });

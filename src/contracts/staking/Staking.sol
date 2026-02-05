@@ -207,7 +207,7 @@ contract Staking is AsyncNonce, StakingStructs {
      * @param signature Signature proving authorization for this staking operation
      * @param priorityFee_EVVM Priority fee for the EVVM transaction
      * @param nonce_EVVM Nonce for the EVVM contract transaction
-     * @param priorityFlag_EVVM True for async EVVM transaction, false for sync
+     * @param isAsyncExec_EVVM True for async EVVM transaction, false for sync
      * @param signature_EVVM Signature for the EVVM contract transaction
      */
     function presaleStaking(
@@ -217,7 +217,7 @@ contract Staking is AsyncNonce, StakingStructs {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external {
         if (!allowPresaleStaking.flag || allowPublicStaking.flag)
@@ -254,7 +254,7 @@ contract Staking is AsyncNonce, StakingStructs {
             1,
             priorityFee_EVVM,
             nonce_EVVM,
-            priorityFlag_EVVM,
+            isAsyncExec_EVVM,
             signature_EVVM
         );
 
@@ -271,7 +271,7 @@ contract Staking is AsyncNonce, StakingStructs {
      * @param signature Signature proving authorization for this staking operation
      * @param priorityFee_EVVM Priority fee for the EVVM transaction
      * @param nonce_EVVM Nonce for the EVVM contract transaction
-     * @param priorityFlag_EVVM True for async EVVM transaction, false for sync
+     * @param isAsyncExec_EVVM True for async EVVM transaction, false for sync
      * @param signature_EVVM Signature for the EVVM contract transaction
      */
     function publicStaking(
@@ -282,7 +282,7 @@ contract Staking is AsyncNonce, StakingStructs {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external {
         if (!allowPublicStaking.flag) revert Error.PublicStakingDisabled();
@@ -306,7 +306,7 @@ contract Staking is AsyncNonce, StakingStructs {
             amountOfStaking,
             priorityFee_EVVM,
             nonce_EVVM,
-            priorityFlag_EVVM,
+            isAsyncExec_EVVM,
             signature_EVVM
         );
 
@@ -422,7 +422,7 @@ contract Staking is AsyncNonce, StakingStructs {
      * @param amountOfStaking Amount of staking tokens to stake/unstake
      * @param priorityFee_EVVM Priority fee for EVVM transaction
      * @param nonce_EVVM Nonce for EVVM contract transaction
-     * @param priorityFlag_EVVM True for async EVVM transaction, false for sync
+     * @param isAsyncExec_EVVM True for async EVVM transaction, false for sync
      * @param signature_EVVM Signature for EVVM contract transaction
      */
     function stakingBaseProcess(
@@ -431,7 +431,7 @@ contract Staking is AsyncNonce, StakingStructs {
         uint256 amountOfStaking,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) internal {
         uint256 auxSMsteBalance;
@@ -447,7 +447,7 @@ contract Staking is AsyncNonce, StakingStructs {
                     account.Address,
                     (PRICE_OF_STAKING * amountOfStaking),
                     priorityFee_EVVM,
-                    priorityFlag_EVVM,
+                    isAsyncExec_EVVM,
                     nonce_EVVM,
                     signature_EVVM
                 );
@@ -474,7 +474,7 @@ contract Staking is AsyncNonce, StakingStructs {
                     account.Address,
                     0,
                     priorityFee_EVVM,
-                    priorityFlag_EVVM,
+                    isAsyncExec_EVVM,
                     nonce_EVVM,
                     signature_EVVM
                 );
@@ -574,7 +574,7 @@ contract Staking is AsyncNonce, StakingStructs {
      * @param user Address of the user making the payment
      * @param amount Amount to be paid in Principal Tokens
      * @param priorityFee Additional priority fee for the transaction
-     * @param priorityFlag True for async payment, false for sync payment
+     * @param isAsyncExec True for async payment, false for sync payment
      * @param nonce Nonce for the EVVM transaction
      * @param signature Signature authorizing the payment
      */
@@ -582,7 +582,7 @@ contract Staking is AsyncNonce, StakingStructs {
         address user,
         uint256 amount,
         uint256 priorityFee,
-        bool priorityFlag,
+        bool isAsyncExec,
         uint256 nonce,
         bytes memory signature
     ) internal {
@@ -594,7 +594,7 @@ contract Staking is AsyncNonce, StakingStructs {
             amount,
             priorityFee,
             nonce,
-            priorityFlag,
+            isAsyncExec,
             address(this),
             signature
         );

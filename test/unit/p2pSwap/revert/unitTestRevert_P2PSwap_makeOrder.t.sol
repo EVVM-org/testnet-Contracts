@@ -67,7 +67,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
@@ -109,7 +109,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -127,7 +127,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -155,7 +155,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
@@ -197,7 +197,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
                 amountA + 1 ether, // tampered
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -215,7 +215,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -243,7 +243,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 1; // this will fail
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
@@ -285,7 +285,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -303,7 +303,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -331,7 +331,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 321;
-        bool priorityFlag = true;
+        bool isAsyncExec = true;
 
         // Fund user1 with amountA
         addBalance(
@@ -351,7 +351,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
                 1 ether,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(0)
             )
         );
@@ -368,7 +368,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             1 ether,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             address(0),
             signatureEVVM
         );
@@ -416,7 +416,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 nonceEVVM, // we try to use the same nonce again, causing a revert
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -430,7 +430,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();

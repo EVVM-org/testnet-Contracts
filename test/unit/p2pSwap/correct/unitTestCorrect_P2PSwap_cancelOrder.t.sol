@@ -67,7 +67,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountB,
         uint256 priorityFee,
         uint256 nonceEVVM,
-        bool priorityFlag
+        bool isAsyncExec
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -106,7 +106,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -123,7 +123,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -140,7 +140,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
         addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
@@ -156,7 +156,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             amountB,
             priorityFee,
             nonceEVVM,
-            priorityFlag
+            isAsyncExec
         );
         nonceP2PSwap = 56565;
         nonceEVVM++;
@@ -192,7 +192,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -223,7 +223,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             metadata,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -247,7 +247,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
         uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         addBalance(
             COMMON_USER_NO_STAKER_1.Address,
@@ -272,7 +272,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             amountB,
             priorityFee,
             nonceEVVM,
-            priorityFlag
+            isAsyncExec
         );
         nonceP2PSwap = 56565;
         nonceEVVM++;
@@ -313,7 +313,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
                 0,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -344,7 +344,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             metadata,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -368,7 +368,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 4242;
-        bool priorityFlag = true;
+        bool isAsyncExec = true;
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
         addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
@@ -384,7 +384,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             amountB,
             priorityFee,
             nonceEVVM,
-            priorityFlag
+            isAsyncExec
         );
         nonceP2PSwap = 56565;
         nonceEVVM = 6565;
@@ -420,7 +420,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -451,7 +451,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             metadata,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -475,7 +475,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
         uint256 nonceEVVM = 78798;
-        bool priorityFlag = true;
+        bool isAsyncExec = true;
 
         addBalance(
             COMMON_USER_NO_STAKER_1.Address,
@@ -500,7 +500,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             amountB,
             priorityFee,
             nonceEVVM,
-            priorityFlag
+            isAsyncExec
         );
         nonceP2PSwap = 56565;
         nonceEVVM = 78987;
@@ -541,7 +541,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
                 0,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -572,7 +572,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             metadata,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();

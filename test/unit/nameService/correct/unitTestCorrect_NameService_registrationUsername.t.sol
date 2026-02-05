@@ -31,13 +31,13 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
 
     string USERNAME_ONE = "alice";
     string USERNAME_TWO = "mario";
-    uint256 REGISTRATION_CLOW_NUMBER_ONE = 67;
-    uint256 REGISTRATION_CLOW_NUMBER_TWO = 89;
+    uint256 REGISTRATION_LOCK_NUMBER_ONE = 67;
+    uint256 REGISTRATION_LOCK_NUMBER_TWO = 89;
 
     struct Params {
         AccountData user;
         string username;
-        uint256 clowNumber;
+        uint256 lockNumber;
         uint256 nonceNameService;
         bytes signatureNameService;
         uint256 priorityFee;
@@ -73,13 +73,13 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         _execute_makePreRegistrationUsername(
             USER_ONE,
             USERNAME_ONE,
-            REGISTRATION_CLOW_NUMBER_ONE,
+            REGISTRATION_LOCK_NUMBER_ONE,
             0
         );
         _execute_makePreRegistrationUsername(
             USER_TWO,
             USERNAME_TWO,
-            REGISTRATION_CLOW_NUMBER_TWO,
+            REGISTRATION_LOCK_NUMBER_TWO,
             0
         );
 
@@ -92,7 +92,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         Params memory params1 = Params({
             user: USER_ONE,
             username: USERNAME_ONE,
-            clowNumber: REGISTRATION_CLOW_NUMBER_ONE,
+            lockNumber: REGISTRATION_LOCK_NUMBER_ONE,
             nonceNameService: 67,
             signatureNameService: "",
             priorityFee: 0,
@@ -103,7 +103,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         Params memory params2 = Params({
             user: USER_TWO,
             username: USERNAME_TWO,
-            clowNumber: REGISTRATION_CLOW_NUMBER_TWO,
+            lockNumber: REGISTRATION_LOCK_NUMBER_TWO,
             nonceNameService: 89,
             signatureNameService: "",
             priorityFee: 0,
@@ -120,7 +120,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             _execute_makeRegistrationUsernameSignatures(
                 params1.user,
                 params1.username,
-                params1.clowNumber,
+                params1.lockNumber,
                 params1.nonceNameService,
                 params1.priorityFee,
                 params1.nonceEVVM,
@@ -131,7 +131,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params1.user.Address,
             params1.username,
-            params1.clowNumber,
+            params1.lockNumber,
             params1.nonceNameService,
             params1.signatureNameService,
             params1.priorityFee,
@@ -168,7 +168,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             _execute_makeRegistrationUsernameSignatures(
                 params2.user,
                 params2.username,
-                params2.clowNumber,
+                params2.lockNumber,
                 params2.nonceNameService,
                 params2.priorityFee,
                 params2.nonceEVVM,
@@ -179,7 +179,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params2.user.Address,
             params2.username,
-            params2.clowNumber,
+            params2.lockNumber,
             params2.nonceNameService,
             params2.signatureNameService,
             params2.priorityFee,
@@ -216,7 +216,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         Params memory params1 = Params({
             user: USER_ONE,
             username: USERNAME_ONE,
-            clowNumber: REGISTRATION_CLOW_NUMBER_ONE,
+            lockNumber: REGISTRATION_LOCK_NUMBER_ONE,
             nonceNameService: 67,
             signatureNameService: "",
             priorityFee: 0,
@@ -227,7 +227,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         Params memory params2 = Params({
             user: USER_TWO,
             username: USERNAME_TWO,
-            clowNumber: REGISTRATION_CLOW_NUMBER_TWO,
+            lockNumber: REGISTRATION_LOCK_NUMBER_TWO,
             nonceNameService: 89,
             signatureNameService: "",
             priorityFee: 0,
@@ -244,7 +244,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             _execute_makeRegistrationUsernameSignatures(
                 params1.user,
                 params1.username,
-                params1.clowNumber,
+                params1.lockNumber,
                 params1.nonceNameService,
                 params1.priorityFee,
                 params1.nonceEVVM,
@@ -255,7 +255,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params1.user.Address,
             params1.username,
-            params1.clowNumber,
+            params1.lockNumber,
             params1.nonceNameService,
             params1.signatureNameService,
             params1.priorityFee,
@@ -292,7 +292,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             _execute_makeRegistrationUsernameSignatures(
                 params2.user,
                 params2.username,
-                params2.clowNumber,
+                params2.lockNumber,
                 params2.nonceNameService,
                 params2.priorityFee,
                 params2.nonceEVVM,
@@ -303,7 +303,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params2.user.Address,
             params2.username,
-            params2.clowNumber,
+            params2.lockNumber,
             params2.nonceNameService,
             params2.signatureNameService,
             params2.priorityFee,
@@ -340,7 +340,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         Params memory params1 = Params({
             user: USER_ONE,
             username: USERNAME_ONE,
-            clowNumber: REGISTRATION_CLOW_NUMBER_ONE,
+            lockNumber: REGISTRATION_LOCK_NUMBER_ONE,
             nonceNameService: 67,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
@@ -351,7 +351,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         Params memory params2 = Params({
             user: USER_TWO,
             username: USERNAME_TWO,
-            clowNumber: REGISTRATION_CLOW_NUMBER_TWO,
+            lockNumber: REGISTRATION_LOCK_NUMBER_TWO,
             nonceNameService: 89,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
@@ -368,7 +368,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             _execute_makeRegistrationUsernameSignatures(
                 params1.user,
                 params1.username,
-                params1.clowNumber,
+                params1.lockNumber,
                 params1.nonceNameService,
                 params1.priorityFee,
                 params1.nonceEVVM,
@@ -379,7 +379,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params1.user.Address,
             params1.username,
-            params1.clowNumber,
+            params1.lockNumber,
             params1.nonceNameService,
             params1.signatureNameService,
             params1.priorityFee,
@@ -416,7 +416,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             _execute_makeRegistrationUsernameSignatures(
                 params2.user,
                 params2.username,
-                params2.clowNumber,
+                params2.lockNumber,
                 params2.nonceNameService,
                 params2.priorityFee,
                 params2.nonceEVVM,
@@ -427,7 +427,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params2.user.Address,
             params2.username,
-            params2.clowNumber,
+            params2.lockNumber,
             params2.nonceNameService,
             params2.signatureNameService,
             params2.priorityFee,
@@ -464,7 +464,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         Params memory params1 = Params({
             user: USER_ONE,
             username: USERNAME_ONE,
-            clowNumber: REGISTRATION_CLOW_NUMBER_ONE,
+            lockNumber: REGISTRATION_LOCK_NUMBER_ONE,
             nonceNameService: 67,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
@@ -475,7 +475,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         Params memory params2 = Params({
             user: USER_TWO,
             username: USERNAME_TWO,
-            clowNumber: REGISTRATION_CLOW_NUMBER_TWO,
+            lockNumber: REGISTRATION_LOCK_NUMBER_TWO,
             nonceNameService: 89,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
@@ -492,7 +492,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             _execute_makeRegistrationUsernameSignatures(
                 params1.user,
                 params1.username,
-                params1.clowNumber,
+                params1.lockNumber,
                 params1.nonceNameService,
                 params1.priorityFee,
                 params1.nonceEVVM,
@@ -503,7 +503,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params1.user.Address,
             params1.username,
-            params1.clowNumber,
+            params1.lockNumber,
             params1.nonceNameService,
             params1.signatureNameService,
             params1.priorityFee,
@@ -540,7 +540,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             _execute_makeRegistrationUsernameSignatures(
                 params2.user,
                 params2.username,
-                params2.clowNumber,
+                params2.lockNumber,
                 params2.nonceNameService,
                 params2.priorityFee,
                 params2.nonceEVVM,
@@ -551,7 +551,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params2.user.Address,
             params2.username,
-            params2.clowNumber,
+            params2.lockNumber,
             params2.nonceNameService,
             params2.signatureNameService,
             params2.priorityFee,

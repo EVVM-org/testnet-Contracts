@@ -32,7 +32,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
     struct Params {
         AccountData user;
         string username;
-        uint256 clowNumber;
+        uint256 lockNumber;
         uint256 nonceNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
@@ -54,7 +54,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         Params memory params1 = Params({
             user: COMMON_USER_NO_STAKER_1,
             username: "testfirst",
-            clowNumber: 1001,
+            lockNumber: 1001,
             nonceNameService: 10101,
             priorityFee: 0,
             nonceEVVM: 0,
@@ -64,7 +64,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         Params memory params2 = Params({
             user: COMMON_USER_NO_STAKER_2,
             username: "testsecond",
-            clowNumber: 2002,
+            lockNumber: 2002,
             nonceNameService: 20202,
             priorityFee: 0,
             nonceEVVM: 0,
@@ -79,7 +79,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         ) = _execute_makePreRegistrationUsernameSignature(
                 params1.user,
                 params1.username,
-                params1.clowNumber,
+                params1.lockNumber,
                 params1.nonceNameService,
                 params1.priorityFee,
                 params1.nonceEVVM,
@@ -91,7 +91,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         nameService.preRegistrationUsername(
             params1.user.Address,
             keccak256(
-                abi.encodePacked(params1.username, uint256(params1.clowNumber))
+                abi.encodePacked(params1.username, uint256(params1.lockNumber))
             ),
             params1.nonceNameService,
             signatureNameServiceOne,
@@ -110,7 +110,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                     keccak256(
                         abi.encodePacked(
                             params1.username,
-                            uint256(params1.clowNumber)
+                            uint256(params1.lockNumber)
                         )
                     )
                 )
@@ -145,7 +145,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         ) = _execute_makePreRegistrationUsernameSignature(
                 params2.user,
                 params2.username,
-                params2.clowNumber,
+                params2.lockNumber,
                 params2.nonceNameService,
                 params2.priorityFee,
                 params2.nonceEVVM,
@@ -156,7 +156,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         nameService.preRegistrationUsername(
             params2.user.Address,
             keccak256(
-                abi.encodePacked(params2.username, uint256(params2.clowNumber))
+                abi.encodePacked(params2.username, uint256(params2.lockNumber))
             ),
             params2.nonceNameService,
             signatureNameServiceTwo,
@@ -173,7 +173,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                     keccak256(
                         abi.encodePacked(
                             params2.username,
-                            uint256(params2.clowNumber)
+                            uint256(params2.lockNumber)
                         )
                     )
                 )
@@ -206,7 +206,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         Params memory params1 = Params({
             user: COMMON_USER_NO_STAKER_1,
             username: "testfirst",
-            clowNumber: 1001,
+            lockNumber: 1001,
             nonceNameService: 10101,
             priorityFee: 0.001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
@@ -218,7 +218,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         Params memory params2 = Params({
             user: COMMON_USER_NO_STAKER_2,
             username: "testsecond",
-            clowNumber: 2002,
+            lockNumber: 2002,
             nonceNameService: 20202,
             priorityFee: 0.001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
@@ -238,7 +238,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         ) = _execute_makePreRegistrationUsernameSignature(
                 COMMON_USER_NO_STAKER_1,
                 params1.username,
-                params1.clowNumber,
+                params1.lockNumber,
                 params1.nonceNameService,
                 params1.priorityFee,
                 params1.nonceEVVM,
@@ -250,7 +250,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(
-                abi.encodePacked(params1.username, uint256(params1.clowNumber))
+                abi.encodePacked(params1.username, uint256(params1.lockNumber))
             ),
             params1.nonceNameService,
             signatureNameServiceOne,
@@ -269,7 +269,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                     keccak256(
                         abi.encodePacked(
                             params1.username,
-                            uint256(params1.clowNumber)
+                            uint256(params1.lockNumber)
                         )
                     )
                 )
@@ -304,7 +304,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         ) = _execute_makePreRegistrationUsernameSignature(
                 COMMON_USER_NO_STAKER_2,
                 params2.username,
-                params2.clowNumber,
+                params2.lockNumber,
                 params2.nonceNameService,
                 params2.priorityFee,
                 params2.nonceEVVM,
@@ -315,7 +315,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_2.Address,
             keccak256(
-                abi.encodePacked(params2.username, uint256(params2.clowNumber))
+                abi.encodePacked(params2.username, uint256(params2.lockNumber))
             ),
             params2.nonceNameService,
             signatureNameServiceTwo,
@@ -332,7 +332,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                     keccak256(
                         abi.encodePacked(
                             params2.username,
-                            uint256(params2.clowNumber)
+                            uint256(params2.lockNumber)
                         )
                     )
                 )
@@ -365,7 +365,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         Params memory params1 = Params({
             user: COMMON_USER_NO_STAKER_1,
             username: "testfirst",
-            clowNumber: 1001,
+            lockNumber: 1001,
             nonceNameService: 10101,
             priorityFee: 0.001 ether,
             nonceEVVM: 420,
@@ -375,7 +375,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         Params memory params2 = Params({
             user: COMMON_USER_NO_STAKER_2,
             username: "testsecond",
-            clowNumber: 2002,
+            lockNumber: 2002,
             nonceNameService: 20202,
             priorityFee: 0.001 ether,
             nonceEVVM: 67,
@@ -393,7 +393,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         ) = _execute_makePreRegistrationUsernameSignature(
                 COMMON_USER_NO_STAKER_1,
                 params1.username,
-                params1.clowNumber,
+                params1.lockNumber,
                 params1.nonceNameService,
                 params1.priorityFee,
                 params1.nonceEVVM,
@@ -405,7 +405,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(
-                abi.encodePacked(params1.username, uint256(params1.clowNumber))
+                abi.encodePacked(params1.username, uint256(params1.lockNumber))
             ),
             params1.nonceNameService,
             signatureNameServiceOne,
@@ -424,7 +424,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                     keccak256(
                         abi.encodePacked(
                             params1.username,
-                            uint256(params1.clowNumber)
+                            uint256(params1.lockNumber)
                         )
                     )
                 )
@@ -459,7 +459,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         ) = _execute_makePreRegistrationUsernameSignature(
                 COMMON_USER_NO_STAKER_2,
                 params2.username,
-                params2.clowNumber,
+                params2.lockNumber,
                 params2.nonceNameService,
                 params2.priorityFee,
                 params2.nonceEVVM,
@@ -470,7 +470,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_2.Address,
             keccak256(
-                abi.encodePacked(params2.username, uint256(params2.clowNumber))
+                abi.encodePacked(params2.username, uint256(params2.lockNumber))
             ),
             params2.nonceNameService,
             signatureNameServiceTwo,
@@ -487,7 +487,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                     keccak256(
                         abi.encodePacked(
                             params2.username,
-                            uint256(params2.clowNumber)
+                            uint256(params2.lockNumber)
                         )
                     )
                 )

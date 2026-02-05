@@ -135,7 +135,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param signature Signature proving authorization for this operation
      * @param priorityFee_EVVM Priority fee for faster transaction processing
      * @param nonce_EVVM Nonce for the EVVM payment transaction
-     * @param priorityFlag_EVVM True for async payment, false for sync payment
+     * @param isAsyncExec_EVVM True for async payment, false for sync payment
      * @param signature_EVVM Signature for the EVVM payment transaction
      */
     function preRegistrationUsername(
@@ -145,7 +145,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external {
         if (
@@ -166,7 +166,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 0,
                 priorityFee_EVVM,
                 nonce_EVVM,
-                priorityFlag_EVVM,
+                isAsyncExec_EVVM,
                 signature_EVVM
             );
 
@@ -194,23 +194,23 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @dev Must be called after the pre-registration period (30 minutes) has reached
      * @param user Address of the user completing the registration
      * @param username The actual username being registered (revealed from hash)
-     * @param clowNumber Random number used in the pre-registration hash
+     * @param lockNumber Random number used in the pre-registration hash
      * @param nonce Unique nonce to prevent replay attacks
      * @param signature Signature proving authorization for this operation
      * @param priorityFee_EVVM Priority fee for faster transaction processing
      * @param nonce_EVVM Nonce for the EVVM payment transaction
-     * @param priorityFlag_EVVM True for async payment, false for sync payment
+     * @param isAsyncExec_EVVM True for async payment, false for sync payment
      * @param signature_EVVM Signature for the EVVM payment transaction
      */
     function registrationUsername(
         address user,
         string memory username,
-        uint256 clowNumber,
+        uint256 lockNumber,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external {
         if (
@@ -218,7 +218,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 evvm.getEvvmID(),
                 user,
                 username,
-                clowNumber,
+                lockNumber,
                 nonce,
                 signature
             )
@@ -239,13 +239,13 @@ contract NameService is AsyncNonce, NameServiceStructs {
             getPriceOfRegistration(username),
             priorityFee_EVVM,
             nonce_EVVM,
-            priorityFlag_EVVM,
+            isAsyncExec_EVVM,
             signature_EVVM
         );
 
         string memory _key = string.concat(
             "@",
-            AdvancedStrings.bytes32ToString(hashUsername(username, clowNumber))
+            AdvancedStrings.bytes32ToString(hashUsername(username, lockNumber))
         );
 
         if (
@@ -283,7 +283,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param signature Signature proving authorization for this operation
      * @param priorityFee_EVVM Priority fee for faster transaction processing
      * @param nonce_EVVM Nonce for the EVVM payment transaction
-     * @param priorityFlag_EVVM True for async payment, false for sync payment
+     * @param isAsyncExec_EVVM True for async payment, false for sync payment
      * @param signature_EVVM Signature for the EVVM payment transaction
      * @return offerID Unique identifier for the created offer
      */
@@ -296,7 +296,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external returns (uint256 offerID) {
         if (
@@ -328,7 +328,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
             amount,
             priorityFee_EVVM,
             nonce_EVVM,
-            priorityFlag_EVVM,
+            isAsyncExec_EVVM,
             signature_EVVM
         );
 
@@ -373,7 +373,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param signature Signature proving authorization for this operation
      * @param priorityFee_EVVM Priority fee for faster transaction processing
      * @param nonce_EVVM Nonce for the EVVM payment transaction
-     * @param priorityFlag_EVVM True for async payment, false for sync payment
+     * @param isAsyncExec_EVVM True for async payment, false for sync payment
      * @param signature_EVVM Signature for the EVVM payment transaction
      */
     function withdrawOffer(
@@ -384,7 +384,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external {
         if (
@@ -409,7 +409,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 0,
                 priorityFee_EVVM,
                 nonce_EVVM,
-                priorityFlag_EVVM,
+                isAsyncExec_EVVM,
                 signature_EVVM
             );
 
@@ -441,7 +441,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param signature Signature proving authorization for this operation
      * @param priorityFee_EVVM Priority fee for faster transaction processing
      * @param nonce_EVVM Nonce for the EVVM payment transaction
-     * @param priorityFlag_EVVM True for async payment, false for sync payment
+     * @param isAsyncExec_EVVM True for async payment, false for sync payment
      * @param signature_EVVM Signature for the EVVM payment transaction
      */
     function acceptOffer(
@@ -452,7 +452,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external {
         if (
@@ -482,7 +482,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 0,
                 priorityFee_EVVM,
                 nonce_EVVM,
-                priorityFlag_EVVM,
+                isAsyncExec_EVVM,
                 signature_EVVM
             );
         }
@@ -527,7 +527,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param signature Signature proving authorization for this operation
      * @param priorityFee_EVVM Priority fee for faster transaction processing
      * @param nonce_EVVM Nonce for the EVVM payment transaction
-     * @param priorityFlag_EVVM True for async payment, false for sync payment
+     * @param isAsyncExec_EVVM True for async payment, false for sync payment
      * @param signature_EVVM Signature for the EVVM payment transaction
      */
     function renewUsername(
@@ -537,7 +537,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external {
         if (
@@ -568,7 +568,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
             priceOfRenew,
             priorityFee_EVVM,
             nonce_EVVM,
-            priorityFlag_EVVM,
+            isAsyncExec_EVVM,
             signature_EVVM
         );
 
@@ -609,7 +609,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param signature Signature proving authorization for this operation
      * @param priorityFee_EVVM Priority fee for faster transaction processing
      * @param nonce_EVVM Nonce for the EVVM payment transaction
-     * @param priorityFlag_EVVM True for async payment, false for sync payment
+     * @param isAsyncExec_EVVM True for async payment, false for sync payment
      * @param signature_EVVM Signature for the EVVM payment transaction
      */
     function addCustomMetadata(
@@ -620,7 +620,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external {
         if (
@@ -646,7 +646,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
             getPriceToAddCustomMetadata(),
             priorityFee_EVVM,
             nonce_EVVM,
-            priorityFlag_EVVM,
+            isAsyncExec_EVVM,
             signature_EVVM
         );
 
@@ -677,7 +677,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param signature Signature proving authorization for this operation
      * @param priorityFee_EVVM Priority fee for faster transaction processing
      * @param nonce_EVVM Nonce for the EVVM payment transaction
-     * @param priorityFlag_EVVM True for async payment, false for sync payment
+     * @param isAsyncExec_EVVM True for async payment, false for sync payment
      * @param signature_EVVM Signature for the EVVM payment transaction
      */
     function removeCustomMetadata(
@@ -688,7 +688,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external {
         if (
@@ -715,7 +715,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
             getPriceToRemoveCustomMetadata(),
             priorityFee_EVVM,
             nonce_EVVM,
-            priorityFlag_EVVM,
+            isAsyncExec_EVVM,
             signature_EVVM
         );
 
@@ -756,7 +756,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param signature Signature proving authorization for this operation
      * @param priorityFee_EVVM Priority fee for faster transaction processing
      * @param nonce_EVVM Nonce for the EVVM payment transaction
-     * @param priorityFlag_EVVM True for async payment, false for sync payment
+     * @param isAsyncExec_EVVM True for async payment, false for sync payment
      * @param signature_EVVM Signature for the EVVM payment transaction
      */
     function flushCustomMetadata(
@@ -766,7 +766,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external {
         if (
@@ -792,7 +792,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
             getPriceToFlushCustomMetadata(identity),
             priorityFee_EVVM,
             nonce_EVVM,
-            priorityFlag_EVVM,
+            isAsyncExec_EVVM,
             signature_EVVM
         );
 
@@ -826,7 +826,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param signature Signature proving authorization for this operation
      * @param priorityFee_EVVM Priority fee for faster transaction processing
      * @param nonce_EVVM Nonce for the EVVM payment transaction
-     * @param priorityFlag_EVVM True for async payment, false for sync payment
+     * @param isAsyncExec_EVVM True for async payment, false for sync payment
      * @param signature_EVVM Signature for the EVVM payment transaction
      */
     function flushUsername(
@@ -836,7 +836,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external {
         if (
@@ -865,7 +865,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
             getPriceToFlushUsername(username),
             priorityFee_EVVM,
             nonce_EVVM,
-            priorityFlag_EVVM,
+            isAsyncExec_EVVM,
             signature_EVVM
         );
 
@@ -1033,7 +1033,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      * @param amount Amount to pay in Principal Tokens
      * @param priorityFee Additional priority fee for faster processing
      * @param nonce Nonce for the EVVM transaction
-     * @param priorityFlag True for async payment, false for sync payment
+     * @param isAsyncExec True for async payment, false for sync payment
      * @param signature Signature authorizing the payment
      */
     function requestPay(
@@ -1041,7 +1041,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         bytes memory signature
     ) internal {
         evvm.pay(
@@ -1052,7 +1052,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
             amount,
             priorityFee,
             nonce,
-            priorityFlag,
+            isAsyncExec,
             address(this),
             signature
         );

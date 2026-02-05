@@ -150,14 +150,14 @@ library Erc191TestBuilder {
      * @dev Creates an EIP-191 compatible hash for NameService registrationUsername
      * @param evvmID Unique identifier of the EVVM instance
      * @param _username The username being registered
-     * @param _clowNumber Random number from pre-registration
+     * @param _lockNumber Random number from pre-registration
      * @param _nameServiceNonce Nonce for NameService replay protection
      * @return messageHash The EIP-191 formatted hash ready for signing
      */
     function buildMessageSignedForRegistrationUsername(
         uint256 evvmID,
         string memory _username,
-        uint256 _clowNumber,
+        uint256 _lockNumber,
         uint256 _nameServiceNonce
     ) internal pure returns (bytes32 messageHash) {
         return
@@ -169,7 +169,7 @@ library Erc191TestBuilder {
                     ",",
                     _username,
                     ",",
-                    AdvancedStrings.uintToString(_clowNumber),
+                    AdvancedStrings.uintToString(_lockNumber),
                     ",",
                     AdvancedStrings.uintToString(_nameServiceNonce)
                 )

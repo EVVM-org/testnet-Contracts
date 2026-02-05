@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed `payMultiple` function name and `PayData` struct to `batchPay` and `BatchData` respectively in `Evvm.sol` to better reflect its functionality of handling multiple payments in a single transaction
 - Updated import paths for all struct libraries across the project to point to `library/structs/` directory instead of `contracts/<service>/lib/` for better organization and clarity
 - Renamed `priorityFlag` to `isAsyncExec` for clearer async nonce execution identification
+- Renamed `clowNumber` to `lockNumber` in NameService related functions for better clarity on its purpose
 - Changed `AdminControlled` name to `Admin` for brevity and consistency across contracts on path `library/utils/governannceUtils.sol`
 
 ### Removed

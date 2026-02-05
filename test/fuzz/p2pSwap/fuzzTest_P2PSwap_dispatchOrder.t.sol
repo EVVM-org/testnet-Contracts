@@ -69,7 +69,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         uint256 amountB,
         uint256 priorityFee,
         uint256 nonceEVVM,
-        bool priorityFlag
+        bool isAsyncExec
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -108,7 +108,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -125,7 +125,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();

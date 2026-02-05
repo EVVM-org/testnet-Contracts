@@ -79,7 +79,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         uint256 nonceNameService;
         uint32 priorityFeeAmountEVVM;
         uint256 nonceAsyncEVVM;
-        bool priorityFlagEVVM;
+        bool isAsyncExecEVVM;
     }
 
     function test__fuzz__acceptOffer__noStaker(Input memory input) external {
@@ -121,10 +121,10 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             nonceNameService: input.nonceNameService,
             signatureNameService: "",
             priorityFee: uint256(input.priorityFeeAmountEVVM),
-            nonceEVVM: input.priorityFlagEVVM
+            nonceEVVM: input.isAsyncExecEVVM
                 ? input.nonceAsyncEVVM
                 : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            priorityEVVM: input.priorityFlagEVVM,
+            priorityEVVM: input.isAsyncExecEVVM,
             signatureEVVM: ""
         });
 
@@ -233,10 +233,10 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             nonceNameService: input.nonceNameService,
             signatureNameService: "",
             priorityFee: uint256(input.priorityFeeAmountEVVM),
-            nonceEVVM: input.priorityFlagEVVM
+            nonceEVVM: input.isAsyncExecEVVM
                 ? input.nonceAsyncEVVM
                 : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            priorityEVVM: input.priorityFlagEVVM,
+            priorityEVVM: input.isAsyncExecEVVM,
             signatureEVVM: ""
         });
 

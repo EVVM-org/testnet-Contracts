@@ -65,7 +65,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         bytes signatureStaking;
         uint256 priorityFeeEVVM;
         uint256 nonceEVVM;
-        bool priorityFlagEVVM;
+        bool isAsyncExecEVVM;
         bytes signatureEVVM;
     }
 
@@ -87,7 +87,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             signatureStaking: "",
             priorityFeeEVVM: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
+            isAsyncExecEVVM: false,
             signatureEVVM: ""
         });
 
@@ -107,7 +107,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -122,7 +122,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.signatureStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -139,7 +139,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             signatureStaking: "",
             priorityFeeEVVM: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
+            isAsyncExecEVVM: false,
             signatureEVVM: ""
         });
 
@@ -173,7 +173,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             staking.priceOfStaking() * params.amountOfStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             address(staking)
         );
 
@@ -187,7 +187,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.signatureStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -204,7 +204,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             signatureStaking: "",
             priorityFeeEVVM: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
+            isAsyncExecEVVM: false,
             signatureEVVM: ""
         });
 
@@ -225,7 +225,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -238,7 +238,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.signatureStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -255,7 +255,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             signatureStaking: "",
             priorityFeeEVVM: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
+            isAsyncExecEVVM: false,
             signatureEVVM: ""
         });
 
@@ -276,7 +276,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -289,7 +289,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.signatureStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -306,7 +306,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             signatureStaking: "",
             priorityFeeEVVM: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
+            isAsyncExecEVVM: false,
             signatureEVVM: ""
         });
 
@@ -327,7 +327,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -340,7 +340,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.signatureStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -357,7 +357,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             signatureStaking: "",
             priorityFeeEVVM: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
+            isAsyncExecEVVM: false,
             signatureEVVM: ""
         });
 
@@ -378,7 +378,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.nonce + 1,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -391,7 +391,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.signatureStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -424,7 +424,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             signatureStaking: "",
             priorityFeeEVVM: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
+            isAsyncExecEVVM: false,
             signatureEVVM: ""
         });
 
@@ -444,7 +444,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -457,7 +457,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.signatureStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -490,7 +490,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             signatureStaking: "",
             priorityFeeEVVM: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
+            isAsyncExecEVVM: false,
             signatureEVVM: ""
         });
 
@@ -510,7 +510,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -523,7 +523,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.signatureStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -569,7 +569,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             signatureStaking: "",
             priorityFeeEVVM: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
+            isAsyncExecEVVM: false,
             signatureEVVM: ""
         });
 
@@ -589,7 +589,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -602,7 +602,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.signatureStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -620,7 +620,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             signatureStaking: "",
             priorityFeeEVVM: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
+            isAsyncExecEVVM: false,
             signatureEVVM: ""
         });
 
@@ -656,7 +656,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.priorityFeeEVVM+1,
             /* 🢃 Different nonceEVVM 🢃 */
             params.nonceEVVM + 1,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             address(staking)
         );
 
@@ -670,7 +670,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.signatureStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -688,7 +688,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             signatureStaking: "",
             priorityFeeEVVM: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
+            isAsyncExecEVVM: false,
             signatureEVVM: ""
         });
 
@@ -702,7 +702,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -715,7 +715,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.signatureStaking,
             params.priorityFeeEVVM,
             params.nonceEVVM,
-            params.priorityFlagEVVM,
+            params.isAsyncExecEVVM,
             params.signatureEVVM
         );
         vm.stopPrank();

@@ -526,7 +526,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         );
     }
 
-    function test__unit_revert__pay__InvalidSignature_priorityFlag() external {
+    function test__unit_revert__pay__InvalidSignature_isAsyncExec() external {
         (uint256 amount, uint256 priorityFee) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             ETHER_ADDRESS,
@@ -544,7 +544,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
                 amount,
                 priorityFee,
                 0,
-                /* 🢃 different priorityFlag 🢃 */
+                /* 🢃 different isAsyncExec 🢃 */
                 true,
                 address(0)
             )

@@ -76,14 +76,14 @@ library SignatureUtils {
      * @notice Verifies EIP-191 signature for username registration operations
      * @dev Constructs message from username, random number, and nonce
      *
-     * Message Format: "[username],[clowNumber],[nameServiceNonce]"
+     * Message Format: "[username],[lockNumber],[nameServiceNonce]"
      * Used in: registrationUsername function
      * Reveals the username from pre-registration commitment
      *
      * @param evvmID Unique identifier of the EVVM instance for cross-chain safety
      * @param signer Address that signed the message (user registering)
      * @param username The actual username being registered
-     * @param clowNumber Random number used in pre-registration hash
+     * @param lockNumber Random number used in pre-registration hash
      * @param nameServiceNonce Transaction nonce for replay protection
      * @param signature EIP-191 signature from the signer
      * @return bool True if the signature is valid and matches the signer
@@ -92,7 +92,7 @@ library SignatureUtils {
         uint256 evvmID,
         address signer,
         string memory username,
-        uint256 clowNumber,
+        uint256 lockNumber,
         uint256 nameServiceNonce,
         bytes memory signature
     ) internal pure returns (bool) {
@@ -103,7 +103,7 @@ library SignatureUtils {
                 string.concat(
                     username,
                     ",",
-                    AdvancedStrings.uintToString(clowNumber),
+                    AdvancedStrings.uintToString(lockNumber),
                     ",",
                     AdvancedStrings.uintToString(nameServiceNonce)
                 ),

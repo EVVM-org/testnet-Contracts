@@ -272,7 +272,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         assertEq(expirationDate, 0, "username expiration date should be zero");
     }
 
-    function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_clowNumber()
+    function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_lockNumber()
         external
     {
         _execute_makePreRegistrationUsername(
@@ -295,7 +295,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         ) = _execute_makeRegistrationUsernameSignatures(
                 COMMON_USER_NO_STAKER_1,
                 "test",
-                /* 🢃 different clowNumber 🢃 */
+                /* 🢃 different lockNumber 🢃 */
                 888,
                 10101,
                 totalPriorityFeeAmount,

@@ -26,7 +26,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
     struct Params {
         AccountData user;
         string username;
-        uint256 clowNumber;
+        uint256 lockNumber;
         uint256 nonceNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
@@ -44,7 +44,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
 
     struct Input {
         string username;
-        uint256 clowNumber;
+        uint256 lockNumber;
         uint256 nonceNameService;
         uint32 priorityFee;
         uint256 nonceAsyncEVVM;
@@ -57,7 +57,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         Params memory params = Params({
             user: COMMON_USER_NO_STAKER_1,
             username: input.username,
-            clowNumber: input.clowNumber,
+            lockNumber: input.lockNumber,
             nonceNameService: input.nonceNameService,
             priorityFee: input.priorityFee,
             nonceEVVM: input.priorityEVVM
@@ -74,7 +74,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         ) = _execute_makePreRegistrationUsernameSignature(
                 params.user,
                 params.username,
-                params.clowNumber,
+                params.lockNumber,
                 params.nonceNameService,
                 params.priorityFee,
                 params.nonceEVVM,
@@ -86,7 +86,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         nameService.preRegistrationUsername(
             params.user.Address,
             keccak256(
-                abi.encodePacked(params.username, uint256(params.clowNumber))
+                abi.encodePacked(params.username, uint256(params.lockNumber))
             ),
             params.nonceNameService,
             signatureNameServiceOne,
@@ -105,7 +105,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                     keccak256(
                         abi.encodePacked(
                             params.username,
-                            uint256(params.clowNumber)
+                            uint256(params.lockNumber)
                         )
                     )
                 )
@@ -139,7 +139,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         Params memory params = Params({
             user: COMMON_USER_NO_STAKER_1,
             username: input.username,
-            clowNumber: input.clowNumber,
+            lockNumber: input.lockNumber,
             nonceNameService: input.nonceNameService,
             priorityFee: input.priorityFee,
             nonceEVVM: input.priorityEVVM
@@ -156,7 +156,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         ) = _execute_makePreRegistrationUsernameSignature(
                 params.user,
                 params.username,
-                params.clowNumber,
+                params.lockNumber,
                 params.nonceNameService,
                 params.priorityFee,
                 params.nonceEVVM,
@@ -168,7 +168,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         nameService.preRegistrationUsername(
             params.user.Address,
             keccak256(
-                abi.encodePacked(params.username, uint256(params.clowNumber))
+                abi.encodePacked(params.username, uint256(params.lockNumber))
             ),
             params.nonceNameService,
             signatureNameServiceOne,
@@ -187,7 +187,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                     keccak256(
                         abi.encodePacked(
                             params.username,
-                            uint256(params.clowNumber)
+                            uint256(params.lockNumber)
                         )
                     )
                 )

@@ -11,7 +11,7 @@ library EvvmStructs {
         uint256 amount;
         uint256 priorityFee;
         uint256 nonce;
-        bool priorityFlag;
+        bool isAsyncExec;
         address executor;
         bytes signature;
     }
@@ -76,7 +76,7 @@ interface IEvvm {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         address executor,
         bytes memory signature
     ) external;
@@ -110,7 +110,7 @@ interface IEvvm {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         address executor,
         bytes memory signature
     ) external;

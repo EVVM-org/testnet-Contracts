@@ -104,7 +104,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         external
     {
         string memory username = "test";
-        uint256 clowNumber = 10101;
+        uint256 lockNumber = 10101;
         uint256 nonceNameService = 1001;
         (
             bytes memory signatureNameService,
@@ -113,7 +113,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 username,
-                clowNumber,
+                lockNumber,
                 nonceNameService,
                 0,
                 0,
@@ -125,7 +125,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            keccak256(abi.encodePacked(username, uint256(lockNumber))),
             nonceNameService,
             signatureNameService,
             0,
@@ -140,7 +140,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             string.concat(
                 "@",
                 AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                    keccak256(abi.encodePacked(username, uint256(lockNumber)))
                 )
             )
         );
@@ -152,7 +152,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         external
     {
         string memory username = "test";
-        uint256 clowNumber = 10101;
+        uint256 lockNumber = 10101;
         uint256 nonceNameService = 1001;
         (
             bytes memory signatureNameService,
@@ -160,7 +160,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         ) = _execute_makePreRegistrationUsernameSignature(
                 COMMON_USER_NO_STAKER_1,
                 username,
-                clowNumber,
+                lockNumber,
                 /* 🢃 different nonce 🢃 */
                 nonceNameService + 67,
                 0,
@@ -173,7 +173,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            keccak256(abi.encodePacked(username, uint256(lockNumber))),
             nonceNameService,
             signatureNameService,
             0,
@@ -188,7 +188,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             string.concat(
                 "@",
                 AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                    keccak256(abi.encodePacked(username, uint256(lockNumber)))
                 )
             )
         );
@@ -200,7 +200,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         external
     {
         string memory username = "test";
-        uint256 clowNumber = 10101;
+        uint256 lockNumber = 10101;
         uint256 nonceNameService = 1001;
         (
             bytes memory signatureNameService,
@@ -222,7 +222,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            keccak256(abi.encodePacked(username, uint256(lockNumber))),
             nonceNameService,
             signatureNameService,
             0,
@@ -237,7 +237,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             string.concat(
                 "@",
                 AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                    keccak256(abi.encodePacked(username, uint256(lockNumber)))
                 )
             )
         );
@@ -249,7 +249,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         external
     {
         string memory username = "test";
-        uint256 clowNumber = 10101;
+        uint256 lockNumber = 10101;
         uint256 nonceNameService = 1001;
 
         _execute_makePreRegistrationUsername(
@@ -265,7 +265,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         ) = _execute_makePreRegistrationUsernameSignature(
                 COMMON_USER_NO_STAKER_1,
                 username,
-                clowNumber,
+                lockNumber,
                 /* 🢃 nonce already used 🢃 */
                 nonceNameService,
                 0,
@@ -278,7 +278,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked(username, clowNumber)),
+            keccak256(abi.encodePacked(username, lockNumber)),
             /* 🢃 nonce already used 🢃 */
             nonceNameService,
             signatureNameService,
@@ -294,7 +294,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             string.concat(
                 "@",
                 AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                    keccak256(abi.encodePacked(username, uint256(lockNumber)))
                 )
             )
         );
@@ -307,7 +307,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
     {
         _addBalance(COMMON_USER_NO_STAKER_2, 5 ether);
         string memory username = "test";
-        uint256 clowNumber = 10101;
+        uint256 lockNumber = 10101;
         uint256 nonceNameService = 1001;
         (
             bytes memory signatureNameService,
@@ -315,7 +315,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         ) = _execute_makePreRegistrationUsernameSignature(
                 COMMON_USER_NO_STAKER_1,
                 username,
-                clowNumber,
+                lockNumber,
                 nonceNameService,
                 0.0001 ether,
                 6767,
@@ -327,7 +327,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         vm.expectRevert(EvvmError.InvalidSignature.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            keccak256(abi.encodePacked(username, uint256(lockNumber))),
             nonceNameService,
             signatureNameService,
             /* 🢃 different priority fee 🢃 */
@@ -343,7 +343,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             string.concat(
                 "@",
                 AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                    keccak256(abi.encodePacked(username, uint256(lockNumber)))
                 )
             )
         );
@@ -355,7 +355,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         external
     {
         string memory username = "test";
-        uint256 clowNumber = 10101;
+        uint256 lockNumber = 10101;
         uint256 nonceNameService = 1001;
         (
             bytes memory signatureNameService,
@@ -363,7 +363,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         ) = _execute_makePreRegistrationUsernameSignature(
                 COMMON_USER_NO_STAKER_1,
                 username,
-                clowNumber,
+                lockNumber,
                 nonceNameService,
                 0.1 ether,
                 676767,
@@ -376,7 +376,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         /* 🢃 insufficient balance to cover priority fee 🢃 */
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
-            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            keccak256(abi.encodePacked(username, uint256(lockNumber))),
             nonceNameService,
             signatureNameService,
             0.1 ether,
@@ -391,7 +391,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             string.concat(
                 "@",
                 AdvancedStrings.bytes32ToString(
-                    keccak256(abi.encodePacked(username, uint256(clowNumber)))
+                    keccak256(abi.encodePacked(username, uint256(lockNumber)))
                 )
             )
         );

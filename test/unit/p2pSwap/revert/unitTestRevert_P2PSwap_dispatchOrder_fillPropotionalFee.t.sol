@@ -73,7 +73,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountB,
         uint256 priorityFee,
         uint256 nonceEVVM,
-        bool priorityFlag
+        bool isAsyncExec
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -112,7 +112,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
                 amountA,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -129,7 +129,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -148,7 +148,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -167,7 +167,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             amountB,
             priorityFee,
             nonceEVVM,
-            priorityFlag
+            isAsyncExec
         );
         // nonceP2PSwap = 56565;
         // nonceEVVM++;
@@ -214,7 +214,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -237,7 +237,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             metadata,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -265,7 +265,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -284,7 +284,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             amountB,
             priorityFee,
             nonceEVVM,
-            priorityFlag
+            isAsyncExec
         );
 
         // use the current nonceP2PSwap
@@ -299,7 +299,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             amountA,
             priorityFee,
             nonceEVVM,
-            priorityFlag
+            isAsyncExec
         );
         // now, nonceP2PSwap has been used, must generate an error when trying to use it again
         nonceEVVM++;
@@ -346,7 +346,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -369,7 +369,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             metadata,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -397,7 +397,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -444,7 +444,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -462,7 +462,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             metadata,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -490,7 +490,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -509,7 +509,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             amountB,
             priorityFee,
             nonceEVVM,
-            priorityFlag
+            isAsyncExec
         );
         // nonceP2PSwap = 56565;
         // nonceEVVM++;
@@ -556,7 +556,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -579,7 +579,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             metadata,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -607,7 +607,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        bool isAsyncExec = false;
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -626,7 +626,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             amountB,
             priorityFee,
             nonceEVVM,
-            priorityFlag
+            isAsyncExec
         );
         // nonceP2PSwap = 56565;
         // nonceEVVM++;
@@ -673,7 +673,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
                 amountB, // metadata.amountOfTokenBToFill, (mismatch of values here, should fail)
                 priorityFee,
                 nonceEVVM,
-                priorityFlag,
+                isAsyncExec,
                 address(p2pSwap)
             )
         );
@@ -696,7 +696,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             metadata,
             priorityFee,
             nonceEVVM,
-            priorityFlag,
+            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();

@@ -25,8 +25,8 @@ import {
  * - Supports cross-chain safety through EvvmID inclusion
  *
  * Message Format:
- * - pay: "receiver,token,amount,priorityFee,nonce,priorityFlag,executor"
- * - dispersePay: "hashOfRecipients,token,amount,priorityFee,nonce,priorityFlag,executor"
+ * - pay: "receiver,token,amount,priorityFee,nonce,isAsyncExec,executor"
+ * - dispersePay: "hashOfRecipients,token,amount,priorityFee,nonce,isAsyncExec,executor"
  *
  * @custom:scope Exclusive to Evvm.sol payment functions
  * @custom:standard EIP-191 (https://eips.ethereum.org/EIPS/eip-191)
@@ -53,7 +53,7 @@ library SignatureUtils {
      * @param amount Amount of tokens to transfer
      * @param priorityFee Fee paid to the staker/fisher processing the transaction
      * @param nonce Transaction nonce for replay protection
-     * @param priorityFlag False for sync nonce (sequential), true for async nonce (flexible)
+     * @param isAsyncExec False for sync nonce (sequential), true for async nonce (flexible)
      * @param executor Address authorized to execute this transaction (address(0) = anyone)
      * @param signature EIP-191 signature from the signer
      * @return bool True if the signature is valid and matches the signer
@@ -67,7 +67,7 @@ library SignatureUtils {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         address executor,
         bytes memory signature
     ) internal pure returns (bool) {
@@ -88,7 +88,7 @@ library SignatureUtils {
                     ",",
                     AdvancedStrings.uintToString(nonce),
                     ",",
-                    AdvancedStrings.boolToString(priorityFlag),
+                    AdvancedStrings.boolToString(isAsyncExec),
                     ",",
                     AdvancedStrings.addressToString(executor)
                 ),
@@ -119,7 +119,7 @@ library SignatureUtils {
      * @param amount Total amount being distributed (must equal sum of individual amounts)
      * @param priorityFee Fee paid to the staker/fisher processing the distribution
      * @param nonce Transaction nonce for replay protection
-     * @param priorityFlag False for sync nonce (sequential), true for async nonce (flexible)
+     * @param isAsyncExec False for sync nonce (sequential), true for async nonce (flexible)
      * @param executor Address authorized to execute this distribution (address(0) = anyone)
      * @param signature EIP-191 signature from the signer
      * @return bool True if the signature is valid and matches the signer
@@ -132,7 +132,7 @@ library SignatureUtils {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         address executor,
         bytes memory signature
     ) internal pure returns (bool) {
@@ -151,7 +151,7 @@ library SignatureUtils {
                     ",",
                     AdvancedStrings.uintToString(nonce),
                     ",",
-                    AdvancedStrings.boolToString(priorityFlag),
+                    AdvancedStrings.boolToString(isAsyncExec),
                     ",",
                     AdvancedStrings.addressToString(executor)
                 ),

@@ -41,7 +41,7 @@ abstract contract EvvmPayments {
      * @param amount Amount of tokens to transfer
      * @param priorityFee Additional fee for priority processing
      * @param nonce Nonce for replay protection in EVVM
-     * @param priorityFlag True for async nonce, false for sync nonce in EVVM
+     * @param isAsyncExec True for async nonce, false for sync nonce in EVVM
      * @param signature EIP-191 signature authorizing the payment
      */
     function requestPay(
@@ -50,7 +50,7 @@ abstract contract EvvmPayments {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         bytes memory signature
     ) internal virtual {
         evvm.pay(
@@ -61,7 +61,7 @@ abstract contract EvvmPayments {
             amount,
             priorityFee,
             nonce,
-            priorityFlag,
+            isAsyncExec,
             address(this),
             signature
         );
@@ -75,7 +75,7 @@ abstract contract EvvmPayments {
      * @param amount Total amount being transferred (for signature verification)
      * @param priorityFee Additional fee for priority processing
      * @param nonce Nonce for replay protection in EVVM
-     * @param priorityFlag True for async nonce, false for sync nonce in EVVM
+     * @param isAsyncExec True for async nonce, false for sync nonce in EVVM
      * @param signature EIP-191 signature authorizing the batch payment
      */
     function requestDispersePay(
@@ -84,7 +84,7 @@ abstract contract EvvmPayments {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         bytes memory signature
     ) internal virtual {
         evvm.dispersePay(
@@ -94,7 +94,7 @@ abstract contract EvvmPayments {
             amount,
             priorityFee,
             nonce,
-            priorityFlag,
+            isAsyncExec,
             address(this),
             signature
         );

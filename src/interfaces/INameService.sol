@@ -42,7 +42,7 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external;
     function acceptProposeAdmin() external;
@@ -54,7 +54,7 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external;
     function cancelChangeEvvmAddress() external;
@@ -68,7 +68,7 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external;
     function flushUsername(
@@ -78,7 +78,7 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external;
     function getAdmin() external view returns (address);
@@ -132,7 +132,7 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external returns (uint256 offerID);
     function preRegistrationUsername(
@@ -142,7 +142,7 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external;
     function proposeAdmin(address _adminToPropose) external;
@@ -151,12 +151,12 @@ interface INameService {
     function registrationUsername(
         address user,
         string memory username,
-        uint256 clowNumber,
+        uint256 lockNumber,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external;
     function removeCustomMetadata(
@@ -167,7 +167,7 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external;
     function renewUsername(
@@ -177,7 +177,7 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external;
     function seePriceToRenew(string memory _identity) external view returns (uint256 price);
@@ -192,7 +192,7 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
+        bool isAsyncExec_EVVM,
         bytes memory signature_EVVM
     ) external;
 }

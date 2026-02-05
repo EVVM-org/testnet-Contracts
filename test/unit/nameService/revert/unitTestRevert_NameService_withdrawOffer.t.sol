@@ -530,7 +530,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 totalPriorityFee + 50,
                 /* 🢃 different nonceEVVM 🢃 */
                 nonceEVVM + 1,
-                /* 🢃 different priorityFlag 🢃 */
+                /* 🢃 different isAsyncExec 🢃 */
                 false
             );
 

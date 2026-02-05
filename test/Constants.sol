@@ -227,7 +227,7 @@ abstract contract Constants is Test {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         address executor
     ) internal virtual returns (bytes memory signatureEVVM) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
@@ -240,7 +240,7 @@ abstract contract Constants is Test {
                 amount,
                 priorityFee,
                 nonce,
-                priorityFlag,
+                isAsyncExec,
                 executor
             )
         );
@@ -255,7 +255,7 @@ abstract contract Constants is Test {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         address executor,
         AccountData memory fisher
     ) internal virtual {
@@ -267,7 +267,7 @@ abstract contract Constants is Test {
             amount,
             priorityFee,
             nonce,
-            priorityFlag,
+            isAsyncExec,
             executor
         );
 
@@ -280,7 +280,7 @@ abstract contract Constants is Test {
             amount,
             priorityFee,
             nonce,
-            priorityFlag,
+            isAsyncExec,
             executor,
             signature
         );
@@ -294,7 +294,7 @@ abstract contract Constants is Test {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         address executor
     ) internal virtual returns (bytes memory signatureEVVM) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
@@ -306,7 +306,7 @@ abstract contract Constants is Test {
                 amount,
                 priorityFee,
                 nonce,
-                priorityFlag,
+                isAsyncExec,
                 executor
             )
         );
@@ -316,7 +316,7 @@ abstract contract Constants is Test {
     function _execute_makePreRegistrationUsernameSignature(
         AccountData memory user,
         string memory username,
-        uint256 clowNumber,
+        uint256 lockNumber,
         uint256 nonceNameService,
         uint256 priorityFeeAmount,
         uint256 nonceEVVM,
@@ -330,7 +330,7 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
                 evvm.getEvvmID(),
-                keccak256(abi.encodePacked(username, clowNumber)),
+                keccak256(abi.encodePacked(username, lockNumber)),
                 nonceNameService
             )
         );
@@ -354,21 +354,21 @@ abstract contract Constants is Test {
     function _execute_makePreRegistrationUsername(
         AccountData memory user,
         string memory username,
-        uint256 clowNumber,
+        uint256 lockNumber,
         uint256 nonceNameService
     ) internal virtual {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
                 evvm.getEvvmID(),
-                keccak256(abi.encodePacked(username, clowNumber)),
+                keccak256(abi.encodePacked(username, lockNumber)),
                 nonceNameService
             )
         );
 
         nameService.preRegistrationUsername(
             user.Address,
-            keccak256(abi.encodePacked(username, uint256(clowNumber))),
+            keccak256(abi.encodePacked(username, uint256(lockNumber))),
             nonceNameService,
             Erc191TestBuilder.buildERC191Signature(v, r, s),
             0,
@@ -381,11 +381,11 @@ abstract contract Constants is Test {
     function _execute_makeRegistrationUsernameSignatures(
         AccountData memory user,
         string memory username,
-        uint256 clowNumber,
+        uint256 lockNumber,
         uint256 nonceNameService,
         uint256 priorityFeeAmountEVVM,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     )
         internal
         virtual
@@ -400,7 +400,7 @@ abstract contract Constants is Test {
             Erc191TestBuilder.buildMessageSignedForRegistrationUsername(
                 evvm.getEvvmID(),
                 username,
-                clowNumber,
+                lockNumber,
                 nonceNameService
             )
         );
@@ -416,7 +416,7 @@ abstract contract Constants is Test {
                 nameService.getPriceOfRegistration(username),
                 priorityFeeAmountEVVM,
                 nonceEVVM,
-                priorityFlagEVVM,
+                isAsyncExecEVVM,
                 address(nameService)
             )
         );
@@ -430,7 +430,7 @@ abstract contract Constants is Test {
             nameService.getPriceOfRegistration(username),
             priorityFeeAmountEVVM,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             address(nameService)
         );
     }
@@ -438,14 +438,14 @@ abstract contract Constants is Test {
     function _execute_makeRegistrationUsername(
         AccountData memory user,
         string memory username,
-        uint256 clowNumber,
+        uint256 lockNumber,
         uint256 nonceNameServicePreRegister,
         uint256 nonceNameServiceRegister
     ) internal virtual {
         _execute_makePreRegistrationUsername(
             user,
             username,
-            clowNumber,
+            lockNumber,
             nonceNameServicePreRegister
         );
 
@@ -463,7 +463,7 @@ abstract contract Constants is Test {
         ) = _execute_makeRegistrationUsernameSignatures(
                 user,
                 username,
-                clowNumber,
+                lockNumber,
                 nonceNameServiceRegister,
                 0,
                 evvm.getNextCurrentSyncNonce(user.Address),
@@ -473,7 +473,7 @@ abstract contract Constants is Test {
         nameService.registrationUsername(
             user.Address,
             username,
-            clowNumber,
+            lockNumber,
             nonceNameServiceRegister,
             signatureNameService,
             0,
@@ -491,7 +491,7 @@ abstract contract Constants is Test {
         uint256 nonceNameService,
         uint256 priorityFeeAmountEVVM,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     )
         internal
         virtual
@@ -521,7 +521,7 @@ abstract contract Constants is Test {
             amountToOffer,
             priorityFeeAmountEVVM,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             address(nameService)
         );
     }
@@ -534,7 +534,7 @@ abstract contract Constants is Test {
         uint256 nonceNameService,
         uint256 priorityFeeAmountEVVM,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM,
+        bool isAsyncExecEVVM,
         AccountData memory fisher
     ) internal virtual returns (uint256 offerID) {
         evvm.addBalance(
@@ -554,7 +554,7 @@ abstract contract Constants is Test {
                 nonceNameService,
                 priorityFeeAmountEVVM,
                 nonceEVVM,
-                priorityFlagEVVM
+                isAsyncExecEVVM
             );
 
         vm.startPrank(fisher.Address);
@@ -567,7 +567,7 @@ abstract contract Constants is Test {
             signatureNameService,
             priorityFeeAmountEVVM,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             signatureEVVM
         );
         vm.stopPrank();
@@ -580,7 +580,7 @@ abstract contract Constants is Test {
         uint256 nonceNameService,
         uint256 priorityFee,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     )
         internal
         virtual
@@ -606,7 +606,7 @@ abstract contract Constants is Test {
                 0,
                 priorityFee,
                 nonceEVVM,
-                priorityFlagEVVM,
+                isAsyncExecEVVM,
                 address(nameService)
             )
             : bytes(hex"");
@@ -619,7 +619,7 @@ abstract contract Constants is Test {
         uint256 nonceNameService,
         uint256 priorityFee,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     )
         internal
         virtual
@@ -645,7 +645,7 @@ abstract contract Constants is Test {
                 0,
                 priorityFee,
                 nonceEVVM,
-                priorityFlagEVVM,
+                isAsyncExecEVVM,
                 address(nameService)
             )
             : bytes(hex"");
@@ -657,7 +657,7 @@ abstract contract Constants is Test {
         uint256 nonceNameService,
         uint256 priorityFeeAmountEVVM,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     )
         internal
         virtual
@@ -681,7 +681,7 @@ abstract contract Constants is Test {
             nameService.seePriceToRenew(usernameToRenew),
             priorityFeeAmountEVVM,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             address(nameService)
         );
     }
@@ -692,7 +692,7 @@ abstract contract Constants is Test {
         uint256 nonceNameService,
         uint256 priorityFeeAmountEVVM,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM,
+        bool isAsyncExecEVVM,
         AccountData memory fisher
     ) internal virtual {
         (
@@ -704,7 +704,7 @@ abstract contract Constants is Test {
                 nonceNameService,
                 priorityFeeAmountEVVM,
                 nonceEVVM,
-                priorityFlagEVVM
+                isAsyncExecEVVM
             );
 
         vm.startPrank(fisher.Address);
@@ -716,7 +716,7 @@ abstract contract Constants is Test {
             signatureNameService,
             priorityFeeAmountEVVM,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             signatureEVVM
         );
 
@@ -730,7 +730,7 @@ abstract contract Constants is Test {
         uint256 nonceNameService,
         uint256 priorityFeeAmountEVVM,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     )
         internal
         virtual
@@ -755,7 +755,7 @@ abstract contract Constants is Test {
             nameService.getPriceToAddCustomMetadata(),
             priorityFeeAmountEVVM,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             address(nameService)
         );
     }
@@ -766,7 +766,7 @@ abstract contract Constants is Test {
         string memory customMetadata,
         uint256 nonceNameService,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     ) internal virtual {
         evvm.addBalance(
             user.Address,
@@ -784,7 +784,7 @@ abstract contract Constants is Test {
                 nonceNameService,
                 0,
                 nonceEVVM,
-                priorityFlagEVVM
+                isAsyncExecEVVM
             );
 
         nameService.addCustomMetadata(
@@ -795,7 +795,7 @@ abstract contract Constants is Test {
             signatureNameService,
             0,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             signatureEVVM
         );
     }
@@ -807,7 +807,7 @@ abstract contract Constants is Test {
         uint256 nonceNameService,
         uint256 priorityFeeAmountEVVM,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     )
         internal
         virtual
@@ -833,7 +833,7 @@ abstract contract Constants is Test {
             nameService.getPriceToRemoveCustomMetadata(),
             priorityFeeAmountEVVM,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             address(nameService)
         );
     }
@@ -844,7 +844,7 @@ abstract contract Constants is Test {
         uint256 nonceNameService,
         uint256 priorityFeeAmountEVVM,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     )
         internal
         virtual
@@ -868,7 +868,7 @@ abstract contract Constants is Test {
             nameService.getPriceToFlushCustomMetadata(username),
             priorityFeeAmountEVVM,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             address(nameService)
         );
     }
@@ -879,7 +879,7 @@ abstract contract Constants is Test {
         uint256 nonceNameService,
         uint256 priorityFeeAmountEVVM,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     )
         internal
         virtual
@@ -903,7 +903,7 @@ abstract contract Constants is Test {
             nameService.getPriceToFlushUsername(username),
             priorityFeeAmountEVVM,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             address(nameService)
         );
     }
@@ -948,7 +948,7 @@ abstract contract Constants is Test {
         uint256 nonceStaking,
         uint256 priorityFee,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     )
         internal
         virtual
@@ -973,7 +973,7 @@ abstract contract Constants is Test {
             isStaking ? staking.priceOfStaking() : 0,
             priorityFee,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             address(staking)
         );
     }
@@ -984,7 +984,7 @@ abstract contract Constants is Test {
         uint256 nonceStaking,
         uint256 priorityFee,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM,
+        bool isAsyncExecEVVM,
         AccountData memory fisher
     ) internal virtual {
         (
@@ -996,7 +996,7 @@ abstract contract Constants is Test {
                 nonceStaking,
                 priorityFee,
                 nonceEVVM,
-                priorityFlagEVVM
+                isAsyncExecEVVM
             );
 
         vm.startPrank(fisher.Address);
@@ -1008,7 +1008,7 @@ abstract contract Constants is Test {
             signatureStaking,
             priorityFee,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             signatureEVVM
         );
 
@@ -1022,7 +1022,7 @@ abstract contract Constants is Test {
         uint256 nonce,
         uint256 priorityFeeEVVM,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM
+        bool isAsyncExecEVVM
     )
         internal
         virtual
@@ -1047,7 +1047,7 @@ abstract contract Constants is Test {
             isStaking ? staking.priceOfStaking() * amountOfStaking : 0,
             priorityFeeEVVM,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             address(staking)
         );
     }
@@ -1059,7 +1059,7 @@ abstract contract Constants is Test {
         uint256 nonce,
         uint256 priorityFeeEVVM,
         uint256 nonceEVVM,
-        bool priorityFlagEVVM,
+        bool isAsyncExecEVVM,
         AccountData memory fisher
     ) internal virtual {
         (
@@ -1072,7 +1072,7 @@ abstract contract Constants is Test {
                 nonce,
                 priorityFeeEVVM,
                 nonceEVVM,
-                priorityFlagEVVM
+                isAsyncExecEVVM
             );
 
         vm.startPrank(fisher.Address);
@@ -1085,7 +1085,7 @@ abstract contract Constants is Test {
             signatureStaking,
             priorityFeeEVVM,
             nonceEVVM,
-            priorityFlagEVVM,
+            isAsyncExecEVVM,
             signatureEVVM
         );
 

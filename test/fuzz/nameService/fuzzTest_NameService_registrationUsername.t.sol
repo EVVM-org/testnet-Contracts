@@ -28,7 +28,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
     struct Params {
         AccountData user;
         string username;
-        uint256 clowNumber;
+        uint256 lockNumber;
         uint256 nonceNameService;
         bytes signatureNameService;
         uint256 priorityFee;
@@ -110,7 +110,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         uint8 secondsToSkip;
         uint32 seed;
         uint8 maxLength;
-        uint256 clowNumber;
+        uint256 lockNumber;
         uint256 nonceNameService;
         uint32 priorityFee;
         uint256 nonceAsyncEVVM;
@@ -129,7 +129,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         _execute_makePreRegistrationUsername(
             USER,
             USERNAME,
-            input.clowNumber,
+            input.lockNumber,
             0
         );
 
@@ -138,7 +138,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         Params memory params = Params({
             user: USER,
             username: USERNAME,
-            clowNumber: input.clowNumber,
+            lockNumber: input.lockNumber,
             nonceNameService: input.nonceNameService,
             signatureNameService: "",
             priorityFee: input.priorityFee,
@@ -155,7 +155,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         ) = _execute_makeRegistrationUsernameSignatures(
             params.user,
             USERNAME,
-            params.clowNumber,
+            params.lockNumber,
             params.nonceNameService,
             params.priorityFee,
             params.nonceEVVM,
@@ -166,7 +166,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params.user.Address,
             USERNAME,
-            params.clowNumber,
+            params.lockNumber,
             params.nonceNameService,
             params.signatureNameService,
             params.priorityFee,
@@ -212,7 +212,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         _execute_makePreRegistrationUsername(
             USER,
             USERNAME,
-            input.clowNumber,
+            input.lockNumber,
             0
         );
 
@@ -221,7 +221,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         Params memory params = Params({
             user: USER,
             username: USERNAME,
-            clowNumber: input.clowNumber,
+            lockNumber: input.lockNumber,
             nonceNameService: input.nonceNameService,
             signatureNameService: "",
             priorityFee: input.priorityFee,
@@ -238,7 +238,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         ) = _execute_makeRegistrationUsernameSignatures(
             params.user,
             USERNAME,
-            params.clowNumber,
+            params.lockNumber,
             params.nonceNameService,
             params.priorityFee,
             params.nonceEVVM,
@@ -249,7 +249,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params.user.Address,
             USERNAME,
-            params.clowNumber,
+            params.lockNumber,
             params.nonceNameService,
             params.signatureNameService,
             params.priorityFee,

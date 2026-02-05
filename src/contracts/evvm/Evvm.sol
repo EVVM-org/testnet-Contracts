@@ -357,7 +357,7 @@ contract Evvm is EvvmStorage {
      * @param amount Amount of tokens to transfer
      * @param priorityFee Additional fee for transaction priority (not used in non-staker payments)
      * @param nonce Transaction nonce
-     * @param priorityFlag Execution type flag (false = sync nonce, true = async nonce)
+     * @param isAsyncExec Execution type flag (false = sync nonce, true = async nonce)
      * @param executor Address authorized to execute this transaction (zero address = sender only)
      * @param signature Cryptographic signature authorizing this payment
      */
@@ -369,7 +369,7 @@ contract Evvm is EvvmStorage {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         address executor,
         bytes memory signature
     ) external {
@@ -383,7 +383,7 @@ contract Evvm is EvvmStorage {
                 amount,
                 priorityFee,
                 nonce,
-                priorityFlag,
+                isAsyncExec,
                 executor,
                 signature
             )
@@ -392,7 +392,7 @@ contract Evvm is EvvmStorage {
         if ((executor != address(0)) && (msg.sender != executor))
             revert Error.SenderIsNotTheExecutor();
 
-        if (priorityFlag) {
+        if (isAsyncExec) {
             if (asyncUsedNonce[from][nonce])
                 revert Error.AsyncNonceAlreadyUsed();
         } else {
@@ -415,7 +415,7 @@ contract Evvm is EvvmStorage {
             _giveReward(msg.sender, 1);
         }
 
-        if (priorityFlag) asyncUsedNonce[from][nonce] = true;
+        if (isAsyncExec) asyncUsedNonce[from][nonce] = true;
         else nextSyncUsedNonce[from]++;
     }
 
@@ -464,7 +464,7 @@ contract Evvm is EvvmStorage {
                     payment.amount,
                     payment.priorityFee,
                     payment.nonce,
-                    payment.priorityFlag,
+                    payment.isAsyncExec,
                     payment.executor,
                     payment.signature
                 )
@@ -477,15 +477,15 @@ contract Evvm is EvvmStorage {
                 continue;
             }
 
-            if (payment.priorityFlag) {
-                /// @dev priorityFlag == true (async)
+            if (payment.isAsyncExec) {
+                /// @dev isAsyncExec == true (async)
 
                 if (asyncUsedNonce[payment.from][payment.nonce]) {
                     results[iteration] = false;
                     continue;
                 }
             } else {
-                /// @dev priorityFlag == false (sync)
+                /// @dev isAsyncExec == false (sync)
 
                 if (nextSyncUsedNonce[payment.from] != payment.nonce) {
                     results[iteration] = false;
@@ -518,7 +518,7 @@ contract Evvm is EvvmStorage {
                     payment.priorityFee
                 );
 
-            if (payment.priorityFlag)
+            if (payment.isAsyncExec)
                 asyncUsedNonce[payment.from][payment.nonce] = true;
             else nextSyncUsedNonce[payment.from]++;
 
@@ -556,7 +556,7 @@ contract Evvm is EvvmStorage {
      * @param amount Total amount to distribute (must match sum of individual amounts)
      * @param priorityFee Fee amount for the transaction executor
      * @param nonce Transaction nonce for replay protection
-     * @param priorityFlag True for async nonce, false for sync nonce
+     * @param isAsyncExec True for async nonce, false for sync nonce
      * @param executor Address authorized to execute this distribution
      * @param signature Cryptographic signature authorizing this distribution
      */
@@ -567,7 +567,7 @@ contract Evvm is EvvmStorage {
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool priorityFlag,
+        bool isAsyncExec,
         address executor,
         bytes memory signature
     ) external {
@@ -580,7 +580,7 @@ contract Evvm is EvvmStorage {
                 amount,
                 priorityFee,
                 nonce,
-                priorityFlag,
+                isAsyncExec,
                 executor,
                 signature
             )
@@ -589,7 +589,7 @@ contract Evvm is EvvmStorage {
         if ((executor != address(0)) && (msg.sender != executor))
             revert Error.SenderIsNotTheExecutor();
 
-        if (priorityFlag) {
+        if (isAsyncExec) {
             if (asyncUsedNonce[from][nonce])
                 revert Error.AsyncNonceAlreadyUsed();
         } else {
@@ -632,7 +632,7 @@ contract Evvm is EvvmStorage {
             balances[msg.sender][token] += priorityFee;
         }
 
-        if (priorityFlag) asyncUsedNonce[from][nonce] = true;
+        if (isAsyncExec) asyncUsedNonce[from][nonce] = true;
         else nextSyncUsedNonce[from]++;
     }
 

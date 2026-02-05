@@ -550,7 +550,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__dispersePay__InvalidSignature_priorityFlag()
+    function test__unit_revert__dispersePay__InvalidSignature_isAsyncExec()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -582,7 +582,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             amount,
             priorityFee,
             0,
-            /* 🢃 different priorityFlag 🢃 */
+            /* 🢃 different isAsyncExec 🢃 */
             true,
             address(0)
         );

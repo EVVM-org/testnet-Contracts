@@ -507,7 +507,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__batchPay__InvalidSignature_priorityFlag()
+    function test__unit_revert__batchPay__InvalidSignature_isAsyncExec()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
