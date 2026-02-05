@@ -28,11 +28,11 @@ import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
+    NameServiceError
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
 import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -126,7 +126,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -192,7 +192,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -258,7 +258,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -324,7 +324,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -390,7 +390,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -455,7 +455,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.OfferInactive.selector);
+        vm.expectRevert(NameServiceError.OfferInactive.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -523,7 +523,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.OfferInactive.selector);
+        vm.expectRevert(NameServiceError.OfferInactive.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -657,7 +657,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.UserIsNotOwnerOfIdentity.selector);
+        vm.expectRevert(NameServiceError.UserIsNotOwnerOfIdentity.selector);
 
         nameService.acceptOffer(
             /* 🢃 not the owner address 🢃 */
@@ -718,7 +718,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -786,7 +786,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(EvvmError.InsufficientBalance.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,

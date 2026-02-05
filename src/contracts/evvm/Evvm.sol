@@ -80,8 +80,8 @@ import {
     EvvmStorage
 } from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError as Error
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     SignatureUtils
 } from "@evvm/testnet-contracts/contracts/evvm/lib/SignatureUtils.sol";
@@ -110,7 +110,7 @@ contract Evvm is EvvmStorage {
      * - Part of the time-delayed governance system for critical operations
      */
     modifier onlyAdmin() {
-        if (msg.sender != admin.current) revert ErrorsLib.SenderIsNotAdmin();
+        if (msg.sender != admin.current) revert Error.SenderIsNotAdmin();
 
         _;
     }
@@ -156,7 +156,7 @@ contract Evvm is EvvmStorage {
     ) {
         if (
             _initialOwner == address(0) || _stakingContractAddress == address(0)
-        ) revert ErrorsLib.AddressCantBeZero();
+        ) revert Error.AddressCantBeZero();
 
         evvmMetadata = _evvmMetadata;
 
@@ -206,10 +206,10 @@ contract Evvm is EvvmStorage {
         address _treasuryAddress
     ) external {
         if (breakerSetupNameServiceAddress == 0x00)
-            revert ErrorsLib.BreakerExploded();
+            revert Error.BreakerExploded();
 
         if (_nameServiceAddress == address(0) || _treasuryAddress == address(0))
-            revert ErrorsLib.AddressCantBeZero();
+            revert Error.AddressCantBeZero();
 
         nameServiceAddress = _nameServiceAddress;
         balances[nameServiceAddress][evvmMetadata.principalTokenAddress] =
@@ -227,7 +227,7 @@ contract Evvm is EvvmStorage {
     function setEvvmID(uint256 newEvvmID) external onlyAdmin {
         if (evvmMetadata.EvvmID != 0) {
             if (block.timestamp > windowTimeToChangeEvvmID)
-                revert ErrorsLib.WindowExpired();
+                revert Error.WindowExpired();
         }
 
         evvmMetadata.EvvmID = newEvvmID;
@@ -270,7 +270,7 @@ contract Evvm is EvvmStorage {
      */
     fallback() external {
         if (currentImplementation == address(0))
-            revert ErrorsLib.ImplementationIsNotActive();
+            revert Error.ImplementationIsNotActive();
 
         assembly {
             /**
@@ -387,17 +387,17 @@ contract Evvm is EvvmStorage {
                 executor,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignature();
+        ) revert Error.InvalidSignature();
 
         if ((executor != address(0)) && (msg.sender != executor))
-            revert ErrorsLib.SenderIsNotTheExecutor();
+            revert Error.SenderIsNotTheExecutor();
 
         if (priorityFlag) {
             if (asyncUsedNonce[from][nonce])
-                revert ErrorsLib.AsyncNonceAlreadyUsed();
+                revert Error.AsyncNonceAlreadyUsed();
         } else {
             if (nextSyncUsedNonce[from] != nonce)
-                revert ErrorsLib.SyncNonceMismatch();
+                revert Error.SyncNonceMismatch();
         }
 
         address to = !AdvancedStrings.equal(to_identity, "")
@@ -447,7 +447,6 @@ contract Evvm is EvvmStorage {
     function payMultiple(
         PayData[] memory payData
     ) external returns (uint256 successfulTransactions, bool[] memory results) {
-        
         bool isSenderStaker = isAddressStaker(msg.sender);
         address to_aux;
         PayData memory payment;
@@ -469,7 +468,7 @@ contract Evvm is EvvmStorage {
                     payment.executor,
                     payment.signature
                 )
-            ) revert ErrorsLib.InvalidSignature();
+            ) revert Error.InvalidSignature();
 
             if (
                 payment.executor != address(0) && msg.sender != payment.executor
@@ -585,23 +584,23 @@ contract Evvm is EvvmStorage {
                 executor,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignature();
+        ) revert Error.InvalidSignature();
 
         if ((executor != address(0)) && (msg.sender != executor))
-            revert ErrorsLib.SenderIsNotTheExecutor();
+            revert Error.SenderIsNotTheExecutor();
 
         if (priorityFlag) {
             if (asyncUsedNonce[from][nonce])
-                revert ErrorsLib.AsyncNonceAlreadyUsed();
+                revert Error.AsyncNonceAlreadyUsed();
         } else {
             if (nextSyncUsedNonce[from] != nonce)
-                revert ErrorsLib.SyncNonceMismatch();
+                revert Error.SyncNonceMismatch();
         }
 
         bool isSenderStaker = isAddressStaker(msg.sender);
 
         if (balances[from][token] < amount + (isSenderStaker ? priorityFee : 0))
-            revert ErrorsLib.InsufficientBalance();
+            revert Error.InsufficientBalance();
 
         uint256 acomulatedAmount = 0;
         balances[from][token] -= (amount + (isSenderStaker ? priorityFee : 0));
@@ -626,7 +625,7 @@ contract Evvm is EvvmStorage {
             balances[to_aux][token] += toData[i].amount;
         }
 
-        if (acomulatedAmount != amount) revert ErrorsLib.InvalidAmount();
+        if (acomulatedAmount != amount) revert Error.InvalidAmount();
 
         if (isSenderStaker) {
             _giveReward(msg.sender, 1);
@@ -671,7 +670,7 @@ contract Evvm is EvvmStorage {
             size := extcodesize(from)
         }
 
-        if (size == 0) revert ErrorsLib.NotAnCA();
+        if (size == 0) revert Error.NotAnCA();
 
         _updateBalance(from, to, token, amount);
 
@@ -716,10 +715,10 @@ contract Evvm is EvvmStorage {
             size := extcodesize(from)
         }
 
-        if (size == 0) revert ErrorsLib.NotAnCA();
+        if (size == 0) revert Error.NotAnCA();
 
         if (balances[msg.sender][token] < amount)
-            revert ErrorsLib.InsufficientBalance();
+            revert Error.InsufficientBalance();
 
         uint256 acomulatedAmount = 0;
 
@@ -730,7 +729,7 @@ contract Evvm is EvvmStorage {
             balances[toData[i].toAddress][token] += toData[i].amount;
         }
 
-        if (acomulatedAmount != amount) revert ErrorsLib.InvalidAmount();
+        if (acomulatedAmount != amount) revert Error.InvalidAmount();
 
         if (isAddressStaker(msg.sender)) _giveReward(msg.sender, 1);
     }
@@ -770,8 +769,7 @@ contract Evvm is EvvmStorage {
         address token,
         uint256 amount
     ) external {
-        if (msg.sender != treasuryAddress)
-            revert ErrorsLib.SenderIsNotTreasury();
+        if (msg.sender != treasuryAddress) revert Error.SenderIsNotTreasury();
 
         balances[user][token] += amount;
     }
@@ -814,8 +812,7 @@ contract Evvm is EvvmStorage {
         address token,
         uint256 amount
     ) external {
-        if (msg.sender != treasuryAddress)
-            revert ErrorsLib.SenderIsNotTreasury();
+        if (msg.sender != treasuryAddress) revert Error.SenderIsNotTreasury();
 
         balances[user][token] -= amount;
     }
@@ -850,7 +847,7 @@ contract Evvm is EvvmStorage {
         uint256 value
     ) internal {
         uint256 fromBalance = balances[from][token];
-        if (fromBalance < value) revert ErrorsLib.InsufficientBalance();
+        if (fromBalance < value) revert Error.InsufficientBalance();
 
         unchecked {
             balances[from][token] = fromBalance - value;
@@ -907,7 +904,7 @@ contract Evvm is EvvmStorage {
      * @param _newImpl Address of the new implementation contract
      */
     function proposeImplementation(address _newImpl) external onlyAdmin {
-        if (_newImpl == address(0)) revert ErrorsLib.IncorrectAddressInput();
+        if (_newImpl == address(0)) revert Error.IncorrectAddressInput();
         proposalImplementation = _newImpl;
         timeToAcceptImplementation =
             block.timestamp +
@@ -929,7 +926,7 @@ contract Evvm is EvvmStorage {
      */
     function acceptImplementation() external onlyAdmin {
         if (block.timestamp < timeToAcceptImplementation)
-            revert ErrorsLib.TimeLockNotExpired();
+            revert Error.TimeLockNotExpired();
 
         currentImplementation = proposalImplementation;
         proposalImplementation = address(0);
@@ -945,7 +942,7 @@ contract Evvm is EvvmStorage {
      */
     function proposeAdmin(address _newOwner) external onlyAdmin {
         if (_newOwner == address(0) || _newOwner == admin.current)
-            revert ErrorsLib.IncorrectAddressInput();
+            revert Error.IncorrectAddressInput();
 
         admin = AddressTypeProposal({
             current: admin.current,
@@ -972,10 +969,10 @@ contract Evvm is EvvmStorage {
      */
     function acceptAdmin() external {
         if (block.timestamp < admin.timeToAccept)
-            revert ErrorsLib.TimeLockNotExpired();
+            revert Error.TimeLockNotExpired();
 
         if (msg.sender != admin.proposal)
-            revert ErrorsLib.SenderIsNotTheProposedAdmin();
+            revert Error.SenderIsNotTheProposedAdmin();
 
         admin = AddressTypeProposal({
             current: admin.proposal,

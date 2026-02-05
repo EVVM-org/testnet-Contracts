@@ -24,8 +24,8 @@ import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
 contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
     Evvm public evvmMock;
@@ -82,7 +82,7 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
     function test__unit_revert__constructor__AddressCantBeZero() external {
         uint256 sizeOfOpcode;
         address addressEvvmMock;
-        vm.expectRevert(ErrorsLib.AddressCantBeZero.selector);
+        vm.expectRevert(EvvmError.AddressCantBeZero.selector);
         evvmMock = new Evvm(
             address(0),
             address(staking),
@@ -111,7 +111,7 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
             "Evvm should not be deployed with zero address as admin"
         );
 
-        vm.expectRevert(ErrorsLib.AddressCantBeZero.selector);
+        vm.expectRevert(EvvmError.AddressCantBeZero.selector);
         evvmMock = new Evvm(
             ADMIN.Address,
             address(0),
@@ -143,7 +143,7 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
 
     function test__unit_revert__setEvvmID__SenderIsNotAdmin() external {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(EvvmError.SenderIsNotAdmin.selector);
         evvm.setEvvmID(1);
         vm.stopPrank();
     }
@@ -152,26 +152,26 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
         vm.startPrank(ADMIN.Address);
         evvm.setEvvmID(1);
         skip(26 hours);
-        vm.expectRevert(ErrorsLib.WindowExpired.selector);
+        vm.expectRevert(EvvmError.WindowExpired.selector);
         evvm.setEvvmID(67);
         vm.stopPrank();
     }
 
     function test__unit_revert__proposeAdmin__SenderIsNotAdmin() external {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(EvvmError.SenderIsNotAdmin.selector);
         evvm.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
         vm.stopPrank();
     }
 
     function test__unit_revert__proposeAdmin__IncorrectAddressInput() external {
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(ErrorsLib.IncorrectAddressInput.selector);
+        vm.expectRevert(EvvmError.IncorrectAddressInput.selector);
         evvm.proposeAdmin(address(0));
         vm.stopPrank();
 
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(ErrorsLib.IncorrectAddressInput.selector);
+        vm.expectRevert(EvvmError.IncorrectAddressInput.selector);
         evvm.proposeAdmin(ADMIN.Address);
         vm.stopPrank();
     }
@@ -187,7 +187,7 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(EvvmError.SenderIsNotAdmin.selector);
         evvm.rejectProposalAdmin();
 
         vm.stopPrank();
@@ -202,7 +202,7 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(ErrorsLib.TimeLockNotExpired.selector);
+        vm.expectRevert(EvvmError.TimeLockNotExpired.selector);
         evvm.acceptAdmin();
 
         vm.stopPrank();
@@ -217,7 +217,7 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
 
         skip(200 days);
 
-        vm.expectRevert(ErrorsLib.SenderIsNotTheProposedAdmin.selector);
+        vm.expectRevert(EvvmError.SenderIsNotTheProposedAdmin.selector);
         evvm.acceptAdmin();
 
         vm.stopPrank();

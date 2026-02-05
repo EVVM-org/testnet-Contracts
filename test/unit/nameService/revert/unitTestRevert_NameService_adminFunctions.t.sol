@@ -28,17 +28,17 @@ import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
+    NameServiceError
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
 import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
 contract unitTestRevert_NameService_adminFunctions is Test, Constants {
     function test__unit_revert__proposeAdmin__SenderIsNotAdmin() external {
         /* 🢃 Non admin sender 🢃 */
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(NameServiceError.SenderIsNotAdmin.selector);
         nameService.proposeAdmin(WILDCARD_USER.Address);
         vm.stopPrank();
 
@@ -58,7 +58,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         external
     {
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(ErrorsLib.InvalidAdminProposal.selector);
+        vm.expectRevert(NameServiceError.InvalidAdminProposal.selector);
         /* 🢃 To address zero 🢃 */
         nameService.proposeAdmin(address(0));
         vm.stopPrank();
@@ -79,7 +79,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         external
     {
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(ErrorsLib.InvalidAdminProposal.selector);
+        vm.expectRevert(NameServiceError.InvalidAdminProposal.selector);
         /* 🢃 To current admin 🢃 */
         nameService.proposeAdmin(ADMIN.Address);
         vm.stopPrank();
@@ -105,7 +105,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
 
         /* 🢃 Non admin sender 🢃 */
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(NameServiceError.SenderIsNotAdmin.selector);
         nameService.cancelProposeAdmin();
         vm.stopPrank();
 
@@ -140,7 +140,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
 
         /* 🢃 Non proposed admin sender 🢃 */
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotProposedAdmin.selector);
+        vm.expectRevert(NameServiceError.SenderIsNotProposedAdmin.selector);
         nameService.acceptProposeAdmin();
         vm.stopPrank();
 
@@ -175,7 +175,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         skip(1 days - 2 hours);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.LockTimeNotExpired.selector);
+        vm.expectRevert(NameServiceError.LockTimeNotExpired.selector);
         nameService.acceptProposeAdmin();
         vm.stopPrank();
 
@@ -208,7 +208,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         );
         /* 🢃 Non admin sender 🢃 */
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(NameServiceError.SenderIsNotAdmin.selector);
         nameService.proposeWithdrawPrincipalTokens(1);
         vm.stopPrank();
 
@@ -243,7 +243,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
             PRINCIPAL_TOKEN_ADDRESS
         );
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(ErrorsLib.InvalidWithdrawAmount.selector);
+        vm.expectRevert(NameServiceError.InvalidWithdrawAmount.selector);
         /* 🢃 Withdraw amount zero 🢃 */
         nameService.proposeWithdrawPrincipalTokens(0);
         vm.stopPrank();
@@ -281,7 +281,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         /* 🢃 Withdraw full contract balance 🢃 */
         uint256 contractBalance = balanceBefore;
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(ErrorsLib.InvalidWithdrawAmount.selector);
+        vm.expectRevert(NameServiceError.InvalidWithdrawAmount.selector);
         nameService.proposeWithdrawPrincipalTokens(contractBalance);
         vm.stopPrank();
 
@@ -317,7 +317,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
 
         /* 🢃 Non admin sender 🢃 */
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(NameServiceError.SenderIsNotAdmin.selector);
         nameService.cancelWithdrawPrincipalTokens();
         vm.stopPrank();
 
@@ -349,7 +349,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
 
         /* 🢃 Non admin sender 🢃 */
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(NameServiceError.SenderIsNotAdmin.selector);
         nameService.claimWithdrawPrincipalTokens();
         vm.stopPrank();
 
@@ -381,7 +381,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         skip(1 days - 2 hours);
 
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(ErrorsLib.LockTimeNotExpired.selector);
+        vm.expectRevert(NameServiceError.LockTimeNotExpired.selector);
         nameService.claimWithdrawPrincipalTokens();
         vm.stopPrank();
 
@@ -407,7 +407,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
     {
         /* 🢃 Non admin sender 🢃 */
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(NameServiceError.SenderIsNotAdmin.selector);
         nameService.proposeChangeEvvmAddress(WILDCARD_USER.Address);
         vm.stopPrank();
 
@@ -427,7 +427,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         external
     {
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(ErrorsLib.InvalidEvvmAddress.selector);
+        vm.expectRevert(NameServiceError.InvalidEvvmAddress.selector);
         /* 🢃 To address zero 🢃 */
         nameService.proposeChangeEvvmAddress(address(0));
         vm.stopPrank();
@@ -454,7 +454,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
 
         /* 🢃 Non admin sender 🢃 */
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(NameServiceError.SenderIsNotAdmin.selector);
         nameService.cancelChangeEvvmAddress();
         vm.stopPrank();
 
@@ -490,7 +490,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
 
         /* 🢃 Non admin sender 🢃 */
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(NameServiceError.SenderIsNotAdmin.selector);
         nameService.acceptChangeEvvmAddress();
         vm.stopPrank();
 
@@ -525,7 +525,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         skip(1 days - 2 hours);
 
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(ErrorsLib.LockTimeNotExpired.selector);
+        vm.expectRevert(NameServiceError.LockTimeNotExpired.selector);
         nameService.acceptChangeEvvmAddress();
         vm.stopPrank();
 

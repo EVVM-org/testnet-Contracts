@@ -26,8 +26,8 @@ import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
 contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -105,7 +105,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.payMultiple(payData);
         vm.stopPrank();
 
@@ -160,7 +160,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.payMultiple(payData);
         vm.stopPrank();
 
@@ -215,7 +215,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.payMultiple(payData);
         vm.stopPrank();
 
@@ -270,7 +270,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.payMultiple(payData);
         vm.stopPrank();
 
@@ -325,7 +325,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.payMultiple(payData);
         vm.stopPrank();
 
@@ -380,7 +380,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.payMultiple(payData);
         vm.stopPrank();
 
@@ -435,7 +435,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.payMultiple(payData);
         vm.stopPrank();
 
@@ -490,7 +490,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.payMultiple(payData);
         vm.stopPrank();
 
@@ -545,7 +545,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.payMultiple(payData);
         vm.stopPrank();
 
@@ -600,7 +600,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.payMultiple(payData);
         vm.stopPrank();
 

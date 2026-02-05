@@ -25,8 +25,8 @@ import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
 contract unitTestRevert_EVVM_disperseCaPay is Test, Constants {
     //function executeBeforeSetUp() internal override {}
@@ -52,7 +52,7 @@ contract unitTestRevert_EVVM_disperseCaPay is Test, Constants {
         });
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(ErrorsLib.NotAnCA.selector);
+        vm.expectRevert(EvvmError.NotAnCA.selector);
         evvm.disperseCaPay(toData, ETHER_ADDRESS, amount);
         vm.stopPrank();
     
@@ -79,7 +79,7 @@ contract unitTestRevert_EVVM_disperseCaPay is Test, Constants {
             toAddress: COMMON_USER_NO_STAKER_2.Address
         });
 
-        vm.expectRevert(ErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(EvvmError.InsufficientBalance.selector);
         // Becase this test script is tecnially a CA, we can call caPay directly
         evvm.disperseCaPay(toData, ETHER_ADDRESS, amount*2);
     
@@ -111,7 +111,7 @@ contract unitTestRevert_EVVM_disperseCaPay is Test, Constants {
             toAddress: COMMON_USER_NO_STAKER_2.Address
         });
 
-        vm.expectRevert(ErrorsLib.InvalidAmount.selector);
+        vm.expectRevert(EvvmError.InvalidAmount.selector);
         // Becase this test script is tecnially a CA, we can call caPay directly
         evvm.disperseCaPay(toData, ETHER_ADDRESS, amount);
     

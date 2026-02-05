@@ -24,8 +24,8 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/treasury/lib/ErrorsLib.sol";
+    TreasuryError
+} from "@evvm/testnet-contracts/library/errors/TreasuryError.sol";
 
 contract unitTestRevert_Treasury is Test, Constants {
     TestERC20 testToken;
@@ -51,7 +51,7 @@ contract unitTestRevert_Treasury is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(ErrorsLib.DepositAmountMustBeGreaterThanZero.selector);
+        vm.expectRevert(TreasuryError.DepositAmountMustBeGreaterThanZero.selector);
 
         treasury.deposit{value: 0 ether}(address(0), 0 ether);
 
@@ -65,7 +65,7 @@ contract unitTestRevert_Treasury is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidDepositAmount.selector);
+        vm.expectRevert(TreasuryError.InvalidDepositAmount.selector);
         treasury.deposit{value: 0.01 ether}(address(0), 0.001 ether);
 
         vm.stopPrank();
@@ -87,7 +87,7 @@ contract unitTestRevert_Treasury is Test, Constants {
 
         testToken.approve(address(treasury), 10 ether);
 
-        vm.expectRevert(ErrorsLib.DepositCoinWithToken.selector);
+        vm.expectRevert(TreasuryError.DepositCoinWithToken.selector);
         treasury.deposit{value: 0.01 ether}(address(testToken), 10 ether);
 
         vm.stopPrank();
@@ -115,7 +115,7 @@ contract unitTestRevert_Treasury is Test, Constants {
 
         testToken.approve(address(treasury), 10 ether);
 
-        vm.expectRevert(ErrorsLib.DepositAmountMustBeGreaterThanZero.selector);
+        vm.expectRevert(TreasuryError.DepositAmountMustBeGreaterThanZero.selector);
         treasury.deposit(address(testToken), 0);
 
         vm.stopPrank();
@@ -170,7 +170,7 @@ contract unitTestRevert_Treasury is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(ErrorsLib.PrincipalTokenIsNotWithdrawable.selector);
+        vm.expectRevert(TreasuryError.PrincipalTokenIsNotWithdrawable.selector);
         treasury.withdraw(PRINCIPAL_TOKEN_ADDRESS, 1 ether);
 
         vm.stopPrank();
@@ -180,7 +180,7 @@ contract unitTestRevert_Treasury is Test, Constants {
         _addBalance(COMMON_USER_NO_STAKER_1.Address, 1 ether, ETHER_ADDRESS);
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(ErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(TreasuryError.InsufficientBalance.selector);
         treasury.withdraw(ETHER_ADDRESS, 2 ether);
 
         vm.stopPrank();

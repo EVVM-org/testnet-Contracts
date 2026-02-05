@@ -67,8 +67,8 @@ import {
     AdvancedStrings
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
+    NameServiceError as Error
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
 import {
     SignatureUtils
 } from "@evvm/testnet-contracts/contracts/nameService/lib/SignatureUtils.sol";
@@ -109,7 +109,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
 
     /// @dev Restricts function access to the current admin address only
     modifier onlyAdmin() {
-        if (msg.sender != admin.current) revert ErrorsLib.SenderIsNotAdmin();
+        if (msg.sender != admin.current) revert Error.SenderIsNotAdmin();
 
         _;
     }
@@ -156,7 +156,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnNameService();
+        ) revert Error.InvalidSignatureOnNameService();
 
         verifyAsyncNonce(user, nonce);
 
@@ -222,15 +222,15 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnNameService();
+        ) revert Error.InvalidSignatureOnNameService();
 
         if (
             admin.current != user &&
             !IdentityValidation.isValidUsername(username)
-        ) revert ErrorsLib.InvalidUsername();
+        ) revert Error.InvalidUsername();
 
         if (!isUsernameAvailable(username))
-            revert ErrorsLib.UsernameAlreadyRegistered();
+            revert Error.UsernameAlreadyRegistered();
 
         verifyAsyncNonce(user, nonce);
 
@@ -251,7 +251,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
         if (
             identityDetails[_key].owner != user ||
             identityDetails[_key].expireDate > block.timestamp
-        ) revert ErrorsLib.PreRegistrationNotValid();
+        ) revert Error.PreRegistrationNotValid();
 
         identityDetails[username] = IdentityBaseMetadata({
             owner: user,
@@ -309,17 +309,17 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnNameService();
+        ) revert Error.InvalidSignatureOnNameService();
 
         if (
             identityDetails[username].flagNotAUsername == 0x01 ||
             !verifyIfIdentityExists(username)
-        ) revert ErrorsLib.InvalidUsername();
+        ) revert Error.InvalidUsername();
 
         if (expireDate <= block.timestamp)
-            revert ErrorsLib.CannotBeBeforeCurrentTime();
+            revert Error.CannotBeBeforeCurrentTime();
 
-        if (amount == 0) revert ErrorsLib.AmountMustBeGreaterThanZero();
+        if (amount == 0) revert Error.AmountMustBeGreaterThanZero();
 
         verifyAsyncNonce(user, nonce);
 
@@ -396,10 +396,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnNameService();
+        ) revert Error.InvalidSignatureOnNameService();
 
         if (usernameOffers[username][offerID].offerer != user)
-            revert ErrorsLib.UserIsNotOwnerOfOffer();
+            revert Error.UserIsNotOwnerOfOffer();
 
         verifyAsyncNonce(user, nonce);
 
@@ -464,15 +464,15 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnNameService();
+        ) revert Error.InvalidSignatureOnNameService();
 
         if (identityDetails[username].owner != user)
-            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+            revert Error.UserIsNotOwnerOfIdentity();
 
         if (
             usernameOffers[username][offerID].offerer == address(0) ||
             usernameOffers[username][offerID].expireDate < block.timestamp
-        ) revert ErrorsLib.OfferInactive();
+        ) revert Error.OfferInactive();
 
         verifyAsyncNonce(user, nonce);
 
@@ -548,16 +548,16 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnNameService();
+        ) revert Error.InvalidSignatureOnNameService();
 
         if (identityDetails[username].owner != user)
-            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+            revert Error.UserIsNotOwnerOfIdentity();
 
         if (identityDetails[username].flagNotAUsername == 0x01)
-            revert ErrorsLib.IdentityIsNotAUsername();
+            revert Error.IdentityIsNotAUsername();
 
         if (identityDetails[username].expireDate > block.timestamp + 36500 days)
-            revert ErrorsLib.RenewalTimeLimitExceeded();
+            revert Error.RenewalTimeLimitExceeded();
 
         verifyAsyncNonce(user, nonce);
 
@@ -632,12 +632,12 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnNameService();
+        ) revert Error.InvalidSignatureOnNameService();
 
         if (identityDetails[identity].owner != user)
-            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+            revert Error.UserIsNotOwnerOfIdentity();
 
-        if (bytes(value).length == 0) revert ErrorsLib.EmptyCustomMetadata();
+        if (bytes(value).length == 0) revert Error.EmptyCustomMetadata();
 
         verifyAsyncNonce(user, nonce);
 
@@ -700,13 +700,13 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnNameService();
+        ) revert Error.InvalidSignatureOnNameService();
 
         if (identityDetails[identity].owner != user)
-            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+            revert Error.UserIsNotOwnerOfIdentity();
 
         if (identityDetails[identity].customMetadataMaxSlots <= key)
-            revert ErrorsLib.InvalidKey();
+            revert Error.InvalidKey();
 
         verifyAsyncNonce(user, nonce);
 
@@ -777,13 +777,13 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnNameService();
+        ) revert Error.InvalidSignatureOnNameService();
 
         if (identityDetails[identity].owner != user)
-            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+            revert Error.UserIsNotOwnerOfIdentity();
 
         if (identityDetails[identity].customMetadataMaxSlots == 0)
-            revert ErrorsLib.EmptyCustomMetadata();
+            revert Error.EmptyCustomMetadata();
 
         verifyAsyncNonce(user, nonce);
 
@@ -847,16 +847,16 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnNameService();
+        ) revert Error.InvalidSignatureOnNameService();
 
         if (identityDetails[username].owner != user)
-            revert ErrorsLib.UserIsNotOwnerOfIdentity();
+            revert Error.UserIsNotOwnerOfIdentity();
 
         if (block.timestamp >= identityDetails[username].expireDate)
-            revert ErrorsLib.OwnershipExpired();
+            revert Error.OwnershipExpired();
 
         if (identityDetails[username].flagNotAUsername == 0x01)
-            revert ErrorsLib.IdentityIsNotAUsername();
+            revert Error.IdentityIsNotAUsername();
 
         verifyAsyncNonce(user, nonce);
 
@@ -903,7 +903,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      */
     function proposeAdmin(address _adminToPropose) public onlyAdmin {
         if (_adminToPropose == address(0) || _adminToPropose == admin.current)
-            revert ErrorsLib.InvalidAdminProposal();
+            revert Error.InvalidAdminProposal();
 
         admin.proposal = _adminToPropose;
         admin.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
@@ -924,10 +924,10 @@ contract NameService is AsyncNonce, NameServiceStructs {
      */
     function acceptProposeAdmin() public {
         if (admin.proposal != msg.sender)
-            revert ErrorsLib.SenderIsNotProposedAdmin();
+            revert Error.SenderIsNotProposedAdmin();
 
         if (block.timestamp < admin.timeToAccept)
-            revert ErrorsLib.LockTimeNotExpired();
+            revert Error.LockTimeNotExpired();
 
         admin = AddressTypeProposal({
             current: admin.proposal,
@@ -950,7 +950,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
             _amount ||
             _amount == 0
         ) {
-            revert ErrorsLib.InvalidWithdrawAmount();
+            revert Error.InvalidWithdrawAmount();
         }
 
         amountToWithdrawTokens.proposal = _amount;
@@ -974,7 +974,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      */
     function claimWithdrawPrincipalTokens() public onlyAdmin {
         if (block.timestamp < amountToWithdrawTokens.timeToAccept)
-            revert ErrorsLib.LockTimeNotExpired();
+            revert Error.LockTimeNotExpired();
 
         makeCaPay(admin.current, amountToWithdrawTokens.proposal);
 
@@ -990,8 +990,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
     function proposeChangeEvvmAddress(
         address _newEvvmAddress
     ) public onlyAdmin {
-        if (_newEvvmAddress == address(0))
-            revert ErrorsLib.InvalidEvvmAddress();
+        if (_newEvvmAddress == address(0)) revert Error.InvalidEvvmAddress();
 
         evvmAddress.proposal = _newEvvmAddress;
         evvmAddress.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
@@ -1012,7 +1011,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
      */
     function acceptChangeEvvmAddress() public onlyAdmin {
         if (block.timestamp < evvmAddress.timeToAccept)
-            revert ErrorsLib.LockTimeNotExpired();
+            revert Error.LockTimeNotExpired();
 
         evvmAddress = AddressTypeProposal({
             current: evvmAddress.proposal,
@@ -1203,7 +1202,7 @@ contract NameService is AsyncNonce, NameServiceStructs {
                 price = 500 * 10 ** 18;
             } else {
                 uint256 principalTokenReward = evvm.getRewardAmount();
-                
+
                 price = ((price * 5) / 1000) > (500000 * principalTokenReward)
                     ? (500000 * principalTokenReward)
                     : ((price * 5) / 1000);

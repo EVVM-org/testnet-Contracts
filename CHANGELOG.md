@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Updated error imports for all services (including the EVVM core contract) to `ErrorsLib` from `<service>Error` for improved readability and maintainability
 
 ### Removed
 

@@ -21,12 +21,12 @@ pragma abicoder v2;
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
-import "@evvm/testnet-contracts/contracts/staking/lib/ErrorsLib.sol";
+import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
 contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     function executeBeforeSetUp() internal override {
@@ -77,7 +77,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(ErrorsLib.SenderIsNotGoldenFisher.selector);
+        vm.expectRevert(StakingError.SenderIsNotGoldenFisher.selector);
         staking.goldenStaking(true, 1, signatureEVVM);
 
         vm.stopPrank();
@@ -97,7 +97,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
 
         staking.goldenStaking(true, 10, signatureEVVMstake);
 
-        vm.expectRevert(ErrorsLib.AddressMustWaitToFullUnstake.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToFullUnstake.selector);
 
         staking.goldenStaking(false, 10, "");
 
@@ -127,7 +127,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
 
         staking.goldenStaking(false, 10, "");
 
-        vm.expectRevert(ErrorsLib.AddressMustWaitToStakeAgain.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToStakeAgain.selector);
 
         staking.goldenStaking(true, 10, signatureEVVM2);
 
@@ -154,7 +154,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         staking.goldenStaking(true, 10, signatureEVVM);
 
         vm.stopPrank();

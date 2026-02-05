@@ -25,8 +25,8 @@ import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 contract unitTestRevert_EVVM_TreasuryFunctions is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
@@ -35,7 +35,7 @@ contract unitTestRevert_EVVM_TreasuryFunctions is Test, Constants {
     function test__unit_revert__addAmountToUser__SenderIsNotTreasury() external {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(ErrorsLib.SenderIsNotTreasury.selector);
+        vm.expectRevert(EvvmError.SenderIsNotTreasury.selector);
         evvm.addAmountToUser(
             COMMON_USER_NO_STAKER_1.Address,
             ETHER_ADDRESS,
@@ -56,7 +56,7 @@ contract unitTestRevert_EVVM_TreasuryFunctions is Test, Constants {
         
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(ErrorsLib.SenderIsNotTreasury.selector);
+        vm.expectRevert(EvvmError.SenderIsNotTreasury.selector);
         evvm.addAmountToUser(
             COMMON_USER_NO_STAKER_1.Address,
             ETHER_ADDRESS,

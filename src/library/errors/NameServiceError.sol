@@ -22,7 +22,7 @@ pragma solidity ^0.8.0;
  * @custom:scope Exclusive to the NameService.sol contract
  * @custom:security All errors provide clear failure reasons without exposing sensitive data
  */
-library ErrorsLib {
+library NameServiceError {
     //█ Access Control Errors ███████████████████████████████████████████████████
 
     /**

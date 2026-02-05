@@ -25,8 +25,8 @@ import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 contract unitTestRevert_EVVM_pay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
@@ -73,7 +73,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -133,7 +133,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -195,7 +195,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -257,7 +257,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -317,7 +317,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -377,7 +377,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -437,7 +437,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -497,7 +497,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -557,7 +557,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -617,7 +617,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -677,7 +677,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         /* 🢃 different executor 🢃 */
         vm.startPrank(COMMON_USER_STAKER.Address);
 
-        vm.expectRevert(ErrorsLib.SenderIsNotTheExecutor.selector);
+        vm.expectRevert(EvvmError.SenderIsNotTheExecutor.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -766,7 +766,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(EvvmError.AsyncNonceAlreadyUsed.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -847,7 +847,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.SyncNonceMismatch.selector);
+        vm.expectRevert(EvvmError.SyncNonceMismatch.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -908,7 +908,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(EvvmError.InsufficientBalance.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -971,7 +971,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_STAKER.Address);
 
-        vm.expectRevert(ErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(EvvmError.InsufficientBalance.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,

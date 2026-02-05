@@ -25,8 +25,8 @@ import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
 contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -117,7 +117,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
@@ -183,7 +183,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
@@ -258,7 +258,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
@@ -323,7 +323,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             address(0)
         );
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
@@ -390,7 +390,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             address(0)
         );
 
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
@@ -456,7 +456,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
@@ -522,7 +522,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
@@ -588,7 +588,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
@@ -654,7 +654,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
@@ -721,7 +721,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         /* 🢃 executor different than msg.sender 🢃 */
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.SenderIsNotTheExecutor.selector);
+        vm.expectRevert(EvvmError.SenderIsNotTheExecutor.selector);
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
@@ -801,7 +801,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(EvvmError.AsyncNonceAlreadyUsed.selector);
 
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
@@ -868,7 +868,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.SyncNonceMismatch.selector);
+        vm.expectRevert(EvvmError.SyncNonceMismatch.selector);
 
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
@@ -937,7 +937,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(EvvmError.InsufficientBalance.selector);
 
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
@@ -1004,7 +1004,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_STAKER.Address);
 
-        vm.expectRevert(ErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(EvvmError.InsufficientBalance.selector);
 
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
@@ -1070,7 +1070,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidAmount.selector);
+        vm.expectRevert(EvvmError.InvalidAmount.selector);
 
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,

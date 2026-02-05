@@ -28,11 +28,11 @@ import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
+    NameServiceError
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
 import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -115,7 +115,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -177,7 +177,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -239,7 +239,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -301,7 +301,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -363,7 +363,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -425,7 +425,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -503,7 +503,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidUsername.selector);
+        vm.expectRevert(NameServiceError.InvalidUsername.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             invalidUsername,
@@ -566,7 +566,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidUsername.selector);
+        vm.expectRevert(NameServiceError.InvalidUsername.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             unregisteredUsername,
@@ -628,7 +628,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.CannotBeBeforeCurrentTime.selector);
+        vm.expectRevert(NameServiceError.CannotBeBeforeCurrentTime.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -690,7 +690,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.AmountMustBeGreaterThanZero.selector);
+        vm.expectRevert(NameServiceError.AmountMustBeGreaterThanZero.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -819,7 +819,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -882,7 +882,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(EvvmError.InsufficientBalance.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",

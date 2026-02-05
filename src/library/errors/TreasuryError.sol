@@ -15,7 +15,7 @@ pragma solidity ^0.8.0;
  * - Withdrawal Restrictions: Token withdrawal limitations
  */
 
-library ErrorsLib {
+library TreasuryError {
     //█ Balance Errors ███████████████████████████████████████████████████████████████████████████████
 
     /// @dev Thrown when a user attempts to withdraw more tokens than their available balance

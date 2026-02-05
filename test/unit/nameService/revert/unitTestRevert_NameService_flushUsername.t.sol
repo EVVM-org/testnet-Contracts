@@ -29,11 +29,11 @@ import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
+    NameServiceError
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
 import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -159,7 +159,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -224,7 +224,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -289,7 +289,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -354,7 +354,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -420,7 +420,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.UserIsNotOwnerOfIdentity.selector);
+        vm.expectRevert(NameServiceError.UserIsNotOwnerOfIdentity.selector);
         nameService.flushUsername(
             /* 🢃 non owner address 🢃 */
             COMMON_USER_NO_STAKER_2.Address,
@@ -488,7 +488,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.OwnershipExpired.selector);
+        vm.expectRevert(NameServiceError.OwnershipExpired.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -571,7 +571,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.IdentityIsNotAUsername.selector);
+        vm.expectRevert(NameServiceError.IdentityIsNotAUsername.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             invalidUsername,
@@ -706,7 +706,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -766,7 +766,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(EvvmError.InsufficientBalance.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,

@@ -34,8 +34,8 @@ pragma solidity ^0.8.0;
 import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/ErrorsLib.sol";
+    CrossChainTreasuryError as Error
+} from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
 import {
     HostChainStationStructs
 } from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/HostChainStationStructs.sol";
@@ -247,10 +247,10 @@ contract TreasuryHostChainStation is
         bytes1 protocolToExecute
     ) external payable {
         if (token == evvm.getEvvmMetadata().principalTokenAddress)
-            revert ErrorsLib.PrincipalTokenIsNotWithdrawable();
+            revert Error.PrincipalTokenIsNotWithdrawable();
 
         if (evvm.getBalance(msg.sender, token) < amount)
-            revert ErrorsLib.InsufficientBalance();
+            revert Error.InsufficientBalance();
 
         executerEVVM(false, msg.sender, token, amount);
 
@@ -326,7 +326,7 @@ contract TreasuryHostChainStation is
                 amount,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignature();
+        ) revert Error.InvalidSignature();
 
         nextFisherExecutionNonce[from]++;
 
@@ -353,10 +353,10 @@ contract TreasuryHostChainStation is
         bytes memory signature
     ) external onlyFisherExecutor {
         if (tokenAddress == evvm.getEvvmMetadata().principalTokenAddress)
-            revert ErrorsLib.PrincipalTokenIsNotWithdrawable();
+            revert Error.PrincipalTokenIsNotWithdrawable();
 
         if (evvm.getBalance(from, tokenAddress) < amount)
-            revert ErrorsLib.InsufficientBalance();
+            revert Error.InsufficientBalance();
 
         if (
             !SignatureUtils.verifyMessageSignedForFisherBridge(
@@ -369,7 +369,7 @@ contract TreasuryHostChainStation is
                 amount,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignature();
+        ) revert Error.InvalidSignature();
 
         nextFisherExecutionNonce[from]++;
 
@@ -420,13 +420,13 @@ contract TreasuryHostChainStation is
         bytes calldata _data
     ) external payable virtual {
         if (msg.sender != hyperlane.mailboxAddress)
-            revert ErrorsLib.MailboxNotAuthorized();
+            revert Error.MailboxNotAuthorized();
 
         if (_sender != hyperlane.externalChainStationAddress)
-            revert ErrorsLib.SenderNotAuthorized();
+            revert Error.SenderNotAuthorized();
 
         if (_origin != hyperlane.externalChainStationDomainId)
-            revert ErrorsLib.ChainIdNotAuthorized();
+            revert Error.ChainIdNotAuthorized();
 
         decodeAndDeposit(_data);
     }
@@ -466,10 +466,10 @@ contract TreasuryHostChainStation is
     ) internal override {
         // Decode the payload to get the message
         if (_origin.srcEid != layerZero.externalChainStationEid)
-            revert ErrorsLib.ChainIdNotAuthorized();
+            revert Error.ChainIdNotAuthorized();
 
         if (_origin.sender != layerZero.externalChainStationAddress)
-            revert ErrorsLib.SenderNotAuthorized();
+            revert Error.SenderNotAuthorized();
 
         decodeAndDeposit(message);
     }
@@ -525,14 +525,14 @@ contract TreasuryHostChainStation is
                 _sourceChain,
                 axelar.externalChainStationChainName
             )
-        ) revert ErrorsLib.ChainIdNotAuthorized();
+        ) revert Error.ChainIdNotAuthorized();
 
         if (
             !AdvancedStrings.equal(
                 _sourceAddress,
                 axelar.externalChainStationAddress
             )
-        ) revert ErrorsLib.SenderNotAuthorized();
+        ) revert Error.SenderNotAuthorized();
 
         decodeAndDeposit(_payload);
     }

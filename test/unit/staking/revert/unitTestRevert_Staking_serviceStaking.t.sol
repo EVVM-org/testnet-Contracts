@@ -21,7 +21,7 @@ pragma abicoder v2;
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
-import "@evvm/testnet-contracts/contracts/staking/lib/ErrorsLib.sol";
+import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
@@ -56,7 +56,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
         _addBalance(WILDCARD_USER.Address, 10);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.AddressIsNotAService.selector);
+        vm.expectRevert(StakingError.AddressIsNotAService.selector);
         staking.prepareServiceStaking(10);
         vm.stopPrank();
 
@@ -89,7 +89,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
         uint256 amountStaking = _addBalance(WILDCARD_USER.Address, 10);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.AddressIsNotAService.selector);
+        vm.expectRevert(StakingError.AddressIsNotAService.selector);
         staking.confirmServiceStaking();
         vm.stopPrank();
 
@@ -123,7 +123,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ErrorsLib.ServiceDoesNotFulfillCorrectStakingAmount.selector,
+                StakingError.ServiceDoesNotFulfillCorrectStakingAmount.selector,
                 (5 * staking.priceOfStaking())
             )
         );
@@ -158,7 +158,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
 
         skip(1);
 
-        vm.expectRevert(ErrorsLib.ServiceDoesNotStakeInSameTx.selector);
+        vm.expectRevert(StakingError.ServiceDoesNotStakeInSameTx.selector);
         mockContract.stakeJustConfirm();
 
         assert(!evvm.isAddressStaker(address(mockContract)));
@@ -194,7 +194,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
 
         mockContract.stakeJustInPartTwo(10);
 
-        vm.expectRevert(ErrorsLib.AddressMismatch.selector);
+        vm.expectRevert(StakingError.AddressMismatch.selector);
         auxMockContract.stakeJustConfirm();
 
         assert(!evvm.isAddressStaker(address(mockContract)));
@@ -228,7 +228,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking() - 50);
 
-        vm.expectRevert(ErrorsLib.AddressMustWaitToFullUnstake.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToFullUnstake.selector);
         mockContract.unstake(10);
 
         assert(evvm.isAddressStaker(address(mockContract)));
@@ -285,7 +285,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockStaking() - 10);
 
-        vm.expectRevert(ErrorsLib.AddressMustWaitToStakeAgain.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToStakeAgain.selector);
         mockContract.stake(10);
 
         assert(!evvm.isAddressStaker(address(mockContract)));
@@ -330,7 +330,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.AddressIsNotAService.selector);
+        vm.expectRevert(StakingError.AddressIsNotAService.selector);
         staking.serviceUnstaking(10);
         vm.stopPrank();
     }

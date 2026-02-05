@@ -33,8 +33,8 @@ pragma solidity ^0.8.0;
 
 import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/ErrorsLib.sol";
+    CrossChainTreasuryError as Error
+} from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
 import {
     ExternalChainStationStructs
 } from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/ExternalChainStationStructs.sol";
@@ -240,7 +240,7 @@ contract TreasuryExternalChainStation is
     function setEvvmID(uint256 newEvvmID) external onlyAdmin {
         if (evvmID != 0) {
             if (block.timestamp > windowTimeToChangeEvvmID)
-                revert ErrorsLib.WindowToChangeEvvmIDExpired();
+                revert Error.WindowToChangeEvvmIDExpired();
         }
 
         evvmID = newEvvmID;
@@ -316,7 +316,7 @@ contract TreasuryExternalChainStation is
         uint256 amount,
         bytes1 protocolToExecute
     ) external payable {
-        if (msg.value < amount) revert ErrorsLib.InsufficientBalance();
+        if (msg.value < amount) revert Error.InsufficientBalance();
 
         bytes memory payload = PayloadUtils.encodePayload(
             address(0),
@@ -327,8 +327,7 @@ contract TreasuryExternalChainStation is
         if (protocolToExecute == 0x01) {
             // 0x01 = Hyperlane
             uint256 quote = getQuoteHyperlane(toAddress, address(0), amount);
-            if (msg.value < quote + amount)
-                revert ErrorsLib.InsufficientBalance();
+            if (msg.value < quote + amount) revert Error.InsufficientBalance();
             /*messageId = */ IMailbox(hyperlane.mailboxAddress).dispatch{
                 value: quote
             }(
@@ -339,8 +338,7 @@ contract TreasuryExternalChainStation is
         } else if (protocolToExecute == 0x02) {
             // 0x02 = LayerZero
             uint256 fee = quoteLayerZero(toAddress, address(0), amount);
-            if (msg.value < fee + amount)
-                revert ErrorsLib.InsufficientBalance();
+            if (msg.value < fee + amount) revert Error.InsufficientBalance();
             _lzSend(
                 layerZero.hostChainStationEid,
                 payload,
@@ -395,7 +393,7 @@ contract TreasuryExternalChainStation is
                 amount,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignature();
+        ) revert Error.InvalidSignature();
 
         nextFisherExecutionNonce[from]++;
     }
@@ -427,7 +425,7 @@ contract TreasuryExternalChainStation is
                 amount,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignature();
+        ) revert Error.InvalidSignature();
 
         verifyAndDepositERC20(tokenAddress, amount);
 
@@ -468,10 +466,10 @@ contract TreasuryExternalChainStation is
                 amount,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignature();
+        ) revert Error.InvalidSignature();
 
         if (msg.value != amount + priorityFee)
-            revert ErrorsLib.InsufficientBalance();
+            revert Error.InsufficientBalance();
 
         nextFisherExecutionNonce[from]++;
 
@@ -517,13 +515,13 @@ contract TreasuryExternalChainStation is
         bytes calldata _data
     ) external payable virtual {
         if (msg.sender != hyperlane.mailboxAddress)
-            revert ErrorsLib.MailboxNotAuthorized();
+            revert Error.MailboxNotAuthorized();
 
         if (_sender != hyperlane.hostChainStationAddress)
-            revert ErrorsLib.SenderNotAuthorized();
+            revert Error.SenderNotAuthorized();
 
         if (_origin != hyperlane.hostChainStationDomainId)
-            revert ErrorsLib.ChainIdNotAuthorized();
+            revert Error.ChainIdNotAuthorized();
 
         decodeAndGive(_data);
     }
@@ -563,10 +561,10 @@ contract TreasuryExternalChainStation is
     ) internal override {
         // Decode the payload to get the message
         if (_origin.srcEid != layerZero.hostChainStationEid)
-            revert ErrorsLib.ChainIdNotAuthorized();
+            revert Error.ChainIdNotAuthorized();
 
         if (_origin.sender != layerZero.hostChainStationAddress)
-            revert ErrorsLib.SenderNotAuthorized();
+            revert Error.SenderNotAuthorized();
 
         decodeAndGive(message);
     }
@@ -622,14 +620,14 @@ contract TreasuryExternalChainStation is
                 _sourceChain,
                 axelar.hostChainStationChainName
             )
-        ) revert ErrorsLib.ChainIdNotAuthorized();
+        ) revert Error.ChainIdNotAuthorized();
 
         if (
             !AdvancedStrings.equal(
                 _sourceAddress,
                 axelar.hostChainStationAddress
             )
-        ) revert ErrorsLib.SenderNotAuthorized();
+        ) revert Error.SenderNotAuthorized();
 
         decodeAndGive(_payload);
     }
@@ -837,7 +835,7 @@ contract TreasuryExternalChainStation is
     function verifyAndDepositERC20(address token, uint256 amount) internal {
         if (token == address(0)) revert();
         if (IERC20(token).allowance(msg.sender, address(this)) < amount)
-            revert ErrorsLib.InsufficientBalance();
+            revert Error.InsufficientBalance();
 
         IERC20(token).transferFrom(msg.sender, address(this), amount);
     }

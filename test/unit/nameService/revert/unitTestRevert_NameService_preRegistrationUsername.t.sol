@@ -28,11 +28,11 @@ import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
+    NameServiceError
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
 import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -74,7 +74,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked("test", uint256(10101))),
@@ -122,7 +122,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked(username, uint256(clowNumber))),
@@ -170,7 +170,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked(username, uint256(clowNumber))),
@@ -219,7 +219,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked(username, uint256(clowNumber))),
@@ -324,7 +324,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked(username, uint256(clowNumber))),
@@ -372,7 +372,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(EvvmError.InsufficientBalance.selector);
         /* 🢃 insufficient balance to cover priority fee 🢃 */
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,

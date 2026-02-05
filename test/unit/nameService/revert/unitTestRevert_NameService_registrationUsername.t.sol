@@ -28,11 +28,11 @@ import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
+    NameServiceError
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
 import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -115,7 +115,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "test",
@@ -430,7 +430,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        vm.expectRevert(ErrorsLib.InvalidUsername.selector);
+        vm.expectRevert(NameServiceError.InvalidUsername.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "@test",
@@ -506,7 +506,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        vm.expectRevert(ErrorsLib.UsernameAlreadyRegistered.selector);
+        vm.expectRevert(NameServiceError.UsernameAlreadyRegistered.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "test",
@@ -634,7 +634,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "test",
@@ -700,7 +700,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(EvvmError.InsufficientBalance.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "test",

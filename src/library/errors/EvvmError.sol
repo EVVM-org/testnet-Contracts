@@ -22,7 +22,7 @@ pragma solidity ^0.8.0;
  * @custom:security All errors are designed to provide clear failure reasons
  *                  without exposing sensitive internal state information
  */
-library ErrorsLib {
+library EvvmError {
     //░▒▓█ Access Control Errors ████████████████████████████████████████████████▓▒░
 
     /**

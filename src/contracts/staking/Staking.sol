@@ -49,7 +49,9 @@ import {
 import {
     StakingStructs
 } from "@evvm/testnet-contracts/contracts/staking/lib/StakingStructs.sol";
-import {ErrorsLib} from "./lib/ErrorsLib.sol";
+import {
+    StakingError as Error
+} from "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import {SignatureUtils} from "./lib/SignatureUtils.sol";
 
 contract Staking is AsyncNonce, StakingStructs {
@@ -96,7 +98,7 @@ contract Staking is AsyncNonce, StakingStructs {
 
     /// @dev Modifier to verify access to admin functions
     modifier onlyOwner() {
-        if (msg.sender != admin.actual) revert ErrorsLib.SenderIsNotAdmin();
+        if (msg.sender != admin.actual) revert Error.SenderIsNotAdmin();
 
         _;
     }
@@ -111,7 +113,7 @@ contract Staking is AsyncNonce, StakingStructs {
             size := extcodesize(callerAddress)
         }
 
-        if (size == 0) revert ErrorsLib.AddressIsNotAService();
+        if (size == 0) revert Error.AddressIsNotAService();
 
         _;
     }
@@ -183,7 +185,7 @@ contract Staking is AsyncNonce, StakingStructs {
         bytes memory signature_EVVM
     ) external {
         if (msg.sender != goldenFisher.actual)
-            revert ErrorsLib.SenderIsNotGoldenFisher();
+            revert Error.SenderIsNotGoldenFisher();
 
         stakingBaseProcess(
             AccountMetadata({Address: goldenFisher.actual, IsAService: false}),
@@ -219,7 +221,7 @@ contract Staking is AsyncNonce, StakingStructs {
         bytes memory signature_EVVM
     ) external {
         if (!allowPresaleStaking.flag || allowPublicStaking.flag)
-            revert ErrorsLib.PresaleStakingDisabled();
+            revert Error.PresaleStakingDisabled();
 
         if (
             !SignatureUtils.verifyMessageSignedForPresaleStake(
@@ -230,17 +232,17 @@ contract Staking is AsyncNonce, StakingStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnStaking();
+        ) revert Error.InvalidSignatureOnStaking();
 
         if (!userPresaleStaker[user].isAllow)
-            revert ErrorsLib.UserIsNotPresaleStaker();
+            revert Error.UserIsNotPresaleStaker();
 
         verifyAsyncNonce(user, nonce);
 
         uint256 current = userPresaleStaker[user].stakingAmount;
 
         if (isStaking ? current >= 2 : current == 0)
-            revert ErrorsLib.UserPresaleStakerLimitExceeded();
+            revert Error.UserPresaleStakerLimitExceeded();
 
         userPresaleStaker[user].stakingAmount = isStaking
             ? current + 1
@@ -283,7 +285,7 @@ contract Staking is AsyncNonce, StakingStructs {
         bool priorityFlag_EVVM,
         bytes memory signature_EVVM
     ) external {
-        if (!allowPublicStaking.flag) revert ErrorsLib.PublicStakingDisabled();
+        if (!allowPublicStaking.flag) revert Error.PublicStakingDisabled();
 
         if (
             !SignatureUtils.verifyMessageSignedForPublicStake(
@@ -294,7 +296,7 @@ contract Staking is AsyncNonce, StakingStructs {
                 nonce,
                 signature
             )
-        ) revert ErrorsLib.InvalidSignatureOnStaking();
+        ) revert Error.InvalidSignatureOnStaking();
 
         verifyAsyncNonce(user, nonce);
 
@@ -368,15 +370,15 @@ contract Staking is AsyncNonce, StakingStructs {
                 totalStakingRequired !=
             evvm.getBalance(address(this), evvm.getPrincipalTokenAddress())
         )
-            revert ErrorsLib.ServiceDoesNotFulfillCorrectStakingAmount(
+            revert Error.ServiceDoesNotFulfillCorrectStakingAmount(
                 totalStakingRequired
             );
 
         if (serviceStakingData.timestamp != block.timestamp)
-            revert ErrorsLib.ServiceDoesNotStakeInSameTx();
+            revert Error.ServiceDoesNotStakeInSameTx();
 
         if (serviceStakingData.service != msg.sender)
-            revert ErrorsLib.AddressMismatch();
+            revert Error.AddressMismatch();
 
         stakingBaseProcess(
             AccountMetadata({Address: msg.sender, IsAService: true}),
@@ -438,7 +440,7 @@ contract Staking is AsyncNonce, StakingStructs {
             if (
                 getTimeToUserUnlockStakingTime(account.Address) >
                 block.timestamp
-            ) revert ErrorsLib.AddressMustWaitToStakeAgain();
+            ) revert Error.AddressMustWaitToStakeAgain();
 
             if (!account.IsAService)
                 makePay(
@@ -462,7 +464,7 @@ contract Staking is AsyncNonce, StakingStructs {
                 if (
                     getTimeToUserUnlockFullUnstakingTime(account.Address) >
                     block.timestamp
-                ) revert ErrorsLib.AddressMustWaitToFullUnstake();
+                ) revert Error.AddressMustWaitToFullUnstake();
 
                 evvm.pointStaker(account.Address, 0x00);
             }
@@ -624,7 +626,7 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function addPresaleStaker(address _staker) external onlyOwner {
         if (presaleStakerCount > LIMIT_PRESALE_STAKER)
-            revert ErrorsLib.LimitPresaleStakersExceeded();
+            revert Error.LimitPresaleStakersExceeded();
 
         userPresaleStaker[_staker].isAllow = true;
         presaleStakerCount++;
@@ -638,7 +640,7 @@ contract Staking is AsyncNonce, StakingStructs {
     function addPresaleStakers(address[] calldata _stakers) external onlyOwner {
         for (uint256 i = 0; i < _stakers.length; i++) {
             if (presaleStakerCount > LIMIT_PRESALE_STAKER)
-                revert ErrorsLib.LimitPresaleStakersExceeded();
+                revert Error.LimitPresaleStakersExceeded();
 
             userPresaleStaker[_stakers[i]].isAllow = true;
             presaleStakerCount++;
@@ -670,10 +672,10 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function acceptNewAdmin() external {
         if (msg.sender != admin.proposal)
-            revert ErrorsLib.SenderIsNotProposedAdmin();
+            revert Error.SenderIsNotProposedAdmin();
 
         if (admin.timeToAccept > block.timestamp)
-            revert ErrorsLib.TimeToAcceptProposalNotReached();
+            revert Error.TimeToAcceptProposalNotReached();
 
         admin.actual = admin.proposal;
         admin.proposal = address(0);
@@ -705,7 +707,7 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function acceptNewGoldenFisher() external onlyOwner {
         if (goldenFisher.timeToAccept > block.timestamp)
-            revert ErrorsLib.TimeToAcceptProposalNotReached();
+            revert Error.TimeToAcceptProposalNotReached();
 
         goldenFisher.actual = goldenFisher.proposal;
         goldenFisher.proposal = address(0);
@@ -741,7 +743,7 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function acceptSetSecondsToUnlockStaking() external onlyOwner {
         if (secondsToUnlockStaking.timeToAccept > block.timestamp)
-            revert ErrorsLib.TimeToAcceptProposalNotReached();
+            revert Error.TimeToAcceptProposalNotReached();
 
         secondsToUnlockStaking.actual = secondsToUnlockStaking.proposal;
         secondsToUnlockStaking.proposal = 0;
@@ -777,7 +779,7 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function confirmSetSecondsToUnllockFullUnstaking() external onlyOwner {
         if (secondsToUnllockFullUnstaking.timeToAccept > block.timestamp)
-            revert ErrorsLib.TimeToAcceptProposalNotReached();
+            revert Error.TimeToAcceptProposalNotReached();
 
         secondsToUnllockFullUnstaking.actual = secondsToUnllockFullUnstaking
             .proposal;
@@ -809,7 +811,7 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function confirmChangeAllowPublicStaking() external onlyOwner {
         if (allowPublicStaking.timeToAccept > block.timestamp)
-            revert ErrorsLib.TimeToAcceptProposalNotReached();
+            revert Error.TimeToAcceptProposalNotReached();
 
         allowPublicStaking = BoolTypeProposal({
             flag: !allowPublicStaking.flag,
@@ -841,7 +843,7 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function confirmChangeAllowPresaleStaking() external onlyOwner {
         if (allowPresaleStaking.timeToAccept > block.timestamp)
-            revert ErrorsLib.TimeToAcceptProposalNotReached();
+            revert Error.TimeToAcceptProposalNotReached();
 
         allowPresaleStaking.flag = !allowPresaleStaking.flag;
         allowPresaleStaking.timeToAccept = 0;
@@ -874,7 +876,7 @@ contract Staking is AsyncNonce, StakingStructs {
      */
     function acceptNewEstimator() external onlyOwner {
         if (estimatorAddress.timeToAccept > block.timestamp)
-            revert ErrorsLib.TimeToAcceptProposalNotReached();
+            revert Error.TimeToAcceptProposalNotReached();
 
         estimatorAddress.actual = estimatorAddress.proposal;
         estimatorAddress.proposal = address(0);

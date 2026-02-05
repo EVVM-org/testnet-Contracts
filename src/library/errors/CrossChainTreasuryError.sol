@@ -11,7 +11,7 @@ pragma solidity ^0.8.0;
  *      Provides gas-efficient custom errors with descriptive names for better debugging
  *      and user experience across all cross-chain treasury operations
  */
-library ErrorsLib {
+library CrossChainTreasuryError {
     /// @notice Thrown when a user has insufficient balance for the requested operation
     /// @dev Used in withdraw operations and Fisher bridge transfers when EVVM balance is too low
     error InsufficientBalance();

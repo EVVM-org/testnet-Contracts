@@ -31,8 +31,8 @@ import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
 import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/treasury/lib/ErrorsLib.sol";
+    TreasuryError as Error
+} from "@evvm/testnet-contracts/library/errors/TreasuryError.sol";
 
 contract Treasury {
     /// @dev Reference to the EVVM core contract for balance management
@@ -61,18 +61,18 @@ contract Treasury {
         if (address(0) == token) {
             /// user is sending host native coin
             if (msg.value == 0)
-                revert ErrorsLib.DepositAmountMustBeGreaterThanZero();
+                revert Error.DepositAmountMustBeGreaterThanZero();
 
-            if (amount != msg.value) revert ErrorsLib.InvalidDepositAmount();
+            if (amount != msg.value) revert Error.InvalidDepositAmount();
 
             evvm.addAmountToUser(msg.sender, address(0), msg.value);
         } else {
             /// user is sending ERC20 tokens
 
-            if (msg.value != 0) revert ErrorsLib.DepositCoinWithToken();
+            if (msg.value != 0) revert Error.DepositCoinWithToken();
 
             if (amount == 0)
-                revert ErrorsLib.DepositAmountMustBeGreaterThanZero();
+                revert Error.DepositAmountMustBeGreaterThanZero();
 
             IERC20(token).transferFrom(msg.sender, address(this), amount);
             evvm.addAmountToUser(msg.sender, token, amount);
@@ -91,10 +91,10 @@ contract Treasury {
      */
     function withdraw(address token, uint256 amount) external {
         if (token == evvm.getPrincipalTokenAddress())
-            revert ErrorsLib.PrincipalTokenIsNotWithdrawable();
+            revert Error.PrincipalTokenIsNotWithdrawable();
 
         if (evvm.getBalance(msg.sender, token) < amount)
-            revert ErrorsLib.InsufficientBalance();
+            revert Error.InsufficientBalance();
 
         if (token == address(0)) {
             /// user is trying to withdraw native coin

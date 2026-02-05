@@ -21,12 +21,12 @@ pragma abicoder v2;
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
-import "@evvm/testnet-contracts/contracts/staking/lib/ErrorsLib.sol";
+import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+    EvvmError
+} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -130,7 +130,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.PresaleStakingDisabled.selector);
+        vm.expectRevert(StakingError.PresaleStakingDisabled.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -186,7 +186,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.PresaleStakingDisabled.selector);
+        vm.expectRevert(StakingError.PresaleStakingDisabled.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -244,7 +244,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.PresaleStakingDisabled.selector);
+        vm.expectRevert(StakingError.PresaleStakingDisabled.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -305,7 +305,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -355,7 +355,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -405,7 +405,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -466,7 +466,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -516,7 +516,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -565,7 +565,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.UserIsNotPresaleStaker.selector);
+        vm.expectRevert(StakingError.UserIsNotPresaleStaker.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -672,7 +672,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.UserPresaleStakerLimitExceeded.selector);
+        vm.expectRevert(StakingError.UserPresaleStakerLimitExceeded.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -748,7 +748,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.UserPresaleStakerLimitExceeded.selector);
+        vm.expectRevert(StakingError.UserPresaleStakerLimitExceeded.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -811,7 +811,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.AddressMustWaitToFullUnstake.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToFullUnstake.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -881,7 +881,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.AddressMustWaitToStakeAgain.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToStakeAgain.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -944,7 +944,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(EvvmError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -988,7 +988,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(EvvmError.InsufficientBalance.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
