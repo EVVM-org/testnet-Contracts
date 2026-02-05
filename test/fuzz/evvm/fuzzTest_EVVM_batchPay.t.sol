@@ -22,7 +22,7 @@ import {
     EvvmError
 } from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
-contract fuzzTest_EVVM_payMultiple is Test, Constants, EvvmStructs {
+contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
@@ -75,7 +75,7 @@ contract fuzzTest_EVVM_payMultiple is Test, Constants, EvvmStructs {
         bool[2] priorityFlag;
     }
 
-    function test__fuzz__payMultiple(
+    function test__fuzz__batchPay(
         PayMultipleFuzzTestInput memory input
     ) external {
         vm.assume(
@@ -89,7 +89,7 @@ contract fuzzTest_EVVM_payMultiple is Test, Constants, EvvmStructs {
                     input.nonce[0] == input.nonce[1])
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](2);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](2);
 
         AccountData memory FISHER = input.useStaker
             ? COMMON_USER_STAKER
@@ -145,7 +145,7 @@ contract fuzzTest_EVVM_payMultiple is Test, Constants, EvvmStructs {
                 input.priorityFee[i]
             );
 
-            payData[i] = EvvmStructs.PayData({
+            batchData[i] = EvvmStructs.BatchData({
                 from: COMMON_USER_NO_STAKER_1.Address,
                 to_address: input.useToAddress[i]
                     ? COMMON_USER_NO_STAKER_2.Address
@@ -173,7 +173,7 @@ contract fuzzTest_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(FISHER.Address);
         (uint256 successfulTransactions, bool[] memory status) = evvm
-            .payMultiple(payData);
+            .batchPay(batchData);
         vm.stopPrank();
 
         assertEq(successfulTransactions, 2);

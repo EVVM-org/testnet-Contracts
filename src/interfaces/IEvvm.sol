@@ -25,7 +25,7 @@ library EvvmStructs {
         uint256 reward;
     }
 
-    struct PayData {
+    struct BatchData {
         address from;
         address to_address;
         string to_identity;
@@ -111,7 +111,7 @@ interface IEvvm {
         address executor,
         bytes memory signature
     ) external;
-    function payMultiple(EvvmStructs.PayData[] memory payData)
+    function batchPay(EvvmStructs.BatchData[] memory batchData)
         external
         returns (uint256 successfulTransactions, bool[] memory results);
     function pointStaker(address user, bytes1 answer) external;

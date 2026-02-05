@@ -37,7 +37,7 @@ library SignatureUtils {
     /**
      * @notice Verifies EIP-191 signature for single payment operations
      * @dev Constructs the expected message from payment parameters and verifies
-     *      the signature matches the signer. Used in pay() and payMultiple() functions.
+     *      the signature matches the signer. Used in pay() and batchPay() functions.
      *
      * Message Construction:
      * - If receiverAddress is address(0): uses receiverIdentity string

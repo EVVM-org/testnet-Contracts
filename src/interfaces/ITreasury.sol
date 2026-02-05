@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 interface ITreasury {
     error DepositAmountMustBeGreaterThanZero();
+    error DepositCoinWithToken();
     error InsufficientBalance();
     error InvalidDepositAmount();
     error PrincipalTokenIsNotWithdrawable();

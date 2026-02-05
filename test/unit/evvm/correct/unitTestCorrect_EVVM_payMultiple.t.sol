@@ -26,7 +26,7 @@ import {
     EvvmError
 } from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
-contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
+contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
     function executeBeforeSetUp() internal override {
         _execute_makeRegistrationUsername(
@@ -54,7 +54,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         return (_amount, _priorityFee);
     }
 
-    function test__unit_correct__payMultiple__noStaker() external {
+    function test__unit_correct__batchPay__noStaker() external {
         (uint256 amount_1, uint256 priorityFee_1) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             ETHER_ADDRESS,
@@ -131,7 +131,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         AccountData memory executor = COMMON_USER_NO_STAKER_3;
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](8);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](8);
 
         bytes memory signature;
 
@@ -149,7 +149,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
             false,
             address(0)
         );
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -163,7 +163,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toAddress -- Executor 🢃 */
-        payData[1] = EvvmStructs.PayData(
+        batchData[1] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -187,7 +187,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toUsername -- No executor 🢃 */
-        payData[2] = EvvmStructs.PayData(
+        batchData[2] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -211,7 +211,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toUsername -- Executor 🢃 */
-        payData[3] = EvvmStructs.PayData(
+        batchData[3] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -237,7 +237,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Async execution ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         /* 🢃 toAddress -- No executor 🢃 */
-        payData[4] = EvvmStructs.PayData(
+        batchData[4] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -261,7 +261,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toAddress -- Executor 🢃 */
-        payData[5] = EvvmStructs.PayData(
+        batchData[5] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -285,7 +285,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toUsername -- No executor 🢃 */
-        payData[6] = EvvmStructs.PayData(
+        batchData[6] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -309,7 +309,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toUsername -- Executor 🢃 */
-        payData[7] = EvvmStructs.PayData(
+        batchData[7] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -334,7 +334,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(executor.Address);
         (uint256 successfulTransactions, bool[] memory results) = evvm
-            .payMultiple(payData);
+            .batchPay(batchData);
         vm.stopPrank();
 
         assertEq(successfulTransactions, 8, "all transactions should succeed");
@@ -387,7 +387,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_correct__payMultiple__staker() external {
+    function test__unit_correct__batchPay__staker() external {
         (uint256 amount_1, uint256 priorityFee_1) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             ETHER_ADDRESS,
@@ -464,7 +464,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         AccountData memory executor = COMMON_USER_STAKER;
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](8);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](8);
 
         bytes memory signature;
 
@@ -482,7 +482,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
             false,
             address(0)
         );
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -496,7 +496,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toAddress -- Executor 🢃 */
-        payData[1] = EvvmStructs.PayData(
+        batchData[1] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -520,7 +520,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toUsername -- No executor 🢃 */
-        payData[2] = EvvmStructs.PayData(
+        batchData[2] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -544,7 +544,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toUsername -- Executor 🢃 */
-        payData[3] = EvvmStructs.PayData(
+        batchData[3] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -570,7 +570,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Async execution ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         /* 🢃 toAddress -- No executor 🢃 */
-        payData[4] = EvvmStructs.PayData(
+        batchData[4] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -594,7 +594,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toAddress -- Executor 🢃 */
-        payData[5] = EvvmStructs.PayData(
+        batchData[5] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -618,7 +618,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toUsername -- No executor 🢃 */
-        payData[6] = EvvmStructs.PayData(
+        batchData[6] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -642,7 +642,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
 
         /* 🢃 toUsername -- Executor 🢃 */
-        payData[7] = EvvmStructs.PayData(
+        batchData[7] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -667,7 +667,7 @@ contract unitTestCorrect_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(executor.Address);
         (uint256 successfulTransactions, bool[] memory results) = evvm
-            .payMultiple(payData);
+            .batchPay(batchData);
         vm.stopPrank();
 
         assertEq(successfulTransactions, 8, "all transactions should succeed");

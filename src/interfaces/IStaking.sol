@@ -23,11 +23,15 @@ interface IStaking {
     error AddressMustWaitToStakeAgain();
     error AsyncNonceAlreadyUsed();
     error InvalidSignatureOnStaking();
+    error LimitPresaleStakersExceeded();
     error PresaleStakingDisabled();
+    error PublicStakingDisabled();
     error SenderIsNotAdmin();
     error SenderIsNotGoldenFisher();
+    error SenderIsNotProposedAdmin();
     error ServiceDoesNotFulfillCorrectStakingAmount(uint256 requiredAmount);
     error ServiceDoesNotStakeInSameTx();
+    error TimeToAcceptProposalNotReached();
     error UserIsNotPresaleStaker();
     error UserPresaleStakerLimitExceeded();
 
@@ -59,7 +63,7 @@ interface IStaking {
     function getGoldenFisher() external view returns (address);
     function getGoldenFisherProposal() external view returns (address);
     function getIfUsedAsyncNonce(address user, uint256 nonce) external view returns (bool);
-    function getMateAddress() external pure returns (address);
+    function getMateAddress() external view returns (address);
     function getOwner() external view returns (address);
     function getPresaleStaker(address _account) external view returns (bool, uint256);
     function getPresaleStakerCount() external view returns (uint256);

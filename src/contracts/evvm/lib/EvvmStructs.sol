@@ -12,7 +12,7 @@ pragma solidity ^0.8.0;
  *      and system configuration. These structures are not shared with external services.
  *
  * Structure Categories:
- * - Payment Structures: PayData, DispersePayData, CaPayData for transaction processing
+ * - Payment Structures: BatchData, DisperseBatchData, CaBatchData for transaction processing
  * - Governance Structures: AddressTypeProposal, UintTypeProposal for time-delayed changes
  * - Metadata Structures: EvvmMetadata for system-wide configuration
  *
@@ -26,7 +26,7 @@ abstract contract EvvmStructs {
 
     /**
      * @notice Data structure for single payment operations
-     * @dev Used in pay() and payMultiple() functions for individual transfers
+     * @dev Used in pay() and batchPay() functions for individual transfers
      *
      * @param from Address of the payment sender (signer of the transaction)
      * @param to_address Direct recipient address (used if to_identity is empty)
@@ -39,7 +39,7 @@ abstract contract EvvmStructs {
      * @param executor Address authorized to execute this transaction (address(0) = any)
      * @param signature EIP-191 signature authorizing this payment
      */
-    struct PayData {
+    struct BatchData {
         address from;
         address to_address;
         string to_identity;
@@ -66,7 +66,7 @@ abstract contract EvvmStructs {
      * @param executor Address authorized to execute this distribution (address(0) = any)
      * @param signature EIP-191 signature authorizing this distribution
      */
-    struct DispersePayData {
+    struct DisperseBatchData {
         address from;
         DispersePayMetadata[] toData;
         address token;
@@ -87,7 +87,7 @@ abstract contract EvvmStructs {
      * @param token Address of the token to transfer (address(0) for ETH)
      * @param amount Amount of tokens to transfer
      */
-    struct CaPayData {
+    struct CaBatchData {
         address from;
         address to;
         address token;
@@ -103,7 +103,7 @@ abstract contract EvvmStructs {
      * @param token Address of the token to distribute (address(0) for ETH)
      * @param amount Total amount being distributed (must equal sum of toData amounts)
      */
-    struct DisperseCaPayData{
+    struct DisperseCaBatchData{
         address from;
         DisperseCaPayMetadata[] toData;
         address token;
@@ -114,7 +114,7 @@ abstract contract EvvmStructs {
 
     /**
      * @notice Recipient metadata for user-signed disperse payments
-     * @dev Used within DispersePayData to specify individual recipients
+     * @dev Used within DisperseBatchData to specify individual recipients
      *
      * @param amount Amount of tokens to send to this recipient
      * @param to_address Direct recipient address (used if to_identity is empty)
@@ -128,7 +128,7 @@ abstract contract EvvmStructs {
 
     /**
      * @notice Recipient metadata for contract-based disperse payments
-     * @dev Used within DisperseCaPayData to specify individual recipients
+     * @dev Used within DisperseCaBatchData to specify individual recipients
      *      Simpler than DispersePayMetadata as identity resolution is not supported
      *
      * @param amount Amount of tokens to send to this recipient

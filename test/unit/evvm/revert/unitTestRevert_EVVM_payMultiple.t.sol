@@ -29,7 +29,7 @@ import {
     EvvmError
 } from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
-contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
+contract unitTestRevert_EVVM_batchPay is Test, Constants, EvvmStructs {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
     function executeBeforeSetUp() internal override {
         _execute_makeRegistrationUsername(
@@ -57,7 +57,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         return (_amount, _priorityFee);
     }
 
-    function test__unit_revert__payMultiple__InvalidSignature_evvmID()
+    function test__unit_revert__batchPay__InvalidSignature_evvmID()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -67,7 +67,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
@@ -90,7 +90,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             s
         );
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -106,7 +106,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.payMultiple(payData);
+        evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -122,7 +122,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__InvalidSignature_signer()
+    function test__unit_revert__batchPay__InvalidSignature_signer()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -132,9 +132,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -161,7 +161,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.payMultiple(payData);
+        evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -177,7 +177,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__InvalidSignature_receiverAddress()
+    function test__unit_revert__batchPay__InvalidSignature_receiverAddress()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -187,9 +187,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -216,7 +216,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.payMultiple(payData);
+        evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -232,7 +232,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__InvalidSignature_receiverIdentity()
+    function test__unit_revert__batchPay__InvalidSignature_receiverIdentity()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -242,9 +242,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -271,7 +271,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.payMultiple(payData);
+        evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -287,7 +287,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__InvalidSignature_token()
+    function test__unit_revert__batchPay__InvalidSignature_token()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -297,9 +297,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -326,7 +326,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.payMultiple(payData);
+        evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -342,7 +342,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__InvalidSignature_amount()
+    function test__unit_revert__batchPay__InvalidSignature_amount()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -352,9 +352,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -381,7 +381,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.payMultiple(payData);
+        evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -397,7 +397,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__InvalidSignature_priorityFee()
+    function test__unit_revert__batchPay__InvalidSignature_priorityFee()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -407,9 +407,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -436,7 +436,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.payMultiple(payData);
+        evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -452,7 +452,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__InvalidSignature_nonce()
+    function test__unit_revert__batchPay__InvalidSignature_nonce()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -462,9 +462,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -491,7 +491,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.payMultiple(payData);
+        evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -507,7 +507,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__InvalidSignature_priorityFlag()
+    function test__unit_revert__batchPay__InvalidSignature_priorityFlag()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -517,9 +517,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -546,7 +546,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.payMultiple(payData);
+        evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -562,7 +562,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__InvalidSignature_executor()
+    function test__unit_revert__batchPay__InvalidSignature_executor()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -572,9 +572,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -601,7 +601,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.payMultiple(payData);
+        evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -617,7 +617,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__SKIP_SenderIsNotTheExecutor()
+    function test__unit_revert__batchPay__SKIP_SenderIsNotTheExecutor()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -627,9 +627,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -655,7 +655,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         /* 🢃 Different executor 🢃 */
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.payMultiple(payData);
+        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -677,7 +677,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__SKIP_AsyncNonceAlreadyUsed()
+    function test__unit_revert__batchPay__SKIP_AsyncNonceAlreadyUsed()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -687,9 +687,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](2);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](2);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -712,7 +712,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             )
         );
 
-        payData[1] = EvvmStructs.PayData(
+        batchData[1] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -740,7 +740,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
         (uint256 successfulTransactions, bool[] memory results) = evvm
-            .payMultiple(payData);
+            .batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -764,7 +764,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__SKIP_SyncNonceMismatch()
+    function test__unit_revert__batchPay__SKIP_SyncNonceMismatch()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -774,9 +774,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -803,7 +803,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.payMultiple(payData);
+        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -825,7 +825,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__SKIP_InsufficientBalance_amount()
+    function test__unit_revert__batchPay__SKIP_InsufficientBalance_amount()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -835,9 +835,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -864,7 +864,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.payMultiple(payData);
+        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -886,7 +886,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__payMultiple__SKIP_InsufficientBalance_priotityFee()
+    function test__unit_revert__batchPay__SKIP_InsufficientBalance_priotityFee()
         external
     {
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -896,9 +896,9 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
             0.01 ether
         );
 
-        EvvmStructs.PayData[] memory payData = new EvvmStructs.PayData[](1);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](1);
 
-        payData[0] = EvvmStructs.PayData(
+        batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -925,7 +925,7 @@ contract unitTestRevert_EVVM_payMultiple is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_STAKER.Address);
 
-        (uint256 successfulTransactions, ) = evvm.payMultiple(payData);
+        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(

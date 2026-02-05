@@ -32,7 +32,7 @@ pragma solidity ^0.8.0;
  * Key Features:
  * - Synchronous and asynchronous payment processing with nonce management
  * - Staker privilege system with enhanced rewards and transaction processing benefits
- * - Multi-recipient payment batching (payMultiple, dispersePay)
+ * - Multi-recipient payment batching (batchPay, dispersePay)
  * - Administrative payment distribution (caPay, disperseCaPay)
  * - Proxy pattern support with delegatecall fallback for upgradeability
  * - Cross-chain asset bridging capabilities through Fisher Bridge
@@ -42,7 +42,7 @@ pragma solidity ^0.8.0;
  * Payment Types:
  * - `payNoStaker_*`: Standard payments for non-stakers with basic functionality
  * - `payStaker_*`: Enhanced payments for Principal Token stakers with priority fee rewards
- * - `payMultiple`: Batch payments to multiple recipients with individual success tracking
+ * - `batchPay`: Batch payments to multiple recipients with individual success tracking
  * - `dispersePay`: Single-source multi-recipient distribution with signature verification
  * - `caPay`: Administrative token distribution for smart contracts
  * - Treasury functions: Direct balance manipulation for authorized operations
@@ -440,20 +440,20 @@ contract Evvm is EvvmStorage {
      * - successfulTransactions: Count of completed payments
      * - results: Boolean array indicating success/failure for each payment
      *
-     * @param payData Array of PayData structures containing payment details
+     * @param batchData Array of BatchData structures containing payment details
      * @return successfulTransactions Number of payments that completed successfully
      * @return results Boolean array with success status for each payment
      */
-    function payMultiple(
-        PayData[] memory payData
+    function batchPay(
+        BatchData[] memory batchData
     ) external returns (uint256 successfulTransactions, bool[] memory results) {
         bool isSenderStaker = isAddressStaker(msg.sender);
         address to_aux;
-        PayData memory payment;
-        results = new bool[](payData.length);
+        BatchData memory payment;
+        results = new bool[](batchData.length);
 
-        for (uint256 iteration = 0; iteration < payData.length; iteration++) {
-            payment = payData[iteration];
+        for (uint256 iteration = 0; iteration < batchData.length; iteration++) {
+            payment = batchData[iteration];
             if (
                 !SignatureUtils.verifyMessageSignedForPay(
                     evvmMetadata.EvvmID,

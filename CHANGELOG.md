@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Updated error imports for all services (including the EVVM core contract) to `ErrorsLib` from `<service>Error` for improved readability and maintainability
+- Changed `payMultiple` function name and `PayData` struct to `batchPay` and `BatchData` respectively in `Evvm.sol` to better reflect its functionality of handling multiple payments in a single transaction
 
 ### Removed
 
