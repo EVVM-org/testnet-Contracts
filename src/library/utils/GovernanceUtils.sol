@@ -40,14 +40,11 @@ library ProposalStructs {
 }
 
 /**
- * @title AdminControlled
+ * @title Admin
  * @notice Base contract for admin-controlled contracts with time-delayed governance
  */
-abstract contract AdminControlled {
+abstract contract Admin {
     ProposalStructs.AddressTypeProposal public admin;
-
-    event AdminProposed(address indexed newAdmin, uint256 timeToAccept);
-    event AdminAccepted(address indexed newAdmin);
 
     error SenderIsNotAdmin();
     error ProposalNotReady();
@@ -55,6 +52,10 @@ abstract contract AdminControlled {
     modifier onlyAdmin() {
         if (msg.sender != admin.current) revert SenderIsNotAdmin();
         _;
+    }
+
+    constructor(address initialAdmin) {
+        admin.current = initialAdmin;
     }
 
     /**
@@ -65,17 +66,12 @@ abstract contract AdminControlled {
     function proposeAdmin(address newAdmin, uint256 delay) external onlyAdmin {
         admin.proposal = newAdmin;
         admin.timeToAccept = block.timestamp + delay;
-        emit AdminProposed(newAdmin, admin.timeToAccept);
     }
 
-    /**
-     * @notice Accepts the admin proposal after time delay
-     */
     function acceptAdminProposal() external onlyAdmin {
         if (block.timestamp < admin.timeToAccept) revert ProposalNotReady();
         admin.current = admin.proposal;
         admin.proposal = address(0);
         admin.timeToAccept = 0;
-        emit AdminAccepted(admin.current);
     }
 }

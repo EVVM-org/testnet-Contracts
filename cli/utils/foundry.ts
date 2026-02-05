@@ -702,6 +702,7 @@ export async function contractInterfacesGenerator() {
       "Evvm",
       "NameService",
       "P2PSwap",
+      "State",
       "Staking",
       "Estimator",
       "Treasury",
@@ -725,6 +726,10 @@ export async function contractInterfacesGenerator() {
     {
       contractName: "P2PSwap",
       folderName: "p2pSwap",
+    },
+    {
+      contractName: "State",
+      folderName: "state",
     },
     {
       contractName: "Staking",

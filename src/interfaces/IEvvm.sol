@@ -3,6 +3,19 @@
 pragma solidity ^0.8.0;
 
 library EvvmStructs {
+    struct BatchData {
+        address from;
+        address to_address;
+        string to_identity;
+        address token;
+        uint256 amount;
+        uint256 priorityFee;
+        uint256 nonce;
+        bool priorityFlag;
+        address executor;
+        bytes signature;
+    }
+
     struct DisperseCaPayMetadata {
         uint256 amount;
         address toAddress;
@@ -23,19 +36,6 @@ library EvvmStructs {
         uint256 totalSupply;
         uint256 eraTokens;
         uint256 reward;
-    }
-
-    struct BatchData {
-        address from;
-        address to_address;
-        string to_identity;
-        address token;
-        uint256 amount;
-        uint256 priorityFee;
-        uint256 nonce;
-        bool priorityFlag;
-        address executor;
-        bytes signature;
     }
 }
 
@@ -64,6 +64,9 @@ interface IEvvm {
     function acceptImplementation() external;
     function addAmountToUser(address user, address token, uint256 amount) external;
     function addBalance(address user, address token, uint256 quantity) external;
+    function batchPay(EvvmStructs.BatchData[] memory batchData)
+        external
+        returns (uint256 successfulTransactions, bool[] memory results);
     function caPay(address to, address token, uint256 amount) external;
     function disperseCaPay(EvvmStructs.DisperseCaPayMetadata[] memory toData, address token, uint256 amount) external;
     function dispersePay(
@@ -111,9 +114,6 @@ interface IEvvm {
         address executor,
         bytes memory signature
     ) external;
-    function batchPay(EvvmStructs.BatchData[] memory batchData)
-        external
-        returns (uint256 successfulTransactions, bool[] memory results);
     function pointStaker(address user, bytes1 answer) external;
     function proposeAdmin(address _newOwner) external;
     function proposeImplementation(address _newImpl) external;

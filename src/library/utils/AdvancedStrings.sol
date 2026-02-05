@@ -104,16 +104,16 @@ library AdvancedStrings {
         if (data.length == 0) {
             return "0x";
         }
-        
+
         bytes memory result = new bytes(2 + data.length * 2);
         result[0] = "0";
         result[1] = "x";
-        
+
         for (uint256 i = 0; i < data.length; i++) {
             result[2 + i * 2] = HEX_DIGITS[uint8(data[i] >> 4)];
             result[3 + i * 2] = HEX_DIGITS[uint8(data[i] & 0x0f)];
         }
-        
+
         return string(result);
     }
 
@@ -129,12 +129,12 @@ library AdvancedStrings {
         bytes memory result = new bytes(66);
         result[0] = "0";
         result[1] = "x";
-        
+
         for (uint256 i = 0; i < 32; i++) {
             result[2 + i * 2] = HEX_DIGITS[uint8(data[i] >> 4)];
             result[3 + i * 2] = HEX_DIGITS[uint8(data[i] & 0x0f)];
         }
-        
+
         return string(result);
     }
 
@@ -146,5 +146,26 @@ library AdvancedStrings {
      */
     function boolToString(bool value) internal pure returns (string memory) {
         return value ? "true" : "false";
+    }
+
+    function buildSignaturePayload(
+        uint256 evvmId,
+        address serviceAddress,
+        bytes32 hashPayload,
+        uint256 nonce,
+        bool isAsyncExec
+    ) internal pure returns (string memory) {
+        return
+            string.concat(
+                uintToString(evvmId),
+                ",",
+                addressToString(serviceAddress),
+                ",",
+                bytes32ToString(hashPayload),
+                ",",
+                uintToString(nonce),
+                ",",
+                boolToString(isAsyncExec)
+            );
     }
 }

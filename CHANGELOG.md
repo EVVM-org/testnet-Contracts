@@ -8,11 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.0] - [Unreleased]
 
 ### Added
+- Added `State.sol` contract as a centralized nonce coordinator for async and sync nonce validation across all EVVM services, ensuring atomic nonce consumption and preventing replay attacks in multi-service transactions
+- Added `buildSignaturePayload` function in `AdvancedStrings.sol` to generate a standardized string representation of transaction data for signature generation and verification, enhancing security and consistency across services
+- Added `State` interface generator on cli
+- Added `IState` interface for cross-contract interaction with `State.sol`
 
 ### Changed
 - Updated error imports for all services (including the EVVM core contract) to `ErrorsLib` from `<service>Error` for improved readability and maintainability
 - Changed `payMultiple` function name and `PayData` struct to `batchPay` and `BatchData` respectively in `Evvm.sol` to better reflect its functionality of handling multiple payments in a single transaction
 - Updated import paths for all struct libraries across the project to point to `library/structs/` directory instead of `contracts/<service>/lib/` for better organization and clarity
+- Renamed `priorityFlag` to `isAsyncExec` for clearer async nonce execution identification
+- Changed `AdminControlled` name to `Admin` for brevity and consistency across contracts on path `library/utils/governannceUtils.sol`
 
 ### Removed
 
