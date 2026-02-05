@@ -38,7 +38,7 @@ import {
 } from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
 import {
     HostChainStationStructs
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/HostChainStationStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/HostChainStationStructs.sol";
 
 import {
     SignatureUtils

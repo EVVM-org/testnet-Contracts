@@ -62,7 +62,7 @@ import {
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
 import {
     NameServiceStructs
-} from "@evvm/testnet-contracts/contracts/nameService/lib/NameServiceStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 import {
     AdvancedStrings
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";

@@ -9,7 +9,9 @@ import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {Treasury} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
-import {EvvmStructs} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+import {
+    EvvmStructs
+} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
 import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
 import {BaseInputs} from "../input/BaseInputs.sol";
 

@@ -25,7 +25,7 @@ import "forge-std/console2.sol";
 import {Constants} from "test/Constants.sol";
 import {
     EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
 
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
@@ -43,14 +43,14 @@ import {
 } from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
 import {
     EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
 import {
     Treasury
 } from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
 import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
 import {
     P2PSwapStructs
-} from "@evvm/testnet-contracts/contracts/p2pSwap/lib/P2PSwapStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
     

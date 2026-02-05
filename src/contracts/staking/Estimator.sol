@@ -42,7 +42,7 @@ MMMMMMMMMMMM
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     StakingStructs
-} from "@evvm/testnet-contracts/contracts/staking/lib/StakingStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 
 contract Estimator {

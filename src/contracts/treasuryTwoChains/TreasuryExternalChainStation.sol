@@ -37,7 +37,7 @@ import {
 } from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
 import {
     ExternalChainStationStructs
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/ExternalChainStationStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/ExternalChainStationStructs.sol";
 
 import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
 

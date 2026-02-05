@@ -3,7 +3,9 @@
 
 pragma solidity ^0.8.0;
 
-import {EvvmStructs} from "./EvvmStructs.sol";
+import {
+    EvvmStructs
+} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
 
 /**
  * @title EvvmStorage

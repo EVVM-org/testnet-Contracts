@@ -38,14 +38,14 @@ import {
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {
     EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
 import {
     Treasury
 } from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
 import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
 import {
     P2PSwapStructs
-} from "@evvm/testnet-contracts/contracts/p2pSwap/lib/P2PSwapStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;

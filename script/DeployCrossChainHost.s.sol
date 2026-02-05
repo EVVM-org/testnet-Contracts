@@ -14,16 +14,16 @@ import {
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
     EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
 import {
     TreasuryHostChainStation
 } from "@evvm/testnet-contracts/contracts/treasuryTwoChains/TreasuryHostChainStation.sol";
 import {
     HostChainStationStructs
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/HostChainStationStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/HostChainStationStructs.sol";
 import {
     ExternalChainStationStructs
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/ExternalChainStationStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/ExternalChainStationStructs.sol";
 import {
     P2PSwap
 } from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";

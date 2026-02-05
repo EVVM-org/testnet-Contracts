@@ -37,16 +37,19 @@ pragma solidity ^0.8.0;
  */
 
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {SignatureUtils} from "@evvm/testnet-contracts/contracts/p2pSwap/lib/SignatureUtils.sol";
-import {AdvancedStrings} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {P2PSwapStructs} from "@evvm/testnet-contracts/contracts/p2pSwap/lib/P2PSwapStructs.sol";
+import {
+    SignatureUtils
+} from "@evvm/testnet-contracts/contracts/p2pSwap/lib/SignatureUtils.sol";
+import {
+    AdvancedStrings
+} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    P2PSwapStructs
+} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 import {EvvmStructs} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
 import {EvvmService} from "@evvm/testnet-contracts/library/EvvmService.sol";
 
-contract P2PSwap is
-    EvvmService,
-    P2PSwapStructs
-{
+contract P2PSwap is EvvmService, P2PSwapStructs {
     address owner;
     address owner_proposal;
     uint256 owner_timeToAccept;
@@ -86,9 +89,7 @@ contract P2PSwap is
         address _evvmAddress,
         address _stakingAddress,
         address _owner
-    )
-        EvvmService(_evvmAddress, _stakingAddress)
-    {
+    ) EvvmService(_evvmAddress, _stakingAddress) {
         owner = _owner;
         maxLimitFillFixedFee = 0.001 ether;
         percentageFee = 500;
@@ -465,10 +466,7 @@ contract P2PSwap is
         uint256 orderId,
         address user
     ) internal view {
-        if (
-            market == 0 ||
-            ordersInsideMarket[market][orderId].seller != user
-        ) {
+        if (market == 0 || ordersInsideMarket[market][orderId].seller != user) {
             revert("Invalid order");
         }
     }
@@ -539,8 +537,10 @@ contract P2PSwap is
         address executor,
         uint256 priorityFee
     ) internal {
-        uint256 sellerAmount = orderAmount + ((fee * rewardPercentage.seller) / 10_000);
-        uint256 executorAmount = priorityFee + ((fee * rewardPercentage.mateStaker) / 10_000);
+        uint256 sellerAmount = orderAmount +
+            ((fee * rewardPercentage.seller) / 10_000);
+        uint256 executorAmount = priorityFee +
+            ((fee * rewardPercentage.mateStaker) / 10_000);
 
         EvvmStructs.DisperseCaPayMetadata[]
             memory toData = new EvvmStructs.DisperseCaPayMetadata[](2);

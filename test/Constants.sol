@@ -33,7 +33,7 @@ import {
 import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
 import {
     P2PSwapStructs
-} from "@evvm/testnet-contracts/contracts/p2pSwap/lib/P2PSwapStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 import {ERC20} from "@solady/tokens/ERC20.sol";
 import {
     StakingServiceUtils
@@ -42,7 +42,7 @@ import {IStaking} from "@evvm/testnet-contracts/interfaces/IStaking.sol";
 import {IEvvm} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
 import {
     EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
 import {
     EvvmStorage
 } from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";

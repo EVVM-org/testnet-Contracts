@@ -48,7 +48,7 @@ import {
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
 import {
     StakingStructs
-} from "@evvm/testnet-contracts/contracts/staking/lib/StakingStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 import {
     StakingError as Error
 } from "@evvm/testnet-contracts/library/errors/StakingError.sol";
