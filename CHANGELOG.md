@@ -8,45 +8,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.0] - [Unreleased]
 
 ### Added
-- Added `State.sol` contract as a centralized nonce coordinator for async and sync nonce validation across all EVVM services, ensuring atomic nonce consumption and preventing replay attacks in multi-service transactions
-- Added `buildSignaturePayload` function in `AdvancedStrings.sol` to generate a standardized string representation of transaction data for signature generation and verification, enhancing security and consistency across services
-- Added `State` interface generator on cli
-- Added `IState` interface for cross-contract interaction with `State.sol`
+- **State.sol**: Centralized nonce coordinator for async and sync nonce validation across EVVM services, preventing replay attacks in multi-service transactions
+- **AdvancedStrings.sol**: `buildSignaturePayload` function for standardized signature generation and verification
+- **CLI**: State interface generator
+- **IState**: Interface for cross-contract interaction with State.sol
 
 ### Changed
-- Updated error imports for all services (including the EVVM core contract) to `ErrorsLib` from `<service>Error` for improved readability and maintainability
-- Changed `payMultiple` function name and `PayData` struct to `batchPay` and `BatchData` respectively in `Evvm.sol` to better reflect its functionality of handling multiple payments in a single transaction
-- Updated import paths for all struct libraries across the project to point to `library/structs/` directory instead of `contracts/<service>/lib/` for better organization and clarity
-- Renamed `priorityFlag` to `isAsyncExec` for clearer async nonce execution identification
-- Renamed `clowNumber` to `lockNumber` in NameService related functions for better clarity on its purpose
-- Changed `AdminControlled` name to `Admin` for brevity and consistency across contracts on path `library/utils/governannceUtils.sol`
+- **Error handling**: Updated error imports for all services (including the EVVM core contract) to `ErrorsLib` from `<service>Error` for improved readability and maintainability
+- **Payment functions**: Renamed `payMultiple` to `batchPay` and `PayData` to `BatchData` in Evvm.sol for clarity
+- **Import paths**: Moved all struct libraries from `contracts/<service>/lib/` to `library/structs/` for better organization
+- **Parameter naming**: 
+  - `priorityFlag` to `isAsyncExec` for clearer async execution identification
+  - `clowNumber` to `lockNumber` in NameService related functions
+- **Contract naming**: Renamed `AdminControlled` to `Admin` in `library/utils/governanceUtils.sol`
 
 ### Removed
 
 ### Fixed
-- Default values for Hyperlane, LayerZero, and Axelar data when user opts not to add on cli deployment script are now properly set to empty values instead of undefined
+- **CLI**: Default values for Hyperlane, LayerZero, and Axelar data when user opts not to add on cli deployment script are now properly set to empty values instead of undefined
 
 ## [2.3.0] - 2026-01-26
 
 ### Added
-- Added `CHANGELOG.md` file to document changes in the project
-- Complete NatSpec documentation for all contracts
-- NatSpec for `evvm/lib/` (ErrorsLib, EvvmStorage, EvvmStructs, SignatureUtils)
-- NatSpec for `nameService/lib/` (ErrorsLib, IdentityValidation, NameServiceStructs, SignatureUtils)
-- NatSpec for `staking/lib/` (ErrorsLib, SignatureUtils, StakingStructs)
-- NatSpec for `treasury/lib/` (ErrorsLib)
-- NatSpec for `library/` (EvvmService, SignatureRecover, AdvancedStrings, nonces, service utils)
-- NatSpec for `Estimator.sol`
-- Updated GitHub Issue Templates (bug_report.md, feature_request.md)
-- Added `getEvvmID` function in `EvvmService.sol` for backend imporves 
+- `CHANGELOG.md` to track project changes
+- `getEvvmID` function in `EvvmService.sol` for backend improvements
+- **NatSpec documentation** for all contracts:
+  - Core library contracts: ErrorsLib, EvvmStorage, EvvmStructs, SignatureUtils (evvm/lib/)
+  - NameService library: ErrorsLib, IdentityValidation, NameServiceStructs, SignatureUtils
+  - Staking library: ErrorsLib, SignatureUtils, StakingStructs
+  - Treasury library: ErrorsLib
+  - Shared libraries: EvvmService, SignatureRecover, AdvancedStrings, nonces, service utils
+  - Estimator.sol contract
 
 ### Changed
-- Improved documentation clarity for community developers
-- Improve testing scripts for more clarity during debugging phase
-- Improved issue templates for better reporting and disclosure of AI tools used 
-- Improved `payMultiple` function on `Evvm.sol` to be more gas efficient and more legible
-- Replace all import interfaces on `src/contracts` files for the respective contract
+- **Documentation**: Improved clarity for community developers
+- **Issue templates**: Enhanced bug_report.md and feature_request.md with AI tools disclosure
+- **Testing**: Improved script clarity for debugging phase
+- **Gas optimization**: Refactored `payMultiple` function in Evvm.sol for better efficiency and readability
+- **Imports**: Replaced interface imports with direct contract imports in `src/contracts` files
 
 ### Fixed
 - Missing `@dev` documentation for `evvm` variable in NameService.sol
-- Replace hardcoded PRINCIPAL_TOKEN_ADDRESS with evvm.getPrincipalTokenAddress() in `NameService.sol` and `Staking.sol`
+- Hardcoded PRINCIPAL_TOKEN_ADDRESS replaced with `evvm.getPrincipalTokenAddress()` in NameService.sol and Staking.sol
