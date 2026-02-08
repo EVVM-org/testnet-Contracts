@@ -24,11 +24,12 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+    StateError
+} from "@evvm/testnet-contracts/library/errors/StateError.sol";
 
-contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
+contract unitTestRevert_EVVM_dispersePay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
@@ -100,13 +101,14 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             Erc191TestBuilder.buildMessageSignedForDispersePay(
                 /* 🢃 different evvmID 🢃 */
                 evvm.getEvvmID() + 1,
-                sha256(abi.encode(toData)),
+                address(evvm),
+                toData,
                 ETHER_ADDRESS,
                 amount,
                 priorityFee,
+                address(0),
                 0,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -124,9 +126,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -170,16 +172,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             /* 🢃 different signer 🢃 */
             COMMON_USER_NO_STAKER_3,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -190,9 +192,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -245,16 +247,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: ""
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             /* 🢃 causes different hashList 🢃 */
             toDataFake,
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -265,9 +267,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -286,9 +288,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__dispersePay__InvalidSignature_token()
-        external
-    {
+    function test__unit_revert__dispersePay__InvalidSignature_token() external {
         (uint256 amount, uint256 priorityFee) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             ETHER_ADDRESS,
@@ -311,16 +311,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             /* 🢃 different token 🢃 */
             PRINCIPAL_TOKEN_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
-            false,
-            address(0)
+            false
         );
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
         vm.expectRevert(EvvmError.InvalidSignature.selector);
@@ -330,9 +330,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -378,16 +378,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             /* 🢃 different amount 🢃 */
             amount + 1,
             priorityFee,
+            address(0),
             0,
-            false,
-            address(0)
+            false
         );
 
         vm.expectRevert(EvvmError.InvalidSignature.selector);
@@ -397,9 +397,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -443,16 +443,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             /* 🢃 different priorityFee 🢃 */
             priorityFee + 1,
+            address(0),
             0,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -463,9 +463,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -484,9 +484,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__dispersePay__InvalidSignature_nonce()
-        external
-    {
+    function test__unit_revert__dispersePay__InvalidSignature_nonce() external {
         (uint256 amount, uint256 priorityFee) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             ETHER_ADDRESS,
@@ -509,16 +507,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
             /* 🢃 different nonce 🢃 */
+            address(0),
             67,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -529,9 +527,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -575,16 +573,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             /* 🢃 different isAsyncExec 🢃 */
-            true,
-            address(0)
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -595,9 +593,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -641,16 +639,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
-            0,
-            false,
             /* 🢃 different executor 🢃 */
-            COMMON_USER_NO_STAKER_3.Address
+            COMMON_USER_NO_STAKER_3.Address,
+            0,
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -661,9 +659,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -682,9 +680,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__dispersePay__SenderIsNotTheExecutor()
-        external
-    {
+    function test__unit_revert__dispersePay__SenderIsNotTheExecutor() external {
         (uint256 amount, uint256 priorityFee) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             ETHER_ADDRESS,
@@ -707,15 +703,15 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            COMMON_USER_NO_STAKER_3.Address,
             0,
-            false,
-            COMMON_USER_NO_STAKER_3.Address
+            false
         );
 
         /* 🢃 executor different than msg.sender 🢃 */
@@ -728,9 +724,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            COMMON_USER_NO_STAKER_3.Address,
             0,
             false,
-            COMMON_USER_NO_STAKER_3.Address,
             signature
         );
 
@@ -752,17 +748,17 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
     function test__unit_revert__dispersePay__AsyncNonceAlreadyUsed() external {
         _addBalance(COMMON_USER_NO_STAKER_1, ETHER_ADDRESS, 0.1 ether, 0 ether);
 
-        _execute_makePay(
+        _executeFn_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_3.Address,
             "",
             ETHER_ADDRESS,
             0.1 ether,
             0 ether,
+            address(0),
             67,
             true,
-            address(0),
-            COMMON_USER_NO_STAKER_3
+            COMMON_USER_NO_STAKER_3.Address
         );
 
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -787,21 +783,21 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             /* 🢃 nonce already used 🢃 */
             67,
-            true,
-            address(0)
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmError.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
 
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
@@ -809,10 +805,10 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             /* 🢃 nonce already used 🢃 */
             67,
             true,
-            address(0),
             signature
         );
 
@@ -854,21 +850,21 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             /* 🢃 wrong nonce 🢃 */
             999999999999999999,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmError.SyncNonceMismatch.selector);
+        vm.expectRevert(StateError.SyncNonceMismatch.selector);
 
         evvm.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
@@ -876,10 +872,10 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             /* 🢃 wrong nonce 🢃 */
             999999999999999999,
             false,
-            address(0),
             signature
         );
 
@@ -898,7 +894,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__dispersePay__InsufficientBalance_amount() external {
+    function test__unit_revert__dispersePay__InsufficientBalance_amount()
+        external
+    {
         (uint256 amount, uint256 priorityFee) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             ETHER_ADDRESS,
@@ -923,16 +921,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             /* 🢃 amount too high 🢃 */
             (amount + priorityFee) * 2,
             priorityFee,
+            address(0),
             0,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -946,9 +944,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             /* 🢃 amount too high 🢃 */
             (amount + priorityFee) * 2,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -967,7 +965,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
         );
     }
 
-    function test__unit_revert__dispersePay__InsufficientBalance_priorityFee() external {
+    function test__unit_revert__dispersePay__InsufficientBalance_priorityFee()
+        external
+    {
         (uint256 amount, uint256 priorityFee) = _addBalance(
             COMMON_USER_NO_STAKER_1,
             ETHER_ADDRESS,
@@ -990,16 +990,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             /* 🢃 priorityFee too high 🢃 */
             (amount + priorityFee) * 2,
+            address(0),
             0,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -1013,9 +1013,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             amount,
             /* 🢃 priorityFee too high 🢃 */
             (amount + priorityFee) * 2,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -1057,15 +1057,15 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -1078,9 +1078,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -1098,5 +1098,4 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants, EvvmStructs {
             "Receiver balance must be zero because pay reverted"
         );
     }
-    
 }

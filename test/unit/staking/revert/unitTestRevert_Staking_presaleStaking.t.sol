@@ -24,9 +24,7 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -292,17 +290,18 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
         params.signatureStake = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        params.signatureEVVM = _execute_makeSignaturePay(
+        params.signatureEVVM = _executeSig_evvm_pay(
             params.user,
             address(staking),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             staking.priceOfStaking(),
             params.priorityFee,
+            address(staking),
             params.nonceEVVM,
-            params.isAsyncExecEVVM,
-            address(staking)
+            params.isAsyncExecEVVM
         );
+    
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
         vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
@@ -453,16 +452,16 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
         params.signatureStake = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        params.signatureEVVM = _execute_makeSignaturePay(
+        params.signatureEVVM = _executeSig_evvm_pay(
             params.user,
             address(staking),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             staking.priceOfStaking(),
             params.priorityFee,
+            address(staking),
             params.nonceEVVM,
-            params.isAsyncExecEVVM,
-            address(staking)
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -581,11 +580,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
     function test__unit_revert__presaleStaking__AsyncNonceAlreadyUsed()
         external
-    {   
-        _addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            0
-        );
+    {
+        _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
         _execute_makePresaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
@@ -689,10 +685,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_maxLimit()
         external
     {
-        _addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            0
-        );
+        _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
         _execute_makePresaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
@@ -702,10 +695,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             false,
             GOLDEN_STAKER
         );
-        _addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            0
-        );
+        _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
         _execute_makePresaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
@@ -765,10 +755,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_AddressMustWaitToFullUnstake()
         external
     {
-        _addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            0
-        );
+        _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
         _execute_makePresaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
@@ -828,10 +815,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_AddressMustWaitToStakeAgain()
         external
     {
-        _addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            0
-        );
+        _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
         _execute_makePresaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
@@ -928,7 +912,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
         params.signatureStake = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        params.signatureEVVM = _execute_makeSignaturePay(
+        params.signatureEVVM = _executeSig_evvm_pay(
             params.user,
             address(staking),
             "",
@@ -937,10 +921,10 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             staking.priceOfStaking() + 1,
             /* 🢃 Diferent priority fee 🢃 */
             params.priorityFee + 1,
+            address(staking),
             /* 🢃 Diferent nonce 🢃 */
             params.nonceEVVM + 1,
-            params.isAsyncExecEVVM,
-            address(staking)
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);

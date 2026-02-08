@@ -142,16 +142,16 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
         bytes memory signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToFlushUsername(USERNAME),
             totalPriorityFeeAmount,
+            address(nameService),
             nonceEVVM,
-            true,
-            address(nameService)
+            true
         );
 
         (address userBefore, uint256 expireDateBefore) = nameService

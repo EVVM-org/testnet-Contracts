@@ -3,12 +3,17 @@ pragma solidity ^0.8.0;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {Estimator} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
+import {
+    Estimator
+} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Treasury} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
+import {
+    Treasury
+} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
 import {
     EvvmStructs
 } from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
@@ -18,6 +23,7 @@ import {BaseInputs} from "../input/BaseInputs.sol";
 contract DeployScript is Script, BaseInputs {
     Staking staking;
     Evvm evvm;
+    State state;
     Estimator estimator;
     NameService nameService;
     Treasury treasury;
@@ -36,20 +42,18 @@ contract DeployScript is Script, BaseInputs {
             address(staking),
             admin
         );
+        state = new State(address(evvm), admin);
 
         nameService = new NameService(address(evvm), admin);
 
         staking._setupEstimatorAndEvvm(address(estimator), address(evvm));
         treasury = new Treasury(address(evvm));
-        evvm._setupNameServiceAndTreasuryAddress(
+        evvm.initializeSystemContracts(
             address(nameService),
-            address(treasury)
+            address(treasury),
+            address(state)
         );
-        p2pSwap = new P2PSwap(
-            address(evvm),
-            address(staking),
-            admin
-        );
+        p2pSwap = new P2PSwap(address(evvm), address(staking), admin);
 
         vm.stopBroadcast();
 

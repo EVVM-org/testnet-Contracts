@@ -22,11 +22,9 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
-contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
+contract unitTestCorrect_EVVM_batchPay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
     function executeBeforeSetUp() internal override {
         _execute_makeRegistrationUsername(
@@ -131,23 +129,25 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
 
         AccountData memory executor = COMMON_USER_NO_STAKER_3;
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](8);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+            8
+        );
 
         bytes memory signature;
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Sync execution ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         /* 🢃 toAddress -- No executor 🢃 */
-        signature = _execute_makeSignaturePay(
+        signature = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
-            false,
-            address(0)
+            false
         );
         batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
@@ -156,9 +156,9 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
             false,
-            address(0),
             signature
         );
 
@@ -170,19 +170,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            executor.Address,
             syncNonce_2,
             false,
-            executor.Address,
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount_2,
                 priorityFee_2,
+                executor.Address,
                 syncNonce_2,
-                false,
-                executor.Address
+                false
             )
         );
 
@@ -194,19 +194,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_3,
             priorityFee_3,
+            address(0),
             syncNonce_3,
             false,
-            address(0),
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 address(0),
                 "dummy",
                 ETHER_ADDRESS,
                 amount_3,
                 priorityFee_3,
+                address(0),
                 syncNonce_3,
-                false,
-                address(0)
+                false
             )
         );
 
@@ -218,19 +218,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_4,
             priorityFee_4,
+            executor.Address,
             syncNonce_4,
             false,
-            executor.Address,
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 address(0),
                 "dummy",
                 ETHER_ADDRESS,
                 amount_4,
                 priorityFee_4,
+                executor.Address,
                 syncNonce_4,
-                false,
-                executor.Address
+                false
             )
         );
 
@@ -244,19 +244,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_5,
             priorityFee_5,
-            asyncNonce_1,
-            true,
             address(0),
-            signature = _execute_makeSignaturePay(
+            syncNonce_1,
+            true,
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount_5,
                 priorityFee_5,
-                asyncNonce_1,
-                true,
-                address(0)
+                address(0),
+                syncNonce_1,
+                true
             )
         );
 
@@ -268,19 +268,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_6,
             priorityFee_6,
+            executor.Address,
             asyncNonce_2,
             true,
-            executor.Address,
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount_6,
                 priorityFee_6,
+                executor.Address,
                 asyncNonce_2,
-                true,
-                executor.Address
+                true
             )
         );
 
@@ -292,19 +292,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_7,
             priorityFee_7,
+            address(0),
             asyncNonce_3,
             true,
-            address(0),
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 address(0),
                 "dummy",
                 ETHER_ADDRESS,
                 amount_7,
                 priorityFee_7,
+                address(0),
                 asyncNonce_3,
-                true,
-                address(0)
+                true
             )
         );
 
@@ -316,25 +316,26 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_8,
             priorityFee_8,
+            executor.Address,
             asyncNonce_4,
             true,
-            executor.Address,
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 address(0),
                 "dummy",
                 ETHER_ADDRESS,
                 amount_8,
                 priorityFee_8,
+                executor.Address,
                 asyncNonce_4,
-                true,
-                executor.Address
+                true
             )
         );
 
         vm.startPrank(executor.Address);
-        (uint256 successfulTransactions, bool[] memory results) = evvm
-            .batchPay(batchData);
+        (uint256 successfulTransactions, bool[] memory results) = evvm.batchPay(
+            batchData
+        );
         vm.stopPrank();
 
         assertEq(successfulTransactions, 8, "all transactions should succeed");
@@ -464,23 +465,25 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
 
         AccountData memory executor = COMMON_USER_STAKER;
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](8);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+            8
+        );
 
         bytes memory signature;
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Sync execution ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         /* 🢃 toAddress -- No executor 🢃 */
-        signature = _execute_makeSignaturePay(
+        signature = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
-            false,
-            address(0)
+            false
         );
         batchData[0] = EvvmStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
@@ -489,9 +492,9 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
             false,
-            address(0),
             signature
         );
 
@@ -503,19 +506,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            executor.Address,
             syncNonce_2,
             false,
-            executor.Address,
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount_2,
                 priorityFee_2,
+                executor.Address,
                 syncNonce_2,
-                false,
-                executor.Address
+                false
             )
         );
 
@@ -527,19 +530,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_3,
             priorityFee_3,
+            address(0),
             syncNonce_3,
             false,
-            address(0),
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 address(0),
                 "dummy",
                 ETHER_ADDRESS,
                 amount_3,
                 priorityFee_3,
+                address(0),
                 syncNonce_3,
-                false,
-                address(0)
+                false
             )
         );
 
@@ -551,19 +554,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_4,
             priorityFee_4,
+            executor.Address,
             syncNonce_4,
             false,
-            executor.Address,
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 address(0),
                 "dummy",
                 ETHER_ADDRESS,
                 amount_4,
                 priorityFee_4,
+                executor.Address,
                 syncNonce_4,
-                false,
-                executor.Address
+                false
             )
         );
 
@@ -577,19 +580,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_5,
             priorityFee_5,
-            asyncNonce_1,
-            true,
             address(0),
-            signature = _execute_makeSignaturePay(
+            syncNonce_1,
+            true,
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount_5,
                 priorityFee_5,
-                asyncNonce_1,
-                true,
-                address(0)
+                address(0),
+                syncNonce_1,
+                true
             )
         );
 
@@ -601,19 +604,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_6,
             priorityFee_6,
+            executor.Address,
             asyncNonce_2,
             true,
-            executor.Address,
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount_6,
                 priorityFee_6,
+                executor.Address,
                 asyncNonce_2,
-                true,
-                executor.Address
+                true
             )
         );
 
@@ -625,19 +628,19 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_7,
             priorityFee_7,
+            address(0),
             asyncNonce_3,
             true,
-            address(0),
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 address(0),
                 "dummy",
                 ETHER_ADDRESS,
                 amount_7,
                 priorityFee_7,
+                address(0),
                 asyncNonce_3,
-                true,
-                address(0)
+                true
             )
         );
 
@@ -649,25 +652,26 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount_8,
             priorityFee_8,
+            executor.Address,
             asyncNonce_4,
             true,
-            executor.Address,
-            signature = _execute_makeSignaturePay(
+            signature = _executeSig_evvm_pay(
                 COMMON_USER_NO_STAKER_1,
                 address(0),
                 "dummy",
                 ETHER_ADDRESS,
                 amount_8,
                 priorityFee_8,
+                executor.Address,
                 asyncNonce_4,
-                true,
-                executor.Address
+                true
             )
         );
 
         vm.startPrank(executor.Address);
-        (uint256 successfulTransactions, bool[] memory results) = evvm
-            .batchPay(batchData);
+        (uint256 successfulTransactions, bool[] memory results) = evvm.batchPay(
+            batchData
+        );
         vm.stopPrank();
 
         assertEq(successfulTransactions, 8, "all transactions should succeed");

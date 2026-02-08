@@ -30,9 +30,7 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -121,21 +119,23 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
 
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _execute_makeSignaturePay(
+        signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToRemoveCustomMetadata(),
             totalPriorityFeeAmount,
+            address(nameService),
             nonceEVVM,
-            true,
-            address(nameService)
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -202,7 +202,9 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -269,7 +271,9 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -336,7 +340,9 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -403,7 +409,9 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,

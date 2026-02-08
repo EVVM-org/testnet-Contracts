@@ -112,16 +112,16 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _execute_makeSignaturePay(
+        signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToAddCustomMetadata(),
             totalPriorityFeeAmount,
+            address(nameService),
             nonceEVVM,
-            true,
-            address(nameService)
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);

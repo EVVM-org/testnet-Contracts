@@ -67,20 +67,6 @@ library EvvmError {
      */
     error NotAnCA();
 
-    //░▒▓█ Nonce Management Errors ██████████████████████████████████████████████▓▒░
-
-    /**
-     * @notice Thrown when the provided synchronous nonce doesn't match the expected sequential nonce
-     * @dev Sync nonces must be used in order (0, 1, 2, ...)
-     */
-    error SyncNonceMismatch();
-
-    /**
-     * @notice Thrown when attempting to use an asynchronous nonce that has already been consumed
-     * @dev Async nonces can be used in any order but only once
-     */
-    error AsyncNonceAlreadyUsed();
-
     //░▒▓█ Balance and Amount Errors ████████████████████████████████████████████▓▒░
 
     /**

@@ -18,11 +18,12 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+    EvvmStructs
+} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
 
-contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
+contract fuzzTest_EVVM_batchPay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
@@ -89,7 +90,9 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
                     input.nonce[0] == input.nonce[1])
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](2);
+        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+            2
+        );
 
         AccountData memory FISHER = input.useStaker
             ? COMMON_USER_STAKER
@@ -97,7 +100,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
 
         bytes[3] memory signature;
 
-        signature[0] = _execute_makeSignaturePay(
+        signature[0] = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             input.useToAddress[0]
                 ? COMMON_USER_NO_STAKER_2.Address
@@ -106,14 +109,14 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
             input.token[0],
             input.amount[0],
             input.priorityFee[0],
+            input.useExecutor[0] ? FISHER.Address : address(0),
             input.isAsyncExec[0]
                 ? input.nonce[0]
                 : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            input.isAsyncExec[0],
-            input.useExecutor[0] ? FISHER.Address : address(0)
+            input.isAsyncExec[0]
         );
 
-        signature[1] = _execute_makeSignaturePay(
+        signature[1] = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             input.useToAddress[1]
                 ? COMMON_USER_NO_STAKER_2.Address
@@ -122,6 +125,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
             input.token[1],
             input.amount[1],
             input.priorityFee[1],
+            input.useExecutor[1] ? FISHER.Address : address(0),
             input.isAsyncExec[1]
                 ? input.nonce[1]
                 : (
@@ -133,8 +137,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
                             COMMON_USER_NO_STAKER_1.Address
                         )
                 ),
-            input.isAsyncExec[1],
-            input.useExecutor[1] ? FISHER.Address : address(0)
+            input.isAsyncExec[1]
         );
 
         for (uint256 i = 0; i < 2; i++) {
@@ -172,8 +175,9 @@ contract fuzzTest_EVVM_batchPay is Test, Constants, EvvmStructs {
         }
 
         vm.startPrank(FISHER.Address);
-        (uint256 successfulTransactions, bool[] memory status) = evvm
-            .batchPay(batchData);
+        (uint256 successfulTransactions, bool[] memory status) = evvm.batchPay(
+            batchData
+        );
         vm.stopPrank();
 
         assertEq(successfulTransactions, 2);

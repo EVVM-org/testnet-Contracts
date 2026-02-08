@@ -48,10 +48,7 @@ import {
 } from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
-
-
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
-
 
     function addBalance(address user, address token, uint256 amount) private {
         evvm.addBalance(user, token, amount);
@@ -137,14 +134,15 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 input.amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                input.isAsync,
-                address(p2pSwap)
+                input.isAsync
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(

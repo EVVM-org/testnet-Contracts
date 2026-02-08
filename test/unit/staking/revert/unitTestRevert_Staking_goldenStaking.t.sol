@@ -24,9 +24,7 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
 contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     function executeBeforeSetUp() internal override {
@@ -59,14 +57,15 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(staking),
                 "",
                 PRINCIPAL_TOKEN_ADDRESS,
                 amount,
                 0,
+                address(staking),
                 evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-                false,
-                address(staking)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -137,7 +136,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     function test__unitRevert__goldenStaking__InvalidSignature_evvm() external {
         _addBalance(GOLDEN_STAKER.Address, 10);
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             GOLDEN_STAKER,
             address(staking),
             "",
@@ -147,9 +146,9 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
             10000000,
             /* 🢃 Different priorityFee (pf>0) 🢃 */
             100,
+            address(staking),
             evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
-            false,
-            address(staking)
+            false
         );
 
         vm.startPrank(GOLDEN_STAKER.Address);

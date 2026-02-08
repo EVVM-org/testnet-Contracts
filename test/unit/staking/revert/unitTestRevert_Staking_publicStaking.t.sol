@@ -24,9 +24,7 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -165,16 +163,16 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             s
         );
 
-        params.signatureEVVM = _execute_makeSignaturePay(
+        params.signatureEVVM = _executeSig_evvm_pay(
             params.user,
             address(staking),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             staking.priceOfStaking() * params.amountOfStaking,
             params.priorityFeeEVVM,
+            address(staking),
             params.nonceEVVM,
-            params.isAsyncExecEVVM,
-            address(staking)
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -400,11 +398,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
     function test__unit_revert__publicStaking__AsyncNonceAlreadyUsed()
         external
     {
-        _addBalance(
-            USER,
-            10,
-            0
-        );
+        _addBalance(USER, 10, 0);
         _execute_makePublicStaking(
             USER,
             true,
@@ -466,11 +460,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
     function test__unit_revert__publicStaking__AddressMustWaitToFullUnstake()
         external
     {
-        _addBalance(
-            USER,
-            10,
-            0
-        );
+        _addBalance(USER, 10, 0);
         _execute_makePublicStaking(
             USER,
             true,
@@ -532,11 +522,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
     function test__unit_revert__publicStaking__AddressMustWaitToStakeAgain()
         external
     {
-        _addBalance(
-            USER,
-            10,
-            0
-        );
+        _addBalance(USER, 10, 0);
         _execute_makePublicStaking(
             USER,
             true,
@@ -608,7 +594,6 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         vm.stopPrank();
     }
 
-
     function test__unit_revert__publicStaking__InvalidSignature_onEvvm()
         external
     {
@@ -645,7 +630,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             s
         );
 
-        params.signatureEVVM = _execute_makeSignaturePay(
+        params.signatureEVVM = _executeSig_evvm_pay(
             params.user,
             address(staking),
             "",
@@ -653,11 +638,11 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             /* 🢃 Different amount 🢃 */
             staking.priceOfStaking() * params.amountOfStaking + 1,
             /* 🢃 Different priorityFee 🢃 */
-            params.priorityFeeEVVM+1,
+            params.priorityFeeEVVM + 1,
+            address(staking),
             /* 🢃 Different nonceEVVM 🢃 */
             params.nonceEVVM + 1,
-            params.isAsyncExecEVVM,
-            address(staking)
+            params.isAsyncExecEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -675,8 +660,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
     }
-    
-    
+
     function test__unit_revert__publicStaking__InsufficientBalance_onEvvm()
         external
     {
@@ -720,5 +704,4 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
     }
-    
 }

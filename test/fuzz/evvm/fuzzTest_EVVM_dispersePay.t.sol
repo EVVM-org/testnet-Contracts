@@ -18,11 +18,9 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
-contract fuzzTest_EVVM_dispersePay is Test, Constants, EvvmStructs {
+contract fuzzTest_EVVM_dispersePay is Test, Constants {
     function executeBeforeSetUp() internal override {
         evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x00);
     }
@@ -137,15 +135,15 @@ contract fuzzTest_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ? input.asyncNonce
             : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
 
-        bytes memory signatureEVVM = _execute_makeDispersePaySignature(
+        bytes memory signatureEVVM = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             input.token,
             amount,
             priorityFee,
+            input.usingExecutor ? input.executor : address(0),
             nonce,
-            input.isUsingAsyncNonce,
-            input.usingExecutor ? input.executor : address(0)
+            input.isUsingAsyncNonce
         );
 
         evvm.setPointStaker(
@@ -159,9 +157,9 @@ contract fuzzTest_EVVM_dispersePay is Test, Constants, EvvmStructs {
             input.token,
             amount,
             priorityFee,
+            input.usingExecutor ? input.executor : address(0),
             nonce,
             input.isUsingAsyncNonce,
-            input.usingExecutor ? input.executor : address(0),
             signatureEVVM
         );
         vm.stopPrank();

@@ -53,8 +53,6 @@ import {
 } from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
-    
-
     function addBalance(address user, address token, uint256 amount) private {
         evvm.addBalance(user, token, amount);
     }
@@ -103,14 +101,15 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -191,14 +190,15 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA + 1 ether, // tampered
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -279,14 +279,15 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -345,14 +346,15 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 1 ether,
                 priorityFee,
+                address(0),
                 nonceEVVM,
-                isAsyncExec,
-                address(0)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -367,9 +369,9 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             ETHER_ADDRESS,
             1 ether,
             priorityFee,
+            address(0),
             nonceEVVM,
             isAsyncExec,
-            address(0),
             signatureEVVM
         );
 
@@ -410,14 +412,15 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM, // we try to use the same nonce again, causing a revert
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);

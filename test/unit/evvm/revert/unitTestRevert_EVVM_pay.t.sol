@@ -24,9 +24,10 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+    StateError
+} from "@evvm/testnet-contracts/library/errors/StateError.sol";
 contract unitTestRevert_EVVM_pay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
@@ -55,14 +56,15 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             Erc191TestBuilder.buildMessageSignedForPay(
                 /* 🢃 different evvmID 🢃 */
                 evvm.getEvvmID() + 67,
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount,
                 priorityFee,
+                address(0),
                 0,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -81,9 +83,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -111,18 +113,19 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         );
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            /* 🢃 different signer 🢃 */
-            COMMON_USER_NO_STAKER_3.PrivateKey,
+            COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
+                /* 🢃 different signer 🢃 */
+                COMMON_USER_NO_STAKER_3.PrivateKey,
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount,
                 priorityFee,
+                address(0),
                 0,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -141,9 +144,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -176,15 +179,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 /* 🢃 different receiver address 🢃 */
                 COMMON_USER_NO_STAKER_3.Address,
                 "",
                 ETHER_ADDRESS,
                 amount,
                 priorityFee,
+                address(0),
                 0,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -203,9 +207,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -238,15 +242,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(0),
                 /* 🢃 different receiver identity 🢃 */
                 "tofailure",
                 ETHER_ADDRESS,
                 amount,
                 priorityFee,
+                address(0),
                 0,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -265,9 +270,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -298,15 +303,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 /* 🢃 different token address 🢃 */
                 PRINCIPAL_TOKEN_ADDRESS,
                 amount,
                 priorityFee,
+                address(0),
                 0,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -325,9 +331,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -358,15 +364,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 /* 🢃 different amount 🢃 */
                 0.67 ether,
                 priorityFee,
+                address(0),
                 0,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -385,9 +392,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -418,15 +425,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount,
                 /* 🢃 different priorityFee 🢃 */
                 0.420 ether,
+                address(0),
                 0,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -445,9 +453,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -478,15 +486,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount,
                 priorityFee,
+                address(0),
                 /* 🢃 different nonce 🢃 */
                 67,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -505,9 +514,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -538,15 +547,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount,
                 priorityFee,
+                address(0),
                 0,
                 /* 🢃 different isAsyncExec 🢃 */
-                true,
-                address(0)
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -565,9 +575,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -598,15 +608,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount,
                 priorityFee,
-                0,
-                false,
                 /* 🢃 different executor 🢃 */
-                COMMON_USER_NO_STAKER_3.Address
+                COMMON_USER_NO_STAKER_3.Address,
+                0,
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -625,9 +636,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -658,14 +669,15 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount,
                 priorityFee,
+                COMMON_USER_NO_STAKER_3.Address,
                 0,
-                false,
-                COMMON_USER_NO_STAKER_3.Address
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -685,9 +697,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            COMMON_USER_NO_STAKER_3.Address,
             0,
             false,
-            COMMON_USER_NO_STAKER_3.Address,
             signatureEVVM
         );
 
@@ -723,17 +735,17 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             0 ether
         );
 
-        _execute_makePay(
+        _executeFn_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amountBefore,
             priorityFeeBefore,
+            address(0),
             67,
             true,
-            address(0),
-            COMMON_USER_NO_STAKER_3
+            COMMON_USER_NO_STAKER_3.Address
         );
 
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -747,15 +759,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount,
                 priorityFee,
+                address(0),
                 /* 🢃 async nonce already used 🢃 */
                 67,
-                true,
-                address(0)
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -766,7 +779,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -774,10 +787,10 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             /* 🢃 async nonce already used 🢃 */
             67,
             true,
-            address(0),
             signatureEVVM
         );
 
@@ -804,17 +817,17 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             0 ether
         );
 
-        _execute_makePay(
+        _executeFn_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amountBefore,
             priorityFeeBefore,
+            address(0),
             evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
             false,
-            address(0),
-            COMMON_USER_NO_STAKER_3
+            COMMON_USER_NO_STAKER_3.Address
         );
 
         (uint256 amount, uint256 priorityFee) = _addBalance(
@@ -828,15 +841,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount,
                 priorityFee,
                 /* 🢃 sync nonce currently on 1 🢃 */
+                address(0),
                 0,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -847,7 +861,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.SyncNonceMismatch.selector);
+        vm.expectRevert(StateError.SyncNonceMismatch.selector);
         evvm.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
@@ -856,9 +870,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             amount,
             priorityFee,
             /* 🢃 sync nonce currently on 1 🢃 */
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -889,15 +903,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 /* 🢃 amount more than current balance 🢃 */
                 (amount + priorityFee) * 10,
                 priorityFee,
+                address(0),
                 0,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -917,9 +932,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             /* 🢃 amount more than current balance 🢃 */
             (amount + priorityFee) * 10,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 
@@ -952,15 +967,16 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
                 amount,
                 /* 🢃 priorityFee more than current balance 🢃 */
                 (amount + priorityFee) * 10,
+                address(0),
                 0,
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -980,9 +996,9 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             amount,
             /* 🢃 priorityFee more than current balance 🢃 */
             (amount + priorityFee) * 10,
+            address(0),
             0,
             false,
-            address(0),
             signatureEVVM
         );
 

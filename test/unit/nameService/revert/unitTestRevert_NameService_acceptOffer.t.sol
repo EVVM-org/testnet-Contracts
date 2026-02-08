@@ -30,9 +30,7 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -112,21 +110,23 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         bytes memory signatureNameService = Erc191TestBuilder
             .buildERC191Signature(v, r, s);
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             0,
             amountPriorityFee,
+            address(nameService),
             1001,
-            true,
-            address(nameService)
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -192,7 +192,9 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -258,7 +260,9 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -324,7 +328,9 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -390,7 +396,9 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -829,5 +837,4 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer maker should not have changed"
         );
     }
-    
 }

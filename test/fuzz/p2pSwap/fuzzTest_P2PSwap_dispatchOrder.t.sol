@@ -102,14 +102,15 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -222,14 +223,15 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenB,
                 metadata.amountOfTokenBToFill,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                input.isAsync,
-                address(p2pSwap)
+                input.isAsync
             )
         );
 
@@ -382,14 +384,15 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenB,
                 metadata.amountOfTokenBToFill,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                input.isAsync,
-                address(p2pSwap)
+                input.isAsync
             )
         );
 

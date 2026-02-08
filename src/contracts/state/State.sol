@@ -24,7 +24,8 @@ import {
     StateError as Error
 } from "@evvm/testnet-contracts/library/errors/StateError.sol";
 import {
-    Admin, ProposalStructs
+    Admin,
+    ProposalStructs
 } from "@evvm/testnet-contracts/library/utils/GovernanceUtils.sol";
 
 interface IUserValidator {
@@ -32,20 +33,30 @@ interface IUserValidator {
 }
 
 contract State is Admin {
-    uint256 constant private DELAY = 1 days;
+    uint256 private constant DELAY = 1 days;
 
     Evvm private evvm;
 
     ProposalStructs.AddressTypeProposal public userValidatorAddress;
 
-    /// @dev Mapping to track used nonces: user address => nonce value => used flag
-    mapping(address user => mapping(uint256 nonce => bool availability))
-        private asyncNonce;
+    /**
+     * @notice Flexible nonce tracking for asynchronous transactions
+     * @dev Nonces can be used in any order but only once
+     *      Provides flexibility for parallel transaction submission
+     *      Marked as used (true) after consumption
+     */
+    mapping(address user => mapping(uint256 nonce => bool isUsed)) asyncNonce;
 
     mapping(address user => mapping(uint256 nonce => address serviceReserved))
         private asyncNonceReservedPointers;
 
-    mapping(address user => uint256 nonce) private syncNonce;
+    /**
+     * @notice Sequential nonce tracking for synchronous transactions
+     * @dev Nonces must be used in strict sequential order (0, 1, 2, ...)
+     *      Provides ordered transaction execution and simpler replay protection
+     *      Incremented after each successful sync transaction
+     */
+    mapping(address user => uint256 nonce) private nextSyncNonce;
 
     constructor(address evvmAddress, address initialAdmin) Admin(initialAdmin) {
         evvm = Evvm(evvmAddress);
@@ -87,10 +98,10 @@ contract State is Admin {
 
             asyncNonce[user][nonce] = true;
         } else {
-            if (nonce != syncNonce[user]) revert Error.SyncNonceMismatch();
+            if (nonce != nextSyncNonce[user]) revert Error.SyncNonceMismatch();
 
             unchecked {
-                ++syncNonce[user];
+                ++nextSyncNonce[user];
             }
         }
     }
@@ -140,7 +151,7 @@ contract State is Admin {
     function getNextCurrentSyncNonce(
         address user
     ) public view virtual returns (uint256) {
-        return syncNonce[user];
+        return nextSyncNonce[user];
     }
 
     function getEvvmID() public view returns (uint256) {
@@ -202,7 +213,9 @@ contract State is Admin {
         userValidatorAddress.timeToAccept = 0;
     }
 
-    function canExecuteUserTransaction(address user) internal view returns (bool) {
+    function canExecuteUserTransaction(
+        address user
+    ) internal view returns (bool) {
         if (userValidatorAddress.current == address(0)) return true;
         return IUserValidator(userValidatorAddress.current).canExecute(user);
     }

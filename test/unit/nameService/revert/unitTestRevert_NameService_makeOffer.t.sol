@@ -30,9 +30,7 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -101,21 +99,23 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         bytes memory signatureNameService = Erc191TestBuilder
             .buildERC191Signature(v, r, s);
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_2,
             address(nameService),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             totalOfferAmount,
             priorityFeeAmount,
+            address(nameService),
             101,
-            true,
-            address(nameService)
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -177,7 +177,9 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -239,7 +241,9 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -301,7 +305,9 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -363,7 +369,9 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -425,7 +433,9 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            NameServiceError.InvalidSignatureOnNameService.selector
+        );
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
@@ -795,7 +805,9 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         );
     }
 
-    function test__unit_revert__makeOffer__InvalidSignature_fromEvvm() external {
+    function test__unit_revert__makeOffer__InvalidSignature_fromEvvm()
+        external
+    {
         (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.001 ether,
@@ -855,7 +867,9 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         );
     }
 
-    function test__unit_revert__makeOffer__InsufficientBalance_fromEvvm() external {
+    function test__unit_revert__makeOffer__InsufficientBalance_fromEvvm()
+        external
+    {
         (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.001 ether,
@@ -917,5 +931,4 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "User balance should be the same after revert"
         );
     }
-    
 }

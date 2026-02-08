@@ -11,107 +11,73 @@ pragma solidity ^0.8.0;
  *         https://book.getfoundry.sh/cheatcodes/sign
  */
 
+import {
+    EvvmStructs
+} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
 import {AdvancedStrings} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {EvvmHashUtils} from "@evvm/testnet-contracts/library/utils/signature/EvvmHashUtils.sol";
 
 library Erc191TestBuilder {
     //-----------------------------------------------------------------------------------
     // EVVM
     //-----------------------------------------------------------------------------------
-    
-    /**
-     * @notice Builds the message hash for a pay operation signature
-     * @dev Creates an EIP-191 compatible hash for EVVM pay function
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _receiverAddress Address of the payment receiver (use address(0) if using identity)
-     * @param _receiverIdentity String identity of receiver (used if address is zero)
-     * @param _token Token address being transferred
-     * @param _amount Amount of tokens to transfer
-     * @param _priorityFee Priority fee for transaction processing
-     * @param _nonce Nonce for replay protection
-     * @param _priority_boolean True for async nonce, false for sync nonce
-     * @param _executor Address authorized to execute the transaction
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
+
     function buildMessageSignedForPay(
         uint256 evvmID,
-        address _receiverAddress,
-        string memory _receiverIdentity,
-        address _token,
-        uint256 _amount,
-        uint256 _priorityFee,
-        uint256 _nonce,
-        bool _priority_boolean,
-        address _executor
-    ) internal pure returns (bytes32 messageHash) {
-        string memory messageToSign = string.concat(
-            AdvancedStrings.uintToString(evvmID),
-            ",",
-            "pay",
-            ",",
-            _receiverAddress == address(0)
-                ? _receiverIdentity
-                : AdvancedStrings.addressToString(_receiverAddress),
-            ",",
-            AdvancedStrings.addressToString(_token),
-            ",",
-            AdvancedStrings.uintToString(_amount),
-            ",",
-            AdvancedStrings.uintToString(_priorityFee),
-            ",",
-            AdvancedStrings.uintToString(_nonce),
-            ",",
-            _priority_boolean ? "true" : "false",
-            ",",
-            AdvancedStrings.addressToString(_executor)
+        address servicePointer,
+        address to_address,
+        string memory to_identity,
+        address token,
+        uint256 amount,
+        uint256 priorityFee,
+        address executor,
+        uint256 nonce,
+        bool isAsyncExec
+    ) internal pure returns (bytes32) {
+        return buildHashForSign(
+            AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    EvvmHashUtils.hashDataForPay(
+                        to_address,
+                        to_identity,
+                        token,
+                        amount,
+                        priorityFee,
+                        executor
+                    ),
+                    nonce,
+                    isAsyncExec
+                )
         );
-        messageHash = buildHashForSign(messageToSign);
     }
 
-    /**
-     * @notice Builds the message hash for a disperse pay operation signature
-     * @dev Creates an EIP-191 compatible hash for EVVM dispersePay function
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param hashList Hash of the recipient list for batch payment
-     * @param _token Token address being transferred
-     * @param _amount Total amount of tokens to transfer
-     * @param _priorityFee Priority fee for transaction processing
-     * @param _nonce Nonce for replay protection
-     * @param _priority_boolean True for async nonce, false for sync nonce
-     * @param _executor Address authorized to execute the transaction
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForDispersePay(
         uint256 evvmID,
-        bytes32 hashList,
-        address _token,
-        uint256 _amount,
-        uint256 _priorityFee,
-        uint256 _nonce,
-        bool _priority_boolean,
-        address _executor
-    ) public pure returns (bytes32 messageHash) {
-        return
-            buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "dispersePay",
-                    ",",
-                    AdvancedStrings.bytes32ToString(hashList),
-                    ",",
-                    AdvancedStrings.addressToString(_token),
-                    ",",
-                    AdvancedStrings.uintToString(_amount),
-                    ",",
-                    AdvancedStrings.uintToString(_priorityFee),
-                    ",",
-                    AdvancedStrings.uintToString(_nonce),
-                    ",",
-                    _priority_boolean ? "true" : "false",
-                    ",",
-                    AdvancedStrings.addressToString(_executor)
+        address servicePointer,
+        EvvmStructs.DispersePayMetadata[] memory toData,
+        address token,
+        uint256 amount,
+        uint256 priorityFee,
+        address executor,
+        uint256 nonce,
+        bool isAsyncExec
+    ) public pure returns (bytes32) {
+        return buildHashForSign(
+            AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    EvvmHashUtils.hashDataForDispersePay(
+                        toData,
+                        token,
+                        amount,
+                        priorityFee,
+                        executor
+                    ),
+                    nonce,
+                    isAsyncExec
                 )
-            );
+        );
     }
 
     //-----------------------------------------------------------------------------------

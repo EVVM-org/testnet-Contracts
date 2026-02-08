@@ -56,8 +56,6 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
     Test,
     Constants
 {
-    
-
     function addBalance(address user, address token, uint256 amount) private {
         evvm.addBalance(user, token, amount);
     }
@@ -106,14 +104,15 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -154,7 +153,11 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
         addBalance(COMMON_USER_NO_STAKER_2.Address, tokenB, amountB + fee);
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -208,14 +211,15 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenB,
                 metadata.amountOfTokenBToFill,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
 
@@ -271,7 +275,11 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
         addBalance(COMMON_USER_NO_STAKER_2.Address, tokenB, amountB + fee);
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -340,14 +348,15 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenB,
                 metadata.amountOfTokenBToFill,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
 
@@ -438,14 +447,15 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenB,
                 metadata.amountOfTokenBToFill,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
 
@@ -496,7 +506,11 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
         addBalance(COMMON_USER_NO_STAKER_2.Address, tokenB, amountB + fee);
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -550,14 +564,15 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenB,
                 metadata.amountOfTokenBToFill,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
 
@@ -613,7 +628,11 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
         addBalance(COMMON_USER_NO_STAKER_2.Address, tokenB, amountB + fee);
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -667,14 +686,15 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenB,
                 amountB, // metadata.amountOfTokenBToFill, (mismatch of values here, should fail)
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
 

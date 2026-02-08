@@ -47,6 +47,7 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
                 reward: 5000000000000000000
             })
         );
+        state = new State(address(evvm), ADMIN.Address);
         estimator = new Estimator(
             ACTIVATOR.Address,
             address(evvm),
@@ -57,9 +58,10 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
 
         staking._setupEstimatorAndEvvm(address(estimator), address(evvm));
         treasury = new Treasury(address(evvm));
-        evvm._setupNameServiceAndTreasuryAddress(
+        evvm.initializeSystemContracts(
             address(nameService),
-            address(treasury)
+            address(treasury),
+            address(state)
         );
 
         evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);

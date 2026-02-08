@@ -6,6 +6,9 @@ pragma solidity ^0.8.0;
 import {
     EvvmStructs
 } from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+import {
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/GovernanceUtils.sol";
 
 /**
  * @title EvvmStorage
@@ -28,7 +31,7 @@ import {
  * @custom:proxy Storage layout must remain consistent across upgrades
  */
 
-abstract contract EvvmStorage is EvvmStructs {
+abstract contract EvvmStorage {
     //░▒▓█ Constants ██████████████████████████████████████████████████████████████████▓▒░
 
     /**
@@ -80,6 +83,8 @@ abstract contract EvvmStorage is EvvmStructs {
      *      Used for cross-chain bridging, reward distributions, and system operations
      */
     address treasuryAddress;
+
+    address stateAddress;
 
     //░▒▓█ Token Whitelist Proposal State ██████████████████████████████████████████████▓▒░
 
@@ -148,7 +153,7 @@ abstract contract EvvmStorage is EvvmStructs {
      *      - eraTokens: Threshold for next reward halving era
      *      - reward: Current reward amount per transaction
      */
-    EvvmMetadata evvmMetadata;
+    EvvmStructs.EvvmMetadata evvmMetadata;
 
     //░▒▓█ Admin Governance State ██████████████████████████████████████████████████████▓▒░
 
@@ -159,7 +164,7 @@ abstract contract EvvmStorage is EvvmStructs {
      *      - proposal: Proposed new admin (awaiting acceptance)
      *      - timeToAccept: Timestamp when proposal can be accepted
      */
-    AddressTypeProposal admin;
+    ProposalStructs.AddressTypeProposal admin;
 
     //░▒▓█ Initialization State ████████████████████████████████████████████████████████▓▒░
 
@@ -189,24 +194,6 @@ abstract contract EvvmStorage is EvvmStructs {
      *      All payment operations update these balances
      */
     mapping(address user => mapping(address token => uint256 quantity)) balances;
-
-    //░▒▓█ Nonce Management █████████████████████████████████████████████████████████████▓▒░
-
-    /**
-     * @notice Sequential nonce tracking for synchronous transactions
-     * @dev Nonces must be used in strict sequential order (0, 1, 2, ...)
-     *      Provides ordered transaction execution and simpler replay protection
-     *      Incremented after each successful sync transaction
-     */
-    mapping(address user => uint256 nonce) nextSyncUsedNonce;
-
-    /**
-     * @notice Flexible nonce tracking for asynchronous transactions
-     * @dev Nonces can be used in any order but only once
-     *      Provides flexibility for parallel transaction submission
-     *      Marked as used (true) after consumption
-     */
-    mapping(address user => mapping(uint256 nonce => bool isUsed)) asyncUsedNonce;
 
     //░▒▓█ Fisher Bridge State ██████████████████████████████████████████████████████████▓▒░
 

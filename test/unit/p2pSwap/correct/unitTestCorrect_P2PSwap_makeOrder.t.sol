@@ -109,14 +109,15 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -204,14 +205,15 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -301,14 +303,15 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -390,14 +393,15 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(

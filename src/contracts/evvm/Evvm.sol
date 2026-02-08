@@ -76,6 +76,7 @@ pragma solidity ^0.8.0;
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
+import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
 import {
     EvvmStorage
 } from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
@@ -83,11 +84,17 @@ import {
     EvvmError as Error
 } from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
-    SignatureUtils
-} from "@evvm/testnet-contracts/contracts/evvm/lib/SignatureUtils.sol";
+    EvvmHashUtils
+} from "@evvm/testnet-contracts/library/utils/signature/EvvmHashUtils.sol";
 import {
     AdvancedStrings
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    EvvmStructs
+} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+import {
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/GovernanceUtils.sol";
 
 contract Evvm is EvvmStorage {
     /**
@@ -152,7 +159,7 @@ contract Evvm is EvvmStorage {
     constructor(
         address _initialOwner,
         address _stakingContractAddress,
-        EvvmMetadata memory _evvmMetadata
+        EvvmStructs.EvvmMetadata memory _evvmMetadata
     ) {
         if (
             _initialOwner == address(0) || _stakingContractAddress == address(0)
@@ -201,15 +208,19 @@ contract Evvm is EvvmStorage {
      * @custom:access-control No explicit access control - relies on deployment sequence
      * @custom:integration Critical for NameService and Treasury functionality
      */
-    function _setupNameServiceAndTreasuryAddress(
+    function initializeSystemContracts(
         address _nameServiceAddress,
-        address _treasuryAddress
+        address _treasuryAddress,
+        address _stateAddress
     ) external {
         if (breakerSetupNameServiceAddress == 0x00)
             revert Error.BreakerExploded();
 
-        if (_nameServiceAddress == address(0) || _treasuryAddress == address(0))
-            revert Error.AddressCantBeZero();
+        if (
+            _nameServiceAddress == address(0) ||
+            _treasuryAddress == address(0) ||
+            _stateAddress == address(0)
+        ) revert Error.AddressCantBeZero();
 
         nameServiceAddress = _nameServiceAddress;
         balances[nameServiceAddress][evvmMetadata.principalTokenAddress] =
@@ -218,6 +229,7 @@ contract Evvm is EvvmStorage {
         stakerList[nameServiceAddress] = FLAG_IS_STAKER;
 
         treasuryAddress = _treasuryAddress;
+        stateAddress = _stateAddress;
     }
 
     /**
@@ -368,37 +380,28 @@ contract Evvm is EvvmStorage {
         address token,
         uint256 amount,
         uint256 priorityFee,
+        address executor,
         uint256 nonce,
         bool isAsyncExec,
-        address executor,
         bytes memory signature
     ) external {
-        if (
-            !SignatureUtils.verifyMessageSignedForPay(
-                evvmMetadata.EvvmID,
-                from,
+        State(stateAddress).validateAndConsumeNonce(
+            from,
+            EvvmHashUtils.hashDataForPay(
                 to_address,
                 to_identity,
                 token,
                 amount,
                 priorityFee,
-                nonce,
-                isAsyncExec,
-                executor,
-                signature
-            )
-        ) revert Error.InvalidSignature();
+                executor
+            ),
+            nonce,
+            isAsyncExec,
+            signature
+        );
 
         if ((executor != address(0)) && (msg.sender != executor))
             revert Error.SenderIsNotTheExecutor();
-
-        if (isAsyncExec) {
-            if (asyncUsedNonce[from][nonce])
-                revert Error.AsyncNonceAlreadyUsed();
-        } else {
-            if (nextSyncUsedNonce[from] != nonce)
-                revert Error.SyncNonceMismatch();
-        }
 
         address to = !AdvancedStrings.equal(to_identity, "")
             ? NameService(nameServiceAddress).verifyStrictAndGetOwnerOfIdentity(
@@ -414,9 +417,6 @@ contract Evvm is EvvmStorage {
             }
             _giveReward(msg.sender, 1);
         }
-
-        if (isAsyncExec) asyncUsedNonce[from][nonce] = true;
-        else nextSyncUsedNonce[from]++;
     }
 
     /**
@@ -445,85 +445,77 @@ contract Evvm is EvvmStorage {
      * @return results Boolean array with success status for each payment
      */
     function batchPay(
-        BatchData[] memory batchData
+        EvvmStructs.BatchData[] memory batchData
     ) external returns (uint256 successfulTransactions, bool[] memory results) {
         bool isSenderStaker = isAddressStaker(msg.sender);
         address to_aux;
-        BatchData memory payment;
+        EvvmStructs.BatchData memory payment;
         results = new bool[](batchData.length);
 
         for (uint256 iteration = 0; iteration < batchData.length; iteration++) {
             payment = batchData[iteration];
-            if (
-                !SignatureUtils.verifyMessageSignedForPay(
-                    evvmMetadata.EvvmID,
+            try
+                State(stateAddress).validateAndConsumeNonce(
                     payment.from,
-                    payment.to_address,
-                    payment.to_identity,
-                    payment.token,
-                    payment.amount,
-                    payment.priorityFee,
+                    EvvmHashUtils.hashDataForPay(
+                        payment.to_address,
+                        payment.to_identity,
+                        payment.token,
+                        payment.amount,
+                        payment.priorityFee,
+                        payment.executor
+                    ),
                     payment.nonce,
                     payment.isAsyncExec,
-                    payment.executor,
                     payment.signature
                 )
-            ) revert Error.InvalidSignature();
-
-            if (
-                payment.executor != address(0) && msg.sender != payment.executor
-            ) {
-                results[iteration] = false;
-                continue;
-            }
-
-            if (payment.isAsyncExec) {
-                /// @dev isAsyncExec == true (async)
-
-                if (asyncUsedNonce[payment.from][payment.nonce]) {
+            {
+                if (
+                    (payment.executor != address(0) &&
+                        msg.sender != payment.executor) ||
+                    ((isSenderStaker ? payment.priorityFee : 0) +
+                        payment.amount >
+                        balances[payment.from][payment.token])
+                ) {
                     results[iteration] = false;
                     continue;
                 }
-            } else {
-                /// @dev isAsyncExec == false (sync)
 
-                if (nextSyncUsedNonce[payment.from] != payment.nonce) {
-                    results[iteration] = false;
-                    continue;
+                if (!AdvancedStrings.equal(payment.to_identity, "")) {
+                    to_aux = NameService(nameServiceAddress).getOwnerOfIdentity(
+                        payment.to_identity
+                    );
+                    if (to_aux == address(0)) {
+                        results[iteration] = false;
+                        continue;
+                    }
+                } else {
+                    to_aux = payment.to_address;
                 }
-            }
 
-            if (
-                (isSenderStaker ? payment.priorityFee : 0) + payment.amount >
-                balances[payment.from][payment.token]
-            ) {
-                results[iteration] = false;
-                continue;
-            }
+                /// @dev Because of the previous check, _updateBalance can´t fail
 
-            to_aux = !AdvancedStrings.equal(payment.to_identity, "")
-                ? NameService(nameServiceAddress)
-                    .verifyStrictAndGetOwnerOfIdentity(payment.to_identity)
-                : payment.to_address;
-
-            /// @dev Because of the previous check, _updateBalance can´t fail
-
-            _updateBalance(payment.from, to_aux, payment.token, payment.amount);
-
-            if (payment.priorityFee > 0 && isSenderStaker)
                 _updateBalance(
                     payment.from,
-                    msg.sender,
+                    to_aux,
                     payment.token,
-                    payment.priorityFee
+                    payment.amount
                 );
 
-            if (payment.isAsyncExec)
-                asyncUsedNonce[payment.from][payment.nonce] = true;
-            else nextSyncUsedNonce[payment.from]++;
+                if (payment.priorityFee > 0 && isSenderStaker)
+                    _updateBalance(
+                        payment.from,
+                        msg.sender,
+                        payment.token,
+                        payment.priorityFee
+                    );
 
-            successfulTransactions++;
-            results[iteration] = true;
+                successfulTransactions++;
+                results[iteration] = true;
+            } catch {
+                results[iteration] = false;
+                continue;
+            }
         }
 
         if (isSenderStaker) _giveReward(msg.sender, successfulTransactions);
@@ -562,40 +554,31 @@ contract Evvm is EvvmStorage {
      */
     function dispersePay(
         address from,
-        DispersePayMetadata[] memory toData,
+        EvvmStructs.DispersePayMetadata[] memory toData,
         address token,
         uint256 amount,
         uint256 priorityFee,
+        address executor,
         uint256 nonce,
         bool isAsyncExec,
-        address executor,
         bytes memory signature
     ) external {
-        if (
-            !SignatureUtils.verifyMessageSignedForDispersePay(
-                evvmMetadata.EvvmID,
-                from,
-                sha256(abi.encode(toData)),
+        State(stateAddress).validateAndConsumeNonce(
+            from,
+            EvvmHashUtils.hashDataForDispersePay(
+                toData,
                 token,
                 amount,
                 priorityFee,
-                nonce,
-                isAsyncExec,
-                executor,
-                signature
-            )
-        ) revert Error.InvalidSignature();
+                executor
+            ),
+            nonce,
+            isAsyncExec,
+            signature
+        );
 
         if ((executor != address(0)) && (msg.sender != executor))
             revert Error.SenderIsNotTheExecutor();
-
-        if (isAsyncExec) {
-            if (asyncUsedNonce[from][nonce])
-                revert Error.AsyncNonceAlreadyUsed();
-        } else {
-            if (nextSyncUsedNonce[from] != nonce)
-                revert Error.SyncNonceMismatch();
-        }
 
         bool isSenderStaker = isAddressStaker(msg.sender);
 
@@ -631,9 +614,6 @@ contract Evvm is EvvmStorage {
             _giveReward(msg.sender, 1);
             balances[msg.sender][token] += priorityFee;
         }
-
-        if (isAsyncExec) asyncUsedNonce[from][nonce] = true;
-        else nextSyncUsedNonce[from]++;
     }
 
     /**
@@ -703,7 +683,7 @@ contract Evvm is EvvmStorage {
      * @param amount Total amount to distribute (must equal sum of individual amounts)
      */
     function disperseCaPay(
-        DisperseCaPayMetadata[] memory toData,
+        EvvmStructs.DisperseCaPayMetadata[] memory toData,
         address token,
         uint256 amount
     ) external {
@@ -944,7 +924,7 @@ contract Evvm is EvvmStorage {
         if (_newOwner == address(0) || _newOwner == admin.current)
             revert Error.IncorrectAddressInput();
 
-        admin = AddressTypeProposal({
+        admin = ProposalStructs.AddressTypeProposal({
             current: admin.current,
             proposal: _newOwner,
             timeToAccept: block.timestamp + TIME_TO_ACCEPT_PROPOSAL
@@ -956,7 +936,7 @@ contract Evvm is EvvmStorage {
      * @dev Allows current admin to reject proposed admin changes
      */
     function rejectProposalAdmin() external onlyAdmin {
-        admin = AddressTypeProposal({
+        admin = ProposalStructs.AddressTypeProposal({
             current: admin.current,
             proposal: address(0),
             timeToAccept: 0
@@ -974,7 +954,7 @@ contract Evvm is EvvmStorage {
         if (msg.sender != admin.proposal)
             revert Error.SenderIsNotTheProposedAdmin();
 
-        admin = AddressTypeProposal({
+        admin = ProposalStructs.AddressTypeProposal({
             current: admin.proposal,
             proposal: address(0),
             timeToAccept: 0
@@ -1079,7 +1059,11 @@ contract Evvm is EvvmStorage {
      *
      * @return Complete EvvmMetadata struct with all system parameters
      */
-    function getEvvmMetadata() external view returns (EvvmMetadata memory) {
+    function getEvvmMetadata()
+        external
+        view
+        returns (EvvmStructs.EvvmMetadata memory)
+    {
         return evvmMetadata;
     }
 
@@ -1152,7 +1136,7 @@ contract Evvm is EvvmStorage {
     function getNextCurrentSyncNonce(
         address user
     ) external view returns (uint256) {
-        return nextSyncUsedNonce[user];
+        return State(stateAddress).getNextCurrentSyncNonce(user);
     }
 
     /**
@@ -1166,7 +1150,7 @@ contract Evvm is EvvmStorage {
         address user,
         uint256 nonce
     ) external view returns (bool) {
-        return asyncUsedNonce[user][nonce];
+        return State(stateAddress).getIfUsedAsyncNonce(user, nonce);
     }
 
     /**

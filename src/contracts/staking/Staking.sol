@@ -593,9 +593,9 @@ contract Staking is AsyncNonce, StakingStructs {
             evvm.getPrincipalTokenAddress(),
             amount,
             priorityFee,
+            address(this),
             nonce,
             isAsyncExec,
-            address(this),
             signature
         );
     }

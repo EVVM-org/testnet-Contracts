@@ -103,14 +103,15 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(

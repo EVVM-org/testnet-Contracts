@@ -1051,9 +1051,9 @@ contract NameService is AsyncNonce, NameServiceStructs {
             evvm.getPrincipalTokenAddress(),
             amount,
             priorityFee,
+            address(this),
             nonce,
             isAsyncExec,
-            address(this),
             signature
         );
     }
@@ -1163,9 +1163,8 @@ contract NameService is AsyncNonce, NameServiceStructs {
     function verifyStrictAndGetOwnerOfIdentity(
         string memory _username
     ) public view returns (address answer) {
-        if (strictVerifyIfIdentityExist(_username)) {
+        if (strictVerifyIfIdentityExist(_username))
             answer = identityDetails[_username].owner;
-        }
     }
 
     /**

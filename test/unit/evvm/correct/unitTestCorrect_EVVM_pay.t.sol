@@ -21,9 +21,7 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
 contract unitTestCorrect_EVVM_pay is Test, Constants {
     function executeBeforeSetUp() internal override {
@@ -77,16 +75,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -97,9 +95,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
             false,
-            address(0),
             signatureEVVM
         );
         vm.stopPrank();
@@ -127,16 +125,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _execute_makeSignaturePay(
+        signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            address(0),
             syncNonce_2,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -147,9 +145,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            address(0),
             syncNonce_2,
             false,
-            address(0),
             signatureEVVM
         );
         vm.stopPrank();
@@ -202,16 +200,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            executorAddress,
             syncNonce_1,
-            false,
-            executorAddress
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -222,9 +220,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            executorAddress,
             syncNonce_1,
             false,
-            executorAddress,
             signatureEVVM
         );
         vm.stopPrank();
@@ -252,16 +250,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _execute_makeSignaturePay(
+        signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            executorAddress,
             syncNonce_2,
-            false,
-            executorAddress
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -272,9 +270,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            executorAddress,
             syncNonce_2,
             false,
-            executorAddress,
             signatureEVVM
         );
         vm.stopPrank();
@@ -321,16 +319,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
-            true,
-            address(0)
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -341,9 +339,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
             true,
-            address(0),
             signatureEVVM
         );
         vm.stopPrank();
@@ -371,16 +369,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _execute_makeSignaturePay(
+        signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            address(0),
             syncNonce_2,
-            true,
-            address(0)
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -391,9 +389,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            address(0),
             syncNonce_2,
             true,
-            address(0),
             signatureEVVM
         );
         vm.stopPrank();
@@ -442,16 +440,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            executorAddress,
             syncNonce_1,
-            true,
-            executorAddress
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -462,9 +460,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            executorAddress,
             syncNonce_1,
             true,
-            executorAddress,
             signatureEVVM
         );
         vm.stopPrank();
@@ -492,16 +490,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _execute_makeSignaturePay(
+        signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            executorAddress,
             syncNonce_2,
-            true,
-            executorAddress
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -512,9 +510,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            executorAddress,
             syncNonce_2,
             true,
-            executorAddress,
             signatureEVVM
         );
         vm.stopPrank();
@@ -541,7 +539,6 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
     }
 
-
     function test__unit_correct__pay__sync_staker_noExecutor() external {
         uint256 syncNonce_1 = evvm.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
@@ -566,16 +563,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -586,9 +583,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
             false,
-            address(0),
             signatureEVVM
         );
         vm.stopPrank();
@@ -622,16 +619,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _execute_makeSignaturePay(
+        signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            address(0),
             syncNonce_2,
-            false,
-            address(0)
+            false
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -642,9 +639,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            address(0),
             syncNonce_2,
             false,
-            address(0),
             signatureEVVM
         );
         vm.stopPrank();
@@ -703,16 +700,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            executorAddress,
             syncNonce_1,
-            false,
-            executorAddress
+            false
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -723,9 +720,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            executorAddress,
             syncNonce_1,
             false,
-            executorAddress,
             signatureEVVM
         );
         vm.stopPrank();
@@ -759,16 +756,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _execute_makeSignaturePay(
+        signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            executorAddress,
             syncNonce_2,
-            false,
-            executorAddress
+            false
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -779,9 +776,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            executorAddress,
             syncNonce_2,
             false,
-            executorAddress,
             signatureEVVM
         );
         vm.stopPrank();
@@ -814,7 +811,6 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
     }
 
-
     function test__unit_correct__pay__async_staker_noExecutor() external {
         uint256 syncNonce_1 = 67;
         uint256 syncNonce_2 = 89; //🗣️🗣️
@@ -835,16 +831,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
-            true,
-            address(0)
+            true
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -855,9 +851,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            address(0),
             syncNonce_1,
             true,
-            address(0),
             signatureEVVM
         );
         vm.stopPrank();
@@ -884,26 +880,23 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_STAKER.Address,
-                ETHER_ADDRESS
-            ),
+            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1,
             "Staker balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
-            
+
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _execute_makeSignaturePay(
+        signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            address(0),
             syncNonce_2,
-            true,
-            address(0)
+            true
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -914,9 +907,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            address(0),
             syncNonce_2,
             true,
-            address(0),
             signatureEVVM
         );
         vm.stopPrank();
@@ -943,10 +936,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_STAKER.Address,
-                ETHER_ADDRESS
-            ),
+            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1 + priorityFee_2,
             "Staker balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
@@ -974,16 +964,16 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            executorAddress,
             syncNonce_1,
-            true,
-            executorAddress
+            true
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -994,9 +984,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_1,
             priorityFee_1,
+            executorAddress,
             syncNonce_1,
             true,
-            executorAddress,
             signatureEVVM
         );
         vm.stopPrank();
@@ -1023,26 +1013,23 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_STAKER.Address,
-                ETHER_ADDRESS
-            ),
+            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1,
             "Staker balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _execute_makeSignaturePay(
+        signatureEVVM = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            executorAddress,
             syncNonce_2,
-            true,
-            executorAddress
+            true
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -1053,9 +1040,9 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
             ETHER_ADDRESS,
             amount_2,
             priorityFee_2,
+            executorAddress,
             syncNonce_2,
             true,
-            executorAddress,
             signatureEVVM
         );
         vm.stopPrank();
@@ -1082,10 +1069,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
-                COMMON_USER_STAKER.Address,
-                ETHER_ADDRESS
-            ),
+            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1 + priorityFee_2,
             "Staker balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );

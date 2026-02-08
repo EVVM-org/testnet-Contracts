@@ -98,14 +98,15 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
+                address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec,
-                address(p2pSwap)
+                isAsyncExec
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -203,8 +204,8 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             input.isAsync
         );
         // update nonces
-        uint256 nextNonceEvvm = uint256(nonceEVVM)+1;
-        uint256 nextNonceP2PSwap = uint256(input.nonceP2PSwap)+1;
+        uint256 nextNonceEvvm = uint256(nonceEVVM) + 1;
+        uint256 nextNonceP2PSwap = uint256(input.nonceP2PSwap) + 1;
 
         // create signatures
         // p2pswap
@@ -238,14 +239,15 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 address(p2pSwap),
                 "",
                 PRINCIPAL_TOKEN_ADDRESS,
                 0,
                 priorityFee,
+                address(p2pSwap),
                 nextNonceEvvm,
-                input.isAsync,
-                address(p2pSwap)
+                input.isAsync
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -276,7 +278,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             input.amountA
         );
         if (tokenA == PRINCIPAL_TOKEN_ADDRESS) {
-            // When tokenA is PRINCIPAL_TOKEN and hasPriorityFee is true, 
+            // When tokenA is PRINCIPAL_TOKEN and hasPriorityFee is true,
             // the contract accumulates one extra reward from the pay operation flow
             if (input.hasPriorityFee) {
                 assertEq(

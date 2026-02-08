@@ -30,9 +30,7 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
@@ -98,14 +96,15 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             Erc191TestBuilder.buildMessageSignedForPay(
                 /* 🢃 different evvmID 🢃 */
                 evvm.getEvvmID() + 1,
+                address(evvm),
                 address(nameService),
                 "",
                 PRINCIPAL_TOKEN_ADDRESS,
                 nameService.getPriceOfRegistration("test"),
                 totalPriorityFeeAmount,
+                address(nameService),
                 222,
-                true,
-                address(nameService)
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(

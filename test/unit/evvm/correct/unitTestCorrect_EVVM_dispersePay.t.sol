@@ -21,11 +21,9 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
-contract unitTestCorrect_EVVM_dispersePay is Test, Constants, EvvmStructs {
+contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
     function executeBeforeSetUp() internal override {
         _execute_makeRegistrationUsername(
@@ -76,15 +74,15 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
-            0,
-            false,
-            address(0)
+            address(0),
+                0,
+                false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -94,9 +92,9 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -153,15 +151,15 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             67,
-            true,
-            address(0)
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -171,9 +169,9 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             67,
             true,
-            address(0),
             signature
         );
 
@@ -230,15 +228,15 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
-            0,
-            false,
-            address(0)
+            address(0),
+                0,
+                false
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -248,9 +246,9 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             0,
             false,
-            address(0),
             signature
         );
 
@@ -307,15 +305,15 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants, EvvmStructs {
             to_identity: "dummy"
         });
 
-        bytes memory signature = _execute_makeDispersePaySignature(
+        bytes memory signature = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             67,
-            true,
-            address(0)
+            true
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -325,9 +323,9 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants, EvvmStructs {
             ETHER_ADDRESS,
             amount,
             priorityFee,
+            address(0),
             67,
             true,
-            address(0),
             signature
         );
 

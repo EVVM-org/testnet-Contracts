@@ -21,7 +21,7 @@ pragma solidity ^0.8.0;
  * @custom:version 1.0.0
  */
 
-abstract contract EvvmStructs {
+library EvvmStructs {
     //░▒▓█ Payment Data Structures ██████████████████████████████████████████████████████▓▒░
 
     /**
@@ -46,9 +46,9 @@ abstract contract EvvmStructs {
         address token;
         uint256 amount;
         uint256 priorityFee;
+        address executor;
         uint256 nonce;
         bool isAsyncExec;
-        address executor;
         bytes signature;
     }
 
@@ -72,9 +72,9 @@ abstract contract EvvmStructs {
         address token;
         uint256 totalAmount;
         uint256 priorityFee;
+        address executor;
         uint256 nonce;
         bool isAsyncExec;
-        address executor;
         bytes signature;
     }
 
@@ -103,7 +103,7 @@ abstract contract EvvmStructs {
      * @param token Address of the token to distribute (address(0) for ETH)
      * @param amount Total amount being distributed (must equal sum of toData amounts)
      */
-    struct DisperseCaBatchData{
+    struct DisperseCaBatchData {
         address from;
         DisperseCaPayMetadata[] toData;
         address token;
@@ -168,41 +168,5 @@ abstract contract EvvmStructs {
         uint256 totalSupply;
         uint256 eraTokens;
         uint256 reward;
-    }
-
-    //░▒▓█ Governance Proposal Structures ███████████████████████████████████████████████▓▒░
-
-    /**
-     * @notice Time-delayed proposal structure for address-type governance changes
-     * @dev Used for admin changes (1-day delay) and can be extended for other address proposals
-     *
-     * Governance Flow:
-     * 1. Admin proposes new address -> sets proposal and timeToAccept
-     * 2. Time delay passes (1 day for admin, 30 days for implementation)
-     * 3. Proposed address calls accept -> current is updated, proposal is cleared
-     *
-     * @param current Currently active address with the role/privilege
-     * @param proposal Proposed new address awaiting acceptance after time delay
-     * @param timeToAccept Timestamp after which the proposal can be accepted
-     */
-    struct AddressTypeProposal {
-        address current;
-        address proposal;
-        uint256 timeToAccept;
-    }
-
-    /**
-     * @notice Time-delayed proposal structure for uint-type governance changes
-     * @dev Used for numeric parameter changes requiring time-delayed governance
-     *      Follows the same pattern as AddressTypeProposal for consistency
-     *
-     * @param current Currently active value for the parameter
-     * @param proposal Proposed new value awaiting acceptance after time delay
-     * @param timeToAccept Timestamp after which the proposal can be accepted
-     */
-    struct UintTypeProposal {
-        uint256 current;
-        uint256 proposal;
-        uint256 timeToAccept;
     }
 }

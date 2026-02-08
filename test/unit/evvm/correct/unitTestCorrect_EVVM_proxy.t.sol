@@ -20,9 +20,7 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 contract unitTestCorrect_EVVM_proxy is Test, Constants {
     /**
      * Naming Convention for Init Test Functions
@@ -99,14 +97,15 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
             userToInteract.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 evvm.getEvvmID(),
+                address(evvm),
                 addressTo,
                 "",
                 tokenAddress,
                 amount,
                 priorityFee,
+                address(0),
                 evvm.getNextCurrentSyncNonce(userToInteract.Address),
-                false,
-                address(0)
+                false
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -122,9 +121,9 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
             tokenAddress,
             amount,
             priorityFee,
+            address(0),
             evvm.getNextCurrentSyncNonce(userToInteract.Address),
             false,
-            address(0),
             signatureEVVM
         );
     }
@@ -634,5 +633,3 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
     }
 }
-
-
