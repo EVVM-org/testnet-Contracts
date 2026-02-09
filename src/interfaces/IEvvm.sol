@@ -10,9 +10,9 @@ library EvvmStructs {
         address token;
         uint256 amount;
         uint256 priorityFee;
+        address executor;
         uint256 nonce;
         bool isAsyncExec;
-        address executor;
         bytes signature;
     }
 
@@ -41,25 +41,21 @@ library EvvmStructs {
 
 interface IEvvm {
     error AddressCantBeZero();
-    error AsyncNonceAlreadyUsed();
     error BreakerExploded();
     error ImplementationIsNotActive();
     error IncorrectAddressInput();
     error InsufficientBalance();
     error InvalidAmount();
-    error InvalidSignature();
     error NotAnCA();
     error SenderIsNotAdmin();
     error SenderIsNotTheExecutor();
     error SenderIsNotTheProposedAdmin();
     error SenderIsNotTreasury();
-    error SyncNonceMismatch();
     error TimeLockNotExpired();
     error WindowExpired();
 
     fallback() external;
 
-    function _setupNameServiceAndTreasuryAddress(address _nameServiceAddress, address _treasuryAddress) external;
     function acceptAdmin() external;
     function acceptImplementation() external;
     function addAmountToUser(address user, address token, uint256 amount) external;
@@ -75,9 +71,9 @@ interface IEvvm {
         address token,
         uint256 amount,
         uint256 priorityFee,
+        address executor,
         uint256 nonce,
         bool isAsyncExec,
-        address executor,
         bytes memory signature
     ) external;
     function getBalance(address user, address token) external view returns (uint256);
@@ -101,6 +97,8 @@ interface IEvvm {
     function getTimeToAcceptImplementation() external view returns (uint256);
     function getWhitelistTokenToBeAdded() external view returns (address);
     function getWhitelistTokenToBeAddedDateToSet() external view returns (uint256);
+    function initializeSystemContracts(address _nameServiceAddress, address _treasuryAddress, address _stateAddress)
+        external;
     function isAddressStaker(address user) external view returns (bool);
     function pay(
         address from,
@@ -109,9 +107,9 @@ interface IEvvm {
         address token,
         uint256 amount,
         uint256 priorityFee,
+        address executor,
         uint256 nonce,
         bool isAsyncExec,
-        address executor,
         bytes memory signature
     ) external;
     function pointStaker(address user, bytes1 answer) external;
