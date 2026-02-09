@@ -18,6 +18,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -31,16 +32,16 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
         AccountData user;
         string identity;
         uint256 key;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
             uint256(
@@ -55,7 +56,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
         );
 
         for (uint256 i = 0; i < 100; i++) {
-            _execute_makeAddCustomMetadata(
+            _executeFn_nameService_addCustomMetadata(
                 USER_USERNAME_OWNER,
                 USERNAME,
                 string.concat("test>", AdvancedStrings.uintToString(i)),
@@ -63,7 +64,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
                     0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
                 ) + i,
                 uint256(
-                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000
                 ) + i,
                 true
             );
@@ -85,10 +86,10 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
     struct Input {
         string identity;
         uint16 key;
-        uint256 nonceNameService;
+        uint256 nonce;
         uint32 priorityFee;
         uint256 nonceAsyncEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
     }
 
     function test__fuzz__removeCustomMetadata__noStaking(
@@ -96,29 +97,33 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
     ) external {
         input.key = uint16(bound(uint256(input.key), 0, 98));
         vm.assume(
-            input.nonceNameService <
+            input.nonce <
                 uint256(
-                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000
                 )
         );
         vm.assume(
             input.nonceAsyncEVVM <
                 uint256(
-                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000
                 )
+        );
+        vm.assume(
+            input.nonceAsyncEVVM !=
+                input.nonce 
         );
 
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: uint256(input.key),
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
+            nonceEVVM: input.isAsyncExecEvvm
                 ? input.nonceAsyncEVVM
                 : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            priorityEVVM: input.priorityEVVM,
+            isAsyncExecEvvm: input.isAsyncExecEvvm,
             signatureEVVM: ""
         });
 
@@ -127,14 +132,14 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+        ) = _executeSig_nameService_removeCustomMetadata(
             params.user,
             params.identity,
             params.key,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -143,11 +148,11 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             params.user.Address,
             params.identity,
             params.key,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
@@ -192,29 +197,33 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
     ) external {
         input.key = uint16(bound(uint256(input.key), 0, 98));
         vm.assume(
-            input.nonceNameService <
+            input.nonce <
                 uint256(
-                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000
                 )
         );
         vm.assume(
             input.nonceAsyncEVVM <
                 uint256(
-                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000
                 )
+        );
+        vm.assume(
+            input.nonceAsyncEVVM !=
+                input.nonce 
         );
 
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: uint256(input.key),
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
+            nonceEVVM: input.isAsyncExecEvvm
                 ? input.nonceAsyncEVVM
                 : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            priorityEVVM: input.priorityEVVM,
+            isAsyncExecEvvm: input.isAsyncExecEvvm,
             signatureEVVM: ""
         });
 
@@ -223,14 +232,14 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+        ) = _executeSig_nameService_removeCustomMetadata(
             params.user,
             params.identity,
             params.key,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -239,11 +248,11 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             params.user.Address,
             params.identity,
             params.key,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 

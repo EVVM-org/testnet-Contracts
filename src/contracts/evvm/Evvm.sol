@@ -84,7 +84,7 @@ import {
     EvvmError as Error
 } from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
-    EvvmHashUtils
+    EvvmHashUtils as Hash
 } from "@evvm/testnet-contracts/library/utils/signature/EvvmHashUtils.sol";
 import {
     AdvancedStrings
@@ -387,7 +387,7 @@ contract Evvm is EvvmStorage {
     ) external {
         State(stateAddress).validateAndConsumeNonce(
             from,
-            EvvmHashUtils.hashDataForPay(
+            Hash.hashDataForPay(
                 to_address,
                 to_identity,
                 token,
@@ -457,7 +457,7 @@ contract Evvm is EvvmStorage {
             try
                 State(stateAddress).validateAndConsumeNonce(
                     payment.from,
-                    EvvmHashUtils.hashDataForPay(
+                    Hash.hashDataForPay(
                         payment.to_address,
                         payment.to_identity,
                         payment.token,
@@ -565,7 +565,7 @@ contract Evvm is EvvmStorage {
     ) external {
         State(stateAddress).validateAndConsumeNonce(
             from,
-            EvvmHashUtils.hashDataForDispersePay(
+            Hash.hashDataForDispersePay(
                 toData,
                 token,
                 amount,

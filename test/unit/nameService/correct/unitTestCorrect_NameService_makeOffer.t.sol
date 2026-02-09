@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract unitTestCorrect_NameService_makeOffer is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -36,11 +37,11 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         string username;
         uint256 expiratonDate;
         uint256 amount;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
@@ -62,7 +63,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
             uint256(
@@ -85,11 +86,11 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             username: USERNAME,
             expiratonDate: block.timestamp + 70 days,
             amount: 1.67 ether,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -98,33 +99,33 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+        ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         nameService.makeOffer(
             params.user.Address,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(USERNAME, 0);
 
         assertEq(
@@ -133,7 +134,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             "Error: offerer address not correct"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             params.expiratonDate,
             "Error: offer expiration date not correct"
         );
@@ -161,11 +162,11 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             username: USERNAME,
             expiratonDate: block.timestamp + 70 days,
             amount: 1.67 ether,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -174,33 +175,33 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+        ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         nameService.makeOffer(
             params.user.Address,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(USERNAME, 0);
 
         assertEq(
@@ -209,7 +210,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             "Error: offerer address not correct"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             params.expiratonDate,
             "Error: offer expiration date not correct"
         );
@@ -237,11 +238,11 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             username: USERNAME,
             expiratonDate: block.timestamp + 70 days,
             amount: 1.67 ether,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -250,33 +251,33 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+        ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_STAKER.Address);
         nameService.makeOffer(
             params.user.Address,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(USERNAME, 0);
 
         assertEq(
@@ -285,7 +286,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             "Error: offerer address not correct"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             params.expiratonDate,
             "Error: offer expiration date not correct"
         );
@@ -313,11 +314,11 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             username: USERNAME,
             expiratonDate: block.timestamp + 70 days,
             amount: 1.67 ether,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -326,33 +327,33 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+        ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_STAKER.Address);
         nameService.makeOffer(
             params.user.Address,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(USERNAME, 0);
 
         assertEq(
@@ -361,7 +362,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             "Error: offerer address not correct"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             params.expiratonDate,
             "Error: offer expiration date not correct"
         );
@@ -389,11 +390,11 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             username: USERNAME,
             expiratonDate: block.timestamp + 70 days,
             amount: 1.67 ether,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -402,33 +403,33 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+        ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         nameService.makeOffer(
             params.user.Address,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(USERNAME, 0);
 
         assertEq(
@@ -437,7 +438,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             "Error: offerer address not correct"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             params.expiratonDate,
             "Error: offer expiration date not correct"
         );
@@ -465,11 +466,11 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             username: USERNAME,
             expiratonDate: block.timestamp + 70 days,
             amount: 1.67 ether,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -478,33 +479,33 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+        ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         nameService.makeOffer(
             params.user.Address,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(USERNAME, 0);
 
         assertEq(
@@ -513,7 +514,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             "Error: offerer address not correct"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             params.expiratonDate,
             "Error: offer expiration date not correct"
         );
@@ -541,11 +542,11 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             username: USERNAME,
             expiratonDate: block.timestamp + 70 days,
             amount: 1.67 ether,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -554,33 +555,33 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+        ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_STAKER.Address);
         nameService.makeOffer(
             params.user.Address,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(USERNAME, 0);
 
         assertEq(
@@ -589,7 +590,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             "Error: offerer address not correct"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             params.expiratonDate,
             "Error: offer expiration date not correct"
         );
@@ -617,11 +618,11 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             username: USERNAME,
             expiratonDate: block.timestamp + 70 days,
             amount: 1.67 ether,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -630,33 +631,33 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+        ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_STAKER.Address);
         nameService.makeOffer(
             params.user.Address,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(USERNAME, 0);
 
         assertEq(
@@ -665,7 +666,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             "Error: offerer address not correct"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             params.expiratonDate,
             "Error: offer expiration date not correct"
         );

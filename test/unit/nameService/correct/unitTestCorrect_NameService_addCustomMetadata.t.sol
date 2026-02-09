@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -37,16 +38,16 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         AccountData user;
         string identity;
         string value;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
             uint256(
@@ -78,13 +79,13 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             value: "test>1",
-            nonceNameService: 10001,
+            nonce: 10001,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -92,11 +93,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             value: "test>2",
-            nonceNameService: 20002,
+            nonce: 20002,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 20002,
-            priorityEVVM: true,
+            nonceEVVM: 22,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -104,13 +105,13 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             value: "test>3",
-            nonceNameService: 30003,
+            nonce: 30003,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ) + 1,
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -118,11 +119,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             value: "test>4",
-            nonceNameService: 40004,
+            nonce: 40004,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
-            nonceEVVM: 40004,
-            priorityEVVM: true,
+            nonceEVVM: 44,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -133,14 +134,14 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         (
             params1.signatureNameService,
             params1.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
             params1.user,
             params1.identity,
             params1.value,
-            params1.nonceNameService,
+            params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -149,11 +150,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.value,
-            params1.nonceNameService,
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM,
+            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
 
@@ -192,14 +193,14 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         (
             params2.signatureNameService,
             params2.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
             params2.user,
             params2.identity,
             params2.value,
-            params2.nonceNameService,
+            params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -208,11 +209,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params2.user.Address,
             params2.identity,
             params2.value,
-            params2.nonceNameService,
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM,
+            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
 
@@ -251,14 +252,14 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         (
             params3.signatureNameService,
             params3.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
             params3.user,
             params3.identity,
             params3.value,
-            params3.nonceNameService,
+            params3.nonce,
             params3.priorityFee,
             params3.nonceEVVM,
-            params3.priorityEVVM
+            params3.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -267,11 +268,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params3.user.Address,
             params3.identity,
             params3.value,
-            params3.nonceNameService,
+            params3.nonce,
             params3.signatureNameService,
             params3.priorityFee,
             params3.nonceEVVM,
-            params3.priorityEVVM,
+            params3.isAsyncExecEvvm,
             params3.signatureEVVM
         );
 
@@ -310,14 +311,14 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         (
             params4.signatureNameService,
             params4.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
             params4.user,
             params4.identity,
             params4.value,
-            params4.nonceNameService,
+            params4.nonce,
             params4.priorityFee,
             params4.nonceEVVM,
-            params4.priorityEVVM
+            params4.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -326,11 +327,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params4.user.Address,
             params4.identity,
             params4.value,
-            params4.nonceNameService,
+            params4.nonce,
             params4.signatureNameService,
             params4.priorityFee,
             params4.nonceEVVM,
-            params4.priorityEVVM,
+            params4.isAsyncExecEvvm,
             params4.signatureEVVM
         );
 
@@ -368,13 +369,13 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             value: "test>1",
-            nonceNameService: 10001,
+            nonce: 10001,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -382,11 +383,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             value: "test>2",
-            nonceNameService: 20002,
+            nonce: 20002,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 20002,
-            priorityEVVM: true,
+            nonceEVVM: 22,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -394,13 +395,13 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             value: "test>3",
-            nonceNameService: 30003,
+            nonce: 30003,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ) + 1,
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -408,11 +409,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             value: "test>4",
-            nonceNameService: 40004,
+            nonce: 40004,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
-            nonceEVVM: 40004,
-            priorityEVVM: true,
+            nonceEVVM: 44,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -423,14 +424,14 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         (
             params1.signatureNameService,
             params1.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
             params1.user,
             params1.identity,
             params1.value,
-            params1.nonceNameService,
+            params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.isAsyncExecEvvm
         );
 
         uint256 amountToReward1 = (5 * evvm.getRewardAmount()) +
@@ -443,11 +444,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.value,
-            params1.nonceNameService,
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM,
+            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
 
@@ -486,14 +487,14 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         (
             params2.signatureNameService,
             params2.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
             params2.user,
             params2.identity,
             params2.value,
-            params2.nonceNameService,
+            params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.isAsyncExecEvvm
         );
 
         uint256 amountToReward2 = (5 * evvm.getRewardAmount()) +
@@ -506,11 +507,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params2.user.Address,
             params2.identity,
             params2.value,
-            params2.nonceNameService,
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM,
+            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
 
@@ -549,14 +550,14 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         (
             params3.signatureNameService,
             params3.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
             params3.user,
             params3.identity,
             params3.value,
-            params3.nonceNameService,
+            params3.nonce,
             params3.priorityFee,
             params3.nonceEVVM,
-            params3.priorityEVVM
+            params3.isAsyncExecEvvm
         );
 
         uint256 amountToReward3 = (5 * evvm.getRewardAmount()) +
@@ -569,11 +570,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params3.user.Address,
             params3.identity,
             params3.value,
-            params3.nonceNameService,
+            params3.nonce,
             params3.signatureNameService,
             params3.priorityFee,
             params3.nonceEVVM,
-            params3.priorityEVVM,
+            params3.isAsyncExecEvvm,
             params3.signatureEVVM
         );
 
@@ -612,14 +613,14 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         (
             params4.signatureNameService,
             params4.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
             params4.user,
             params4.identity,
             params4.value,
-            params4.nonceNameService,
+            params4.nonce,
             params4.priorityFee,
             params4.nonceEVVM,
-            params4.priorityEVVM
+            params4.isAsyncExecEvvm
         );
 
         uint256 amountToReward4 = (5 * evvm.getRewardAmount()) +
@@ -632,11 +633,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params4.user.Address,
             params4.identity,
             params4.value,
-            params4.nonceNameService,
+            params4.nonce,
             params4.signatureNameService,
             params4.priorityFee,
             params4.nonceEVVM,
-            params4.priorityEVVM,
+            params4.isAsyncExecEvvm,
             params4.signatureEVVM
         );
 

@@ -23,6 +23,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 import {
     NameService
@@ -36,6 +37,9 @@ import {
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+import {
+    StateError
+} from "@evvm/testnet-contracts/library/errors/StateError.sol";
 
 contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
     function executeBeforeSetUp() internal override {
@@ -58,15 +62,16 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
     function test__unit_revert__preRegistrationUsername__InvalidSignatureOnNameService_evvmID()
         external
     {
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
                 /* 🢃 different evvmID 🢃 */
                 evvm.getEvvmID() + 1,
+                address(evvm),
                 keccak256(abi.encodePacked("test", uint256(10101))),
-                nonceNameService
+                nonce
             )
         );
         bytes memory signatureNameService = Erc191TestBuilder
@@ -74,11 +79,11 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked("test", uint256(10101))),
-            nonceNameService,
+            nonce,
             signatureNameService,
             0,
             0,
@@ -105,16 +110,16 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
     {
         string memory username = "test";
         uint256 lockNumber = 10101;
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         (
             bytes memory signatureNameService,
 
-        ) = _execute_makePreRegistrationUsernameSignature(
+        ) = _executeSig_nameService_preRegistrationUsername(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 username,
                 lockNumber,
-                nonceNameService,
+                nonce,
                 0,
                 0,
                 false
@@ -122,11 +127,11 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked(username, uint256(lockNumber))),
-            nonceNameService,
+            nonce,
             signatureNameService,
             0,
             0,
@@ -153,16 +158,16 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
     {
         string memory username = "test";
         uint256 lockNumber = 10101;
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         (
             bytes memory signatureNameService,
 
-        ) = _execute_makePreRegistrationUsernameSignature(
+        ) = _executeSig_nameService_preRegistrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 username,
                 lockNumber,
                 /* 🢃 different nonce 🢃 */
-                nonceNameService + 67,
+                nonce + 67,
                 0,
                 0,
                 false
@@ -170,11 +175,11 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked(username, uint256(lockNumber))),
-            nonceNameService,
+            nonce,
             signatureNameService,
             0,
             0,
@@ -201,17 +206,17 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
     {
         string memory username = "test";
         uint256 lockNumber = 10101;
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         (
             bytes memory signatureNameService,
 
-        ) = _execute_makePreRegistrationUsernameSignature(
+        ) = _executeSig_nameService_preRegistrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different hash 🢃 */
                 "wrongusername",
                 67,
                 /**************************/
-                nonceNameService,
+                nonce,
                 0,
                 0,
                 false
@@ -219,11 +224,11 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked(username, uint256(lockNumber))),
-            nonceNameService,
+            nonce,
             signatureNameService,
             0,
             0,
@@ -250,24 +255,24 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
     {
         string memory username = "test";
         uint256 lockNumber = 10101;
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
 
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "testdifferent",
             67,
-            nonceNameService
+            nonce
         );
 
         (
             bytes memory signatureNameService,
 
-        ) = _execute_makePreRegistrationUsernameSignature(
+        ) = _executeSig_nameService_preRegistrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 username,
                 lockNumber,
                 /* 🢃 nonce already used 🢃 */
-                nonceNameService,
+                nonce,
                 0,
                 0,
                 false
@@ -275,12 +280,12 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked(username, lockNumber)),
             /* 🢃 nonce already used 🢃 */
-            nonceNameService,
+            nonce,
             signatureNameService,
             0,
             0,
@@ -308,15 +313,15 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         _addBalance(COMMON_USER_NO_STAKER_2, 5 ether);
         string memory username = "test";
         uint256 lockNumber = 10101;
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         (
             bytes memory signatureNameService,
             bytes memory signature_EVVM
-        ) = _execute_makePreRegistrationUsernameSignature(
+        ) = _executeSig_nameService_preRegistrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 username,
                 lockNumber,
-                nonceNameService,
+                nonce,
                 0.0001 ether,
                 6767,
                 true
@@ -328,7 +333,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked(username, uint256(lockNumber))),
-            nonceNameService,
+            nonce,
             signatureNameService,
             /* 🢃 different priority fee 🢃 */
             1 ether,
@@ -356,15 +361,15 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
     {
         string memory username = "test";
         uint256 lockNumber = 10101;
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         (
             bytes memory signatureNameService,
             bytes memory signature_EVVM
-        ) = _execute_makePreRegistrationUsernameSignature(
+        ) = _executeSig_nameService_preRegistrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 username,
                 lockNumber,
-                nonceNameService,
+                nonce,
                 0.1 ether,
                 676767,
                 true
@@ -377,7 +382,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         nameService.preRegistrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(abi.encodePacked(username, uint256(lockNumber))),
-            nonceNameService,
+            nonce,
             signatureNameService,
             0.1 ether,
             676767,

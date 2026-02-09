@@ -24,6 +24,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 import {
     NameService
@@ -31,12 +32,10 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+    StateError
+} from "@evvm/testnet-contracts/library/errors/StateError.sol";
 
 contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -46,7 +45,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
     string constant USERNAME = "test";
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             uint256(
@@ -91,7 +90,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         string memory customMetadata = string.concat(USERNAME, ">1");
-        uint256 nonceNameService = 100010001;
+        uint256 nonce = 100010001;
         uint256 nonceEVVM = 1001;
 
         uint8 v;
@@ -105,9 +104,10 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
                 /* 🢃 different evvmID 🢃 */
                 evvm.getEvvmID() + 1,
+                address(nameService),
                 USERNAME,
                 customMetadata,
-                nonceNameService
+                nonce
             )
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
@@ -126,12 +126,14 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            StateError.InvalidSignature.selector
+        );
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
@@ -169,18 +171,18 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         string memory customMetadata = string.concat(USERNAME, ">1");
-        uint256 nonceNameService = 100010001;
+        uint256 nonce = 100010001;
         uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
                 customMetadata,
-                nonceNameService,
+                nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM,
                 true
@@ -188,12 +190,14 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            StateError.InvalidSignature.selector
+        );
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
@@ -231,18 +235,18 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         string memory customMetadata = string.concat(USERNAME, ">1");
-        uint256 nonceNameService = 100010001;
+        uint256 nonce = 100010001;
         uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different identity 🢃 */
                 "differentIdentity",
                 customMetadata,
-                nonceNameService,
+                nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM,
                 true
@@ -250,12 +254,14 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            StateError.InvalidSignature.selector
+        );
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
@@ -293,18 +299,18 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         string memory customMetadata = string.concat(USERNAME, ">1");
-        uint256 nonceNameService = 100010001;
+        uint256 nonce = 100010001;
         uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 /* 🢃 different value 🢃 */
                 string.concat(USERNAME, ">2"),
-                nonceNameService,
+                nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM,
                 true
@@ -312,12 +318,14 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            StateError.InvalidSignature.selector
+        );
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
@@ -355,18 +363,18 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         string memory customMetadata = string.concat(USERNAME, ">1");
-        uint256 nonceNameService = 100010001;
+        uint256 nonce = 100010001;
         uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 customMetadata,
                 /* 🢃 different nonce 🢃 */
-                nonceNameService + 1,
+                nonce + 1,
                 totalPriorityFeeAmount,
                 nonceEVVM,
                 true
@@ -374,12 +382,14 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(
+            StateError.InvalidSignature.selector
+        );
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
@@ -414,22 +424,24 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         (
             uint256 totalPriceToAddCustomMetadata,
             uint256 totalPriorityFeeAmount
-        ) = /* 🢃 different user (not owner) 🢃 */
-            addBalance(COMMON_USER_NO_STAKER_2, 0.0001 ether);
+         /* 🢃 different user (not owner) 🢃 */) = addBalance(
+                COMMON_USER_NO_STAKER_2,
+                0.0001 ether
+            );
 
         string memory customMetadata = string.concat(USERNAME, ">1");
-        uint256 nonceNameService = 100010001;
+        uint256 nonce = 100010001;
         uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
                 /* 🢃 different user (not owner) 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
                 customMetadata,
-                nonceNameService,
+                nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM,
                 true
@@ -443,7 +455,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             USERNAME,
             customMetadata,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
@@ -482,17 +494,17 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         /* 🢃 empty custom metadata 🢃 */
         string memory customMetadata = "";
-        uint256 nonceNameService = 100010001;
+        uint256 nonce = 100010001;
         uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 customMetadata,
-                nonceNameService,
+                nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM,
                 true
@@ -505,7 +517,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
@@ -544,7 +556,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         string memory customMetadata = string.concat(USERNAME, ">1");
         /* 🢃 reused nonce 🢃 */
-        uint256 nonceNameService = uint256(
+        uint256 nonce = uint256(
             0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
         );
         uint256 nonceEVVM = 1001;
@@ -552,11 +564,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 customMetadata,
-                nonceNameService,
+                nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM,
                 true
@@ -564,12 +576,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
@@ -607,17 +619,17 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         ) = addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         string memory customMetadata = string.concat(USERNAME, ">1");
-        uint256 nonceNameService = 100010001;
+        uint256 nonce = 100010001;
         uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 customMetadata,
-                nonceNameService,
+                nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
                 /* 🢃 different nonceEVVM 🢃 */
@@ -633,7 +645,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
@@ -666,17 +678,17 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         external
     {
         string memory customMetadata = string.concat(USERNAME, ">1");
-        uint256 nonceNameService = 100010001;
+        uint256 nonce = 100010001;
         uint256 nonceEVVM = 1001;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 customMetadata,
-                nonceNameService,
+                nonce,
                 0,
                 nonceEVVM,
                 true
@@ -689,7 +701,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
-            nonceNameService,
+            nonce,
             signatureNameService,
             0,
             nonceEVVM,

@@ -18,6 +18,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract fuzzTest_NameService_registrationUsername is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -29,11 +30,11 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         AccountData user;
         string username;
         uint256 lockNumber;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
@@ -111,22 +112,24 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         uint32 seed;
         uint8 maxLength;
         uint256 lockNumber;
-        uint256 nonceNameService;
+        uint256 nonce;
         uint32 priorityFee;
         uint256 nonceAsyncEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
     }
 
     function test__fuzz__preRegistrationUsername__noStaker(
         Input memory input
     ) external {
-        vm.assume(input.nonceNameService > 0);
+        vm.assume(input.nonce > 0);
+        vm.assume(input.nonceAsyncEVVM > 0);
+        vm.assume(input.nonce != input.nonceAsyncEVVM);
 
         string memory USERNAME = generateValidUsername(
             uint256(input.seed),
             uint256(input.maxLength)
         );
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             USER,
             USERNAME,
             input.lockNumber,
@@ -139,27 +142,27 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             user: USER,
             username: USERNAME,
             lockNumber: input.lockNumber,
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
+            nonceEVVM: input.isAsyncExecEvvm
                 ? input.nonceAsyncEVVM
                 : evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: input.priorityEVVM,
+            isAsyncExecEvvm: input.isAsyncExecEvvm,
             signatureEVVM: ""
         });
         _addBalance(params.user, params.username, params.priorityFee);
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
             params.user,
             USERNAME,
             params.lockNumber,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -167,11 +170,11 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             params.user.Address,
             USERNAME,
             params.lockNumber,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -203,13 +206,14 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
     function test__fuzz__preRegistrationUsername__staker(
         Input memory input
     ) external {
-        vm.assume(input.nonceNameService > 0);
-        
+        vm.assume(input.nonce > 0);
+        vm.assume(input.nonceAsyncEVVM > 0);
+        vm.assume(input.nonce != input.nonceAsyncEVVM);
         string memory USERNAME = generateValidUsername(
             uint256(input.seed),
             uint256(input.maxLength)
         );
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             USER,
             USERNAME,
             input.lockNumber,
@@ -222,27 +226,27 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             user: USER,
             username: USERNAME,
             lockNumber: input.lockNumber,
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
+            nonceEVVM: input.isAsyncExecEvvm
                 ? input.nonceAsyncEVVM
                 : evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: input.priorityEVVM,
+            isAsyncExecEvvm: input.isAsyncExecEvvm,
             signatureEVVM: ""
         });
         _addBalance(params.user, params.username, params.priorityFee);
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
             params.user,
             USERNAME,
             params.lockNumber,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -250,11 +254,11 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             params.user.Address,
             USERNAME,
             params.lockNumber,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();

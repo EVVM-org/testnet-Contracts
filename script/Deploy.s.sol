@@ -44,7 +44,7 @@ contract DeployScript is Script, BaseInputs {
         );
         state = new State(address(evvm), admin);
 
-        nameService = new NameService(address(evvm), admin);
+        nameService = new NameService(address(evvm), address(state), admin);
 
         staking._setupEstimatorAndEvvm(address(estimator), address(evvm));
         treasury = new Treasury(address(evvm));

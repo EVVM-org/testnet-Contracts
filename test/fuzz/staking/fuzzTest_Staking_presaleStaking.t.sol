@@ -73,7 +73,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
         bool usingStaker;
         uint144 nonceStaking;
         uint144 nonceEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         uint16 priorityFeeAmountEVVM;
     }
 
@@ -160,12 +160,12 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                     true,
                     input[i].nonceStaking,
                     uint256(input[i].priorityFeeAmountEVVM),
-                    input[i].priorityEVVM
+                    input[i].isAsyncExecEvvm
                         ? input[i].nonceEVVM
                         : evvm.getNextCurrentSyncNonce(
                             COMMON_USER_NO_STAKER_1.Address
                         ),
-                    input[i].priorityEVVM,
+                    input[i].isAsyncExecEvvm,
                     FISHER
                 );
             } else {
@@ -202,12 +202,12 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                     false,
                     input[i].nonceStaking,
                     uint256(input[i].priorityFeeAmountEVVM),
-                    input[i].priorityEVVM
+                    input[i].isAsyncExecEvvm
                         ? input[i].nonceEVVM
                         : evvm.getNextCurrentSyncNonce(
                             COMMON_USER_NO_STAKER_1.Address
                         ),
-                    input[i].priorityEVVM,
+                    input[i].isAsyncExecEvvm,
                     FISHER
                 );
             }

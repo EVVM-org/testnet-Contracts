@@ -14,8 +14,15 @@ pragma solidity ^0.8.0;
 import {
     EvvmStructs
 } from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
-import {AdvancedStrings} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {EvvmHashUtils} from "@evvm/testnet-contracts/library/utils/signature/EvvmHashUtils.sol";
+import {
+    AdvancedStrings
+} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    EvvmHashUtils
+} from "@evvm/testnet-contracts/library/utils/signature/EvvmHashUtils.sol";
+import {
+    NameServiceHashUtils
+} from "@evvm/testnet-contracts/library/utils/signature/NameServiceHashUtils.sol";
 
 library Erc191TestBuilder {
     //-----------------------------------------------------------------------------------
@@ -34,8 +41,9 @@ library Erc191TestBuilder {
         uint256 nonce,
         bool isAsyncExec
     ) internal pure returns (bytes32) {
-        return buildHashForSign(
-            AdvancedStrings.buildSignaturePayload(
+        return
+            buildHashForSign(
+                AdvancedStrings.buildSignaturePayload(
                     evvmID,
                     servicePointer,
                     EvvmHashUtils.hashDataForPay(
@@ -49,7 +57,7 @@ library Erc191TestBuilder {
                     nonce,
                     isAsyncExec
                 )
-        );
+            );
     }
 
     function buildMessageSignedForDispersePay(
@@ -63,8 +71,9 @@ library Erc191TestBuilder {
         uint256 nonce,
         bool isAsyncExec
     ) public pure returns (bytes32) {
-        return buildHashForSign(
-            AdvancedStrings.buildSignaturePayload(
+        return
+            buildHashForSign(
+                AdvancedStrings.buildSignaturePayload(
                     evvmID,
                     servicePointer,
                     EvvmHashUtils.hashDataForDispersePay(
@@ -77,307 +86,220 @@ library Erc191TestBuilder {
                     nonce,
                     isAsyncExec
                 )
-        );
+            );
     }
 
     //-----------------------------------------------------------------------------------
     // MATE NAME SERVICE
     //-----------------------------------------------------------------------------------
 
-    /**
-     * @notice Builds the message hash for username pre-registration
-     * @dev Creates an EIP-191 compatible hash for NameService preRegistrationUsername
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _hashUsername Hash of username + random number for commit-reveal
-     * @param _nameServiceNonce Nonce for NameService replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForPreRegistrationUsername(
         uint256 evvmID,
-        bytes32 _hashUsername,
-        uint256 _nameServiceNonce
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        bytes32 hashPreRegisteredUsername,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "preRegistrationUsername",
-                    ",",
-                    AdvancedStrings.bytes32ToString(_hashUsername),
-                    ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    NameServiceHashUtils.hashDataForPreRegistrationUsername(
+                        hashPreRegisteredUsername
+                    ),
+                    nonce,
+                    true
                 )
             );
     }
 
-    /**
-     * @notice Builds the message hash for username registration
-     * @dev Creates an EIP-191 compatible hash for NameService registrationUsername
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _username The username being registered
-     * @param _lockNumber Random number from pre-registration
-     * @param _nameServiceNonce Nonce for NameService replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForRegistrationUsername(
         uint256 evvmID,
-        string memory _username,
-        uint256 _lockNumber,
-        uint256 _nameServiceNonce
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        string memory username,
+        uint256 lockNumber,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "registrationUsername",
-                    ",",
-                    _username,
-                    ",",
-                    AdvancedStrings.uintToString(_lockNumber),
-                    ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    NameServiceHashUtils.hashDataForRegistrationUsername(
+                        username,
+                        lockNumber
+                    ),
+                    nonce,
+                    true
                 )
             );
     }
 
-    /**
-     * @notice Builds the message hash for making a username offer
-     * @dev Creates an EIP-191 compatible hash for NameService makeOffer
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _username Target username for the offer
-     * @param _dateExpire Timestamp when the offer expires
-     * @param _amount Amount being offered in Principal Tokens
-     * @param _nameServiceNonce Nonce for NameService replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForMakeOffer(
         uint256 evvmID,
-        string memory _username,
-        uint256 _dateExpire,
-        uint256 _amount,
-        uint256 _nameServiceNonce
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        string memory username,
+        uint256 amount,
+        uint256 expirationDate,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "makeOffer",
-                    ",",
-                    _username,
-                    ",",
-                    AdvancedStrings.uintToString(_dateExpire),
-                    ",",
-                    AdvancedStrings.uintToString(_amount),
-                    ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    NameServiceHashUtils.hashDataForMakeOffer(
+                        username,
+                        amount,
+                        expirationDate
+                        
+                    ),
+                    nonce,
+                    true
                 )
             );
     }
 
-    /**
-     * @notice Builds the message hash for withdrawing a username offer
-     * @dev Creates an EIP-191 compatible hash for NameService withdrawOffer
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _username Username the offer was made for
-     * @param _offerId ID of the offer to withdraw
-     * @param _nameServiceNonce Nonce for NameService replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForWithdrawOffer(
         uint256 evvmID,
-        string memory _username,
-        uint256 _offerId,
-        uint256 _nameServiceNonce
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        string memory username,
+        uint256 offerId,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "withdrawOffer",
-                    ",",
-                    _username,
-                    ",",
-                    AdvancedStrings.uintToString(_offerId),
-                    ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    NameServiceHashUtils.hashDataForWithdrawOffer(
+                        username,
+                        offerId
+                    ),
+                    nonce,
+                    true
                 )
             );
     }
 
-    /**
-     * @notice Builds the message hash for accepting a username offer
-     * @dev Creates an EIP-191 compatible hash for NameService acceptOffer
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _username Username being sold
-     * @param _offerId ID of the offer to accept
-     * @param _nameServiceNonce Nonce for NameService replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForAcceptOffer(
         uint256 evvmID,
-        string memory _username,
-        uint256 _offerId,
-        uint256 _nameServiceNonce
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        string memory username,
+        uint256 offerId,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "acceptOffer",
-                    ",",
-                    _username,
-                    ",",
-                    AdvancedStrings.uintToString(_offerId),
-                    ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    NameServiceHashUtils.hashDataForAcceptOffer(
+                        username,
+                        offerId
+                    ),
+                    nonce,
+                    true
                 )
             );
     }
 
-    /**
-     * @notice Builds the message hash for renewing a username
-     * @dev Creates an EIP-191 compatible hash for NameService renewUsername
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _username Username to renew
-     * @param _nameServiceNonce Nonce for NameService replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForRenewUsername(
         uint256 evvmID,
-        string memory _username,
-        uint256 _nameServiceNonce
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        string memory username,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "renewUsername",
-                    ",",
-                    _username,
-                    ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    NameServiceHashUtils.hashDataForRenewUsername(username),
+                    nonce,
+                    true
                 )
             );
     }
 
-    /**
-     * @notice Builds the message hash for adding custom metadata
-     * @dev Creates an EIP-191 compatible hash for NameService addCustomMetadata
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _username Username to add metadata to
-     * @param _value Metadata value following schema format
-     * @param _nameServiceNonce Nonce for NameService replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForAddCustomMetadata(
         uint256 evvmID,
-        string memory _username,
-        string memory _value,
-        uint256 _nameServiceNonce
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        string memory username,
+        string memory value,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "addCustomMetadata",
-                    ",",
-                    _username,
-                    ",",
-                    _value,
-                    ",",
-                    AdvancedStrings.uintToString(_nameServiceNonce)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    NameServiceHashUtils.hashDataForAddCustomMetadata(
+                        username,
+                        value
+                    ),
+                    nonce,
+                    true
                 )
             );
     }
 
-    /**
-     * @notice Builds the message hash for removing custom metadata
-     * @dev Creates an EIP-191 compatible hash for NameService removeCustomMetadata
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _username Username to remove metadata from
-     * @param _key Index of the metadata entry to remove
-     * @param _nonce Nonce for NameService replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForRemoveCustomMetadata(
         uint256 evvmID,
-        string memory _username,
-        uint256 _key,
-        uint256 _nonce
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        string memory username,
+        uint256 key,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "removeCustomMetadata",
-                    ",",
-                    _username,
-                    ",",
-                    AdvancedStrings.uintToString(_key),
-                    ",",
-                    AdvancedStrings.uintToString(_nonce)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    NameServiceHashUtils.hashDataForRemoveCustomMetadata(
+                        username,
+                        key
+                    ),
+                    nonce,
+                    true
                 )
             );
     }
 
-    /**
-     * @notice Builds the message hash for flushing all custom metadata
-     * @dev Creates an EIP-191 compatible hash for NameService flushCustomMetadata
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _username Username to flush metadata from
-     * @param _nonce Nonce for NameService replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForFlushCustomMetadata(
         uint256 evvmID,
-        string memory _username,
-        uint256 _nonce
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        string memory username,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "flushCustomMetadata",
-                    ",",
-                    _username,
-                    ",",
-                    AdvancedStrings.uintToString(_nonce)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    NameServiceHashUtils.hashDataForFlushCustomMetadata(
+                        username
+                    ),
+                    nonce,
+                    true
                 )
             );
     }
 
-    /**
-     * @notice Builds the message hash for flushing a username
-     * @dev Creates an EIP-191 compatible hash for NameService flushUsername
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _username Username to completely remove
-     * @param _nonce Nonce for NameService replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForFlushUsername(
         uint256 evvmID,
-        string memory _username,
-        uint256 _nonce
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        string memory username,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "flushUsername",
-                    ",",
-                    _username,
-                    ",",
-                    AdvancedStrings.uintToString(_nonce)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    NameServiceHashUtils.hashDataForFlushUsername(username),
+                    nonce,
+                    true
                 )
             );
     }

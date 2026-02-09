@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -38,11 +39,11 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         AccountData user;
         string username;
         uint256 lockNumber;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
@@ -70,13 +71,13 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
          *      register them inmediately
          */
 
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             USER_ONE,
             USERNAME_ONE,
             REGISTRATION_LOCK_NUMBER_ONE,
             0
         );
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             USER_TWO,
             USERNAME_TWO,
             REGISTRATION_LOCK_NUMBER_TWO,
@@ -93,22 +94,22 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             user: USER_ONE,
             username: USERNAME_ONE,
             lockNumber: REGISTRATION_LOCK_NUMBER_ONE,
-            nonceNameService: 67,
+            nonce: 67,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER_ONE.Address),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
         Params memory params2 = Params({
             user: USER_TWO,
             username: USERNAME_TWO,
             lockNumber: REGISTRATION_LOCK_NUMBER_TWO,
-            nonceNameService: 89,
+            nonce: 89,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER_TWO.Address),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -117,14 +118,14 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher noStaker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (params1.signatureNameService, params1.signatureEVVM) =
-            _execute_makeRegistrationUsernameSignatures(
+            _executeSig_nameService_registrationUsername(
                 params1.user,
                 params1.username,
                 params1.lockNumber,
-                params1.nonceNameService,
+                params1.nonce,
                 params1.priorityFee,
                 params1.nonceEVVM,
-                params1.priorityEVVM
+                params1.isAsyncExecEvvm
             );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -132,11 +133,11 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.user.Address,
             params1.username,
             params1.lockNumber,
-            params1.nonceNameService,
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM,
+            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
         vm.stopPrank();
@@ -165,14 +166,14 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher staker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (params2.signatureNameService, params2.signatureEVVM) =
-            _execute_makeRegistrationUsernameSignatures(
+            _executeSig_nameService_registrationUsername(
                 params2.user,
                 params2.username,
                 params2.lockNumber,
-                params2.nonceNameService,
+                params2.nonce,
                 params2.priorityFee,
                 params2.nonceEVVM,
-                params2.priorityEVVM
+                params2.isAsyncExecEvvm
             );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -180,11 +181,11 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.user.Address,
             params2.username,
             params2.lockNumber,
-            params2.nonceNameService,
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM,
+            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
         vm.stopPrank();
@@ -217,22 +218,22 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             user: USER_ONE,
             username: USERNAME_ONE,
             lockNumber: REGISTRATION_LOCK_NUMBER_ONE,
-            nonceNameService: 67,
+            nonce: 68,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            priorityEVVM: true,
+            nonceEVVM: 420,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
         Params memory params2 = Params({
             user: USER_TWO,
             username: USERNAME_TWO,
             lockNumber: REGISTRATION_LOCK_NUMBER_TWO,
-            nonceNameService: 89,
+            nonce: 777,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 89,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -241,14 +242,14 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher noStaker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (params1.signatureNameService, params1.signatureEVVM) =
-            _execute_makeRegistrationUsernameSignatures(
+            _executeSig_nameService_registrationUsername(
                 params1.user,
                 params1.username,
                 params1.lockNumber,
-                params1.nonceNameService,
+                params1.nonce,
                 params1.priorityFee,
                 params1.nonceEVVM,
-                params1.priorityEVVM
+                params1.isAsyncExecEvvm
             );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -256,11 +257,11 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.user.Address,
             params1.username,
             params1.lockNumber,
-            params1.nonceNameService,
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM,
+            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
         vm.stopPrank();
@@ -289,14 +290,14 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher staker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (params2.signatureNameService, params2.signatureEVVM) =
-            _execute_makeRegistrationUsernameSignatures(
+            _executeSig_nameService_registrationUsername(
                 params2.user,
                 params2.username,
                 params2.lockNumber,
-                params2.nonceNameService,
+                params2.nonce,
                 params2.priorityFee,
                 params2.nonceEVVM,
-                params2.priorityEVVM
+                params2.isAsyncExecEvvm
             );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -304,11 +305,11 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.user.Address,
             params2.username,
             params2.lockNumber,
-            params2.nonceNameService,
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM,
+            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
         vm.stopPrank();
@@ -341,22 +342,22 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             user: USER_ONE,
             username: USERNAME_ONE,
             lockNumber: REGISTRATION_LOCK_NUMBER_ONE,
-            nonceNameService: 67,
+            nonce: 67,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER_ONE.Address),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
         Params memory params2 = Params({
             user: USER_TWO,
             username: USERNAME_TWO,
             lockNumber: REGISTRATION_LOCK_NUMBER_TWO,
-            nonceNameService: 89,
+            nonce: 89,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(USER_TWO.Address),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -365,14 +366,14 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher noStaker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (params1.signatureNameService, params1.signatureEVVM) =
-            _execute_makeRegistrationUsernameSignatures(
+            _executeSig_nameService_registrationUsername(
                 params1.user,
                 params1.username,
                 params1.lockNumber,
-                params1.nonceNameService,
+                params1.nonce,
                 params1.priorityFee,
                 params1.nonceEVVM,
-                params1.priorityEVVM
+                params1.isAsyncExecEvvm
             );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -380,11 +381,11 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.user.Address,
             params1.username,
             params1.lockNumber,
-            params1.nonceNameService,
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM,
+            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
         vm.stopPrank();
@@ -413,14 +414,14 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher staker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (params2.signatureNameService, params2.signatureEVVM) =
-            _execute_makeRegistrationUsernameSignatures(
+            _executeSig_nameService_registrationUsername(
                 params2.user,
                 params2.username,
                 params2.lockNumber,
-                params2.nonceNameService,
+                params2.nonce,
                 params2.priorityFee,
                 params2.nonceEVVM,
-                params2.priorityEVVM
+                params2.isAsyncExecEvvm
             );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -428,11 +429,11 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.user.Address,
             params2.username,
             params2.lockNumber,
-            params2.nonceNameService,
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM,
+            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
         vm.stopPrank();
@@ -465,22 +466,22 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             user: USER_ONE,
             username: USERNAME_ONE,
             lockNumber: REGISTRATION_LOCK_NUMBER_ONE,
-            nonceNameService: 67,
+            nonce: 67,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
-            nonceEVVM: 67,
-            priorityEVVM: true,
+            nonceEVVM: 420,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
         Params memory params2 = Params({
             user: USER_TWO,
             username: USERNAME_TWO,
             lockNumber: REGISTRATION_LOCK_NUMBER_TWO,
-            nonceNameService: 89,
+            nonce: 777,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
             nonceEVVM: 89,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -489,14 +490,14 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher noStaker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (params1.signatureNameService, params1.signatureEVVM) =
-            _execute_makeRegistrationUsernameSignatures(
+            _executeSig_nameService_registrationUsername(
                 params1.user,
                 params1.username,
                 params1.lockNumber,
-                params1.nonceNameService,
+                params1.nonce,
                 params1.priorityFee,
                 params1.nonceEVVM,
-                params1.priorityEVVM
+                params1.isAsyncExecEvvm
             );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -504,11 +505,11 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.user.Address,
             params1.username,
             params1.lockNumber,
-            params1.nonceNameService,
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM,
+            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
         vm.stopPrank();
@@ -537,14 +538,14 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher staker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (params2.signatureNameService, params2.signatureEVVM) =
-            _execute_makeRegistrationUsernameSignatures(
+            _executeSig_nameService_registrationUsername(
                 params2.user,
                 params2.username,
                 params2.lockNumber,
-                params2.nonceNameService,
+                params2.nonce,
                 params2.priorityFee,
                 params2.nonceEVVM,
-                params2.priorityEVVM
+                params2.isAsyncExecEvvm
             );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -552,11 +553,11 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.user.Address,
             params2.username,
             params2.lockNumber,
-            params2.nonceNameService,
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM,
+            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
         vm.stopPrank();

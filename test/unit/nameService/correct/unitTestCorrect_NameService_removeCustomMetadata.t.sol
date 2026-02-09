@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -38,62 +39,62 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         AccountData user;
         string identity;
         uint256 key;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             )
         );
 
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_1,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
             ),
             true
         );
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_2,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6
             ),
             true
         );
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_3,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8
             ),
             true
         );
@@ -118,13 +119,13 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 1,
-            nonceNameService: 100010001,
+            nonce: 100010001,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 COMMON_USER_NO_STAKER_1.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -132,11 +133,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 0,
-            nonceNameService: 200020002,
+            nonce: 200020002,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -147,14 +148,14 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         (
             params1.signatureNameService,
             params1.signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+        ) = _executeSig_nameService_removeCustomMetadata(
             params1.user,
             params1.identity,
             params1.key,
-            params1.nonceNameService,
+            params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -163,11 +164,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.key,
-            params1.nonceNameService,
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM,
+            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
 
@@ -210,14 +211,14 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         (
             params2.signatureNameService,
             params2.signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+        ) = _executeSig_nameService_removeCustomMetadata(
             params2.user,
             params2.identity,
             params2.key,
-            params2.nonceNameService,
+            params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -226,11 +227,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params2.user.Address,
             params2.identity,
             params2.key,
-            params2.nonceNameService,
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM,
+            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
 
@@ -274,13 +275,13 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 1,
-            nonceNameService: 100010001,
+            nonce: 100010001,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 COMMON_USER_NO_STAKER_1.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -288,11 +289,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 0,
-            nonceNameService: 200020002,
+            nonce: 200020002,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -306,14 +307,14 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         (
             params1.signatureNameService,
             params1.signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+        ) = _executeSig_nameService_removeCustomMetadata(
             params1.user,
             params1.identity,
             params1.key,
-            params1.nonceNameService,
+            params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -322,11 +323,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.key,
-            params1.nonceNameService,
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM,
+            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
 
@@ -372,14 +373,14 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         (
             params2.signatureNameService,
             params2.signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+        ) = _executeSig_nameService_removeCustomMetadata(
             params2.user,
             params2.identity,
             params2.key,
-            params2.nonceNameService,
+            params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -388,11 +389,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params2.user.Address,
             params2.identity,
             params2.key,
-            params2.nonceNameService,
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM,
+            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
 
@@ -436,13 +437,13 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 1,
-            nonceNameService: 100010001,
+            nonce: 100010001,
             signatureNameService: "",
             priorityFee: 0.0001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 COMMON_USER_NO_STAKER_1.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -450,11 +451,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 0,
-            nonceNameService: 200020002,
+            nonce: 200020002,
             signatureNameService: "",
             priorityFee: 0.0001 ether,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -465,14 +466,14 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         (
             params1.signatureNameService,
             params1.signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+        ) = _executeSig_nameService_removeCustomMetadata(
             params1.user,
             params1.identity,
             params1.key,
-            params1.nonceNameService,
+            params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -481,11 +482,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.key,
-            params1.nonceNameService,
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM,
+            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
 
@@ -528,14 +529,14 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         (
             params2.signatureNameService,
             params2.signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+        ) = _executeSig_nameService_removeCustomMetadata(
             params2.user,
             params2.identity,
             params2.key,
-            params2.nonceNameService,
+            params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -544,11 +545,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params2.user.Address,
             params2.identity,
             params2.key,
-            params2.nonceNameService,
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM,
+            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
 
@@ -592,13 +593,13 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 1,
-            nonceNameService: 100010001,
+            nonce: 100010001,
             signatureNameService: "",
             priorityFee: 0.0001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 COMMON_USER_NO_STAKER_1.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -606,11 +607,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 0,
-            nonceNameService: 200020002,
+            nonce: 200020002,
             signatureNameService: "",
             priorityFee: 0.0001 ether,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -624,14 +625,14 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         (
             params1.signatureNameService,
             params1.signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+        ) = _executeSig_nameService_removeCustomMetadata(
             params1.user,
             params1.identity,
             params1.key,
-            params1.nonceNameService,
+            params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -640,11 +641,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.key,
-            params1.nonceNameService,
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.priorityEVVM,
+            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
 
@@ -690,14 +691,14 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         (
             params2.signatureNameService,
             params2.signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+        ) = _executeSig_nameService_removeCustomMetadata(
             params2.user,
             params2.identity,
             params2.key,
-            params2.nonceNameService,
+            params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -706,11 +707,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params2.user.Address,
             params2.identity,
             params2.key,
-            params2.nonceNameService,
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.priorityEVVM,
+            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
 

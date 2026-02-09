@@ -54,7 +54,11 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
             address(staking),
             ADMIN.Address
         );
-        nameService = new NameService(address(evvm), ADMIN.Address);
+        nameService = new NameService(
+            address(evvm),
+            address(state),
+            ADMIN.Address
+        );
 
         staking._setupEstimatorAndEvvm(address(estimator), address(evvm));
         treasury = new Treasury(address(evvm));

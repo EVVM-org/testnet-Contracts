@@ -186,16 +186,23 @@ abstract contract Constants is Test {
             })
         );
         state = new State(address(evvm), ADMIN.Address);
+
         estimator = new Estimator(
             ACTIVATOR.Address,
             address(evvm),
             address(staking),
             ADMIN.Address
         );
-        nameService = new NameService(address(evvm), ADMIN.Address);
+
+        nameService = new NameService(
+            address(evvm),
+            address(state),
+            ADMIN.Address
+        );
 
         staking._setupEstimatorAndEvvm(address(estimator), address(evvm));
         treasury = new Treasury(address(evvm));
+
         evvm.initializeSystemContracts(
             address(nameService),
             address(treasury),
@@ -310,11 +317,11 @@ abstract contract Constants is Test {
         signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
     }
 
-    function _execute_makePreRegistrationUsernameSignature(
+    function _executeSig_nameService_preRegistrationUsername(
         AccountData memory user,
         string memory username,
         uint256 lockNumber,
-        uint256 nonceNameService,
+        uint256 nonce,
         uint256 priorityFeeAmount,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm
@@ -327,8 +334,9 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
                 evvm.getEvvmID(),
+                address(nameService),
                 keccak256(abi.encodePacked(username, lockNumber)),
-                nonceNameService
+                nonce
             )
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
@@ -348,26 +356,30 @@ abstract contract Constants is Test {
             : bytes(hex"");
     }
 
-    function _execute_makePreRegistrationUsername(
+    function _executeFn_nameService_preRegistrationUsername(
         AccountData memory user,
         string memory username,
         uint256 lockNumber,
-        uint256 nonceNameService
+        uint256 nonce
     ) internal virtual {
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
-                keccak256(abi.encodePacked(username, lockNumber)),
-                nonceNameService
-            )
-        );
+        (
+            bytes memory signature,
+
+        ) = _executeSig_nameService_preRegistrationUsername(
+                user,
+                username,
+                lockNumber,
+                nonce,
+                0,
+                evvm.getNextCurrentSyncNonce(user.Address),
+                false
+            );
 
         nameService.preRegistrationUsername(
             user.Address,
             keccak256(abi.encodePacked(username, uint256(lockNumber))),
-            nonceNameService,
-            Erc191TestBuilder.buildERC191Signature(v, r, s),
+            nonce,
+            signature,
             0,
             0,
             false,
@@ -375,11 +387,11 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makeRegistrationUsernameSignatures(
+    function _executeSig_nameService_registrationUsername(
         AccountData memory user,
         string memory username,
         uint256 lockNumber,
-        uint256 nonceNameService,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm
@@ -396,9 +408,10 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRegistrationUsername(
                 evvm.getEvvmID(),
+                address(nameService),
                 username,
                 lockNumber,
-                nonceNameService
+                nonce
             )
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
@@ -416,18 +429,18 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makeRegistrationUsername(
+    function _executeFn_nameService_registrationUsername(
         AccountData memory user,
         string memory username,
         uint256 lockNumber,
-        uint256 nonceNameServicePreRegister,
-        uint256 nonceNameServiceRegister
+        uint256 noncePreRegister,
+        uint256 nonceRegister
     ) internal virtual {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             user,
             username,
             lockNumber,
-            nonceNameServicePreRegister
+            noncePreRegister
         );
 
         skip(30 minutes);
@@ -441,11 +454,11 @@ abstract contract Constants is Test {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
                 user,
                 username,
                 lockNumber,
-                nonceNameServiceRegister,
+                nonceRegister,
                 0,
                 evvm.getNextCurrentSyncNonce(user.Address),
                 false
@@ -455,7 +468,7 @@ abstract contract Constants is Test {
             user.Address,
             username,
             lockNumber,
-            nonceNameServiceRegister,
+            nonceRegister,
             signatureNameService,
             0,
             evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
@@ -464,12 +477,12 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makeMakeOfferSignatures(
+    function _executeSig_nameService_makeOffer(
         AccountData memory user,
         string memory usernameToMakeOffer,
-        uint256 expireDate,
         uint256 amountToOffer,
-        uint256 nonceNameService,
+        uint256 expirationDate,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm
@@ -486,10 +499,11 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOffer(
                 evvm.getEvvmID(),
+                address(nameService),
                 usernameToMakeOffer,
-                expireDate,
                 amountToOffer,
-                nonceNameService
+                expirationDate,
+                nonce
             )
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
@@ -507,12 +521,12 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makeMakeOffer(
+    function _executeFn_nameService_makeOffer(
         AccountData memory user,
         string memory usernameToMakeOffer,
-        uint256 expireDate,
         uint256 amountToOffer,
-        uint256 nonceNameService,
+        uint256 expirationDate,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm,
@@ -527,12 +541,12 @@ abstract contract Constants is Test {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+        ) = _executeSig_nameService_makeOffer(
                 user,
                 usernameToMakeOffer,
-                expireDate,
                 amountToOffer,
-                nonceNameService,
+                expirationDate,
+                nonce,
                 priorityFee,
                 nonceEvvm,
                 isAsyncExecEvvm
@@ -542,9 +556,9 @@ abstract contract Constants is Test {
         offerID = nameService.makeOffer(
             user.Address,
             usernameToMakeOffer,
-            expireDate,
             amountToOffer,
-            nonceNameService,
+            expirationDate,
+            nonce,
             signatureNameService,
             priorityFee,
             nonceEvvm,
@@ -554,11 +568,11 @@ abstract contract Constants is Test {
         vm.stopPrank();
     }
 
-    function _execute_makeWithdrawOfferSignatures(
+    function _executeSig_nameService_withdrawOffer(
         AccountData memory user,
         string memory usernameToFindOffer,
         uint256 index,
-        uint256 nonceNameService,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm
@@ -571,9 +585,10 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
                 evvm.getEvvmID(),
+                address(nameService),
                 usernameToFindOffer,
                 index,
-                nonceNameService
+                nonce
             )
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
@@ -593,11 +608,11 @@ abstract contract Constants is Test {
             : bytes(hex"");
     }
 
-    function _execute_makeAcceptOfferSignatures(
+    function _executeSig_nameService_acceptOffer(
         AccountData memory user,
         string memory usernameToFindOffer,
         uint256 index,
-        uint256 nonceNameService,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm
@@ -610,9 +625,10 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForAcceptOffer(
                 evvm.getEvvmID(),
+                address(nameService),
                 usernameToFindOffer,
                 index,
-                nonceNameService
+                nonce
             )
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
@@ -632,10 +648,10 @@ abstract contract Constants is Test {
             : bytes(hex"");
     }
 
-    function _execute_makeRenewUsernameSignatures(
+    function _executeSig_nameService_renewUsername(
         AccountData memory user,
         string memory usernameToRenew,
-        uint256 nonceNameService,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm
@@ -648,8 +664,9 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRenewUsername(
                 evvm.getEvvmID(),
+                address(nameService),
                 usernameToRenew,
-                nonceNameService
+                nonce
             )
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
@@ -667,10 +684,10 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makeRenewUsername(
+    function _executeFn_nameService_renewUsername(
         AccountData memory user,
         string memory usernameToRenew,
-        uint256 nonceNameService,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm,
@@ -679,10 +696,10 @@ abstract contract Constants is Test {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+        ) = _executeSig_nameService_renewUsername(
                 user,
                 usernameToRenew,
-                nonceNameService,
+                nonce,
                 priorityFee,
                 nonceEvvm,
                 isAsyncExecEvvm
@@ -693,7 +710,7 @@ abstract contract Constants is Test {
         nameService.renewUsername(
             user.Address,
             usernameToRenew,
-            nonceNameService,
+            nonce,
             signatureNameService,
             priorityFee,
             nonceEvvm,
@@ -704,11 +721,11 @@ abstract contract Constants is Test {
         vm.stopPrank();
     }
 
-    function _execute_makeAddCustomMetadataSignatures(
+    function _executeSig_nameService_addCustomMetadata(
         AccountData memory user,
         string memory username,
         string memory customMetadata,
-        uint256 nonceNameService,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm
@@ -721,9 +738,10 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
                 evvm.getEvvmID(),
+                address(nameService),
                 username,
                 customMetadata,
-                nonceNameService
+                nonce
             )
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
@@ -741,11 +759,11 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makeAddCustomMetadata(
+    function _executeFn_nameService_addCustomMetadata(
         AccountData memory user,
         string memory username,
         string memory customMetadata,
-        uint256 nonceNameService,
+        uint256 nonce,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm
     ) internal virtual {
@@ -758,11 +776,11 @@ abstract contract Constants is Test {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+        ) = _executeSig_nameService_addCustomMetadata(
                 user,
                 username,
                 customMetadata,
-                nonceNameService,
+                nonce,
                 0,
                 nonceEvvm,
                 isAsyncExecEvvm
@@ -772,7 +790,7 @@ abstract contract Constants is Test {
             user.Address,
             username,
             customMetadata,
-            nonceNameService,
+            nonce,
             signatureNameService,
             0,
             nonceEvvm,
@@ -781,11 +799,11 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makeRemoveCustomMetadataSignatures(
+    function _executeSig_nameService_removeCustomMetadata(
         AccountData memory user,
         string memory username,
         uint256 indexCustomMetadata,
-        uint256 nonceNameService,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm
@@ -798,9 +816,10 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRemoveCustomMetadata(
                 evvm.getEvvmID(),
+                address(nameService),
                 username,
                 indexCustomMetadata,
-                nonceNameService
+                nonce
             )
         );
 
@@ -819,10 +838,10 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makeFlushCustomMetadataSignatures(
+    function _executeSig_nameService_flushCustomMetadata(
         AccountData memory user,
         string memory username,
-        uint256 nonceNameService,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm
@@ -835,8 +854,9 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
                 evvm.getEvvmID(),
+                address(nameService),
                 username,
-                nonceNameService
+                nonce
             )
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
@@ -854,10 +874,10 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makeFlushUsernameSignatures(
+    function _executeSig_nameService_flushUsername(
         AccountData memory user,
         string memory username,
-        uint256 nonceNameService,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm
@@ -870,8 +890,9 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForFlushUsername(
                 evvm.getEvvmID(),
+                address(nameService),
                 username,
-                nonceNameService
+                nonce
             )
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);

@@ -21,9 +21,7 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
 contract unitTestCorrect_EVVM_adminFunctions is Test, Constants {
     function setUp() public override {
@@ -49,7 +47,11 @@ contract unitTestCorrect_EVVM_adminFunctions is Test, Constants {
             address(staking),
             ADMIN.Address
         );
-        nameService = new NameService(address(evvm), ADMIN.Address);
+        nameService = new NameService(
+            address(evvm),
+            address(state),
+            ADMIN.Address
+        );
 
         staking._setupEstimatorAndEvvm(address(estimator), address(evvm));
         treasury = new Treasury(address(evvm));

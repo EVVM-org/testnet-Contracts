@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -39,16 +40,16 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         AccountData user;
         string username;
         uint256 offerID;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
             uint256(
@@ -62,11 +63,11 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             )
         );
 
-        OFFER_ID = _execute_makeMakeOffer(
+        OFFER_ID = _executeFn_nameService_makeOffer(
             USER,
             USERNAME,
-            EXPIRATION_DATE,
             AMOUNT_OFFER,
+            EXPIRATION_DATE,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -99,13 +100,13 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             user: USER_USERNAME_OWNER,
             username: USERNAME,
             offerID: OFFER_ID,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -114,14 +115,14 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.prank(FISHER_NO_STAKER.Address);
@@ -129,16 +130,16 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -147,7 +148,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             EXPIRATION_DATE,
             "Error: offer expiration date should remain the same"
         );
@@ -182,11 +183,11 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             user: USER_USERNAME_OWNER,
             username: USERNAME,
             offerID: OFFER_ID,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -195,14 +196,14 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.prank(FISHER_NO_STAKER.Address);
@@ -210,16 +211,16 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -228,7 +229,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             EXPIRATION_DATE,
             "Error: offer expiration date should remain the same"
         );
@@ -263,13 +264,13 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             user: USER_USERNAME_OWNER,
             username: USERNAME,
             offerID: OFFER_ID,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0.001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -278,14 +279,14 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.prank(FISHER_NO_STAKER.Address);
@@ -293,16 +294,16 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -311,7 +312,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             EXPIRATION_DATE,
             "Error: offer expiration date should remain the same"
         );
@@ -346,11 +347,11 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             user: USER_USERNAME_OWNER,
             username: USERNAME,
             offerID: OFFER_ID,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0.001 ether,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -359,14 +360,14 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.prank(FISHER_NO_STAKER.Address);
@@ -374,16 +375,16 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -392,7 +393,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             EXPIRATION_DATE,
             "Error: offer expiration date should remain the same"
         );
@@ -427,13 +428,13 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             user: USER_USERNAME_OWNER,
             username: USERNAME,
             offerID: OFFER_ID,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -442,14 +443,14 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.prank(FISHER_STAKER.Address);
@@ -457,16 +458,16 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -475,7 +476,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             EXPIRATION_DATE,
             "Error: offer expiration date should remain the same"
         );
@@ -512,11 +513,11 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             user: USER_USERNAME_OWNER,
             username: USERNAME,
             offerID: OFFER_ID,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -525,14 +526,14 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.prank(FISHER_STAKER.Address);
@@ -540,16 +541,16 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -558,7 +559,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             EXPIRATION_DATE,
             "Error: offer expiration date should remain the same"
         );
@@ -595,13 +596,13 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             user: USER_USERNAME_OWNER,
             username: USERNAME,
             offerID: OFFER_ID,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0.001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -610,14 +611,14 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.prank(FISHER_STAKER.Address);
@@ -625,16 +626,16 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -643,7 +644,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             EXPIRATION_DATE,
             "Error: offer expiration date should remain the same"
         );
@@ -680,11 +681,11 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             user: USER_USERNAME_OWNER,
             username: USERNAME,
             offerID: OFFER_ID,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0.001 ether,
             nonceEVVM: 67,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -693,14 +694,14 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.prank(FISHER_STAKER.Address);
@@ -708,16 +709,16 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -726,7 +727,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             EXPIRATION_DATE,
             "Error: offer expiration date should remain the same"
         );

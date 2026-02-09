@@ -25,7 +25,7 @@ import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 
 contract unitTestCorrect_EVVM_pay is Test, Constants {
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             "dummy",
             uint256(

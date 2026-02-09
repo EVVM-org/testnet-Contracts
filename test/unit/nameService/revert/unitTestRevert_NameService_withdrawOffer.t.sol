@@ -23,6 +23,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 import {
     NameService
@@ -30,12 +31,13 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+import {
+    StateError
+} from "@evvm/testnet-contracts/library/errors/StateError.sol";
 
 contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -43,7 +45,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     uint256 offerID;
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             uint256(
@@ -57,11 +59,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             )
         );
 
-        offerID = _execute_makeMakeOffer(
+        offerID = _executeFn_nameService_makeOffer(
             COMMON_USER_NO_STAKER_2,
             "test",
-            block.timestamp + 30 days,
             0.001 ether,
+            block.timestamp + 30 days,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
@@ -95,7 +97,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             0.0001 ether
         );
 
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
@@ -103,9 +105,10 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
                 /* 🢃 different evvmID 🢃 */
                 evvm.getEvvmID() + 1,
+                address(nameService),
                 "test",
                 offerID,
-                nonceNameService
+                nonce
             )
         );
         bytes memory signatureNameService = Erc191TestBuilder
@@ -125,12 +128,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFee,
             nonceEVVM,
@@ -164,18 +167,18 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             0.0001 ether
         );
 
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeWithdrawOfferSignatures(
+        ) = _executeSig_nameService_withdrawOffer(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_3,
                 "test",
                 offerID,
-                nonceNameService,
+                nonce,
                 totalPriorityFee,
                 nonceEVVM,
                 true
@@ -183,12 +186,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFee,
             nonceEVVM,
@@ -222,18 +225,18 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             0.0001 ether
         );
 
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeWithdrawOfferSignatures(
+        ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 /* 🢃 different username 🢃 */
                 "differentTest",
                 offerID,
-                nonceNameService,
+                nonce,
                 totalPriorityFee,
                 nonceEVVM,
                 true
@@ -241,12 +244,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFee,
             nonceEVVM,
@@ -280,18 +283,18 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             0.0001 ether
         );
 
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeWithdrawOfferSignatures(
+        ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
                 /* 🢃 different offerId 🢃 */
                 offerID + 1,
-                nonceNameService,
+                nonce,
                 totalPriorityFee,
                 nonceEVVM,
                 true
@@ -299,12 +302,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFee,
             nonceEVVM,
@@ -338,18 +341,18 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             0.0001 ether
         );
 
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeWithdrawOfferSignatures(
+        ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
                 offerID,
                 /* 🢃 different nameServiceNonce 🢃 */
-                nonceNameService + 1,
+                nonce + 1,
                 totalPriorityFee,
                 nonceEVVM,
                 true
@@ -357,12 +360,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(NameServiceError.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFee,
             nonceEVVM,
@@ -396,18 +399,18 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             0.0001 ether
         );
 
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeWithdrawOfferSignatures(
+        ) = _executeSig_nameService_withdrawOffer(
                 /* 🢃 non owner address 🢃 */
                 COMMON_USER_NO_STAKER_3,
                 "test",
                 offerID,
-                nonceNameService,
+                nonce,
                 totalPriorityFee,
                 nonceEVVM,
                 true
@@ -421,7 +424,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             COMMON_USER_NO_STAKER_3.Address,
             "test",
             offerID,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFee,
             nonceEVVM,
@@ -456,7 +459,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         );
 
         /* 🢃 reused nonce 🢃 */
-        uint256 nonceNameService = uint256(
+        uint256 nonce = uint256(
             0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
         );
         uint256 nonceEVVM = 2002;
@@ -464,11 +467,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeWithdrawOfferSignatures(
+        ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
                 offerID,
-                nonceNameService,
+                nonce,
                 totalPriorityFee,
                 nonceEVVM,
                 true
@@ -476,12 +479,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFee,
             nonceEVVM,
@@ -515,17 +518,17 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             0.0001 ether
         );
 
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeWithdrawOfferSignatures(
+        ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
                 offerID,
-                nonceNameService,
+                nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFee + 50,
                 /* 🢃 different nonceEVVM 🢃 */
@@ -541,7 +544,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFee,
             nonceEVVM,
@@ -575,7 +578,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             0.0001 ether
         );
 
-        uint256 nonceNameService = 1001;
+        uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
         /* 🢃 insufficient balance 🢃 */
         totalPriorityFee += 1 ether;
@@ -583,11 +586,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeWithdrawOfferSignatures(
+        ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
                 offerID,
-                nonceNameService,
+                nonce,
                 totalPriorityFee,
                 nonceEVVM,
                 true
@@ -600,7 +603,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
-            nonceNameService,
+            nonce,
             signatureNameService,
             totalPriorityFee,
             nonceEVVM,

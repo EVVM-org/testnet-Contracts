@@ -23,6 +23,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 import {
     NameService
@@ -34,6 +35,9 @@ import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
 import {
     AsyncNonce
 } from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+import {
+    StateError
+} from "@evvm/testnet-contracts/library/errors/StateError.sol";
 
 contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function executeBeforeSetUp() internal override {
@@ -61,7 +65,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_evvmID()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
@@ -83,6 +87,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRegistrationUsername(
                 evvm.getEvvmID(),
+                address(evvm),
                 "test",
                 777,
                 222
@@ -148,7 +153,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_signer()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
@@ -165,7 +170,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -211,7 +216,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_username()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
@@ -228,7 +233,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different username 🢃 */
                 "invalid",
@@ -274,7 +279,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_lockNumber()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
@@ -291,7 +296,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
                 /* 🢃 different lockNumber 🢃 */
@@ -337,7 +342,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_nameServiceNonce()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
@@ -354,7 +359,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
                 777,
@@ -401,7 +406,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         external
     {
         /* 🢂 username with invalid character '@' 🢀 */
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "@test",
             777,
@@ -418,7 +423,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "@test",
                 777,
@@ -463,7 +468,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__UsernameAlreadyRegistered()
         external
     {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             "test",
             uint256(
@@ -477,7 +482,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             )
         );
 
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
@@ -494,7 +499,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
                 777,
@@ -540,7 +545,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__AsyncNonceAlreadyUsed()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
@@ -557,7 +562,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
                 777,
@@ -569,7 +574,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "test",
@@ -604,7 +609,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InvalidSignature_fromEvvm()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
@@ -621,7 +626,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
                 777,
@@ -667,7 +672,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InsufficientBalance_fromEvvm()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
@@ -688,7 +693,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
                 777,

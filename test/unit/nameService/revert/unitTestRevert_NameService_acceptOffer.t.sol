@@ -31,9 +31,10 @@ import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
 import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+    StateError
+} from "@evvm/testnet-contracts/library/errors/StateError.sol";
 
 contract unitTestRevert_NameService_acceptOffer is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -45,7 +46,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
     uint256 constant EXPIRATION_DATE_OF_OFFER = 30 days;
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             uint256(
@@ -59,11 +60,11 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             )
         );
 
-        offerID = _execute_makeMakeOffer(
+        offerID = _executeFn_nameService_makeOffer(
             COMMON_USER_NO_STAKER_2,
             USERNAME,
-            block.timestamp + EXPIRATION_DATE_OF_OFFER,
             0.001 ether,
+            block.timestamp + EXPIRATION_DATE_OF_OFFER,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
@@ -102,6 +103,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             Erc191TestBuilder.buildMessageSignedForAcceptOffer(
                 /* 🢃 different evvmID 🢃 */
                 evvm.getEvvmID() + 1,
+                address(nameService),
                 USERNAME,
                 offerID,
                 10000000001
@@ -124,9 +126,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            NameServiceError.InvalidSignatureOnNameService.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -179,7 +179,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
@@ -192,9 +192,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            NameServiceError.InvalidSignatureOnNameService.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -247,7 +245,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different username 🢃 */
                 "diferent",
@@ -260,9 +258,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            NameServiceError.InvalidSignatureOnNameService.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -315,7 +311,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 /* 🢃 different offerId 🢃 */
@@ -328,9 +324,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            NameServiceError.InvalidSignatureOnNameService.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -383,7 +377,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 offerID,
@@ -396,9 +390,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            NameServiceError.InvalidSignatureOnNameService.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
@@ -451,7 +443,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 diferentOfferID,
@@ -505,7 +497,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
     }
 
-    function test__unit_revert__acceptOffer__OfferInactive_expireDate()
+    function test__unit_revert__acceptOffer__OfferInactive_expirationDate()
         external
     {
         /* 🢃 skip after expiration date 🢃 */
@@ -519,7 +511,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 offerID,
@@ -580,18 +572,18 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         /* 🢃 reused nonce 🢃 */
-        uint256 nonceNameService = uint256(
+        uint256 nonce = uint256(
             0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
         );
 
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 offerID,
-                nonceNameService,
+                nonce,
                 amountPriorityFee,
                 1001,
                 true
@@ -599,13 +591,13 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             offerID,
-            nonceNameService,
+            nonce,
             signatureNameService,
             amountPriorityFee,
             1001,
@@ -652,7 +644,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
                 /* 🢃 not the owner address 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
@@ -711,7 +703,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 offerID,
@@ -782,7 +774,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         (
             bytes memory signatureNameService,
             bytes memory signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+        ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 offerID,

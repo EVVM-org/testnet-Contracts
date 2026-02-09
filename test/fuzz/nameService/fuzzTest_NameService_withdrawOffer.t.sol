@@ -18,6 +18,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract fuzzTest_NameService_withdrawOffer is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -36,16 +37,16 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
         AccountData user;
         string username;
         uint256 offerID;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
             uint256(
@@ -59,11 +60,11 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
             )
         );
 
-        OFFER_ID = _execute_makeMakeOffer(
+        OFFER_ID = _executeFn_nameService_makeOffer(
             USER,
             USERNAME,
-            EXPIRATION_DATE,
             AMOUNT_OFFER,
+            EXPIRATION_DATE,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -90,15 +91,15 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
     }
 
     struct Input {
-        uint256 nonceNameService;
+        uint256 nonce;
         uint32 priorityFee;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         uint256 nonceAsyncEVVM;
     }
 
     function test__fuzz__withdrawOffer__noStaking(Input memory input) external {
         vm.assume(
-            input.nonceNameService <
+            input.nonce <
                 uint256(
                     0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
                 )
@@ -110,17 +111,19 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
                     0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
                 )
         );
+
+        vm.assume(input.nonce != input.nonceAsyncEVVM);
         Params memory params = Params({
             user: USER,
             username: USERNAME,
             offerID: OFFER_ID,
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
+            nonceEVVM: input.isAsyncExecEvvm
                 ? input.nonceAsyncEVVM
                 : evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: input.priorityEVVM,
+            isAsyncExecEvvm: input.isAsyncExecEvvm,
             signatureEVVM: ""
         });
 
@@ -129,14 +132,14 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeWithdrawOfferSignatures(
+        ) = _executeSig_nameService_withdrawOffer(
             params.user,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -145,17 +148,17 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -164,7 +167,7 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             EXPIRATION_DATE,
             "Error: offer expiration date should remain the same"
         );
@@ -187,7 +190,7 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
 
     function test__fuzz__withdrawOffer__staking(Input memory input) external {
         vm.assume(
-            input.nonceNameService <
+            input.nonce <
                 uint256(
                     0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
                 )
@@ -199,17 +202,18 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
                     0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
                 )
         );
+        vm.assume(input.nonce != input.nonceAsyncEVVM);
         Params memory params = Params({
             user: USER,
             username: USERNAME,
             offerID: OFFER_ID,
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
+            nonceEVVM: input.isAsyncExecEvvm
                 ? input.nonceAsyncEVVM
                 : evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: input.priorityEVVM,
+            isAsyncExecEvvm: input.isAsyncExecEvvm,
             signatureEVVM: ""
         });
 
@@ -218,14 +222,14 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeWithdrawOfferSignatures(
+        ) = _executeSig_nameService_withdrawOffer(
             params.user,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -234,17 +238,17 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -253,7 +257,7 @@ contract fuzzTest_NameService_withdrawOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             EXPIRATION_DATE,
             "Error: offer expiration date should remain the same"
         );

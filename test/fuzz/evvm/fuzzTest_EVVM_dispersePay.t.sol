@@ -56,7 +56,7 @@ contract fuzzTest_EVVM_dispersePay is Test, Constants {
         username = string(usernameBytes);
 
         // Register the username for the test user
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             username,
             uint256(

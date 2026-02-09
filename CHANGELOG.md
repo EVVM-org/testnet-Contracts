@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **AdvancedStrings.sol**: `buildSignaturePayload` function for standardized signature generation and verification
 - **CLI**: State interface generator
 - **IState**: Interface for cross-contract interaction with State.sol
+- **Hashing utilities**: Added service-specific hashing functions in `/library/utils/signature/` for consistent payload construction across services
+- **Deployment script**: Updated to deploy State.sol and set its address in the services during deployment
 
 ### Changed
 
@@ -21,12 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Import paths**: Moved all struct libraries from `contracts/<service>/lib/` to `library/structs/` for better organization
 - **Parameter naming**:
   - `priorityFlag` to `isAsyncExec` for clearer async execution identification
-  - `clowNumber` to `lockNumber` in NameService related functions
 - **Contract naming**: Renamed `AdminControlled` to `Admin` in `library/utils/governanceUtils.sol`
-- **Hashing service utilities**: Added hash functions for each service, this will be located in `/library/utils/signature/`
-- **EVVM core service** 
+- **EVVM core service**
   - Change `_setupNameServiceAndTreasuryAddress` to `initializeSystemContracts` to generalize the function for setting up all critical system contracts (NameService, Treasury, State) in one call during deployment
   - Updated `EvvmStructs` to interact as a library instead of a abstract contract for better modularity and reuse across services
+  - Implemented `State.sol` for centralized nonce management and signature verification, replacing Evvm's previous nonce management and signature utilities
+- **NameService**:
+  - Update variable name `clowNumber` to `lockNumber` and `expireDate` to `expirationDate` for better clarity
+  - Updated `NameServiceStructs` to be a library instead of an abstract contract for better modularity and reuse across services
+  - Implemented `State.sol` for nonce validation and signature verification in `makeOffer` and `withdrawOffer`, replacing previous service-specific nonce management and signature utilities
 
 ### Removed
 

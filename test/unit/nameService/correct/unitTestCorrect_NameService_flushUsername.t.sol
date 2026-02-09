@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract unitTestCorrect_NameService_flushUsername is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -37,62 +38,62 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
     struct Params {
         AccountData user;
         string username;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             )
         );
 
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_1,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
             ),
             true
         );
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_2,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6
             ),
             true
         );
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_3,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8
             ),
             true
         );
@@ -125,13 +126,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 110010011,
+            nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -140,13 +141,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+        ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -158,21 +159,21 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(params.username);
 
         assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expireDate, 0, "username expire date should be flushed");
+        assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
             evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
@@ -196,11 +197,11 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 110010011,
+            nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 1001,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -209,13 +210,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+        ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -227,21 +228,21 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(params.username);
 
         assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expireDate, 0, "username expire date should be flushed");
+        assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
             evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
@@ -266,13 +267,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 110010011,
+            nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0.001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -281,13 +282,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+        ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -299,21 +300,21 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(params.username);
 
         assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expireDate, 0, "username expire date should be flushed");
+        assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
             evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
@@ -337,11 +338,11 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 110010011,
+            nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0.001 ether,
             nonceEVVM: 1001,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -350,13 +351,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+        ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -368,21 +369,21 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(params.username);
 
         assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expireDate, 0, "username expire date should be flushed");
+        assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
             evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
@@ -406,13 +407,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 110010011,
+            nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -421,13 +422,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+        ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -439,21 +440,21 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(params.username);
 
         assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expireDate, 0, "username expire date should be flushed");
+        assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
             evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
@@ -477,11 +478,11 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 110010011,
+            nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 1001,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -490,13 +491,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+        ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -508,21 +509,21 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(params.username);
 
         assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expireDate, 0, "username expire date should be flushed");
+        assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
             evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
@@ -547,13 +548,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 110010011,
+            nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0.001 ether,
             nonceEVVM: evvm.getNextCurrentSyncNonce(
                 USER_USERNAME_OWNER.Address
             ),
-            priorityEVVM: false,
+            isAsyncExecEvvm: false,
             signatureEVVM: ""
         });
 
@@ -562,13 +563,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+        ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -580,21 +581,21 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(params.username);
 
         assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expireDate, 0, "username expire date should be flushed");
+        assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
             evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
@@ -618,11 +619,11 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 110010011,
+            nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0.001 ether,
             nonceEVVM: 1001,
-            priorityEVVM: true,
+            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -631,13 +632,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         (
             params.signatureNameService,
             params.signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+        ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM
+            params.isAsyncExecEvvm
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -649,21 +650,21 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
-            params.nonceNameService,
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(params.username);
 
         assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expireDate, 0, "username expire date should be flushed");
+        assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
             evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),

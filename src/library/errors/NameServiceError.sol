@@ -52,12 +52,6 @@ library NameServiceError {
     //█ Validation Errors ███████████████████████████████████████████████████████
 
     /**
-     * @notice Thrown when the provided EIP-191 signature is invalid or doesn't match the signer
-     * @dev Used in all operations requiring signature verification
-     */
-    error InvalidSignatureOnNameService();
-
-    /**
      * @notice Thrown when a username doesn't meet format requirements
      * @dev Username must be 4+ characters, start with letter, contain only alphanumeric
      */

@@ -23,6 +23,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 import {
     NameService
@@ -33,6 +34,9 @@ import {
 import {
     EvvmError
 } from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {
+    StateError
+} from "@evvm/testnet-contracts/library/errors/StateError.sol";
 
 contract unitTestRevert_NameService_adminFunctions is Test, Constants {
     function test__unit_revert__proposeAdmin__SenderIsNotAdmin() external {

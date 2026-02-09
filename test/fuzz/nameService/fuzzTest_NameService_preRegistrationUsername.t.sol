@@ -18,6 +18,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -27,10 +28,10 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         AccountData user;
         string username;
         uint256 lockNumber;
-        uint256 nonceNameService;
+        uint256 nonce;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
     }
 
     function _addBalance(
@@ -45,25 +46,26 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
     struct Input {
         string username;
         uint256 lockNumber;
-        uint256 nonceNameService;
+        uint256 nonce;
         uint32 priorityFee;
         uint256 nonceAsyncEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
     }
 
     function test__fuzz__preRegistrationUsername__noStaker(
         Input memory input
     ) external {
+        vm.assume(input.nonce != input.nonceAsyncEVVM);
         Params memory params = Params({
             user: COMMON_USER_NO_STAKER_1,
             username: input.username,
             lockNumber: input.lockNumber,
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
+            nonceEVVM: input.isAsyncExecEvvm
                 ? input.nonceAsyncEVVM
                 : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            priorityEVVM: input.priorityEVVM
+            isAsyncExecEvvm: input.isAsyncExecEvvm
         });
 
         _addBalance(params.user, params.priorityFee);
@@ -71,14 +73,14 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         (
             bytes memory signatureNameServiceOne,
             bytes memory signatureEvvmOne
-        ) = _execute_makePreRegistrationUsernameSignature(
+        ) = _executeSig_nameService_preRegistrationUsername(
                 params.user,
                 params.username,
                 params.lockNumber,
-                params.nonceNameService,
+                params.nonce,
                 params.priorityFee,
                 params.nonceEVVM,
-                params.priorityEVVM
+                params.isAsyncExecEvvm
             );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -88,11 +90,11 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             keccak256(
                 abi.encodePacked(params.username, uint256(params.lockNumber))
             ),
-            params.nonceNameService,
+            params.nonce,
             signatureNameServiceOne,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             signatureEvvmOne
         );
 
@@ -136,16 +138,17 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
     function test__fuzz__preRegistrationUsername__staker(
         Input memory input
     ) external {
+        vm.assume(input.nonce != input.nonceAsyncEVVM);
         Params memory params = Params({
             user: COMMON_USER_NO_STAKER_1,
             username: input.username,
             lockNumber: input.lockNumber,
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
+            nonceEVVM: input.isAsyncExecEvvm
                 ? input.nonceAsyncEVVM
                 : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            priorityEVVM: input.priorityEVVM
+            isAsyncExecEvvm: input.isAsyncExecEvvm
         });
 
         _addBalance(params.user, params.priorityFee);
@@ -153,14 +156,14 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         (
             bytes memory signatureNameServiceOne,
             bytes memory signatureEvvmOne
-        ) = _execute_makePreRegistrationUsernameSignature(
+        ) = _executeSig_nameService_preRegistrationUsername(
                 params.user,
                 params.username,
                 params.lockNumber,
-                params.nonceNameService,
+                params.nonce,
                 params.priorityFee,
                 params.nonceEVVM,
-                params.priorityEVVM
+                params.isAsyncExecEvvm
             );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -170,11 +173,11 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             keccak256(
                 abi.encodePacked(params.username, uint256(params.lockNumber))
             ),
-            params.nonceNameService,
+            params.nonce,
             signatureNameServiceOne,
             params.priorityFee,
             params.nonceEVVM,
-            params.priorityEVVM,
+            params.isAsyncExecEvvm,
             signatureEvvmOne
         );
 
