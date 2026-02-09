@@ -151,6 +151,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
     ) external {
         vm.assume(input.priorityFee > 0);
         vm.assume(input.amountA > 0 && input.amountB > 0);
+        vm.assume(input.nonceEVVM != input.nonceP2PSwap);
 
         // 1. define params
         address tokenA = input.tokenScenario
@@ -302,6 +303,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
     ) external {
         vm.assume(input.priorityFee > 0);
         vm.assume(input.amountA > 0 && input.amountB > 0);
+        vm.assume(input.nonceEVVM != input.nonceP2PSwap);
 
         // 1. define params
         address tokenA = input.tokenScenario

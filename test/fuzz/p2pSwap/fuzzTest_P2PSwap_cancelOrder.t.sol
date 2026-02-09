@@ -148,6 +148,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         // assumptions
         vm.assume(input.priorityFee > 0);
         vm.assume(input.amountA > 0 && input.amountB > 0);
+        vm.assume(input.nonceEVVM != input.nonceP2PSwap);
 
         // Form inputs
         // alternate tokens
