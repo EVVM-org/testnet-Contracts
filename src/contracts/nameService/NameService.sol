@@ -59,9 +59,6 @@ pragma solidity ^0.8.0;
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
 import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
-import {
     NameServiceStructs
 } from "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 import {

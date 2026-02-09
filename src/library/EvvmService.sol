@@ -34,18 +34,19 @@ pragma solidity ^0.8.0;
  */
 
 import {EvvmStructs} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
-import {SignatureUtil} from "@evvm/testnet-contracts/library/utils/SignatureUtil.sol";
-import {AsyncNonce} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
 import {StakingServiceUtils} from "@evvm/testnet-contracts/library/utils/service/StakingServiceUtils.sol";
 import {EvvmPayments} from "@evvm/testnet-contracts/library/utils/service/EvvmPayments.sol";
 
 abstract contract EvvmService is
-    AsyncNonce,
     StakingServiceUtils,
     EvvmPayments
 {
+    
     /// @dev Thrown when a signature verification fails for a service operation
     error InvalidServiceSignature();
+
+    State state;
 
     /**
      * @notice Initializes the EvvmService with EVVM and Staking contract addresses
@@ -54,34 +55,10 @@ abstract contract EvvmService is
      */
     constructor(
         address evvmAddress,
-        address stakingAddress
-    ) StakingServiceUtils(stakingAddress) EvvmPayments(evvmAddress) {}
-
-    /**
-     * @notice Validates an EIP-191 signature for a service operation
-     * @dev Verifies that the signature was created by the expected signer using the EVVM ID,
-     *      function name, and inputs as the signed message
-     * @param functionName Name of the function being called (used in signature message)
-     * @param inputs Comma-separated string of function inputs (used in signature message)
-     * @param signature The EIP-191 signature to verify
-     * @param expectedSigner Address that should have signed the message
-     * @custom:throws InvalidServiceSignature If signature verification fails
-     */
-    function validateServiceSignature(
-        string memory functionName,
-        string memory inputs,
-        bytes memory signature,
-        address expectedSigner
-    ) internal view virtual {
-        if (
-            !SignatureUtil.verifySignature(
-                evvm.getEvvmID(),
-                functionName,
-                inputs,
-                signature,
-                expectedSigner
-            )
-        ) revert InvalidServiceSignature();
+        address stakingAddress,
+        address stateAddress
+    ) StakingServiceUtils(stakingAddress) EvvmPayments(evvmAddress) {
+        state = State(stateAddress);
     }
 
     /**
@@ -91,5 +68,9 @@ abstract contract EvvmService is
      */
     function getEvvmID() internal view returns (uint256) {
         return evvm.getEvvmID();
+    }
+
+    function getPrincipalTokenAddress() internal view returns (address) {
+        return evvm.getPrincipalTokenAddress();
     }
 }

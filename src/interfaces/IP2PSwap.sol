@@ -70,27 +70,27 @@ interface IP2PSwap {
     function cancelOrder(
         address user,
         P2PSwapStructs.MetadataCancelOrder memory metadata,
-        uint256 _priorityFee_Evvm,
-        uint256 _nonce_Evvm,
-        bool _priority_Evvm,
-        bytes memory _signature_Evvm
+        uint256 priorityFeeEvvm,
+        uint256 nonceEvvm,
+        bool isAsyncExecEvvm,
+        bytes memory signatureEvvm
     ) external;
     function dispatchOrder_fillFixedFee(
         address user,
         P2PSwapStructs.MetadataDispatchOrder memory metadata,
-        uint256 _priorityFee_Evvm,
-        uint256 _nonce_Evvm,
-        bool _priority_Evvm,
-        bytes memory _signature_Evvm,
+        uint256 priorityFeeEvvm,
+        uint256 nonceEvvm,
+        bool isAsyncExecEvvm,
+        bytes memory signatureEvvm,
         uint256 maxFillFixedFee
     ) external;
     function dispatchOrder_fillPropotionalFee(
         address user,
         P2PSwapStructs.MetadataDispatchOrder memory metadata,
-        uint256 _priorityFee_Evvm,
-        uint256 _nonce_Evvm,
-        bool _priority_Evvm,
-        bytes memory _signature_Evvm
+        uint256 priorityFeeEvvm,
+        uint256 nonceEvvm,
+        bool isAsyncExecEvvm,
+        bytes memory signatureEvvm
     ) external;
     function findMarket(address tokenA, address tokenB) external view returns (uint256);
     function getAllMarketOrders(uint256 market) external view returns (P2PSwapStructs.OrderForGetter[] memory orders);
@@ -117,10 +117,10 @@ interface IP2PSwap {
         address user,
         P2PSwapStructs.MetadataMakeOrder memory metadata,
         bytes memory signature,
-        uint256 _priorityFee_Evvm,
-        uint256 _nonce_Evvm,
-        bool _priority_Evvm,
-        bytes memory _signature_Evvm
+        uint256 priorityFeeEvvm,
+        uint256 nonceEvvm,
+        bool isAsyncExecEvvm,
+        bytes memory signatureEvvm
     ) external returns (uint256 market, uint256 orderId);
     function proposeFillFixedPercentage(uint256 _seller, uint256 _service, uint256 _mateStaker) external;
     function proposeFillPropotionalPercentage(uint256 _seller, uint256 _service, uint256 _mateStaker) external;

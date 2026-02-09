@@ -79,6 +79,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -180,6 +181,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -300,6 +302,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -428,6 +431,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -556,6 +560,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -676,6 +681,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -796,6 +802,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -924,6 +931,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -1052,6 +1060,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,

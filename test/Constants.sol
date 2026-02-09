@@ -209,7 +209,7 @@ abstract contract Constants is Test {
             address(state)
         );
 
-        p2pSwap = new P2PSwap(address(evvm), address(staking), ADMIN.Address);
+        p2pSwap = new P2PSwap(address(evvm), address(staking), address(state), ADMIN.Address);
         evvm.setPointStaker(address(p2pSwap), 0x01);
 
         if (address(p2pSwap) == address(0)) revert();

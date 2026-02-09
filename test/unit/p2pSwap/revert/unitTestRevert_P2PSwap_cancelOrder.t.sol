@@ -82,6 +82,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -172,6 +173,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForCancelOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenA, // tokenA twice here
@@ -274,6 +276,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForCancelOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -353,6 +356,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForCancelOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -454,6 +458,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForCancelOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,

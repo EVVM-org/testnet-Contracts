@@ -60,9 +60,9 @@ abstract contract EvvmPayments {
             token,
             amount,
             priorityFee,
+            address(this),
             nonce,
             isAsyncExec,
-            address(this),
             signature
         );
     }
@@ -93,9 +93,9 @@ abstract contract EvvmPayments {
             token,
             amount,
             priorityFee,
+            address(this),
             nonce,
             isAsyncExec,
-            address(this),
             signature
         );
     }

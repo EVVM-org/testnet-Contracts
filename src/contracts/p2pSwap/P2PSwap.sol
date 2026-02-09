@@ -36,10 +36,10 @@ pragma solidity ^0.8.0;
  * - Staker Rewards: 10% (configurable)
  */
 
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
-    SignatureUtils
-} from "@evvm/testnet-contracts/contracts/p2pSwap/lib/SignatureUtils.sol";
+    P2PSwapHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/P2PSwapHashUtils.sol";
+import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     AdvancedStrings
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
@@ -88,8 +88,9 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
     constructor(
         address _evvmAddress,
         address _stakingAddress,
+        address _stateAddress,
         address _owner
-    ) EvvmService(_evvmAddress, _stakingAddress) {
+    ) EvvmService(_evvmAddress, _stakingAddress, _stateAddress) {
         owner = _owner;
         maxLimitFillFixedFee = 0.001 ether;
         percentageFee = 500;
@@ -104,36 +105,32 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         address user,
         MetadataMakeOrder memory metadata,
         bytes memory signature,
-        uint256 _priorityFee_Evvm,
-        uint256 _nonce_Evvm,
-        bool _priority_Evvm,
-        bytes memory _signature_Evvm
+        uint256 priorityFeeEvvm,
+        uint256 nonceEvvm,
+        bool isAsyncExecEvvm,
+        bytes memory signatureEvvm
     ) external returns (uint256 market, uint256 orderId) {
-        if (
-            !SignatureUtils.verifyMessageSignedForMakeOrder(
-                evvm.getEvvmID(),
-                user,
-                metadata.nonce,
+        state.validateAndConsumeNonce(
+            user,
+            Hash.hashDataForMakeOrder(
                 metadata.tokenA,
                 metadata.tokenB,
                 metadata.amountA,
-                metadata.amountB,
-                signature
-            )
-        ) {
-            revert("Invalid signature");
-        }
-
-        verifyAsyncNonce(user, metadata.nonce);
+                metadata.amountB
+            ),
+            metadata.nonce,
+            true,
+            signature
+        );
 
         requestPay(
             user,
             metadata.tokenA,
             metadata.amountA,
-            _priorityFee_Evvm,
-            _nonce_Evvm,
-            _priority_Evvm,
-            _signature_Evvm
+            priorityFeeEvvm,
+            nonceEvvm,
+            isAsyncExecEvvm,
+            signatureEvvm
         );
 
         market = findMarket(metadata.tokenA, metadata.tokenB);
@@ -165,55 +162,49 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         );
 
         if (evvm.isAddressStaker(msg.sender)) {
-            if (_priorityFee_Evvm > 0) {
+            if (priorityFeeEvvm > 0) {
                 // send the executor the priorityFee
-                makeCaPay(msg.sender, metadata.tokenA, _priorityFee_Evvm);
+                makeCaPay(msg.sender, metadata.tokenA, priorityFeeEvvm);
             }
         }
 
         // send some mate token reward to the executor (independent of the priorityFee the user attached)
-        _rewardExecutor(msg.sender, _priorityFee_Evvm > 0 ? 3 : 2);
-
-        markAsyncNonceAsUsed(user, metadata.nonce);
+        _rewardExecutor(msg.sender, priorityFeeEvvm > 0 ? 3 : 2);
     }
 
     function cancelOrder(
         address user,
         MetadataCancelOrder memory metadata,
-        uint256 _priorityFee_Evvm,
-        uint256 _nonce_Evvm,
-        bool _priority_Evvm,
-        bytes memory _signature_Evvm
+        uint256 priorityFeeEvvm,
+        uint256 nonceEvvm,
+        bool isAsyncExecEvvm,
+        bytes memory signatureEvvm
     ) external {
-        if (
-            !SignatureUtils.verifyMessageSignedForCancelOrder(
-                evvm.getEvvmID(),
-                user,
-                metadata.nonce,
+        state.validateAndConsumeNonce(
+            user,
+            Hash.hashDataForCancelOrder(
                 metadata.tokenA,
                 metadata.tokenB,
-                metadata.orderId,
-                metadata.signature
-            )
-        ) {
-            revert("Invalid signature");
-        }
+                metadata.orderId
+            ),
+            metadata.nonce,
+            true,
+            metadata.signature
+        );
 
         uint256 market = findMarket(metadata.tokenA, metadata.tokenB);
 
-        verifyAsyncNonce(user, metadata.nonce);
-
         _validateOrderOwnership(market, metadata.orderId, user);
 
-        if (_priorityFee_Evvm > 0) {
+        if (priorityFeeEvvm > 0) {
             requestPay(
                 user,
                 MATE_TOKEN_ADDRESS,
                 0,
-                _priorityFee_Evvm,
-                _nonce_Evvm,
-                _priority_Evvm,
-                _signature_Evvm
+                priorityFeeEvvm,
+                nonceEvvm,
+                isAsyncExecEvvm,
+                signatureEvvm
             );
         }
 
@@ -225,39 +216,33 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
 
         _clearOrderAndUpdateMarket(market, metadata.orderId);
 
-        if (evvm.isAddressStaker(msg.sender) && _priorityFee_Evvm > 0) {
-            makeCaPay(msg.sender, MATE_TOKEN_ADDRESS, _priorityFee_Evvm);
+        if (evvm.isAddressStaker(msg.sender) && priorityFeeEvvm > 0) {
+            makeCaPay(msg.sender, MATE_TOKEN_ADDRESS, priorityFeeEvvm);
         }
-        _rewardExecutor(msg.sender, _priorityFee_Evvm > 0 ? 3 : 2);
-
-        markAsyncNonceAsUsed(user, metadata.nonce);
+        _rewardExecutor(msg.sender, priorityFeeEvvm > 0 ? 3 : 2);
     }
 
     function dispatchOrder_fillPropotionalFee(
         address user,
         MetadataDispatchOrder memory metadata,
-        uint256 _priorityFee_Evvm,
-        uint256 _nonce_Evvm,
-        bool _priority_Evvm,
-        bytes memory _signature_Evvm
+        uint256 priorityFeeEvvm,
+        uint256 nonceEvvm,
+        bool isAsyncExecEvvm,
+        bytes memory signatureEvvm
     ) external {
-        if (
-            !SignatureUtils.verifyMessageSignedForDispatchOrder(
-                evvm.getEvvmID(),
-                user,
-                metadata.nonce,
+        state.validateAndConsumeNonce(
+            user,
+            Hash.hashDataForDispatchOrder(
                 metadata.tokenA,
                 metadata.tokenB,
-                metadata.orderId,
-                metadata.signature
-            )
-        ) {
-            revert("Invalid signature");
-        }
+                metadata.orderId
+            ),
+            metadata.nonce,
+            true,
+            metadata.signature
+        );
 
         uint256 market = findMarket(metadata.tokenA, metadata.tokenB);
-
-        verifyAsyncNonce(user, metadata.nonce);
 
         Order storage order = _validateMarketAndOrder(market, metadata.orderId);
 
@@ -272,10 +257,10 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
             user,
             metadata.tokenB,
             metadata.amountOfTokenBToFill,
-            _priorityFee_Evvm,
-            _nonce_Evvm,
-            _priority_Evvm,
-            _signature_Evvm
+            priorityFeeEvvm,
+            nonceEvvm,
+            isAsyncExecEvvm,
+            signatureEvvm
         );
 
         // si es mas del fee + el monto de la orden hacemos caPay al usuario del sobranate
@@ -293,7 +278,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
             fee,
             order.seller,
             msg.sender,
-            _priorityFee_Evvm
+            priorityFeeEvvm
         );
 
         // pay user with token A
@@ -302,35 +287,30 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         _rewardExecutor(msg.sender, didRefund ? 5 : 4);
 
         _clearOrderAndUpdateMarket(market, metadata.orderId);
-        markAsyncNonceAsUsed(user, metadata.nonce);
     }
 
     function dispatchOrder_fillFixedFee(
         address user,
         MetadataDispatchOrder memory metadata,
-        uint256 _priorityFee_Evvm,
-        uint256 _nonce_Evvm,
-        bool _priority_Evvm,
-        bytes memory _signature_Evvm,
+        uint256 priorityFeeEvvm,
+        uint256 nonceEvvm,
+        bool isAsyncExecEvvm,
+        bytes memory signatureEvvm,
         uint256 maxFillFixedFee ///@dev for testing purposes
     ) external {
-        if (
-            !SignatureUtils.verifyMessageSignedForDispatchOrder(
-                evvm.getEvvmID(),
-                user,
-                metadata.nonce,
+        state.validateAndConsumeNonce(
+            user,
+            Hash.hashDataForDispatchOrder(
                 metadata.tokenA,
                 metadata.tokenB,
-                metadata.orderId,
-                metadata.signature
-            )
-        ) {
-            revert("Invalid signature");
-        }
+                metadata.orderId
+            ),
+            metadata.nonce,
+            true,
+            metadata.signature
+        );
 
         uint256 market = findMarket(metadata.tokenA, metadata.tokenB);
-
-        verifyAsyncNonce(user, metadata.nonce);
 
         Order storage order = _validateMarketAndOrder(market, metadata.orderId);
 
@@ -350,10 +330,10 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
             user,
             metadata.tokenB,
             metadata.amountOfTokenBToFill,
-            _priorityFee_Evvm,
-            _nonce_Evvm,
-            _priority_Evvm,
-            _signature_Evvm
+            priorityFeeEvvm,
+            nonceEvvm,
+            isAsyncExecEvvm,
+            signatureEvvm
         );
 
         uint256 finalFee = _calculateFinalFee(
@@ -378,7 +358,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
             finalFee,
             order.seller,
             msg.sender,
-            _priorityFee_Evvm
+            priorityFeeEvvm
         );
 
         makeCaPay(user, metadata.tokenA, order.amountA);
@@ -386,7 +366,6 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         _rewardExecutor(msg.sender, didRefund ? 5 : 4);
 
         _clearOrderAndUpdateMarket(market, metadata.orderId);
-        markAsyncNonceAsUsed(user, metadata.nonce);
     }
 
     function calculateFillPropotionalFee(

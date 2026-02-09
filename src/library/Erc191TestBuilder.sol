@@ -23,6 +23,9 @@ import {
 import {
     NameServiceHashUtils
 } from "@evvm/testnet-contracts/library/utils/signature/NameServiceHashUtils.sol";
+import {
+    P2PSwapHashUtils
+} from "@evvm/testnet-contracts/library/utils/signature/P2PSwapHashUtils.sol";
 
 library Erc191TestBuilder {
     //-----------------------------------------------------------------------------------
@@ -152,7 +155,6 @@ library Erc191TestBuilder {
                         username,
                         amount,
                         expirationDate
-                        
                     ),
                     nonce,
                     true
@@ -409,111 +411,76 @@ library Erc191TestBuilder {
     // P2PSwap functions
     //-----------------------------------------------------------------------------------
 
-    /**
-     * @notice Builds the message hash for making a P2P swap order
-     * @dev Creates an EIP-191 compatible hash for P2PSwap makeOrder
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _nonce Nonce for replay protection
-     * @param _tokenA Token address being offered
-     * @param _tokenB Token address being requested
-     * @param _amountA Amount of tokenA being offered
-     * @param _amountB Amount of tokenB being requested
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForMakeOrder(
         uint256 evvmID,
-        uint256 _nonce,
-        address _tokenA,
-        address _tokenB,
-        uint256 _amountA,
-        uint256 _amountB
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        uint256 nonce,
+        address tokenA,
+        address tokenB,
+        uint256 amountA,
+        uint256 amountB
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "makeOrder",
-                    ",",
-                    AdvancedStrings.uintToString(_nonce),
-                    ",",
-                    AdvancedStrings.addressToString(_tokenA),
-                    ",",
-                    AdvancedStrings.addressToString(_tokenB),
-                    ",",
-                    AdvancedStrings.uintToString(_amountA),
-                    ",",
-                    AdvancedStrings.uintToString(_amountB)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    P2PSwapHashUtils.hashDataForMakeOrder(
+                        tokenA,
+                        tokenB,
+                        amountA,
+                        amountB
+                    ),
+                    nonce,
+                    true
                 )
             );
     }
 
-    /**
-     * @notice Builds the message hash for canceling a P2P swap order
-     * @dev Creates an EIP-191 compatible hash for P2PSwap cancelOrder
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _nonce Nonce for replay protection
-     * @param _tokenA Token address that was offered
-     * @param _tokenB Token address that was requested
-     * @param _orderId ID of the order to cancel
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForCancelOrder(
         uint256 evvmID,
-        uint256 _nonce,
-        address _tokenA,
-        address _tokenB,
-        uint256 _orderId
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        uint256 nonce,
+        address tokenA,
+        address tokenB,
+        uint256 orderId
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "cancelOrder",
-                    ",",
-                    AdvancedStrings.uintToString(_nonce),
-                    ",",
-                    AdvancedStrings.addressToString(_tokenA),
-                    ",",
-                    AdvancedStrings.addressToString(_tokenB),
-                    ",",
-                    AdvancedStrings.uintToString(_orderId)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    P2PSwapHashUtils.hashDataForCancelOrder(
+                        tokenA,
+                        tokenB,
+                        orderId
+                    ),
+                    nonce,
+                    true
                 )
             );
     }
 
-    /**
-     * @notice Builds the message hash for dispatching (accepting) a P2P swap order
-     * @dev Creates an EIP-191 compatible hash for P2PSwap dispatchOrder
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _nonce Nonce for replay protection
-     * @param _tokenA Token address that was offered
-     * @param _tokenB Token address that was requested
-     * @param _orderId ID of the order to dispatch
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForDispatchOrder(
         uint256 evvmID,
-        uint256 _nonce,
-        address _tokenA,
-        address _tokenB,
-        uint256 _orderId
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        uint256 nonce,
+        address tokenA,
+        address tokenB,
+        uint256 orderId
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "dispatchOrder",
-                    ",",
-                    AdvancedStrings.uintToString(_nonce),
-                    ",",
-                    AdvancedStrings.addressToString(_tokenA),
-                    ",",
-                    AdvancedStrings.addressToString(_tokenB),
-                    ",",
-                    AdvancedStrings.uintToString(_orderId)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    P2PSwapHashUtils.hashDataForDispatchOrder(
+                        tokenA,
+                        tokenB,
+                        orderId
+                    ),
+                    nonce,
+                    true
                 )
             );
     }

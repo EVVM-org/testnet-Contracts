@@ -80,6 +80,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -213,6 +214,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForCancelOrder(
                 evvm.getEvvmID(),
+                address(p2pSwap),
                 nextNonceP2PSwap,
                 tokenA,
                 tokenB,

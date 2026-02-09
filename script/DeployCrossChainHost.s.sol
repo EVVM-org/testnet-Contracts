@@ -67,7 +67,7 @@ contract DeployCrossChainHostScript is Script, BaseInputs, CrossChainInputs {
             address(state)
         );
 
-        p2pSwap = new P2PSwap(address(evvm), address(staking), admin);
+        p2pSwap = new P2PSwap(address(evvm), address(staking), address(state), admin);
 
         vm.stopBroadcast();
     }
