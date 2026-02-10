@@ -205,9 +205,9 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             nonceEVVM,
             input.isAsync
         );
-        // update nonces
-        uint256 nextNonceEvvm = uint256(nonceEVVM) + 1;
-        uint256 nextNonceP2PSwap = uint256(input.nonceP2PSwap) + 1;
+        // update nonces - ensure they don't conflict with any previously used async nonces
+        uint256 nextNonceP2PSwap = input.isAsync ? 99998 : uint256(input.nonceP2PSwap) + 1;
+        uint256 nextNonceEvvm = input.isAsync ? 99999 : 1;
 
         // create signatures
         // p2pswap

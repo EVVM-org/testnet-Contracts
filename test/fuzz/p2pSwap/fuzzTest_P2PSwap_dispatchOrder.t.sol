@@ -188,6 +188,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             input.isAsync
         );
         input.nonceP2PSwap = 43242;
+        nonceEVVM = input.isAsync ? 99999 : 0;
 
         assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
@@ -351,6 +352,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             input.isAsync
         );
         input.nonceP2PSwap = 43242;
+        nonceEVVM = input.isAsync ? 99999 : 0;
 
         assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
