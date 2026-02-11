@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - [Unreleased]
+## [3.0.0] "Ichiban Kasuga" - [Unreleased]
 
 ### Added
 
@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Service-specific nonce management**: All nonce management is now centralized in `State.sol` for improved security and consistency across services
 - **Service SignatureUtils**: Removed service-specific signature utilities because signature generation and verification is now centralized in `State.sol` using `AdvancedStrings.sol` for payload construction
 - **Redundant Structs**: Removed all governance-related structs from individual service struct libraries, as they are now centralized in `GovernanceUtils.sol` for better organization and reuse
+- **Service nonce libraries**: Removed all service-specific nonce libraries, as nonce management is now handled by `State.sol`
 
 ### Fixed
 
