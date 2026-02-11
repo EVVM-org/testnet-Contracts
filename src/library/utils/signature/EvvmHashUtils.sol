@@ -20,8 +20,8 @@ library EvvmHashUtils {
             keccak256(
                 abi.encode(
                     "pay",
-                    to_identity,
                     to_address,
+                    to_identity,
                     token,
                     amount,
                     priorityFee,

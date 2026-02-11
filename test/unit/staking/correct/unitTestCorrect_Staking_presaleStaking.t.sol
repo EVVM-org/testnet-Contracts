@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 
 contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
     AccountData FISHER_STAKER = COMMON_USER_STAKER;
@@ -117,7 +118,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             paramsSync.signatureStake,
             paramsSync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             paramsSync.user,
             paramsSync.isStaking,
             paramsSync.nonceStake,
@@ -139,8 +140,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySync = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySync = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSync.user.Address)
             );
         historySync = staking.getAddressHistory(paramsSync.user.Address);
@@ -186,7 +187,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             paramsAsync.signatureStake,
             paramsAsync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             paramsAsync.user,
             paramsAsync.isStaking,
             paramsAsync.nonceStake,
@@ -208,8 +209,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsync = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsync = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsync.user.Address)
             );
         historyAsync = staking.getAddressHistory(paramsAsync.user.Address);
@@ -283,7 +284,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             paramsSync.signatureStake,
             paramsSync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             paramsSync.user,
             paramsSync.isStaking,
             paramsSync.nonceStake,
@@ -305,8 +306,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySync = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySync = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSync.user.Address)
             );
         historySync = staking.getAddressHistory(paramsSync.user.Address);
@@ -352,7 +353,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             paramsAsync.signatureStake,
             paramsAsync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             paramsAsync.user,
             paramsAsync.isStaking,
             paramsAsync.nonceStake,
@@ -374,8 +375,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsync = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsync = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsync.user.Address)
             );
         historyAsync = staking.getAddressHistory(paramsAsync.user.Address);
@@ -449,7 +450,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             paramsSync.signatureStake,
             paramsSync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             paramsSync.user,
             paramsSync.isStaking,
             paramsSync.nonceStake,
@@ -471,8 +472,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySync = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySync = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSync.user.Address)
             );
         historySync = staking.getAddressHistory(paramsSync.user.Address);
@@ -518,7 +519,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             paramsAsync.signatureStake,
             paramsAsync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             paramsAsync.user,
             paramsAsync.isStaking,
             paramsAsync.nonceStake,
@@ -540,8 +541,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsync = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsync = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsync.user.Address)
             );
         historyAsync = staking.getAddressHistory(paramsAsync.user.Address);
@@ -617,7 +618,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             paramsSync.signatureStake,
             paramsSync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             paramsSync.user,
             paramsSync.isStaking,
             paramsSync.nonceStake,
@@ -639,8 +640,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySync = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySync = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSync.user.Address)
             );
         historySync = staking.getAddressHistory(paramsSync.user.Address);
@@ -686,7 +687,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             paramsAsync.signatureStake,
             paramsAsync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             paramsAsync.user,
             paramsAsync.isStaking,
             paramsAsync.nonceStake,
@@ -708,8 +709,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsync = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsync = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsync.user.Address)
             );
         historyAsync = staking.getAddressHistory(paramsAsync.user.Address);
@@ -754,7 +755,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
     {
         for (uint256 i = 0; i < 2; i++) {
             _addBalance(USER.Address, 0);
-            _execute_makePresaleStaking(
+            _executeFn_staking_presaleStaking(
                 USER,
                 true,
                 uint256(
@@ -800,7 +801,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             paramsUnstake.signatureStake,
             paramsUnstake.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             paramsUnstake.user,
             paramsUnstake.isStaking,
             paramsUnstake.nonceStake,
@@ -822,8 +823,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyUnstake = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyUnstake = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsUnstake.user.Address)
             );
         historyUnstake = staking.getAddressHistory(paramsUnstake.user.Address);
@@ -871,7 +872,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             paramsFullUnstake.signatureStake,
             paramsFullUnstake.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             paramsFullUnstake.user,
             paramsFullUnstake.isStaking,
             paramsFullUnstake.nonceStake,
@@ -893,8 +894,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyFullUnstake = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyFullUnstake = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsFullUnstake.user.Address)
             );
         historyFullUnstake = staking.getAddressHistory(
@@ -938,7 +939,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         external
     {
         _addBalance(USER.Address, 0);
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             USER,
             true,
             uint256(
@@ -952,7 +953,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             USER,
             false,
             uint256(
@@ -986,7 +987,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,
@@ -1010,8 +1011,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyFullUnstake = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyFullUnstake = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
         historyFullUnstake = staking.getAddressHistory(params.user.Address);
@@ -1053,7 +1054,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         external
     {
         _addBalance(USER.Address, 0);
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             USER,
             true,
             uint256(
@@ -1067,7 +1068,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             USER,
             false,
             uint256(
@@ -1101,7 +1102,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,
@@ -1125,8 +1126,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyFullUnstake = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyFullUnstake = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
         historyFullUnstake = staking.getAddressHistory(params.user.Address);

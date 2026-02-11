@@ -34,9 +34,7 @@ import {
 import {
     EvvmError
 } from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+
 import {
     StateError
 } from "@evvm/testnet-contracts/library/errors/StateError.sol";
@@ -316,7 +314,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         uint256 nonce = 1001;
         (
             bytes memory signatureNameService,
-            bytes memory signature_EVVM
+            bytes memory signatureEvvm
         ) = _executeSig_nameService_preRegistrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 username,
@@ -339,7 +337,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             1 ether,
             6767,
             true,
-            signature_EVVM
+            signatureEvvm
         );
 
         vm.stopPrank();
@@ -364,7 +362,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         uint256 nonce = 1001;
         (
             bytes memory signatureNameService,
-            bytes memory signature_EVVM
+            bytes memory signatureEvvm
         ) = _executeSig_nameService_preRegistrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 username,
@@ -387,7 +385,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             0.1 ether,
             676767,
             true,
-            signature_EVVM
+            signatureEvvm
         );
 
         vm.stopPrank();

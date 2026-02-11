@@ -25,9 +25,8 @@ import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+import "@evvm/testnet-contracts/library/errors/StateError.sol";
 
 contract unitTestRevert_Staking_publicStaking is Test, Constants {
     AccountData USER = COMMON_USER_NO_STAKER_1;
@@ -98,7 +97,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -126,7 +125,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__publicStaking__InvalidSignatureOnStaking_evvmID()
+    function test__unit_revert__publicStaking__InvalidSignature_evvmID()
         external
     {
         Params memory params = Params({
@@ -152,6 +151,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             Erc191TestBuilder.buildMessageSignedForPublicStaking(
                 /* 🢃 Diferent evvmID 🢃 */
                 evvm.getEvvmID() + 1,
+                address(staking),
                 params.isStaking,
                 params.amountOfStaking,
                 params.nonce
@@ -176,7 +176,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
@@ -191,7 +191,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__publicStaking__InvalidSignatureOnStaking_signer()
+    function test__unit_revert__publicStaking__InvalidSignature_signer()
         external
     {
         Params memory params = Params({
@@ -215,7 +215,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             /* 🢃 Different signer 🢃 */
             COMMON_USER_NO_STAKER_2,
             params.isStaking,
@@ -227,7 +227,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
@@ -242,7 +242,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__publicStaking__InvalidSignatureOnStaking_isStaking()
+    function test__unit_revert__publicStaking__InvalidSignature_isStaking()
         external
     {
         Params memory params = Params({
@@ -266,7 +266,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             /* 🢃 Different isStaking 🢃 */
             !params.isStaking,
@@ -278,7 +278,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
@@ -293,7 +293,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__publicStaking__InvalidSignatureOnStaking_amountOfStaking()
+    function test__unit_revert__publicStaking__InvalidSignature_amountOfStaking()
         external
     {
         Params memory params = Params({
@@ -317,7 +317,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             /* 🢃 Different amountOfStaking 🢃 */
@@ -329,7 +329,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
@@ -344,7 +344,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__publicStaking__InvalidSignatureOnStaking_nonce()
+    function test__unit_revert__publicStaking__InvalidSignature_nonce()
         external
     {
         Params memory params = Params({
@@ -368,7 +368,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -380,7 +380,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
@@ -399,7 +399,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         external
     {
         _addBalance(USER, 10, 0);
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -431,7 +431,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -442,7 +442,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
@@ -461,7 +461,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         external
     {
         _addBalance(USER, 10, 0);
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -493,7 +493,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -523,7 +523,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         external
     {
         _addBalance(USER, 10, 0);
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -536,7 +536,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             false,
             10,
@@ -568,7 +568,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -619,6 +619,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPublicStaking(
                 evvm.getEvvmID(),
+                address(staking),
                 params.isStaking,
                 params.amountOfStaking,
                 params.nonce
@@ -679,7 +680,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,

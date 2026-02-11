@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 
 contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
     function _addBalance(
@@ -56,8 +57,8 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
 
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(GOLDEN_STAKER.Address)
             );
         history = staking.getAddressHistory(GOLDEN_STAKER.Address);
@@ -97,7 +98,7 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
     function test__unit_correct__goldenStaking__unstaking() external {
         _addBalance(10);
 
-        _execute_makeGoldenStaking(true, 10);
+        _executeFn_staking_goldenStaking(true, 10);
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
@@ -105,8 +106,8 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
 
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(GOLDEN_STAKER.Address)
             );
         history = staking.getAddressHistory(GOLDEN_STAKER.Address);
@@ -146,7 +147,7 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
     function test__unit_correct__goldenStaking__fullunstaking() external {
         uint256 amountToStake = _addBalance(10);
 
-        _execute_makeGoldenStaking(true, 10);
+        _executeFn_staking_goldenStaking(true, 10);
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
@@ -156,8 +157,8 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
 
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(GOLDEN_STAKER.Address)
             );
         history = staking.getAddressHistory(GOLDEN_STAKER.Address);
@@ -199,11 +200,11 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
     {
         _addBalance(10);
 
-        _execute_makeGoldenStaking(true, 10);
+        _executeFn_staking_goldenStaking(true, 10);
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makeGoldenStaking(false, 10);
+        _executeFn_staking_goldenStaking(false, 10);
 
         skip(staking.getSecondsToUnlockStaking());
 
@@ -211,12 +212,12 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
         staking.goldenStaking(
             true,
             10,
-            _execute_makeGoldenStakingSignature(true, 10)
+            _executeSig_staking_goldenStaking(true, 10)
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(GOLDEN_STAKER.Address)
             );
         history = staking.getAddressHistory(GOLDEN_STAKER.Address);

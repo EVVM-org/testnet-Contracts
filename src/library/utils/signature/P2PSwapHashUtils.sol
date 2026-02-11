@@ -4,31 +4,31 @@ pragma solidity ^0.8.0;
 
 library P2PSwapHashUtils {
     function hashDataForMakeOrder(
-        address _tokenA,
-        address _tokenB,
-        uint256 _amountA,
-        uint256 _amountB
+        address tokenA,
+        address tokenB,
+        uint256 amountA,
+        uint256 amountB
     ) internal pure returns (bytes32) {
         return
             keccak256(
-                abi.encode("makeOrder", _tokenA, _tokenB, _amountA, _amountB)
+                abi.encode("makeOrder", tokenA, tokenB, amountA, amountB)
             );
     }
 
     function hashDataForCancelOrder(
-        address _tokenA,
-        address _tokenB,
-        uint256 _orderId
+        address tokenA,
+        address tokenB,
+        uint256 orderId
     ) internal pure returns (bytes32) {
-        return keccak256(abi.encode("cancelOrder", _tokenA, _tokenB, _orderId));
+        return keccak256(abi.encode("cancelOrder", tokenA, tokenB, orderId));
     }
 
     function hashDataForDispatchOrder(
-        address _tokenA,
-        address _tokenB,
-        uint256 _orderId
+        address tokenA,
+        address tokenB,
+        uint256 orderId
     ) internal pure returns (bytes32) {
         return
-            keccak256(abi.encode("dispatchOrder", _tokenA, _tokenB, _orderId));
+            keccak256(abi.encode("dispatchOrder", tokenA, tokenB, orderId));
     }
 }

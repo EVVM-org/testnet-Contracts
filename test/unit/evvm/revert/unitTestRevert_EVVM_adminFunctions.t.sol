@@ -60,7 +60,11 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
             ADMIN.Address
         );
 
-        staking._setupEstimatorAndEvvm(address(estimator), address(evvm));
+        staking.initializeSystemContracts(
+            address(estimator),
+            address(evvm),
+            address(state)
+        );
         treasury = new Treasury(address(evvm));
         evvm.initializeSystemContracts(
             address(nameService),

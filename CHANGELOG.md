@@ -5,10 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] "Ichiban Kasuga" - [Unreleased]
+## [3.0.0] - [Unreleased]
+
+### Codename: "Ichiban Kasuga"
 
 ### Added
 
+- **Changelog**: Added codenames to releases for a more engaging and memorable version history
 - **State.sol**: Centralized nonce coordinator for async and sync nonce validation across EVVM services, preventing replay attacks in multi-service transactions
 - **AdvancedStrings.sol**: `buildSignaturePayload` function for standardized signature generation and verification
 - **CLI**: State interface generator
@@ -34,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
 - **P2PSwap**:
   - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
+- **Staking**:
+  - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce
+  - Updated `StakingStructs` to be a library instead of an abstract contract for better modularity and reuse across services
+  - Change `_setupEstimatorAndEvvm` to `initializeSystemContracts` to generalize the function for setting up all critical system contracts (Evvm, Estimator, State) in one call during deployment
 
 ### Removed
 

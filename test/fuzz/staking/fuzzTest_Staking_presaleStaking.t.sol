@@ -17,6 +17,7 @@ import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 
 contract fuzzTest_Staking_presaleStaking is Test, Constants {
     function executeBeforeSetUp() internal override {
@@ -38,7 +39,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
 
         _addBalance(COMMON_USER_NO_STAKER_1.Address, true, 0);
 
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
             0,
@@ -77,10 +78,10 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
         uint16 priorityFeeAmountEVVM;
     }
 
-    function test__fuzz__presaleStaking_AsyncExecution(
+    function test__fuzz__presaleStaking(
         PresaleStakingFuzzTestInput[20] memory input
     ) external {
-        Staking.HistoryMetadata memory history;
+        StakingStructs.HistoryMetadata memory history;
         uint256 amountBeforeFisher;
         uint256 amountBeforeUser;
         uint256 totalStakedBefore;
@@ -107,6 +108,14 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
             ) {
                 incorrectTxCount++;
                 continue;
+            }
+
+            if (input[i].isAsyncExecEvvm) {
+                
+                if (input[i].nonceStaking == input[i].nonceEVVM) {
+                    incorrectTxCount++;
+                    continue;
+                }
             }
 
             FISHER = input[i].usingStaker
@@ -155,7 +164,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                     uint256(input[i].priorityFeeAmountEVVM)
                 );
 
-                _execute_makePresaleStaking(
+                _executeFn_staking_presaleStaking(
                     COMMON_USER_NO_STAKER_1,
                     true,
                     input[i].nonceStaking,
@@ -197,7 +206,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                     uint256(input[i].priorityFeeAmountEVVM)
                 );
 
-                _execute_makePresaleStaking(
+                _executeFn_staking_presaleStaking(
                     COMMON_USER_NO_STAKER_1,
                     false,
                     input[i].nonceStaking,

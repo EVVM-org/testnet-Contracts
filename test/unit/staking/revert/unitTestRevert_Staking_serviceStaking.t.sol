@@ -24,6 +24,8 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+import "@evvm/testnet-contracts/library/errors/StateError.sol";
 
 contract unitTestRevert_Staking_serviceStaking is Test, Constants {
     MockContractToStake mockContract;
@@ -243,8 +245,8 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
             amountStakingBefore + amountStaking
         );
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(address(mockContract))
             );
 
@@ -300,8 +302,8 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
             amountStakingBefore + evvm.getRewardAmount()
         );
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(address(mockContract))
             );
 

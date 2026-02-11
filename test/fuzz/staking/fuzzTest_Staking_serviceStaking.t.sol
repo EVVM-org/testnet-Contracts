@@ -17,6 +17,7 @@ import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 
 contract fuzzTest_Staking_serviceStaking is Test, Constants {
     MockContractToStake mockContract;
@@ -105,7 +106,7 @@ contract fuzzTest_Staking_serviceStaking is Test, Constants {
 
             counterTx++;
 
-            Staking.HistoryMetadata memory history = staking
+            StakingStructs.HistoryMetadata memory history = staking
                 .getAddressHistoryByIndex(address(mockContract), counterTx);
 
             assertEq(

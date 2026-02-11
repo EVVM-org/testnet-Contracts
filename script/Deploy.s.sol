@@ -46,14 +46,23 @@ contract DeployScript is Script, BaseInputs {
 
         nameService = new NameService(address(evvm), address(state), admin);
 
-        staking._setupEstimatorAndEvvm(address(estimator), address(evvm));
+        staking.initializeSystemContracts(
+            address(estimator),
+            address(evvm),
+            address(state)
+        );
         treasury = new Treasury(address(evvm));
         evvm.initializeSystemContracts(
             address(nameService),
             address(treasury),
             address(state)
         );
-        p2pSwap = new P2PSwap(address(evvm), address(staking), address(state), admin);
+        p2pSwap = new P2PSwap(
+            address(evvm),
+            address(staking),
+            address(state),
+            admin
+        );
 
         vm.stopBroadcast();
 

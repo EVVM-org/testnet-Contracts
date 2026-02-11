@@ -34,9 +34,7 @@ import {
 import {
     EvvmError
 } from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+
 import {
     StateError
 } from "@evvm/testnet-contracts/library/errors/StateError.sol";

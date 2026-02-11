@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 
 contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
     MockContractToStake mockContract;
@@ -85,8 +86,8 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
             "Error: staking contract principal token balance should be increased after staking"
         );
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(address(mockContract))
             );
 
@@ -144,8 +145,8 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
             "Error: staking contract principal token balance mismatch after unstaking"
         );
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(address(mockContract))
             );
 
@@ -204,8 +205,8 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
             "Error: staking contract principal token balance mismatch after full unstake"
         );
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(address(mockContract))
             );
 
@@ -277,8 +278,8 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
             "Error: staking contract principal token balance mismatch after staking again"
         );
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(address(mockContract))
             );
 

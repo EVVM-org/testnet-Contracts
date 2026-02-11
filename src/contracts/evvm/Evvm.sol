@@ -94,7 +94,7 @@ import {
 } from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
 import {
     ProposalStructs
-} from "@evvm/testnet-contracts/library/utils/GovernanceUtils.sol";
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
 
 contract Evvm is EvvmStorage {
     /**

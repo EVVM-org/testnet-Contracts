@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 
 contract unitTestCorrect_Staking_publicStaking is Test, Constants {
     AccountData FISHER_STAKER = COMMON_USER_STAKER;
@@ -114,7 +115,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsSyncNpf.signatureStaking,
             paramsSyncNpf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsSyncNpf.user,
             paramsSyncNpf.isStaking,
             paramsSyncNpf.amountOfStaking,
@@ -138,8 +139,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSyncNpf.user.Address)
             );
 
@@ -196,7 +197,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsAsyncNpf.signatureStaking,
             paramsAsyncNpf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsAsyncNpf.user,
             paramsAsyncNpf.isStaking,
             paramsAsyncNpf.amountOfStaking,
@@ -220,8 +221,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsyncNpf.user.Address)
             );
 
@@ -280,7 +281,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsSyncPf.signatureStaking,
             paramsSyncPf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsSyncPf.user,
             paramsSyncPf.isStaking,
             paramsSyncPf.amountOfStaking,
@@ -304,8 +305,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncPf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncPf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSyncPf.user.Address)
             );
 
@@ -359,7 +360,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsAsyncPf.signatureStaking,
             paramsAsyncPf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsAsyncPf.user,
             paramsAsyncPf.isStaking,
             paramsAsyncPf.amountOfStaking,
@@ -383,8 +384,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsyncPf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsyncPf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsyncPf.user.Address)
             );
 
@@ -493,7 +494,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsSyncNpf.signatureStaking,
             paramsSyncNpf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsSyncNpf.user,
             paramsSyncNpf.isStaking,
             paramsSyncNpf.amountOfStaking,
@@ -517,8 +518,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSyncNpf.user.Address)
             );
 
@@ -575,7 +576,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsAsyncNpf.signatureStaking,
             paramsAsyncNpf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsAsyncNpf.user,
             paramsAsyncNpf.isStaking,
             paramsAsyncNpf.amountOfStaking,
@@ -599,8 +600,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsyncNpf.user.Address)
             );
 
@@ -661,7 +662,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsSyncPf.signatureStaking,
             paramsSyncPf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsSyncPf.user,
             paramsSyncPf.isStaking,
             paramsSyncPf.amountOfStaking,
@@ -685,8 +686,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncPf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncPf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSyncPf.user.Address)
             );
 
@@ -743,7 +744,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsAsyncPf.signatureStaking,
             paramsAsyncPf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsAsyncPf.user,
             paramsAsyncPf.isStaking,
             paramsAsyncPf.amountOfStaking,
@@ -767,8 +768,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsyncPf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsyncPf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsyncPf.user.Address)
             );
 
@@ -827,7 +828,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             30,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             30,
@@ -836,7 +837,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -896,7 +897,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsSyncNpf.signatureStaking,
             paramsSyncNpf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsSyncNpf.user,
             paramsSyncNpf.isStaking,
             paramsSyncNpf.amountOfStaking,
@@ -920,8 +921,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSyncNpf.user.Address)
             );
 
@@ -974,7 +975,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsAsyncNpf.signatureStaking,
             paramsAsyncNpf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsAsyncNpf.user,
             paramsAsyncNpf.isStaking,
             paramsAsyncNpf.amountOfStaking,
@@ -998,8 +999,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsyncNpf.user.Address)
             );
 
@@ -1054,7 +1055,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsSyncPf.signatureStaking,
             paramsSyncPf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsSyncPf.user,
             paramsSyncPf.isStaking,
             paramsSyncPf.amountOfStaking,
@@ -1078,8 +1079,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncPf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncPf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSyncPf.user.Address)
             );
 
@@ -1129,7 +1130,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsAsyncPf.signatureStaking,
             paramsAsyncPf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsAsyncPf.user,
             paramsAsyncPf.isStaking,
             paramsAsyncPf.amountOfStaking,
@@ -1153,8 +1154,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsyncPf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsyncPf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsyncPf.user.Address)
             );
 
@@ -1209,7 +1210,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             30,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             30,
@@ -1218,7 +1219,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -1278,7 +1279,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsSyncNpf.signatureStaking,
             paramsSyncNpf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsSyncNpf.user,
             paramsSyncNpf.isStaking,
             paramsSyncNpf.amountOfStaking,
@@ -1302,8 +1303,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSyncNpf.user.Address)
             );
 
@@ -1356,7 +1357,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsAsyncNpf.signatureStaking,
             paramsAsyncNpf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsAsyncNpf.user,
             paramsAsyncNpf.isStaking,
             paramsAsyncNpf.amountOfStaking,
@@ -1380,8 +1381,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsyncNpf.user.Address)
             );
 
@@ -1438,7 +1439,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsSyncPf.signatureStaking,
             paramsSyncPf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsSyncPf.user,
             paramsSyncPf.isStaking,
             paramsSyncPf.amountOfStaking,
@@ -1462,8 +1463,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncPf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncPf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsSyncPf.user.Address)
             );
 
@@ -1516,7 +1517,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             paramsAsyncPf.signatureStaking,
             paramsAsyncPf.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             paramsAsyncPf.user,
             paramsAsyncPf.isStaking,
             paramsAsyncPf.amountOfStaking,
@@ -1540,8 +1541,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsyncPf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyAsyncPf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsAsyncPf.user.Address)
             );
 
@@ -1600,7 +1601,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -1609,7 +1610,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -1633,7 +1634,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -1657,8 +1658,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -1710,7 +1711,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -1719,7 +1720,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -1743,7 +1744,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -1767,8 +1768,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -1820,7 +1821,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -1829,7 +1830,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -1853,7 +1854,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -1877,8 +1878,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -1930,7 +1931,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -1939,7 +1940,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -1963,7 +1964,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -1987,8 +1988,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -2040,7 +2041,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -2049,7 +2050,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -2073,7 +2074,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -2097,8 +2098,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -2150,7 +2151,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -2159,7 +2160,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -2183,7 +2184,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -2207,8 +2208,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -2260,7 +2261,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -2269,7 +2270,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -2293,7 +2294,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -2317,8 +2318,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -2370,7 +2371,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -2379,7 +2380,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -2403,7 +2404,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -2427,8 +2428,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -2480,7 +2481,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -2489,7 +2490,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -2497,16 +2498,16 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             false,
             10,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             true,
             GOLDEN_STAKER
@@ -2531,7 +2532,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -2555,8 +2556,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -2608,7 +2609,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -2617,7 +2618,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -2625,16 +2626,16 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             false,
             10,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             true,
             GOLDEN_STAKER
@@ -2659,7 +2660,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -2683,8 +2684,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -2736,7 +2737,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -2745,7 +2746,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -2753,16 +2754,16 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             false,
             10,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             true,
             GOLDEN_STAKER
@@ -2787,7 +2788,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -2811,8 +2812,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -2864,7 +2865,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -2873,7 +2874,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -2881,16 +2882,16 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             false,
             10,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             true,
             GOLDEN_STAKER
@@ -2915,7 +2916,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -2939,8 +2940,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -2993,7 +2994,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -3002,7 +3003,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -3010,16 +3011,16 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             false,
             10,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             true,
             GOLDEN_STAKER
@@ -3044,7 +3045,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -3068,8 +3069,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -3121,7 +3122,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -3130,7 +3131,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -3138,16 +3139,16 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             false,
             10,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             true,
             GOLDEN_STAKER
@@ -3172,7 +3173,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -3196,8 +3197,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -3249,7 +3250,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -3258,7 +3259,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -3266,16 +3267,16 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             false,
             10,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             true,
             GOLDEN_STAKER
@@ -3300,7 +3301,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -3324,8 +3325,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 
@@ -3377,7 +3378,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             10,
             0
         );
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             true,
             10,
@@ -3386,7 +3387,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             true,
             GOLDEN_STAKER
@@ -3394,16 +3395,16 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             USER,
             false,
             10,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
             0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             true,
             GOLDEN_STAKER
@@ -3428,7 +3429,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         (
             params.signatureStaking,
             params.signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
@@ -3452,8 +3453,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySyncNpf = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historySyncNpf = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
 

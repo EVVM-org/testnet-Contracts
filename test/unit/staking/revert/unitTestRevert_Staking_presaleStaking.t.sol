@@ -25,9 +25,8 @@ import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+import "@evvm/testnet-contracts/library/errors/StateError.sol";
 
 contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     function executeBeforeSetUp() internal override {
@@ -118,7 +117,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,
@@ -174,7 +173,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,
@@ -232,7 +231,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,
@@ -256,7 +255,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_evvmID()
+    function test__unit_revert__presaleStaking__InvalidSignature_evvmID()
         external
     {
         Params memory params = Params({
@@ -283,6 +282,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             Erc191TestBuilder.buildMessageSignedForPresaleStaking(
                 /* 🢃 Diferent EvvmID 🢃 */
                 evvm.getEvvmID() + 1,
+                address(staking),
                 params.isStaking,
                 1,
                 params.nonceStake
@@ -304,7 +304,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -318,7 +318,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_signer()
+    function test__unit_revert__presaleStaking__InvalidSignature_signer()
         external
     {
         Params memory params = Params({
@@ -343,7 +343,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             /* 🢃 Different Signer 🢃 */
             COMMON_USER_NO_STAKER_2,
             params.isStaking,
@@ -354,7 +354,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -368,7 +368,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_isStaking()
+    function test__unit_revert__presaleStaking__InvalidSignature_isStaking()
         external
     {
         Params memory params = Params({
@@ -393,7 +393,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             /* 🢃 Different flag isStaking 🢃 */
             !params.isStaking,
@@ -404,7 +404,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -418,7 +418,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_amountOfStaking()
+    function test__unit_revert__presaleStaking__InvalidSignature_amountOfStaking()
         external
     {
         Params memory params = Params({
@@ -444,6 +444,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             params.user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPresaleStaking(
                 evvm.getEvvmID(),
+                address(staking),
                 params.isStaking,
                 /* 🢃 Different amount of staking 🢃 */
                 67,
@@ -465,7 +466,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -479,7 +480,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_nonce()
+    function test__unit_revert__presaleStaking__InvalidSignature_nonce()
         external
     {
         Params memory params = Params({
@@ -504,7 +505,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             /* 🢃 Different nonce 🢃 */
@@ -515,7 +516,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StakingError.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(StateError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -554,7 +555,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,
@@ -582,7 +583,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         external
     {
         _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
             1000001000001,
@@ -614,7 +615,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,
@@ -624,7 +625,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
@@ -658,7 +659,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,
@@ -686,7 +687,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         external
     {
         _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
             111,
@@ -696,7 +697,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             GOLDEN_STAKER
         );
         _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
             222,
@@ -728,7 +729,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,
@@ -756,7 +757,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         external
     {
         _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
             111,
@@ -788,7 +789,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,
@@ -816,7 +817,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         external
     {
         _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
             111,
@@ -828,7 +829,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             false,
             222,
@@ -855,7 +856,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,
@@ -905,6 +906,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             params.user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPresaleStaking(
                 evvm.getEvvmID(),
+                address(staking),
                 params.isStaking,
                 1,
                 params.nonceStake
@@ -962,7 +964,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (
             params.signatureStake,
             params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             params.nonceStake,

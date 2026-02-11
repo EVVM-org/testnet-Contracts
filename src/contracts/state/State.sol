@@ -24,9 +24,11 @@ import {
     StateError as Error
 } from "@evvm/testnet-contracts/library/errors/StateError.sol";
 import {
-    Admin,
     ProposalStructs
-} from "@evvm/testnet-contracts/library/utils/GovernanceUtils.sol";
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+import {
+    Admin
+} from "@evvm/testnet-contracts/library/utils/governance/Admin.sol";
 
 interface IUserValidator {
     function canExecute(address user) external view returns (bool);

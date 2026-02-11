@@ -17,6 +17,7 @@ import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 
 contract fuzzTest_Staking_goldenStaking is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -26,7 +27,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
 
         _addBalance(10);
 
-        bytes memory signatureEVVM = _execute_makeGoldenStakingSignature(
+        bytes memory signatureEVVM = _executeSig_staking_goldenStaking(
             true,
             10
         );
@@ -93,7 +94,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
 
                 totalAmount = _addBalance(input[i].amount);
 
-                _execute_makeGoldenStaking(input[i].isStaking, input[i].amount);
+                _executeFn_staking_goldenStaking(input[i].isStaking, input[i].amount);
 
                 assertTrue(
                     evvm.isAddressStaker(GOLDEN_STAKER.Address),
@@ -115,7 +116,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                         GOLDEN_STAKER.Address
                     );
 
-                    _execute_makeGoldenStaking(
+                    _executeFn_staking_goldenStaking(
                         input[i].isStaking,
                         stakingFullAmountBefore
                     );
@@ -125,14 +126,14 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                         "Error: golden user is pointer as staker after full unstaking"
                     );
                 } else {
-                    _execute_makeGoldenStaking(
+                    _executeFn_staking_goldenStaking(
                         input[i].isStaking,
                         input[i].amount
                     );
                 }
             }
 
-            Staking.HistoryMetadata memory history = staking
+            StakingStructs.HistoryMetadata memory history = staking
                 .getAddressHistoryByIndex(GOLDEN_STAKER.Address, i + 1);
 
             assertEq(

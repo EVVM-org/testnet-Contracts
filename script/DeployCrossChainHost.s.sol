@@ -53,7 +53,11 @@ contract DeployCrossChainHostScript is Script, BaseInputs, CrossChainInputs {
 
         nameService = new NameService(address(evvm), address(state), admin);
 
-        staking._setupEstimatorAndEvvm(address(estimator), address(evvm));
+        staking.initializeSystemContracts(
+            address(estimator),
+            address(evvm),
+            address(state)
+        );
 
         treasuryHost = new TreasuryHostChainStation(
             address(evvm),
@@ -67,7 +71,12 @@ contract DeployCrossChainHostScript is Script, BaseInputs, CrossChainInputs {
             address(state)
         );
 
-        p2pSwap = new P2PSwap(address(evvm), address(staking), address(state), admin);
+        p2pSwap = new P2PSwap(
+            address(evvm),
+            address(staking),
+            address(state),
+            admin
+        );
 
         vm.stopBroadcast();
     }

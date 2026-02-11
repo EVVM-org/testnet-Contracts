@@ -17,12 +17,13 @@ import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 
 contract fuzzTest_Staking_publicStaking is Test, Constants {
     function executeBeforeSetUp() internal override {
         _addBalance(COMMON_USER_NO_STAKER_1.Address, 10, 0);
 
-        _execute_makePublicStaking(
+        _executeFn_staking_publicStaking(
             COMMON_USER_NO_STAKER_1,
             true,
             10,
@@ -68,7 +69,7 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
     function test__fuzz__publicStaking(
         PublicStakingFuzzTestInput[20] memory input
     ) external {
-        Staking.HistoryMetadata memory history;
+        StakingStructs.HistoryMetadata memory history;
         uint256 amountBeforeFisher;
         uint256 amountBeforeUser;
         uint256 totalStakedBefore;
@@ -95,6 +96,14 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
             ) {
                 incorrectTxCount++;
                 continue;
+            }
+
+            if (input[i].isAsyncExecEvvm) {
+                
+                if (input[i].nonceStaking == input[i].nonceEVVM) {
+                    incorrectTxCount++;
+                    continue;
+                }
             }
 
             FISHER = input[i].usingStaker
@@ -135,7 +144,7 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
                     input[i].priorityFeeAmountEVVM
                 );
 
-                _execute_makePublicStaking(
+                _executeFn_staking_publicStaking(
                     COMMON_USER_NO_STAKER_1,
                     input[i].isStaking,
                     input[i].stakingAmount,
@@ -173,7 +182,7 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
                         input[i].priorityFeeAmountEVVM
                     );
 
-                    _execute_makePublicStaking(
+                    _executeFn_staking_publicStaking(
                         COMMON_USER_NO_STAKER_1,
                         input[i].isStaking,
                         stakingFullAmountBefore,
@@ -196,7 +205,7 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
                         input[i].priorityFeeAmountEVVM
                     );
 
-                    _execute_makePublicStaking(
+                    _executeFn_staking_publicStaking(
                         COMMON_USER_NO_STAKER_1,
                         input[i].isStaking,
                         input[i].stakingAmount,

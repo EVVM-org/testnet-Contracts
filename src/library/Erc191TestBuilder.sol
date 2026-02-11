@@ -26,6 +26,9 @@ import {
 import {
     P2PSwapHashUtils
 } from "@evvm/testnet-contracts/library/utils/signature/P2PSwapHashUtils.sol";
+import {
+    StakingHashUtils
+} from "@evvm/testnet-contracts/library/utils/signature/StakingHashUtils.sol";
 
 library Erc191TestBuilder {
     //-----------------------------------------------------------------------------------
@@ -310,99 +313,46 @@ library Erc191TestBuilder {
     // staking functions
     //-----------------------------------------------------------------------------------
 
-    /**
-     * @notice Builds the message hash for public service staking
-     * @dev Creates an EIP-191 compatible hash for Staking publicServiceStaking
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _serviceAddress Address of the service to stake for
-     * @param _isStaking True for staking, false for unstaking
-     * @param _amountOfStaking Amount of staking units
-     * @param _nonce Nonce for replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
-    function buildMessageSignedForPublicServiceStake(
-        uint256 evvmID,
-        address _serviceAddress,
-        bool _isStaking,
-        uint256 _amountOfStaking,
-        uint256 _nonce
-    ) internal pure returns (bytes32 messageHash) {
-        return
-            buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "publicServiceStaking",
-                    ",",
-                    AdvancedStrings.addressToString(_serviceAddress),
-                    ",",
-                    _isStaking ? "true" : "false",
-                    ",",
-                    AdvancedStrings.uintToString(_amountOfStaking),
-                    ",",
-                    AdvancedStrings.uintToString(_nonce)
-                )
-            );
-    }
-
-    /**
-     * @notice Builds the message hash for public staking
-     * @dev Creates an EIP-191 compatible hash for Staking publicStaking
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _isStaking True for staking, false for unstaking
-     * @param _amountOfStaking Amount of staking units
-     * @param _nonce Nonce for replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
-    function buildMessageSignedForPublicStaking(
-        uint256 evvmID,
-        bool _isStaking,
-        uint256 _amountOfStaking,
-        uint256 _nonce
-    ) internal pure returns (bytes32 messageHash) {
-        return
-            buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "publicStaking",
-                    ",",
-                    _isStaking ? "true" : "false",
-                    ",",
-                    AdvancedStrings.uintToString(_amountOfStaking),
-                    ",",
-                    AdvancedStrings.uintToString(_nonce)
-                )
-            );
-    }
-
-    /**
-     * @notice Builds the message hash for presale staking
-     * @dev Creates an EIP-191 compatible hash for Staking presaleStaking
-     * @param evvmID Unique identifier of the EVVM instance
-     * @param _isStaking True for staking, false for unstaking
-     * @param _amountOfStaking Amount of staking units
-     * @param _nonce Nonce for replay protection
-     * @return messageHash The EIP-191 formatted hash ready for signing
-     */
     function buildMessageSignedForPresaleStaking(
         uint256 evvmID,
-        bool _isStaking,
-        uint256 _amountOfStaking,
-        uint256 _nonce
-    ) internal pure returns (bytes32 messageHash) {
+        address servicePointer,
+        bool isStaking,
+        uint256 amountOfStaking,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
         return
             buildHashForSign(
-                string.concat(
-                    AdvancedStrings.uintToString(evvmID),
-                    ",",
-                    "presaleStaking",
-                    ",",
-                    _isStaking ? "true" : "false",
-                    ",",
-                    AdvancedStrings.uintToString(_amountOfStaking),
-                    ",",
-                    AdvancedStrings.uintToString(_nonce)
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    StakingHashUtils.hashDataForPresaleStake(
+                        isStaking,
+                        amountOfStaking
+                    ),
+                    nonce,
+                    true
+                )
+            );
+    }
+
+    function buildMessageSignedForPublicStaking(
+        uint256 evvmID,
+        address servicePointer,
+        bool isStaking,
+        uint256 amountOfStaking,
+        uint256 nonce
+    ) internal pure returns (bytes32) {
+        return
+            buildHashForSign(
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    StakingHashUtils.hashDataForPublicStake(
+                        isStaking,
+                        amountOfStaking
+                    ),
+                    nonce,
+                    true
                 )
             );
     }

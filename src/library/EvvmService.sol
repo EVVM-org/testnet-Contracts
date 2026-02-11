@@ -26,7 +26,20 @@ pragma solidity ^0.8.0;
  *         EvvmService(evvm, staking) {}
  *
  *     function myFunction(address user, ..., bytes memory sig) external {
- *         validateServiceSignature("myFunction", "...", sig, user);
+ *      validateAndConsumeNonce(
+ *          user,
+ *          keccak256(
+ *              abi.encodePacked(
+ *                  "myFunction",
+ *                  <input1>,
+ *                  ...,
+ *                  <inputN>
+ *              )
+ *          ),
+ *          nonce,
+ *          isAsyncExec, // if you want to set as a only async transaction, set this to true.
+ *          signature
+ *      )
  *         // Your logic here
  *     }
  * }
@@ -34,19 +47,23 @@ pragma solidity ^0.8.0;
  */
 
 import {EvvmStructs} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
-import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
-import {StakingServiceUtils} from "@evvm/testnet-contracts/library/utils/service/StakingServiceUtils.sol";
-import {EvvmPayments} from "@evvm/testnet-contracts/library/utils/service/EvvmPayments.sol";
+import {
+    StateManagment
+} from "@evvm/testnet-contracts/library/utils/service/StateManagment.sol";
+import {
+    StakingServiceUtils
+} from "@evvm/testnet-contracts/library/utils/service/StakingServiceUtils.sol";
+import {
+    EvvmPayments
+} from "@evvm/testnet-contracts/library/utils/service/EvvmPayments.sol";
 
 abstract contract EvvmService is
     StakingServiceUtils,
-    EvvmPayments
+    EvvmPayments,
+    StateManagment
 {
-    
     /// @dev Thrown when a signature verification fails for a service operation
     error InvalidServiceSignature();
-
-    State state;
 
     /**
      * @notice Initializes the EvvmService with EVVM and Staking contract addresses
@@ -57,9 +74,11 @@ abstract contract EvvmService is
         address evvmAddress,
         address stakingAddress,
         address stateAddress
-    ) StakingServiceUtils(stakingAddress) EvvmPayments(evvmAddress) {
-        state = State(stateAddress);
-    }
+    )
+        StakingServiceUtils(stakingAddress)
+        EvvmPayments(evvmAddress)
+        StateManagment(stateAddress)
+    {}
 
     /**
      * @notice Retrieves the unique EVVM instance identifier

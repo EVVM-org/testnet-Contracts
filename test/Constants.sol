@@ -200,7 +200,11 @@ abstract contract Constants is Test {
             ADMIN.Address
         );
 
-        staking._setupEstimatorAndEvvm(address(estimator), address(evvm));
+        staking.initializeSystemContracts(
+            address(estimator),
+            address(evvm),
+            address(state)
+        );
         treasury = new Treasury(address(evvm));
 
         evvm.initializeSystemContracts(
@@ -910,7 +914,7 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makeGoldenStakingSignature(
+    function _executeSig_staking_goldenStaking(
         bool isStaking,
         uint256 amount
     ) internal virtual returns (bytes memory signatureEVVM) {
@@ -929,7 +933,7 @@ abstract contract Constants is Test {
             : bytes(hex"");
     }
 
-    function _execute_makeGoldenStaking(
+    function _executeFn_staking_goldenStaking(
         bool isStaking,
         uint256 amount
     ) internal virtual {
@@ -938,13 +942,13 @@ abstract contract Constants is Test {
         staking.goldenStaking(
             isStaking,
             amount,
-            _execute_makeGoldenStakingSignature(isStaking, amount)
+            _executeSig_staking_goldenStaking(isStaking, amount)
         );
 
         vm.stopPrank();
     }
 
-    function _execute_makePresaleStakingSignature(
+    function _executeSig_staking_presaleStaking(
         AccountData memory user,
         bool isStaking,
         uint256 nonceStaking,
@@ -960,6 +964,7 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPresaleStaking(
                 evvm.getEvvmID(),
+                address(staking),
                 isStaking,
                 1,
                 nonceStaking
@@ -980,7 +985,7 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makePresaleStaking(
+    function _executeFn_staking_presaleStaking(
         AccountData memory user,
         bool isStaking,
         uint256 nonceStaking,
@@ -992,7 +997,7 @@ abstract contract Constants is Test {
         (
             bytes memory signatureStaking,
             bytes memory signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+        ) = _executeSig_staking_presaleStaking(
                 user,
                 isStaking,
                 nonceStaking,
@@ -1017,7 +1022,7 @@ abstract contract Constants is Test {
         vm.stopPrank();
     }
 
-    function _execute_makePublicStakingSignature(
+    function _executeSig_staking_publicStaking(
         AccountData memory user,
         bool isStaking,
         uint256 amountOfStaking,
@@ -1034,6 +1039,7 @@ abstract contract Constants is Test {
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPublicStaking(
                 evvm.getEvvmID(),
+                address(staking),
                 isStaking,
                 amountOfStaking,
                 nonce
@@ -1054,7 +1060,7 @@ abstract contract Constants is Test {
         );
     }
 
-    function _execute_makePublicStaking(
+    function _executeFn_staking_publicStaking(
         AccountData memory user,
         bool isStaking,
         uint256 amountOfStaking,
@@ -1067,7 +1073,7 @@ abstract contract Constants is Test {
         (
             bytes memory signatureStaking,
             bytes memory signatureEVVM
-        ) = _execute_makePublicStakingSignature(
+        ) = _executeSig_staking_publicStaking(
                 user,
                 isStaking,
                 amountOfStaking,

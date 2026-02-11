@@ -15,13 +15,13 @@ pragma solidity ^0.8.0;
  * - Service Staking: ServiceStakingMetadata, AccountMetadata
  */
 
-abstract contract StakingStructs {
+library StakingStructs {
     /**
      * @dev Metadata for presale stakers
      * @param isAllow Whether the address is allowed to participate in presale staking
      * @param stakingAmount Current number of staking tokens staked (max 2 for presale)
      */
-    struct presaleStakerMetadata {
+    struct PresaleStakerMetadata {
         bool isAllow;
         uint256 stakingAmount;
     }
@@ -41,40 +41,6 @@ abstract contract StakingStructs {
         uint256 amount;
         uint256 timestamp;
         uint256 totalStaked;
-    }
-
-    /**
-     * @dev Struct for managing address change proposals with time delay
-     * @param actual Current active address
-     * @param proposal Proposed new address
-     * @param timeToAccept Timestamp when the proposal can be accepted
-     */
-    struct AddressTypeProposal {
-        address actual;
-        address proposal;
-        uint256 timeToAccept;
-    }
-
-    /**
-     * @dev Struct for managing uint256 change proposals with time delay
-     * @param actual Current active value
-     * @param proposal Proposed new value
-     * @param timeToAccept Timestamp when the proposal can be accepted
-     */
-    struct UintTypeProposal {
-        uint256 actual;
-        uint256 proposal;
-        uint256 timeToAccept;
-    }
-
-    /**
-     * @dev Struct for managing boolean flag changes with time delay
-     * @param flag Current boolean state
-     * @param timeToAccept Timestamp when the flag change can be executed
-     */
-    struct BoolTypeProposal {
-        bool flag;
-        uint256 timeToAccept;
     }
 
     /**

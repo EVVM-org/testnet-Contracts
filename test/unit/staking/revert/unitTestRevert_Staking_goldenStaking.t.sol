@@ -25,6 +25,8 @@ import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+import "@evvm/testnet-contracts/library/errors/StateError.sol";
 
 contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     function executeBeforeSetUp() internal override {
@@ -87,7 +89,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     {
         _addBalance(GOLDEN_STAKER.Address, 10);
 
-        bytes memory signatureEVVMstake = _execute_makeGoldenStakingSignature(
+        bytes memory signatureEVVMstake = _executeSig_staking_goldenStaking(
             true,
             10
         );
@@ -108,12 +110,12 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     {
         _addBalance(GOLDEN_STAKER.Address, 10);
 
-        bytes memory signatureEVVM1 = _execute_makeGoldenStakingSignature(
+        bytes memory signatureEVVM1 = _executeSig_staking_goldenStaking(
             true,
             10
         );
 
-        bytes memory signatureEVVM2 = _execute_makeGoldenStakingSignature(
+        bytes memory signatureEVVM2 = _executeSig_staking_goldenStaking(
             true,
             10
         );
