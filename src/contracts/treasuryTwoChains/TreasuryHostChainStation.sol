@@ -33,16 +33,16 @@ pragma solidity ^0.8.0;
 
 import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
 import {
     CrossChainTreasuryError as Error
 } from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
 import {
     HostChainStationStructs
 } from "@evvm/testnet-contracts/library/structs/HostChainStationStructs.sol";
-
 import {
-    SignatureUtils
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/SignatureUtils.sol";
+    TreasuryCrossChainHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/TreasuryCrossChainHashUtils.sol";
 import {
     PayloadUtils
 } from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/PayloadUtils.sol";
@@ -78,44 +78,40 @@ import {
 import {
     AdvancedStrings
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
 
-contract TreasuryHostChainStation is
-    HostChainStationStructs,
-    OApp,
-    OAppOptionsType3,
-    AxelarExecutable
-{
+contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     /// @notice EVVM core contract for balance operations
     /// @dev Used to integrate with EVVM's balance management and token operations
     Evvm evvm;
 
+    State state;
+
     /// @notice Admin address management with time-delayed proposals
     /// @dev Stores current admin, proposed admin, and acceptance timestamp
-    AddressTypeProposal admin;
+    ProposalStructs.AddressTypeProposal admin;
 
     /// @notice Fisher executor address management with time-delayed proposals
     /// @dev Fisher executor can process cross-chain bridge transactions
-    AddressTypeProposal fisherExecutor;
+    ProposalStructs.AddressTypeProposal fisherExecutor;
 
     /// @notice Hyperlane protocol configuration for cross-chain messaging
     /// @dev Contains domain ID, external chain address, and mailbox contract address
-    HyperlaneConfig hyperlane;
+    HostChainStationStructs.HyperlaneConfig hyperlane;
 
     /// @notice LayerZero protocol configuration for omnichain messaging
     /// @dev Contains endpoint ID, external chain address, and endpoint contract address
-    LayerZeroConfig layerZero;
+    HostChainStationStructs.LayerZeroConfig layerZero;
 
     /// @notice Axelar protocol configuration for cross-chain communication
     /// @dev Contains chain name, external chain address, gas service, and gateway addresses
-    AxelarConfig axelar;
+    HostChainStationStructs.AxelarConfig axelar;
 
     /// @notice Pending proposal for changing external chain addresses across all protocols
     /// @dev Used for coordinated updates to external chain addresses with time delay
-    ChangeExternalChainAddressParams externalChainAddressChangeProposal;
-
-    /// @notice Tracks the next nonce for Fisher bridge operations per user address
-    /// @dev Prevents replay attacks in Fisher bridge transactions
-    mapping(address => uint256) nextFisherExecutionNonce;
+    HostChainStationStructs.ChangeExternalChainAddressParams externalChainAddressChangeProposal;
 
     /// @notice LayerZero execution options with gas limit configuration
     /// @dev Pre-built options for LayerZero message execution (200k gas limit)
@@ -171,8 +167,9 @@ contract TreasuryHostChainStation is
     /// @param _crosschainConfig Configuration struct containing all cross-chain protocol settings
     constructor(
         address _evvmAddress,
+        address _stateAddress,
         address _admin,
-        CrosschainConfig memory _crosschainConfig
+        HostChainStationStructs.CrosschainConfig memory _crosschainConfig
     )
         OApp(_crosschainConfig.layerZero.endpointAddress, _admin)
         Ownable(_admin)
@@ -180,26 +177,28 @@ contract TreasuryHostChainStation is
     {
         evvm = Evvm(_evvmAddress);
 
-        admin = AddressTypeProposal({
+        state = State(_stateAddress);
+
+        admin = ProposalStructs.AddressTypeProposal({
             current: _admin,
             proposal: address(0),
             timeToAccept: 0
         });
-        hyperlane = HyperlaneConfig({
+        hyperlane = HostChainStationStructs.HyperlaneConfig({
             externalChainStationDomainId: _crosschainConfig
                 .hyperlane
                 .externalChainStationDomainId,
             externalChainStationAddress: "",
             mailboxAddress: _crosschainConfig.hyperlane.mailboxAddress
         });
-        layerZero = LayerZeroConfig({
+        layerZero = HostChainStationStructs.LayerZeroConfig({
             externalChainStationEid: _crosschainConfig
                 .layerZero
                 .externalChainStationEid,
             externalChainStationAddress: "",
             endpointAddress: _crosschainConfig.layerZero.endpointAddress
         });
-        axelar = AxelarConfig({
+        axelar = HostChainStationStructs.AxelarConfig({
             externalChainStationChainName: _crosschainConfig
                 .axelar
                 .externalChainStationChainName,
@@ -313,22 +312,21 @@ contract TreasuryHostChainStation is
         address tokenAddress,
         uint256 priorityFee,
         uint256 amount,
+        uint256 nonce,
         bytes memory signature
     ) external onlyFisherExecutor {
-        if (
-            !SignatureUtils.verifyMessageSignedForFisherBridge(
-                evvm.getEvvmID(),
-                from,
+        state.validateAndConsumeNonce(
+            from,
+            Hash.hashDataForFisherBridge(
                 addressToReceive,
-                nextFisherExecutionNonce[from],
                 tokenAddress,
                 priorityFee,
-                amount,
-                signature
-            )
-        ) revert Error.InvalidSignature();
-
-        nextFisherExecutionNonce[from]++;
+                amount
+            ),
+            nonce,
+            true,
+            signature
+        );
 
         executerEVVM(true, addressToReceive, tokenAddress, amount);
 
@@ -350,6 +348,7 @@ contract TreasuryHostChainStation is
         address tokenAddress,
         uint256 priorityFee,
         uint256 amount,
+        uint256 nonce,
         bytes memory signature
     ) external onlyFisherExecutor {
         if (tokenAddress == evvm.getEvvmMetadata().principalTokenAddress)
@@ -358,20 +357,18 @@ contract TreasuryHostChainStation is
         if (evvm.getBalance(from, tokenAddress) < amount)
             revert Error.InsufficientBalance();
 
-        if (
-            !SignatureUtils.verifyMessageSignedForFisherBridge(
-                evvm.getEvvmID(),
-                from,
+        state.validateAndConsumeNonce(
+            from,
+            Hash.hashDataForFisherBridge(
                 addressToReceive,
-                nextFisherExecutionNonce[from],
                 tokenAddress,
                 priorityFee,
-                amount,
-                signature
-            )
-        ) revert Error.InvalidSignature();
-
-        nextFisherExecutionNonce[from]++;
+                amount
+            ),
+            nonce,
+            true,
+            signature
+        );
 
         executerEVVM(false, from, tokenAddress, amount + priorityFee);
 
@@ -384,7 +381,7 @@ contract TreasuryHostChainStation is
             tokenAddress,
             priorityFee,
             amount,
-            nextFisherExecutionNonce[from] - 1
+            nonce
         );
     }
 
@@ -614,21 +611,23 @@ contract TreasuryHostChainStation is
     ) external onlyAdmin {
         if (fuseSetExternalChainAddress == 0x01) revert();
 
-        externalChainAddressChangeProposal = ChangeExternalChainAddressParams({
-            porposeAddress_AddressType: externalChainStationAddress,
-            porposeAddress_StringType: externalChainStationAddressString,
-            timeToAccept: block.timestamp + 1 minutes
-        });
+        externalChainAddressChangeProposal = HostChainStationStructs
+            .ChangeExternalChainAddressParams({
+                porposeAddress_AddressType: externalChainStationAddress,
+                porposeAddress_StringType: externalChainStationAddressString,
+                timeToAccept: block.timestamp + 1 minutes
+            });
     }
 
     /// @notice Cancels a pending external chain address change proposal
     /// @dev Resets the external chain address proposal to default state
     function rejectProposalExternalChainAddress() external onlyAdmin {
-        externalChainAddressChangeProposal = ChangeExternalChainAddressParams({
-            porposeAddress_AddressType: address(0),
-            porposeAddress_StringType: "",
-            timeToAccept: 0
-        });
+        externalChainAddressChangeProposal = HostChainStationStructs
+            .ChangeExternalChainAddressParams({
+                porposeAddress_AddressType: address(0),
+                porposeAddress_StringType: "",
+                timeToAccept: 0
+            });
     }
 
     /// @notice Accepts pending external chain address changes across all protocols
@@ -665,7 +664,11 @@ contract TreasuryHostChainStation is
 
     /// @notice Returns the complete admin configuration including proposals and timelock
     /// @return Current admin address, proposed admin, and acceptance timestamp
-    function getAdmin() external view returns (AddressTypeProposal memory) {
+    function getAdmin()
+        external
+        view
+        returns (ProposalStructs.AddressTypeProposal memory)
+    {
         return admin;
     }
 
@@ -674,7 +677,7 @@ contract TreasuryHostChainStation is
     function getFisherExecutor()
         external
         view
-        returns (AddressTypeProposal memory)
+        returns (ProposalStructs.AddressTypeProposal memory)
     {
         return fisherExecutor;
     }
@@ -683,10 +686,11 @@ contract TreasuryHostChainStation is
     /// @dev Used to prevent replay attacks in cross-chain bridge transactions
     /// @param user Address to query the next Fisher execution nonce for
     /// @return Next sequential nonce value for the user's Fisher bridge operations
-    function getNextFisherExecutionNonce(
-        address user
-    ) external view returns (uint256) {
-        return nextFisherExecutionNonce[user];
+    function getIfUsedAsyncNonce(
+        address user,
+        uint256 nonce
+    ) external view returns (bool) {
+        return state.getIfUsedAsyncNonce(user, nonce);
     }
 
     /// @notice Returns the EVVM core contract address
@@ -700,7 +704,7 @@ contract TreasuryHostChainStation is
     function getHyperlaneConfig()
         external
         view
-        returns (HyperlaneConfig memory)
+        returns (HostChainStationStructs.HyperlaneConfig memory)
     {
         return hyperlane;
     }
@@ -710,14 +714,18 @@ contract TreasuryHostChainStation is
     function getLayerZeroConfig()
         external
         view
-        returns (LayerZeroConfig memory)
+        returns (HostChainStationStructs.LayerZeroConfig memory)
     {
         return layerZero;
     }
 
     /// @notice Returns the complete Axelar protocol configuration
     /// @return Axelar configuration including chain name, addresses, gas service, and gateway
-    function getAxelarConfig() external view returns (AxelarConfig memory) {
+    function getAxelarConfig()
+        external
+        view
+        returns (HostChainStationStructs.AxelarConfig memory)
+    {
         return axelar;
     }
 

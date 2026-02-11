@@ -40,9 +40,5 @@ library CrossChainTreasuryError {
     /// @dev Prevents cross-chain attacks from unauthorized chains or wrong network configurations
     error ChainIdNotAuthorized();
 
-    /// @notice Thrown when Fisher bridge signature verification fails
-    /// @dev Security check for Fisher bridge operations to ensure transaction authenticity and prevent replay attacks
-    error InvalidSignature();
-
     error WindowToChangeEvvmIDExpired();
 }

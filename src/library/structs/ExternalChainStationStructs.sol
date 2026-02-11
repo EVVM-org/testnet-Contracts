@@ -11,7 +11,7 @@ pragma solidity ^0.8.0;
  *      These structures ensure type safety and consistency for cross-chain operations
  *      from external chains to the host chain in the EVVM ecosystem
  */
-abstract contract ExternalChainStationStructs {
+library ExternalChainStationStructs {
     /// @notice Time-delayed address change proposal structure for governance
     /// @dev Used for admin and Fisher executor address changes with 1-day delay
     /// @param current Currently active address with full privileges
@@ -74,6 +74,7 @@ abstract contract ExternalChainStationStructs {
     struct ChangeHostChainAddressParams {
         address porposeAddress_AddressType;
         string porposeAddress_StringType;
+        address currentAddress;
         uint256 timeToAccept;
     }
 }

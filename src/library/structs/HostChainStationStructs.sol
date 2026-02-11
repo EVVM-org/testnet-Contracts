@@ -12,18 +12,7 @@ pragma solidity ^0.8.0;
  *      from the host chain to external chains in the EVVM ecosystem
  */
 
-abstract contract HostChainStationStructs {
-    /// @notice Time-delayed address change proposal structure for governance
-    /// @dev Used for admin and Fisher executor address changes with 1-day delay
-    /// @param current Currently active address with full privileges
-    /// @param proposal Proposed new address waiting for acceptance
-    /// @param timeToAccept Timestamp when the proposal becomes acceptable
-    struct AddressTypeProposal {
-        address current;
-        address proposal;
-        uint256 timeToAccept;
-    }
-
+library HostChainStationStructs {
     /// @notice Hyperlane protocol configuration for cross-chain messaging
     /// @dev Configuration for reliable cross-chain communication via Hyperlane
     /// @param externalChainStationDomainId Hyperlane domain identifier for the external chain

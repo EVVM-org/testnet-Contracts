@@ -36,14 +36,22 @@ import {
     CrossChainTreasuryError as Error
 } from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
 import {
+    StateError
+} from "@evvm/testnet-contracts/library/errors/StateError.sol";
+import {
+    SignatureRecover
+} from "@evvm/testnet-contracts/library/primitives/SignatureRecover.sol";
+import {
+    TreasuryCrossChainHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/TreasuryCrossChainHashUtils.sol";
+import {
     ExternalChainStationStructs
 } from "@evvm/testnet-contracts/library/structs/ExternalChainStationStructs.sol";
 
 import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
-
 import {
-    SignatureUtils
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/SignatureUtils.sol";
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
 import {
     PayloadUtils
 } from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/PayloadUtils.sol";
@@ -81,34 +89,33 @@ import {
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract TreasuryExternalChainStation is
-    ExternalChainStationStructs,
     OApp,
     OAppOptionsType3,
     AxelarExecutable
 {
     /// @notice Admin address management with time-delayed proposals
     /// @dev Stores current admin, proposed admin, and acceptance timestamp
-    AddressTypeProposal admin;
+    ProposalStructs.AddressTypeProposal admin;
 
     /// @notice Fisher executor address management with time-delayed proposals
     /// @dev Fisher executor can process cross-chain bridge transactions
-    AddressTypeProposal fisherExecutor;
+    ProposalStructs.AddressTypeProposal fisherExecutor;
 
     /// @notice Hyperlane protocol configuration for cross-chain messaging
     /// @dev Contains domain ID, host chain address, and mailbox contract address
-    HyperlaneConfig hyperlane;
+    ExternalChainStationStructs.HyperlaneConfig hyperlane;
 
     /// @notice LayerZero protocol configuration for omnichain messaging
     /// @dev Contains endpoint ID, host chain address, and endpoint contract address
-    LayerZeroConfig layerZero;
+    ExternalChainStationStructs.LayerZeroConfig layerZero;
 
     /// @notice Axelar protocol configuration for cross-chain communication
     /// @dev Contains chain name, host chain address, gas service, and gateway addresses
-    AxelarConfig axelar;
+    ExternalChainStationStructs.AxelarConfig axelar;
 
     /// @notice Pending proposal for changing host chain addresses across all protocols
     /// @dev Used for coordinated updates to host chain addresses with time delay
-    ChangeHostChainAddressParams hostChainAddressChangeProposal;
+    ExternalChainStationStructs.ChangeHostChainAddressParams hostChainAddress;
 
     /// @notice Unique identifier for the EVVM instance this station belongs to
     /// @dev Immutable value set at deployment for signature verification
@@ -116,9 +123,7 @@ contract TreasuryExternalChainStation is
 
     uint256 windowTimeToChangeEvvmID;
 
-    /// @notice Tracks the next nonce for Fisher bridge operations per user address
-    /// @dev Prevents replay attacks in Fisher bridge transactions
-    mapping(address => uint256) nextFisherExecutionNonce;
+    mapping(address user => mapping(uint256 nonce => bool isUsed)) asyncNonce;
 
     /// @notice LayerZero execution options with gas limit configuration
     /// @dev Pre-built options for LayerZero message execution (200k gas limit)
@@ -173,32 +178,32 @@ contract TreasuryExternalChainStation is
     /// @param _crosschainConfig Configuration struct containing all cross-chain protocol settings
     constructor(
         address _admin,
-        CrosschainConfig memory _crosschainConfig
+        ExternalChainStationStructs.CrosschainConfig memory _crosschainConfig
     )
         OApp(_crosschainConfig.layerZero.endpointAddress, _admin)
         Ownable(_admin)
         AxelarExecutable(_crosschainConfig.axelar.gatewayAddress)
     {
-        admin = AddressTypeProposal({
+        admin = ProposalStructs.AddressTypeProposal({
             current: _admin,
             proposal: address(0),
             timeToAccept: 0
         });
-        hyperlane = HyperlaneConfig({
+        hyperlane = ExternalChainStationStructs.HyperlaneConfig({
             hostChainStationDomainId: _crosschainConfig
                 .hyperlane
                 .hostChainStationDomainId,
             hostChainStationAddress: "",
             mailboxAddress: _crosschainConfig.hyperlane.mailboxAddress
         });
-        layerZero = LayerZeroConfig({
+        layerZero = ExternalChainStationStructs.LayerZeroConfig({
             hostChainStationEid: _crosschainConfig
                 .layerZero
                 .hostChainStationEid,
             hostChainStationAddress: "",
             endpointAddress: _crosschainConfig.layerZero.endpointAddress
         });
-        axelar = AxelarConfig({
+        axelar = ExternalChainStationStructs.AxelarConfig({
             hostChainStationChainName: _crosschainConfig
                 .axelar
                 .hostChainStationChainName,
@@ -229,6 +234,8 @@ contract TreasuryExternalChainStation is
             layerZero.hostChainStationEid,
             layerZero.hostChainStationAddress
         );
+
+        hostChainAddress.currentAddress = hostChainStationAddress;
 
         fuseSetHostChainAddress = 0x00;
     }
@@ -380,22 +387,30 @@ contract TreasuryExternalChainStation is
         address tokenAddress,
         uint256 priorityFee,
         uint256 amount,
+        uint256 nonce,
         bytes memory signature
     ) external onlyFisherExecutor {
-        if (
-            !SignatureUtils.verifyMessageSignedForFisherBridge(
-                evvmID,
-                from,
-                addressToReceive,
-                nextFisherExecutionNonce[from],
-                tokenAddress,
-                priorityFee,
-                amount,
-                signature
-            )
-        ) revert Error.InvalidSignature();
+        if (asyncNonce[from][nonce]) revert StateError.AsyncNonceAlreadyUsed();
 
-        nextFisherExecutionNonce[from]++;
+        if (
+            SignatureRecover.recoverSigner(
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    hostChainAddress.currentAddress,
+                    Hash.hashDataForFisherBridge(
+                        addressToReceive,
+                        tokenAddress,
+                        priorityFee,
+                        amount
+                    ),
+                    nonce,
+                    true
+                ),
+                signature
+            ) != from
+        ) revert StateError.InvalidSignature();
+
+        asyncNonce[from][nonce] = true;
     }
 
     /// @notice Processes Fisher bridge ERC20 token transfers to host chain
@@ -412,24 +427,32 @@ contract TreasuryExternalChainStation is
         address tokenAddress,
         uint256 priorityFee,
         uint256 amount,
+        uint256 nonce,
         bytes memory signature
     ) external onlyFisherExecutor {
+        if (asyncNonce[from][nonce]) revert StateError.AsyncNonceAlreadyUsed();
+
         if (
-            !SignatureUtils.verifyMessageSignedForFisherBridge(
-                evvmID,
-                from,
-                addressToReceive,
-                nextFisherExecutionNonce[from],
-                tokenAddress,
-                priorityFee,
-                amount,
+            SignatureRecover.recoverSigner(
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    hostChainAddress.currentAddress,
+                    Hash.hashDataForFisherBridge(
+                        addressToReceive,
+                        tokenAddress,
+                        priorityFee,
+                        amount
+                    ),
+                    nonce,
+                    true
+                ),
                 signature
-            )
-        ) revert Error.InvalidSignature();
+            ) != from
+        ) revert StateError.InvalidSignature();
 
         verifyAndDepositERC20(tokenAddress, amount);
 
-        nextFisherExecutionNonce[from]++;
+        asyncNonce[from][nonce] = true;
 
         emit FisherBridgeSend(
             from,
@@ -437,7 +460,7 @@ contract TreasuryExternalChainStation is
             tokenAddress,
             priorityFee,
             amount,
-            nextFisherExecutionNonce[from] - 1
+            nonce
         );
     }
 
@@ -453,25 +476,33 @@ contract TreasuryExternalChainStation is
         address addressToReceive,
         uint256 priorityFee,
         uint256 amount,
+        uint256 nonce,
         bytes memory signature
     ) external payable onlyFisherExecutor {
+        if (asyncNonce[from][nonce]) revert StateError.AsyncNonceAlreadyUsed();
+
         if (
-            !SignatureUtils.verifyMessageSignedForFisherBridge(
-                evvmID,
-                from,
-                addressToReceive,
-                nextFisherExecutionNonce[from],
-                address(0),
-                priorityFee,
-                amount,
+            SignatureRecover.recoverSigner(
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    hostChainAddress.currentAddress,
+                    Hash.hashDataForFisherBridge(
+                        addressToReceive,
+                        address(0),
+                        priorityFee,
+                        amount
+                    ),
+                    nonce,
+                    true
+                ),
                 signature
-            )
-        ) revert Error.InvalidSignature();
+            ) != from
+        ) revert StateError.InvalidSignature();
 
         if (msg.value != amount + priorityFee)
             revert Error.InsufficientBalance();
 
-        nextFisherExecutionNonce[from]++;
+        asyncNonce[from][nonce] = true;
 
         emit FisherBridgeSend(
             from,
@@ -479,7 +510,7 @@ contract TreasuryExternalChainStation is
             address(0),
             priorityFee,
             amount,
-            nextFisherExecutionNonce[from] - 1
+            nonce
         );
     }
 
@@ -709,57 +740,64 @@ contract TreasuryExternalChainStation is
     ) external onlyAdmin {
         if (fuseSetHostChainAddress == 0x01) revert();
 
-        hostChainAddressChangeProposal = ChangeHostChainAddressParams({
-            porposeAddress_AddressType: hostChainStationAddress,
-            porposeAddress_StringType: hostChainStationAddressString,
-            timeToAccept: block.timestamp + 1 minutes
-        });
+        hostChainAddress = ExternalChainStationStructs
+            .ChangeHostChainAddressParams({
+                porposeAddress_AddressType: hostChainStationAddress,
+                porposeAddress_StringType: hostChainStationAddressString,
+                currentAddress: hostChainAddress.currentAddress,
+                timeToAccept: block.timestamp + 1 minutes
+            });
     }
 
     /// @notice Cancels a pending host chain address change proposal
     /// @dev Resets the host chain address proposal to default state
     function rejectProposalHostChainAddress() external onlyAdmin {
-        hostChainAddressChangeProposal = ChangeHostChainAddressParams({
-            porposeAddress_AddressType: address(0),
-            porposeAddress_StringType: "",
-            timeToAccept: 0
-        });
+        hostChainAddress = ExternalChainStationStructs
+            .ChangeHostChainAddressParams({
+                porposeAddress_AddressType: address(0),
+                porposeAddress_StringType: "",
+                currentAddress: hostChainAddress.currentAddress,
+                timeToAccept: 0
+            });
     }
 
     /// @notice Accepts pending host chain address changes across all protocols
     /// @dev Updates Hyperlane, LayerZero, and Axelar configurations simultaneously
     function acceptHostChainAddress() external {
-        if (block.timestamp < hostChainAddressChangeProposal.timeToAccept)
-            revert();
+        if (block.timestamp < hostChainAddress.timeToAccept) revert();
 
         hyperlane.hostChainStationAddress = bytes32(
-            uint256(
-                uint160(
-                    hostChainAddressChangeProposal.porposeAddress_AddressType
-                )
-            )
+            uint256(uint160(hostChainAddress.porposeAddress_AddressType))
         );
         layerZero.hostChainStationAddress = bytes32(
-            uint256(
-                uint160(
-                    hostChainAddressChangeProposal.porposeAddress_AddressType
-                )
-            )
+            uint256(uint160(hostChainAddress.porposeAddress_AddressType))
         );
-        axelar.hostChainStationAddress = hostChainAddressChangeProposal
+        axelar.hostChainStationAddress = hostChainAddress
             .porposeAddress_StringType;
 
         _setPeer(
             layerZero.hostChainStationEid,
             layerZero.hostChainStationAddress
         );
+
+        hostChainAddress = ExternalChainStationStructs
+            .ChangeHostChainAddressParams({
+                porposeAddress_AddressType: address(0),
+                porposeAddress_StringType: "",
+                currentAddress: hostChainAddress.porposeAddress_AddressType,
+                timeToAccept: 0
+            });
     }
 
     // Getter functions //
 
     /// @notice Returns the complete admin configuration including proposals and timelock
     /// @return Current admin address, proposed admin, and acceptance timestamp
-    function getAdmin() external view returns (AddressTypeProposal memory) {
+    function getAdmin()
+        external
+        view
+        returns (ProposalStructs.AddressTypeProposal memory)
+    {
         return admin;
     }
 
@@ -768,19 +806,16 @@ contract TreasuryExternalChainStation is
     function getFisherExecutor()
         external
         view
-        returns (AddressTypeProposal memory)
+        returns (ProposalStructs.AddressTypeProposal memory)
     {
         return fisherExecutor;
     }
 
-    /// @notice Returns the next nonce for Fisher bridge operations for a specific user
-    /// @dev Used to prevent replay attacks in cross-chain bridge transactions
-    /// @param user Address to query the next Fisher execution nonce for
-    /// @return Next sequential nonce value for the user's Fisher bridge operations
-    function getNextFisherExecutionNonce(
-        address user
-    ) external view returns (uint256) {
-        return nextFisherExecutionNonce[user];
+    function getIfUsedAsyncNonce(
+        address user,
+        uint256 nonce
+    ) public view virtual returns (bool) {
+        return asyncNonce[user][nonce];
     }
 
     /// @notice Returns the complete Hyperlane protocol configuration
@@ -788,7 +823,7 @@ contract TreasuryExternalChainStation is
     function getHyperlaneConfig()
         external
         view
-        returns (HyperlaneConfig memory)
+        returns (ExternalChainStationStructs.HyperlaneConfig memory)
     {
         return hyperlane;
     }
@@ -798,14 +833,18 @@ contract TreasuryExternalChainStation is
     function getLayerZeroConfig()
         external
         view
-        returns (LayerZeroConfig memory)
+        returns (ExternalChainStationStructs.LayerZeroConfig memory)
     {
         return layerZero;
     }
 
     /// @notice Returns the complete Axelar protocol configuration
     /// @return Axelar configuration including chain name, addresses, gas service, and gateway
-    function getAxelarConfig() external view returns (AxelarConfig memory) {
+    function getAxelarConfig()
+        external
+        view
+        returns (ExternalChainStationStructs.AxelarConfig memory)
+    {
         return axelar;
     }
 

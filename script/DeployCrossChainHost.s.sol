@@ -61,6 +61,7 @@ contract DeployCrossChainHostScript is Script, BaseInputs, CrossChainInputs {
 
         treasuryHost = new TreasuryHostChainStation(
             address(evvm),
+            address(state),
             admin,
             crosschainConfigHost
         );
