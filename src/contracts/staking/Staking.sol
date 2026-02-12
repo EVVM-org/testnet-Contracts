@@ -223,7 +223,6 @@ contract Staking {
      * @param signature Signature proving authorization for this staking operation
      * @param priorityFee_EVVM Priority fee for the EVVM transaction
      * @param nonceEvvm Nonce for the EVVM contract transaction
-     * @param isAsyncExecEvvm True for async EVVM transaction, false for sync
      * @param signatureEvvm Signature for the EVVM contract transaction
      */
     function presaleStaking(
@@ -233,7 +232,6 @@ contract Staking {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         if (!allowPresaleStaking.flag || allowPublicStaking.flag)
@@ -265,7 +263,7 @@ contract Staking {
             1,
             priorityFee_EVVM,
             nonceEvvm,
-            isAsyncExecEvvm,
+            true,
             signatureEvvm
         );
     }
@@ -280,7 +278,6 @@ contract Staking {
      * @param signature Signature proving authorization for this staking operation
      * @param priorityFee_EVVM Priority fee for the EVVM transaction
      * @param nonceEvvm Nonce for the EVVM contract transaction
-     * @param isAsyncExecEvvm True for async EVVM transaction, false for sync
      * @param signatureEvvm Signature for the EVVM contract transaction
      */
     function publicStaking(
@@ -291,7 +288,6 @@ contract Staking {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         if (!allowPublicStaking.flag) revert Error.PublicStakingDisabled();
@@ -310,7 +306,7 @@ contract Staking {
             amountOfStaking,
             priorityFee_EVVM,
             nonceEvvm,
-            isAsyncExecEvvm,
+            true,
             signatureEvvm
         );
     }
@@ -430,7 +426,6 @@ contract Staking {
      * @param amountOfStaking Amount of staking tokens to stake/unstake
      * @param priorityFee_EVVM Priority fee for EVVM transaction
      * @param nonceEvvm Nonce for EVVM contract transaction
-     * @param isAsyncExecEvvm True for async EVVM transaction, false for sync
      * @param signatureEvvm Signature for EVVM contract transaction
      */
     function stakingBaseProcess(

@@ -27,10 +27,9 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
             COMMON_USER_NO_STAKER_1,
             true,
             10,
+            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0),
             0,
-            0,
-            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            false,
+            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1),
             COMMON_USER_NO_STAKER_1
         );
     }
@@ -62,7 +61,6 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
         uint8 stakingAmount;
         uint144 nonceStaking;
         uint144 nonceEVVM;
-        bool isAsyncExecEvvm;
         uint16 priorityFeeAmountEVVM;
     }
 
@@ -98,12 +96,9 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
                 continue;
             }
 
-            if (input[i].isAsyncExecEvvm) {
-                
-                if (input[i].nonceStaking == input[i].nonceEVVM) {
-                    incorrectTxCount++;
-                    continue;
-                }
+            if (input[i].nonceStaking == input[i].nonceEVVM) {
+                incorrectTxCount++;
+                continue;
             }
 
             FISHER = input[i].usingStaker
@@ -150,14 +145,7 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
                     input[i].stakingAmount,
                     input[i].nonceStaking,
                     input[i].priorityFeeAmountEVVM,
-                    (
-                        input[i].isAsyncExecEvvm
-                            ? input[i].nonceEVVM
-                            : evvm.getNextCurrentSyncNonce(
-                                COMMON_USER_NO_STAKER_1.Address
-                            )
-                    ),
-                    input[i].isAsyncExecEvvm,
+                    input[i].nonceEVVM,
                     FISHER
                 );
             } else {
@@ -188,14 +176,7 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
                         stakingFullAmountBefore,
                         input[i].nonceStaking,
                         input[i].priorityFeeAmountEVVM,
-                        (
-                            input[i].isAsyncExecEvvm
-                                ? input[i].nonceEVVM
-                                : evvm.getNextCurrentSyncNonce(
-                                    COMMON_USER_NO_STAKER_1.Address
-                                )
-                        ),
-                        input[i].isAsyncExecEvvm,
+                        input[i].nonceEVVM,
                         FISHER
                     );
                 } else {
@@ -211,14 +192,7 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
                         input[i].stakingAmount,
                         input[i].nonceStaking,
                         input[i].priorityFeeAmountEVVM,
-                        (
-                            input[i].isAsyncExecEvvm
-                                ? input[i].nonceEVVM
-                                : evvm.getNextCurrentSyncNonce(
-                                    COMMON_USER_NO_STAKER_1.Address
-                                )
-                        ),
-                        input[i].isAsyncExecEvvm,
+                        input[i].nonceEVVM,
                         FISHER
                     );
                 }

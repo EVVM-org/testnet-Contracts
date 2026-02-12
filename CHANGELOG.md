@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce management
   - Updated `StakingStructs` to be a library instead of an abstract contract for better modularity and reuse across services
   - Changed `_setupEstimatorAndEvvm` to `initializeSystemContracts` to generalize the function for setting up all critical system contracts (Evvm, Estimator, State) in one call during deployment
+  - Implemented `nonce` and `nonceEvvm` as async nonces for public and presale staking via `State.sol` to prevent multi-service replay attacks
 - **Cross Chain Treasury**:
   - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
   - Updated `ExternalChainStationStructs` and `HostChainStationStructs` to be a library instead of an abstract contract for better modularity and reuse across services

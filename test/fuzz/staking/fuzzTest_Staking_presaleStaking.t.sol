@@ -42,10 +42,9 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
         _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
+            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0),
             0,
-            0,
-            0,
-            false,
+            uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1),
             COMMON_USER_NO_STAKER_1
         );
     }
@@ -74,7 +73,6 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
         bool usingStaker;
         uint144 nonceStaking;
         uint144 nonceEVVM;
-        bool isAsyncExecEvvm;
         uint16 priorityFeeAmountEVVM;
     }
 
@@ -110,12 +108,9 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                 continue;
             }
 
-            if (input[i].isAsyncExecEvvm) {
-                
-                if (input[i].nonceStaking == input[i].nonceEVVM) {
-                    incorrectTxCount++;
-                    continue;
-                }
+            if (input[i].nonceStaking == input[i].nonceEVVM) {
+                incorrectTxCount++;
+                continue;
             }
 
             FISHER = input[i].usingStaker
@@ -169,12 +164,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                     true,
                     input[i].nonceStaking,
                     uint256(input[i].priorityFeeAmountEVVM),
-                    input[i].isAsyncExecEvvm
-                        ? input[i].nonceEVVM
-                        : evvm.getNextCurrentSyncNonce(
-                            COMMON_USER_NO_STAKER_1.Address
-                        ),
-                    input[i].isAsyncExecEvvm,
+                    input[i].nonceEVVM,
                     FISHER
                 );
             } else {
@@ -211,12 +201,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                     false,
                     input[i].nonceStaking,
                     uint256(input[i].priorityFeeAmountEVVM),
-                    input[i].isAsyncExecEvvm
-                        ? input[i].nonceEVVM
-                        : evvm.getNextCurrentSyncNonce(
-                            COMMON_USER_NO_STAKER_1.Address
-                        ),
-                    input[i].isAsyncExecEvvm,
+                    input[i].nonceEVVM,
                     FISHER
                 );
             }
