@@ -239,7 +239,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool isAsyncExec = false;
+        
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
@@ -340,7 +340,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool isAsyncExec = false;
+        
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
@@ -414,7 +414,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
         uint256 nonceEVVM = 0;
-        bool isAsyncExec = false;
+        
 
         // Fund user1 with amountA + priorityFee
         addBalance(
@@ -475,7 +475,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM, // we use the same nonce here
-                isAsyncExec
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(

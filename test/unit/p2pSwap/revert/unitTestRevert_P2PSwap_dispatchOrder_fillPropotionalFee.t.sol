@@ -146,7 +146,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool isAsyncExec = false;
+        
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -267,7 +267,6 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool isAsyncExec = false;
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -402,7 +401,6 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool isAsyncExec = false;
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -496,7 +494,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool isAsyncExec = false;
+        
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -617,7 +615,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool isAsyncExec = false;
+        
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -689,7 +687,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillPropotionalFee is
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
 
