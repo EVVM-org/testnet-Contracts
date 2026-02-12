@@ -50,8 +50,6 @@ import {
 } from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
-    
-
     function addBalance(address user, address token, uint256 amount) private {
         evvm.addBalance(user, token, amount);
     }
@@ -66,8 +64,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM,
-        bool isAsyncExec
+        uint256 nonceEVVM
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -109,7 +106,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -125,244 +122,11 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
 
         return (market, orderId);
-    }
-
-    function test__unit_correct__cancelOrder_paySync_noPriorityFee() external {
-        // 1. define params
-        uint256 nonceP2PSwap = 14569;
-        address tokenA = ETHER_ADDRESS;
-        address tokenB = PRINCIPAL_TOKEN_ADDRESS;
-        uint256 amountA = 0.001 ether;
-        uint256 amountB = 0.01 ether;
-        uint256 priorityFee = 0;
-        uint256 nonceEVVM = 0;
-        bool isAsyncExec = false;
-
-        addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
-
-        // 2. create an order
-        (uint256 market, uint256 orderId) = createOrder(
-            COMMON_USER_STAKER,
-            COMMON_USER_NO_STAKER_1,
-            nonceP2PSwap,
-            tokenA,
-            tokenB,
-            amountA,
-            amountB,
-            priorityFee,
-            nonceEVVM,
-            isAsyncExec
-        );
-        nonceP2PSwap = 56565;
-        nonceEVVM++;
-
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
-
-        // 3. cancel that order
-        // 3.1 create p2p signature
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForCancelOrder(
-                evvm.getEvvmID(),
-                address(p2pSwap),
-                nonceP2PSwap,
-                tokenA,
-                tokenB,
-                orderId
-            )
-        );
-
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-        // 3.2 crete evvm signature
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
-                address(p2pSwap),
-                "",
-                tokenA,
-                amountA,
-                priorityFee,
-                address(p2pSwap),
-                nonceEVVM,
-                isAsyncExec
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        P2PSwapStructs.MetadataCancelOrder memory metadata = P2PSwapStructs
-            .MetadataCancelOrder({
-                nonce: nonceP2PSwap,
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                signature: signatureP2P
-            });
-
-        // make sure the order is there
-        P2PSwap.Order memory order = p2pSwap.getOrder(market, orderId);
-        assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
-
-        // Cancel the order
-        vm.startPrank(COMMON_USER_STAKER.Address);
-        p2pSwap.cancelOrder(
-            COMMON_USER_NO_STAKER_1.Address,
-            metadata,
-            priorityFee,
-            nonceEVVM,
-            isAsyncExec,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        // 4. assertions
-        order = p2pSwap.getOrder(market, orderId);
-        // order should not be present anymore
-        assertEq(order.seller, address(0));
-        assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA),
-            amountA
-        );
-    }
-
-    function test__unit_correct__cancelOrder_paySync_priorityFee() external {
-        // 1. define params
-        uint256 nonceP2PSwap = 14569;
-        address tokenA = ETHER_ADDRESS;
-        address tokenB = PRINCIPAL_TOKEN_ADDRESS;
-        uint256 amountA = 0.001 ether;
-        uint256 amountB = 0.01 ether;
-        uint256 priorityFee = 0.0001 ether;
-        uint256 nonceEVVM = 0;
-        bool isAsyncExec = false;
-
-        addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            tokenA,
-            amountA + priorityFee
-        );
-        addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            PRINCIPAL_TOKEN_ADDRESS,
-            priorityFee
-        );
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
-
-        // 2. create an order
-        (uint256 market, uint256 orderId) = createOrder(
-            COMMON_USER_STAKER,
-            COMMON_USER_NO_STAKER_1,
-            nonceP2PSwap,
-            tokenA,
-            tokenB,
-            amountA,
-            amountB,
-            priorityFee,
-            nonceEVVM,
-            isAsyncExec
-        );
-        nonceP2PSwap = 56565;
-        nonceEVVM++;
-
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
-        assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, tokenA),
-            priorityFee
-        );
-
-        // 3. cancel that order
-        // 3.1 create p2p signature
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForCancelOrder(
-                evvm.getEvvmID(),
-                address(p2pSwap),
-                nonceP2PSwap,
-                tokenA,
-                tokenB,
-                orderId
-            )
-        );
-
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        // 3.2 crete evvm signature
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
-                address(p2pSwap),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                0,
-                priorityFee,
-                address(p2pSwap),
-                nonceEVVM,
-                isAsyncExec
-            )
-        );
-
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        P2PSwapStructs.MetadataCancelOrder memory metadata = P2PSwapStructs
-            .MetadataCancelOrder({
-                nonce: nonceP2PSwap,
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                signature: signatureP2P
-            });
-
-        // make sure the order is there
-        P2PSwap.Order memory order = p2pSwap.getOrder(market, orderId);
-        // assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
-
-        // Cancel the order
-        vm.startPrank(COMMON_USER_STAKER.Address);
-        p2pSwap.cancelOrder(
-            COMMON_USER_NO_STAKER_1.Address,
-            metadata,
-            priorityFee,
-            nonceEVVM,
-            isAsyncExec,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        // 4. assertions
-        order = p2pSwap.getOrder(market, orderId);
-        // order should not be present anymore
-        assertEq(order.seller, address(0));
-        assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA),
-            amountA
-        );
     }
 
     function test__unit_correct__cancelOrder_payAsync_noPriorityFee() external {
@@ -374,10 +138,13 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 4242;
-        bool isAsyncExec = true;
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -389,8 +156,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM,
-            isAsyncExec
+            nonceEVVM
         );
         nonceP2PSwap = 56565;
         nonceEVVM = 6565;
@@ -429,7 +195,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
 
@@ -459,7 +225,6 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             metadata,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -483,7 +248,6 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
         uint256 nonceEVVM = 78798;
-        bool isAsyncExec = true;
 
         addBalance(
             COMMON_USER_NO_STAKER_1.Address,
@@ -495,7 +259,11 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             PRINCIPAL_TOKEN_ADDRESS,
             priorityFee
         );
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -507,8 +275,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM,
-            isAsyncExec
+            nonceEVVM
         );
         nonceP2PSwap = 56565;
         nonceEVVM = 78987;
@@ -552,7 +319,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
 
@@ -582,7 +349,6 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             metadata,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();

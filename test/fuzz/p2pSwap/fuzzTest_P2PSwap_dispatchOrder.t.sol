@@ -48,11 +48,7 @@ import {
 } from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
-
-
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
-
-
 
     function addBalance(address user, address token, uint256 amount) private {
         if (amount == 0) return;
@@ -68,8 +64,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM,
-        bool isAsyncExec
+        uint256 nonceEVVM
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -111,7 +106,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -127,7 +122,6 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -137,7 +131,6 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
 
     struct DispatchOrderFuzzTestInput {
         bool hasPriorityFee;
-        bool isAsync;
         uint16 amountA;
         uint16 amountB;
         uint16 priorityFee;
@@ -162,7 +155,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
-        uint256 nonceEVVM = input.isAsync ? input.nonceEVVM : 0;
+        uint256 nonceEVVM = 99999;
 
         uint256 fee = (uint256(input.amountB) * 500) / 10_000;
 
@@ -172,7 +165,11 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             tokenB,
             input.amountB + fee + priorityFee
         );
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -184,11 +181,10 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             input.amountA,
             input.amountB,
             0, // priorityFee is 0 for createOrder
-            nonceEVVM,
-            input.isAsync
+            nonceEVVM
         );
         input.nonceP2PSwap = 43242;
-        nonceEVVM = input.isAsync ? 99999 : 0;
+        nonceEVVM = 99999;
 
         assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
@@ -235,7 +231,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                input.isAsync
+                true
             )
         );
 
@@ -256,7 +252,6 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             metadata,
             priorityFee,
             nonceEVVM,
-            input.isAsync,
             signatureEVVM
         );
         vm.stopPrank();
@@ -294,7 +289,10 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         executorAmount += 4 * evvm.getRewardAmount(); // from dispatchOrder
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
             executorAmount
         );
     }
@@ -315,7 +313,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
-        uint256 nonceEVVM = input.isAsync ? input.nonceEVVM : 0;
+        uint256 nonceEVVM = input.nonceEVVM;
 
         uint256 proportionalFee = (uint256(input.amountB) * 500) / 10_000;
         uint256 _amountOut = 0.001 ether; // greater than proportionalFee
@@ -336,7 +334,11 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             tokenB,
             input.amountB + fee + priorityFee
         );
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -348,11 +350,10 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             input.amountA,
             input.amountB,
             0, // priorityFee is 0 for createOrder
-            nonceEVVM,
-            input.isAsync
+            nonceEVVM
         );
         input.nonceP2PSwap = 43242;
-        nonceEVVM = input.isAsync ? 99999 : 0;
+        nonceEVVM = 99999;
 
         assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
@@ -399,7 +400,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                input.isAsync
+                true
             )
         );
 
@@ -420,7 +421,6 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             metadata,
             priorityFee,
             nonceEVVM,
-            input.isAsync,
             signatureEVVM,
             _amountOut
         );
@@ -459,7 +459,10 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         executorAmount += 4 * evvm.getRewardAmount(); // from dispatchOrder
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            evvm.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
             executorAmount
         );
     }

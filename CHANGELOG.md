@@ -28,20 +28,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `priorityFlag` to `isAsyncExec` for clearer async execution identification
 - **Contract naming**: Renamed `AdminControlled` to `Admin` in `library/utils/governanceUtils.sol`
 - **EVVM core service**
-  - Change `_setupNameServiceAndTreasuryAddress` to `initializeSystemContracts` to generalize the function for setting up all critical system contracts (NameService, Treasury, State) in one call during deployment
-  - Updated `EvvmStructs` to interact as a library instead of a abstract contract for better modularity and reuse across services
+  - Changed `_setupNameServiceAndTreasuryAddress` to `initializeSystemContracts` to generalize the function for setting up all critical system contracts (NameService, Treasury, State) in one call during deployment
+  - Updated `EvvmStructs` to interact as a library instead of an abstract contract for better modularity and reuse across services
   - Implemented `State.sol` for centralized nonce management and signature verification, replacing Evvm's previous nonce management and signature utilities
 - **NameService**:
-  - Update variable name `clowNumber` to `lockNumber` and `expireDate` to `expirationDate` for better clarity
+  - Updated variable name `clowNumber` to `lockNumber` and `expireDate` to `expirationDate` for better clarity
   - Updated `NameServiceStructs` to be a library instead of an abstract contract for better modularity and reuse across services
   - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
   - Now both `nonce` and `nonceEvvm` are async nonces managed by `State.sol` to prevent replay attacks in multi-service transactions, replacing the previous service-specific nonce management
 - **P2PSwap**:
   - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
+  - Now both `nonce` and `nonceEvvm` are async nonces managed by `State.sol` to prevent replay attacks in multi-service transactions, replacing the previous service-specific nonce management
 - **Staking**:
-  - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce
+  - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce management
   - Updated `StakingStructs` to be a library instead of an abstract contract for better modularity and reuse across services
-  - Change `_setupEstimatorAndEvvm` to `initializeSystemContracts` to generalize the function for setting up all critical system contracts (Evvm, Estimator, State) in one call during deployment
+  - Changed `_setupEstimatorAndEvvm` to `initializeSystemContracts` to generalize the function for setting up all critical system contracts (Evvm, Estimator, State) in one call during deployment
 - **Cross Chain Treasury**:
   - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
   - Updated `ExternalChainStationStructs` and `HostChainStationStructs` to be a library instead of an abstract contract for better modularity and reuse across services

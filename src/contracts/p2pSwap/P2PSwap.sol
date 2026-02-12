@@ -107,7 +107,6 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external returns (uint256 market, uint256 orderId) {
         state.validateAndConsumeNonce(
@@ -129,7 +128,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
             metadata.amountA,
             priorityFeeEvvm,
             nonceEvvm,
-            isAsyncExecEvvm,
+            true,
             signatureEvvm
         );
 
@@ -177,7 +176,6 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         MetadataCancelOrder memory metadata,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         state.validateAndConsumeNonce(
@@ -203,7 +201,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
                 0,
                 priorityFeeEvvm,
                 nonceEvvm,
-                isAsyncExecEvvm,
+                true,
                 signatureEvvm
             );
         }
@@ -227,7 +225,6 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         MetadataDispatchOrder memory metadata,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         state.validateAndConsumeNonce(
@@ -259,7 +256,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
             metadata.amountOfTokenBToFill,
             priorityFeeEvvm,
             nonceEvvm,
-            isAsyncExecEvvm,
+            true,
             signatureEvvm
         );
 
@@ -294,7 +291,6 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         MetadataDispatchOrder memory metadata,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm,
         uint256 maxFillFixedFee ///@dev for testing purposes
     ) external {
@@ -332,7 +328,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
             metadata.amountOfTokenBToFill,
             priorityFeeEvvm,
             nonceEvvm,
-            isAsyncExecEvvm,
+            true,
             signatureEvvm
         );
 

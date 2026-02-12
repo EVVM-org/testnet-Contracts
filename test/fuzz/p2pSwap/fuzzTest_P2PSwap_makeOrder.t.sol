@@ -56,7 +56,6 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
 
     struct MakeOrderFuzzTestInput {
         bool hasPriorityFee;
-        bool isAsync;
         uint16 amountA;
         uint16 amountB;
         uint16 priorityFee;
@@ -83,7 +82,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
-        uint256 nonceEVVM = input.isAsync ? input.nonceEVVM : 0;
+        uint256 nonceEVVM = input.nonceEVVM ;
         P2PSwapStructs.MetadataMakeOrder memory metadata = P2PSwapStructs
             .MetadataMakeOrder({
                 nonce: input.nonceP2PSwap,
@@ -144,7 +143,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                input.isAsync
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -161,7 +160,6 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            input.isAsync,
             signatureEVVM
         );
         vm.stopPrank();

@@ -110,7 +110,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -127,7 +127,6 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -217,7 +216,6 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -290,7 +288,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -307,7 +305,6 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -335,7 +332,6 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 321;
-        bool isAsyncExec = true;
 
         // Fund user1 with amountA
         addBalance(
@@ -357,7 +353,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
                 priorityFee,
                 address(0),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -374,7 +370,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             priorityFee,
             address(0),
             nonceEVVM,
-            isAsyncExec,
+            true,
             signatureEVVM
         );
 
@@ -424,7 +420,7 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM, // we try to use the same nonce again, causing a revert
-                isAsyncExec
+                true
             )
         );
         signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
@@ -437,7 +433,6 @@ contract unitTestRevert_P2PSwap_makeOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();

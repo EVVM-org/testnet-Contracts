@@ -64,8 +64,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM,
-        bool isAsyncExec
+        uint256 nonceEVVM
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -107,7 +106,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -123,7 +122,6 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -133,7 +131,6 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
 
     struct CancelOrderFuzzTestInput {
         bool hasPriorityFee;
-        bool isAsync;
         uint16 amountA;
         uint16 amountB;
         uint16 priorityFee;
@@ -160,7 +157,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
-        uint256 nonceEVVM = input.isAsync ? input.nonceEVVM : 0;
+        uint256 nonceEVVM = input.nonceEVVM;
 
         uint256 rewardAmountMateToken = priorityFee > 0
             ? evvm.getRewardAmount() * 3
@@ -202,12 +199,11 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             input.amountA,
             input.amountB,
             priorityFee,
-            nonceEVVM,
-            input.isAsync
+            nonceEVVM
         );
         // update nonces - ensure they don't conflict with any previously used async nonces
-        uint256 nextNonceP2PSwap = input.isAsync ? 99998 : uint256(input.nonceP2PSwap) + 1;
-        uint256 nextNonceEvvm = input.isAsync ? 99999 : 1;
+        uint256 nextNonceP2PSwap = 99998;
+        uint256 nextNonceEvvm = 99999;
 
         // create signatures
         // p2pswap
@@ -250,7 +246,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nextNonceEvvm,
-                input.isAsync
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -266,7 +262,6 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             metadata,
             priorityFee,
             nextNonceEvvm,
-            input.isAsync,
             signatureEVVM
         );
         vm.stopPrank();

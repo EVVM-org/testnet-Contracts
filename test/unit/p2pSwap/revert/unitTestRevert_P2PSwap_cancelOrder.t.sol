@@ -66,8 +66,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM,
-        bool isAsyncExec
+        uint256 nonceEVVM
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -109,7 +108,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -125,7 +124,6 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             signatureP2P,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -141,7 +139,6 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
         uint256 nonceEVVM = 0;
-        bool isAsyncExec = false;
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
@@ -160,8 +157,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM,
-            isAsyncExec
+            nonceEVVM
         );
 
         nonceP2PSwap = 5453;
@@ -208,7 +204,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -224,7 +220,6 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             orderData,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -263,8 +258,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM,
-            isAsyncExec
+            nonceEVVM
         );
 
         // nonceP2PSwap = 5453; // we don't change the nonce, thus reverting
@@ -311,7 +305,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -327,7 +321,6 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             orderData,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -391,7 +384,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
                 priorityFee,
                 address(p2pSwap),
                 nonceEVVM,
-                isAsyncExec
+                true
             )
         );
         bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
@@ -407,7 +400,6 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             orderData,
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
@@ -445,8 +437,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM,
-            isAsyncExec
+            nonceEVVM
         );
 
         nonceP2PSwap = 5453;
@@ -506,7 +497,6 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             }),
             priorityFee,
             nonceEVVM,
-            isAsyncExec,
             signatureEVVM
         );
         vm.stopPrank();
