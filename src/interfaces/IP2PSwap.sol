@@ -57,7 +57,6 @@ library P2PSwapStructs {
 }
 
 interface IP2PSwap {
-    error AsyncNonceAlreadyUsed();
     error InvalidServiceSignature();
 
     function acceptFillFixedPercentage() external;
@@ -72,7 +71,6 @@ interface IP2PSwap {
         P2PSwapStructs.MetadataCancelOrder memory metadata,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function dispatchOrder_fillFixedFee(
@@ -80,7 +78,6 @@ interface IP2PSwap {
         P2PSwapStructs.MetadataDispatchOrder memory metadata,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm,
         uint256 maxFillFixedFee
     ) external;
@@ -89,7 +86,6 @@ interface IP2PSwap {
         P2PSwapStructs.MetadataDispatchOrder memory metadata,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function findMarket(address tokenA, address tokenB) external view returns (uint256);
@@ -104,6 +100,7 @@ interface IP2PSwap {
         external
         view
         returns (P2PSwapStructs.OrderForGetter[] memory orders);
+    function getNextCurrentSyncNonce(address user) external view returns (uint256);
     function getOrder(uint256 market, uint256 orderId) external view returns (P2PSwapStructs.Order memory order);
     function getOwner() external view returns (address);
     function getOwnerProposal() external view returns (address);
@@ -119,7 +116,6 @@ interface IP2PSwap {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external returns (uint256 market, uint256 orderId);
     function proposeFillFixedPercentage(uint256 _seller, uint256 _service, uint256 _mateStaker) external;
@@ -134,6 +130,8 @@ interface IP2PSwap {
     function rejectProposeOwner() external;
     function rejectProposePercentageFee() external;
     function rejectProposeWithdrawal() external;
+    function reserveAsyncNonceToService(address user, uint256 nonce) external;
+    function revokeAsyncNonceToService(address user, uint256 nonce) external;
     function stake(uint256 amount) external;
     function unstake(uint256 amount) external;
 }

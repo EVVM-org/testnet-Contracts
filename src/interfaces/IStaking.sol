@@ -2,12 +2,14 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 pragma solidity ^0.8.0;
 
-library StakingStructs {
+library ProposalStructs {
     struct BoolTypeProposal {
         bool flag;
         uint256 timeToAccept;
     }
+}
 
+library StakingStructs {
     struct HistoryMetadata {
         bytes32 transactionType;
         uint256 amount;
@@ -21,8 +23,6 @@ interface IStaking {
     error AddressMismatch();
     error AddressMustWaitToFullUnstake();
     error AddressMustWaitToStakeAgain();
-    error AsyncNonceAlreadyUsed();
-    error InvalidSignatureOnStaking();
     error LimitPresaleStakersExceeded();
     error PresaleStakingDisabled();
     error PublicStakingDisabled();
@@ -35,7 +35,6 @@ interface IStaking {
     error UserIsNotPresaleStaker();
     error UserPresaleStakerLimitExceeded();
 
-    function _setupEstimatorAndEvvm(address _estimator, address _evvm) external;
     function acceptNewAdmin() external;
     function acceptNewEstimator() external;
     function acceptNewGoldenFisher() external;
@@ -54,8 +53,8 @@ interface IStaking {
         external
         view
         returns (StakingStructs.HistoryMetadata memory);
-    function getAllowPresaleStaking() external view returns (StakingStructs.BoolTypeProposal memory);
-    function getAllowPublicStaking() external view returns (StakingStructs.BoolTypeProposal memory);
+    function getAllowPresaleStaking() external view returns (ProposalStructs.BoolTypeProposal memory);
+    function getAllowPublicStaking() external view returns (ProposalStructs.BoolTypeProposal memory);
     function getEstimatorAddress() external view returns (address);
     function getEstimatorProposal() external view returns (address);
     function getEvvmAddress() external view returns (address);
@@ -83,6 +82,7 @@ interface IStaking {
             uint256 timestampToBeOverwritten
         );
     function goldenStaking(bool isStaking, uint256 amountOfStaking, bytes memory signatureEvvm) external;
+    function initializeSystemContracts(address _estimator, address _evvm, address _state) external;
     function prepareChangeAllowPresaleStaking() external;
     function prepareChangeAllowPublicStaking() external;
     function prepareServiceStaking(uint256 amountOfStaking) external;
@@ -94,7 +94,6 @@ interface IStaking {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function priceOfStaking() external pure returns (uint256);
@@ -110,7 +109,6 @@ interface IStaking {
         bytes memory signature,
         uint256 priorityFee_EVVM,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function rejectProposalAdmin() external;

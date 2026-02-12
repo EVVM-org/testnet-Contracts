@@ -3,12 +3,6 @@
 pragma solidity ^0.8.0;
 
 library ExternalChainStationStructs {
-    struct AddressTypeProposal {
-        address current;
-        address proposal;
-        uint256 timeToAccept;
-    }
-
     struct AxelarConfig {
         string hostChainStationChainName;
         string hostChainStationAddress;
@@ -35,6 +29,14 @@ library ExternalChainStationStructs {
     }
 }
 
+library ProposalStructs {
+    struct AddressTypeProposal {
+        address current;
+        address proposal;
+        uint256 timeToAccept;
+    }
+}
+
 interface ITreasuryExternalChainStation {
     struct EnforcedOptionParam {
         uint32 eid;
@@ -50,6 +52,7 @@ interface ITreasuryExternalChainStation {
 
     error AddressEmptyCode(address target);
     error AddressInsufficientBalance(address account);
+    error AsyncNonceAlreadyUsed();
     error ChainIdNotAuthorized();
     error FailedInnerCall();
     error InsufficientBalance();
@@ -106,6 +109,7 @@ interface ITreasuryExternalChainStation {
         address tokenAddress,
         uint256 priorityFee,
         uint256 amount,
+        uint256 nonce,
         bytes memory signature
     ) external;
     function fisherBridgeSendCoin(
@@ -113,6 +117,7 @@ interface ITreasuryExternalChainStation {
         address addressToReceive,
         uint256 priorityFee,
         uint256 amount,
+        uint256 nonce,
         bytes memory signature
     ) external payable;
     function fisherBridgeSendERC20(
@@ -121,15 +126,16 @@ interface ITreasuryExternalChainStation {
         address tokenAddress,
         uint256 priorityFee,
         uint256 amount,
+        uint256 nonce,
         bytes memory signature
     ) external;
     function gateway() external view returns (address);
-    function getAdmin() external view returns (ExternalChainStationStructs.AddressTypeProposal memory);
+    function getAdmin() external view returns (ProposalStructs.AddressTypeProposal memory);
     function getAxelarConfig() external view returns (ExternalChainStationStructs.AxelarConfig memory);
-    function getFisherExecutor() external view returns (ExternalChainStationStructs.AddressTypeProposal memory);
+    function getFisherExecutor() external view returns (ProposalStructs.AddressTypeProposal memory);
     function getHyperlaneConfig() external view returns (ExternalChainStationStructs.HyperlaneConfig memory);
+    function getIfUsedAsyncNonce(address user, uint256 nonce) external view returns (bool);
     function getLayerZeroConfig() external view returns (ExternalChainStationStructs.LayerZeroConfig memory);
-    function getNextFisherExecutionNonce(address user) external view returns (uint256);
     function getOptions() external view returns (bytes memory);
     function getQuoteHyperlane(address toAddress, address token, uint256 amount) external view returns (uint256);
     function handle(uint32 _origin, bytes32 _sender, bytes memory _data) external payable;

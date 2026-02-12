@@ -40,7 +40,6 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function acceptProposeAdmin() external;
@@ -52,7 +51,6 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function cancelChangeEvvmAddress() external;
@@ -66,7 +64,6 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function flushUsername(
@@ -76,7 +73,6 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function getAdmin() external view returns (address);
@@ -129,7 +125,6 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external returns (uint256 offerID);
     function preRegistrationUsername(
@@ -139,7 +134,6 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function proposeAdmin(address _adminToPropose) external;
@@ -153,7 +147,6 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function removeCustomMetadata(
@@ -164,7 +157,6 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function renewUsername(
@@ -174,7 +166,6 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
     function seePriceToRenew(string memory _identity) external view returns (uint256 price);
@@ -189,7 +180,6 @@ interface INameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external;
 }
