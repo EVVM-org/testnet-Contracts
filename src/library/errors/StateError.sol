@@ -43,4 +43,6 @@ library StateError {
     error AsyncNonceIsReservedByAnotherService();
 
     error ProposalForUserValidatorNotReady();
+
+    error MsgSenderIsNotAContract();
 }

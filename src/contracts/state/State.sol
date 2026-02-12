@@ -32,8 +32,9 @@ import {
 import {
     Admin
 } from "@evvm/testnet-contracts/library/utils/governance/Admin.sol";
-
-
+import {
+    CAUtils
+} from "@evvm/testnet-contracts/library/utils/CAUtils.sol";
 
 contract State is Admin {
     uint256 private constant DELAY = 1 days;
@@ -73,6 +74,10 @@ contract State is Admin {
         bytes memory signature
     ) external {
         address servicePointer = msg.sender;
+
+        if (!CAUtils.verifyIfCA(servicePointer))
+            revert Error.MsgSenderIsNotAContract();
+
         if (
             SignatureRecover.recoverSigner(
                 AdvancedStrings.buildSignaturePayload(
@@ -223,5 +228,3 @@ contract State is Admin {
         return IUserValidator(userValidatorAddress.current).canExecute(user);
     }
 }
-
-

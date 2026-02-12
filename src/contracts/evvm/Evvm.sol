@@ -95,6 +95,9 @@ import {
 import {
     ProposalStructs
 } from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+import {
+    CAUtils
+} from "@evvm/testnet-contracts/library/utils/CAUtils.sol";
 
 contract Evvm is EvvmStorage {
     /**
@@ -642,15 +645,9 @@ contract Evvm is EvvmStorage {
      * @param amount Amount of tokens to transfer from calling contract
      */
     function caPay(address to, address token, uint256 amount) external {
-        uint256 size;
         address from = msg.sender;
 
-        assembly {
-            /// @dev check the size of the opcode of the address
-            size := extcodesize(from)
-        }
-
-        if (size == 0) revert Error.NotAnCA();
+        if (!CAUtils.verifyIfCA(from)) revert Error.NotAnCA();
 
         _updateBalance(from, to, token, amount);
 
@@ -687,22 +684,15 @@ contract Evvm is EvvmStorage {
         address token,
         uint256 amount
     ) external {
-        uint256 size;
         address from = msg.sender;
 
-        assembly {
-            /// @dev check the size of the opcode of the address
-            size := extcodesize(from)
-        }
+        if (!CAUtils.verifyIfCA(from)) revert Error.NotAnCA();
 
-        if (size == 0) revert Error.NotAnCA();
-
-        if (balances[msg.sender][token] < amount)
-            revert Error.InsufficientBalance();
+        if (balances[from][token] < amount) revert Error.InsufficientBalance();
 
         uint256 acomulatedAmount = 0;
 
-        balances[msg.sender][token] -= amount;
+        balances[from][token] -= amount;
 
         for (uint256 i = 0; i < toData.length; i++) {
             acomulatedAmount += toData[i].amount;
@@ -711,7 +701,7 @@ contract Evvm is EvvmStorage {
 
         if (acomulatedAmount != amount) revert Error.InvalidAmount();
 
-        if (isAddressStaker(msg.sender)) _giveReward(msg.sender, 1);
+        if (isAddressStaker(from)) _giveReward(from, 1);
     }
 
     //░▒▓█Treasury exclusive functions██████████████████████████████████████████▓▒░

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Deployment script**: Updated to deploy State.sol and set its address in the services during deployment
 - **StateManagment**: Added `StateManagment.sol` library for services to interact with State.sol for nonce management and signature verification
 - **IUserValidator**: Interface for user validation logic in State.sol, allowing for flexible access control in evvm transactions
+- **CA Verification Library**: Added `CAUtils.sol` for verifying if a certain address is a CA, which can be used in `State.sol` for access control in async transactions and `Evvm.sol` for validating CaPay transactions
 
 ### Changed
 
