@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **IState**: Interface for cross-contract interaction with State.sol
 - **Hashing utilities**: Added service-specific hashing functions in `/library/utils/signature/` for consistent payload construction across services
 - **Deployment script**: Updated to deploy State.sol and set its address in the services during deployment
+- **StateManagment**: Added `StateManagment.sol` library for services to interact with State.sol for nonce management and signature verification
+- **IUserValidator**: Interface for user validation logic in State.sol, allowing for flexible access control in evvm transactions
 
 ### Changed
 

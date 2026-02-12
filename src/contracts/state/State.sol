@@ -27,12 +27,13 @@ import {
     ProposalStructs
 } from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
 import {
+    IUserValidator
+} from "@evvm/testnet-contracts/interfaces/IUserValidator.sol";
+import {
     Admin
 } from "@evvm/testnet-contracts/library/utils/governance/Admin.sol";
 
-interface IUserValidator {
-    function canExecute(address user) external view returns (bool);
-}
+
 
 contract State is Admin {
     uint256 private constant DELAY = 1 days;
@@ -222,3 +223,5 @@ contract State is Admin {
         return IUserValidator(userValidatorAddress.current).canExecute(user);
     }
 }
+
+

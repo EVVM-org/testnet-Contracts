@@ -3,13 +3,13 @@
 
 pragma solidity ^0.8.0;
 
-import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
+import {IState} from "@evvm/testnet-contracts/interfaces/IState.sol";
 
 abstract contract StateManagment {
-    State state;
+    IState state;
 
     constructor(address stateAddress) {
-        state = State(stateAddress);
+        state = IState(stateAddress);
     }
 
     function reserveAsyncNonceToService(address user, uint256 nonce) external {
@@ -34,6 +34,6 @@ abstract contract StateManagment {
     }
 
     function _changeStateAddress(address newStateAddress) internal virtual {
-        state = State(newStateAddress);
+        state = IState(newStateAddress);
     }
 }
