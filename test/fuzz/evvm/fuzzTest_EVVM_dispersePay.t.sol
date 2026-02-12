@@ -67,6 +67,9 @@ contract fuzzTest_EVVM_dispersePay is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             )
         );
     }

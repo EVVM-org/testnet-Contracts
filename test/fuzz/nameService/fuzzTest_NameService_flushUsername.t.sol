@@ -39,7 +39,6 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
@@ -47,6 +46,7 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
         _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            44,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8
             ),
@@ -67,8 +67,7 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
-            ),
-            true
+            )
         );
         _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
@@ -79,8 +78,7 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
-            ),
-            true
+            )
         );
         _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
@@ -91,8 +89,7 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
-            ),
-            true
+            )
         );
     }
 
@@ -139,10 +136,7 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
                 )
         );
 
-        vm.assume(
-            input.nonceAsyncEVVM != input.nonce
-        );
-
+        vm.assume(input.nonceAsyncEVVM != input.nonce);
 
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
@@ -150,10 +144,7 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
             nonce: input.nonce,
             signatureNameService: "",
             priorityFee: uint256(input.priorityFee),
-            nonceEVVM: input.isAsyncExecEvvm
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(USER_USERNAME_OWNER.Address),
-            isAsyncExecEvvm: input.isAsyncExecEvvm,
+            nonceEVVM: input.nonceAsyncEVVM,
             signatureEVVM: ""
         });
 
@@ -167,8 +158,7 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
             params.username,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -184,7 +174,6 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 

@@ -43,7 +43,6 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
@@ -87,131 +86,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         skip(30 minutes);
     }
 
-    function test__unit_correct__preRegistrationUsername__noPriorityFee_sync()
-        external
-    {
-        Params memory params1 = Params({
-            user: USER_ONE,
-            username: USERNAME_ONE,
-            lockNumber: REGISTRATION_LOCK_NUMBER_ONE,
-            nonce: 67,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER_ONE.Address),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
-        Params memory params2 = Params({
-            user: USER_TWO,
-            username: USERNAME_TWO,
-            lockNumber: REGISTRATION_LOCK_NUMBER_TWO,
-            nonce: 89,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER_TWO.Address),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params1.user, params1.username, params1.priorityFee);
-        _addBalance(params2.user, params2.username, params2.priorityFee);
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher noStaker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (params1.signatureNameService, params1.signatureEVVM) =
-            _executeSig_nameService_registrationUsername(
-                params1.user,
-                params1.username,
-                params1.lockNumber,
-                params1.nonce,
-                params1.priorityFee,
-                params1.nonceEVVM,
-                params1.isAsyncExecEvvm
-            );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-        nameService.registrationUsername(
-            params1.user.Address,
-            params1.username,
-            params1.lockNumber,
-            params1.nonce,
-            params1.signatureNameService,
-            params1.priorityFee,
-            params1.nonceEVVM,
-            params1.isAsyncExecEvvm,
-            params1.signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address ownerOne,) = nameService.getIdentityBasicMetadata(
-            params1.username
-        );
-
-        assertEq(ownerOne, params1.user.Address, "Error no staker: username not registered correctly");
-
-        assertEq(
-            evvm.getBalance(
-                params1.user.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error no staker: balance incorrectly changed after registration"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error no staker: balance incorrectly changed after registration"
-        );
-
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher staker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (params2.signatureNameService, params2.signatureEVVM) =
-            _executeSig_nameService_registrationUsername(
-                params2.user,
-                params2.username,
-                params2.lockNumber,
-                params2.nonce,
-                params2.priorityFee,
-                params2.nonceEVVM,
-                params2.isAsyncExecEvvm
-            );
-
-        vm.startPrank(FISHER_STAKER.Address);
-        nameService.registrationUsername(
-            params2.user.Address,
-            params2.username,
-            params2.lockNumber,
-            params2.nonce,
-            params2.signatureNameService,
-            params2.priorityFee,
-            params2.nonceEVVM,
-            params2.isAsyncExecEvvm,
-            params2.signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address ownerTwo,) = nameService.getIdentityBasicMetadata(
-            params2.username
-        );
-
-        assertEq(ownerTwo, params2.user.Address, "Error staker: username not registered correctly");
-        assertEq(
-            evvm.getBalance(
-                params2.user.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error staker: balance incorrectly changed after registration"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (50 * evvm.getRewardAmount()) + params2.priorityFee,
-            "Error staker: balance incorrectly changed after registration"
-        );
-    }
-
-    function test__unit_correct__preRegistrationUsername__noPriorityFee_async()
+    function test__unit_correct__preRegistrationUsername__noPriorityFee()
         external
     {
         Params memory params1 = Params({
@@ -222,7 +97,6 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 420,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
         Params memory params2 = Params({
@@ -233,7 +107,6 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 89,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -241,16 +114,17 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         _addBalance(params2.user, params2.username, params2.priorityFee);
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher noStaker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (params1.signatureNameService, params1.signatureEVVM) =
-            _executeSig_nameService_registrationUsername(
-                params1.user,
-                params1.username,
-                params1.lockNumber,
-                params1.nonce,
-                params1.priorityFee,
-                params1.nonceEVVM,
-                params1.isAsyncExecEvvm
-            );
+        (
+            params1.signatureNameService,
+            params1.signatureEVVM
+        ) = _executeSig_nameService_registrationUsername(
+            params1.user,
+            params1.username,
+            params1.lockNumber,
+            params1.nonce,
+            params1.priorityFee,
+            params1.nonceEVVM
+        );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         nameService.registrationUsername(
@@ -261,22 +135,22 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
         vm.stopPrank();
 
-        (address ownerOne,) = nameService.getIdentityBasicMetadata(
+        (address ownerOne, ) = nameService.getIdentityBasicMetadata(
             params1.username
         );
 
-        assertEq(ownerOne, params1.user.Address, "Error no staker: username not registered correctly");
+        assertEq(
+            ownerOne,
+            params1.user.Address,
+            "Error no staker: username not registered correctly"
+        );
 
         assertEq(
-            evvm.getBalance(
-                params1.user.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
+            evvm.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error no staker: balance incorrectly changed after registration"
         );
@@ -287,18 +161,18 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             "Error no staker: balance incorrectly changed after registration"
         );
 
-
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher staker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (params2.signatureNameService, params2.signatureEVVM) =
-            _executeSig_nameService_registrationUsername(
-                params2.user,
-                params2.username,
-                params2.lockNumber,
-                params2.nonce,
-                params2.priorityFee,
-                params2.nonceEVVM,
-                params2.isAsyncExecEvvm
-            );
+        (
+            params2.signatureNameService,
+            params2.signatureEVVM
+        ) = _executeSig_nameService_registrationUsername(
+            params2.user,
+            params2.username,
+            params2.lockNumber,
+            params2.nonce,
+            params2.priorityFee,
+            params2.nonceEVVM
+        );
 
         vm.startPrank(FISHER_STAKER.Address);
         nameService.registrationUsername(
@@ -309,21 +183,21 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
         vm.stopPrank();
 
-        (address ownerTwo,) = nameService.getIdentityBasicMetadata(
+        (address ownerTwo, ) = nameService.getIdentityBasicMetadata(
             params2.username
         );
 
-        assertEq(ownerTwo, params2.user.Address, "Error staker: username not registered correctly");
         assertEq(
-            evvm.getBalance(
-                params2.user.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
+            ownerTwo,
+            params2.user.Address,
+            "Error staker: username not registered correctly"
+        );
+        assertEq(
+            evvm.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error staker: balance incorrectly changed after registration"
         );
@@ -335,131 +209,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         );
     }
 
-    function test__unit_correct__preRegistrationUsername__priorityFee_sync()
-        external
-    {
-        Params memory params1 = Params({
-            user: USER_ONE,
-            username: USERNAME_ONE,
-            lockNumber: REGISTRATION_LOCK_NUMBER_ONE,
-            nonce: 67,
-            signatureNameService: "",
-            priorityFee: 0.00001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER_ONE.Address),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
-        Params memory params2 = Params({
-            user: USER_TWO,
-            username: USERNAME_TWO,
-            lockNumber: REGISTRATION_LOCK_NUMBER_TWO,
-            nonce: 89,
-            signatureNameService: "",
-            priorityFee: 0.00001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER_TWO.Address),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params1.user, params1.username, params1.priorityFee);
-        _addBalance(params2.user, params2.username, params2.priorityFee);
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher noStaker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (params1.signatureNameService, params1.signatureEVVM) =
-            _executeSig_nameService_registrationUsername(
-                params1.user,
-                params1.username,
-                params1.lockNumber,
-                params1.nonce,
-                params1.priorityFee,
-                params1.nonceEVVM,
-                params1.isAsyncExecEvvm
-            );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-        nameService.registrationUsername(
-            params1.user.Address,
-            params1.username,
-            params1.lockNumber,
-            params1.nonce,
-            params1.signatureNameService,
-            params1.priorityFee,
-            params1.nonceEVVM,
-            params1.isAsyncExecEvvm,
-            params1.signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address ownerOne,) = nameService.getIdentityBasicMetadata(
-            params1.username
-        );
-
-        assertEq(ownerOne, params1.user.Address, "Error no staker: username not registered correctly");
-
-        assertEq(
-            evvm.getBalance(
-                params1.user.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error no staker: balance incorrectly changed after registration"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error no staker: balance incorrectly changed after registration"
-        );
-
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher staker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (params2.signatureNameService, params2.signatureEVVM) =
-            _executeSig_nameService_registrationUsername(
-                params2.user,
-                params2.username,
-                params2.lockNumber,
-                params2.nonce,
-                params2.priorityFee,
-                params2.nonceEVVM,
-                params2.isAsyncExecEvvm
-            );
-
-        vm.startPrank(FISHER_STAKER.Address);
-        nameService.registrationUsername(
-            params2.user.Address,
-            params2.username,
-            params2.lockNumber,
-            params2.nonce,
-            params2.signatureNameService,
-            params2.priorityFee,
-            params2.nonceEVVM,
-            params2.isAsyncExecEvvm,
-            params2.signatureEVVM
-        );
-        vm.stopPrank();
-
-        (address ownerTwo,) = nameService.getIdentityBasicMetadata(
-            params2.username
-        );
-
-        assertEq(ownerTwo, params2.user.Address, "Error staker: username not registered correctly");
-        assertEq(
-            evvm.getBalance(
-                params2.user.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error staker: balance incorrectly changed after registration"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (50 * evvm.getRewardAmount()) + params2.priorityFee,
-            "Error staker: balance incorrectly changed after registration"
-        );
-    }
-
-    function test__unit_correct__preRegistrationUsername__priorityFee_async()
+    function test__unit_correct__preRegistrationUsername__priorityFee()
         external
     {
         Params memory params1 = Params({
@@ -470,7 +220,6 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             signatureNameService: "",
             priorityFee: 0.00001 ether,
             nonceEVVM: 420,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
         Params memory params2 = Params({
@@ -481,7 +230,6 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             signatureNameService: "",
             priorityFee: 0.00001 ether,
             nonceEVVM: 89,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -489,16 +237,17 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         _addBalance(params2.user, params2.username, params2.priorityFee);
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher noStaker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (params1.signatureNameService, params1.signatureEVVM) =
-            _executeSig_nameService_registrationUsername(
-                params1.user,
-                params1.username,
-                params1.lockNumber,
-                params1.nonce,
-                params1.priorityFee,
-                params1.nonceEVVM,
-                params1.isAsyncExecEvvm
-            );
+        (
+            params1.signatureNameService,
+            params1.signatureEVVM
+        ) = _executeSig_nameService_registrationUsername(
+            params1.user,
+            params1.username,
+            params1.lockNumber,
+            params1.nonce,
+            params1.priorityFee,
+            params1.nonceEVVM
+        );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         nameService.registrationUsername(
@@ -509,22 +258,22 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
         vm.stopPrank();
 
-        (address ownerOne,) = nameService.getIdentityBasicMetadata(
+        (address ownerOne, ) = nameService.getIdentityBasicMetadata(
             params1.username
         );
 
-        assertEq(ownerOne, params1.user.Address, "Error no staker: username not registered correctly");
+        assertEq(
+            ownerOne,
+            params1.user.Address,
+            "Error no staker: username not registered correctly"
+        );
 
         assertEq(
-            evvm.getBalance(
-                params1.user.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
+            evvm.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error no staker: balance incorrectly changed after registration"
         );
@@ -535,18 +284,18 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             "Error no staker: balance incorrectly changed after registration"
         );
 
-
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher staker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (params2.signatureNameService, params2.signatureEVVM) =
-            _executeSig_nameService_registrationUsername(
-                params2.user,
-                params2.username,
-                params2.lockNumber,
-                params2.nonce,
-                params2.priorityFee,
-                params2.nonceEVVM,
-                params2.isAsyncExecEvvm
-            );
+        (
+            params2.signatureNameService,
+            params2.signatureEVVM
+        ) = _executeSig_nameService_registrationUsername(
+            params2.user,
+            params2.username,
+            params2.lockNumber,
+            params2.nonce,
+            params2.priorityFee,
+            params2.nonceEVVM
+        );
 
         vm.startPrank(FISHER_STAKER.Address);
         nameService.registrationUsername(
@@ -557,21 +306,21 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.signatureNameService,
             params2.priorityFee,
             params2.nonceEVVM,
-            params2.isAsyncExecEvvm,
             params2.signatureEVVM
         );
         vm.stopPrank();
 
-        (address ownerTwo,) = nameService.getIdentityBasicMetadata(
+        (address ownerTwo, ) = nameService.getIdentityBasicMetadata(
             params2.username
         );
 
-        assertEq(ownerTwo, params2.user.Address, "Error staker: username not registered correctly");
         assertEq(
-            evvm.getBalance(
-                params2.user.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
+            ownerTwo,
+            params2.user.Address,
+            "Error staker: username not registered correctly"
+        );
+        assertEq(
+            evvm.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error staker: balance incorrectly changed after registration"
         );

@@ -146,7 +146,7 @@ contract NameService {
      * @param signature Signature proving authorization for this operation
      * @param priorityFeeEvvm Priority fee for faster transaction processing
      * @param nonceEvvm Nonce for the EVVM payment transaction
-     * @param isAsyncExecEvvm True for async payment, false for sync payment
+
      * @param signatureEvvm Signature for the EVVM payment transaction
      */
     function preRegistrationUsername(
@@ -156,7 +156,6 @@ contract NameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         state.validateAndConsumeNonce(
@@ -168,14 +167,7 @@ contract NameService {
         );
 
         if (priorityFeeEvvm > 0)
-            requestPay(
-                user,
-                0,
-                priorityFeeEvvm,
-                nonceEvvm,
-                isAsyncExecEvvm,
-                signatureEvvm
-            );
+            requestPay(user, 0, priorityFeeEvvm, nonceEvvm, signatureEvvm);
 
         identityDetails[
             string.concat(
@@ -204,18 +196,17 @@ contract NameService {
      * @param signature Signature proving authorization for this operation
      * @param priorityFeeEvvm Priority fee for faster transaction processing
      * @param nonceEvvm Nonce for the EVVM payment transaction
-     * @param isAsyncExecEvvm True for async payment, false for sync payment
+
      * @param signatureEvvm Signature for the EVVM payment transaction
      */
     function registrationUsername(
         address user,
         string memory username,
         uint256 lockNumber,
-        uint256 nonce, 
+        uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         state.validateAndConsumeNonce(
@@ -239,7 +230,6 @@ contract NameService {
             getPriceOfRegistration(username),
             priorityFeeEvvm,
             nonceEvvm,
-            isAsyncExecEvvm,
             signatureEvvm
         );
 
@@ -281,7 +271,7 @@ contract NameService {
      * @param signature Signature proving authorization for this operation
      * @param priorityFeeEvvm Priority fee for faster transaction processing
      * @param nonceEvvm Nonce for the EVVM payment transaction
-     * @param isAsyncExecEvvm True for async payment, false for sync payment
+
      * @param signatureEvvm Signature for the EVVM payment transaction
      * @return offerID Unique identifier for the created offer
      */
@@ -294,7 +284,6 @@ contract NameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external returns (uint256 offerID) {
         state.validateAndConsumeNonce(
@@ -315,14 +304,7 @@ contract NameService {
 
         if (amount == 0) revert Error.AmountMustBeGreaterThanZero();
 
-        requestPay(
-            user,
-            amount,
-            priorityFeeEvvm,
-            nonceEvvm,
-            isAsyncExecEvvm,
-            signatureEvvm
-        );
+        requestPay(user, amount, priorityFeeEvvm, nonceEvvm, signatureEvvm);
 
         while (usernameOffers[username][offerID].offerer != address(0))
             offerID++;
@@ -363,7 +345,7 @@ contract NameService {
      * @param signature Signature proving authorization for this operation
      * @param priorityFeeEvvm Priority fee for faster transaction processing
      * @param nonceEvvm Nonce for the EVVM payment transaction
-     * @param isAsyncExecEvvm True for async payment, false for sync payment
+
      * @param signatureEvvm Signature for the EVVM payment transaction
      */
     function withdrawOffer(
@@ -374,7 +356,6 @@ contract NameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         state.validateAndConsumeNonce(
@@ -389,14 +370,7 @@ contract NameService {
             revert Error.UserIsNotOwnerOfOffer();
 
         if (priorityFeeEvvm > 0)
-            requestPay(
-                user,
-                0,
-                priorityFeeEvvm,
-                nonceEvvm,
-                isAsyncExecEvvm,
-                signatureEvvm
-            );
+            requestPay(user, 0, priorityFeeEvvm, nonceEvvm, signatureEvvm);
 
         makeCaPay(user, usernameOffers[username][offerID].amount);
 
@@ -424,7 +398,7 @@ contract NameService {
      * @param signature Signature proving authorization for this operation
      * @param priorityFeeEvvm Priority fee for faster transaction processing
      * @param nonceEvvm Nonce for the EVVM payment transaction
-     * @param isAsyncExecEvvm True for async payment, false for sync payment
+
      * @param signatureEvvm Signature for the EVVM payment transaction
      */
     function acceptOffer(
@@ -435,7 +409,6 @@ contract NameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         state.validateAndConsumeNonce(
@@ -455,14 +428,7 @@ contract NameService {
         ) revert Error.OfferInactive();
 
         if (priorityFeeEvvm > 0) {
-            requestPay(
-                user,
-                0,
-                priorityFeeEvvm,
-                nonceEvvm,
-                isAsyncExecEvvm,
-                signatureEvvm
-            );
+            requestPay(user, 0, priorityFeeEvvm, nonceEvvm, signatureEvvm);
         }
 
         makeCaPay(user, usernameOffers[username][offerID].amount);
@@ -503,7 +469,7 @@ contract NameService {
      * @param signature Signature proving authorization for this operation
      * @param priorityFeeEvvm Priority fee for faster transaction processing
      * @param nonceEvvm Nonce for the EVVM payment transaction
-     * @param isAsyncExecEvvm True for async payment, false for sync payment
+
      * @param signatureEvvm Signature for the EVVM payment transaction
      */
     function renewUsername(
@@ -513,7 +479,6 @@ contract NameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         state.validateAndConsumeNonce(
@@ -542,7 +507,6 @@ contract NameService {
             priceOfRenew,
             priorityFeeEvvm,
             nonceEvvm,
-            isAsyncExecEvvm,
             signatureEvvm
         );
 
@@ -582,7 +546,7 @@ contract NameService {
      * @param signature Signature proving authorization for this operation
      * @param priorityFeeEvvm Priority fee for faster transaction processing
      * @param nonceEvvm Nonce for the EVVM payment transaction
-     * @param isAsyncExecEvvm True for async payment, false for sync payment
+
      * @param signatureEvvm Signature for the EVVM payment transaction
      */
     function addCustomMetadata(
@@ -593,7 +557,6 @@ contract NameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         state.validateAndConsumeNonce(
@@ -614,7 +577,6 @@ contract NameService {
             getPriceToAddCustomMetadata(),
             priorityFeeEvvm,
             nonceEvvm,
-            isAsyncExecEvvm,
             signatureEvvm
         );
 
@@ -644,7 +606,7 @@ contract NameService {
      * @param signature Signature proving authorization for this operation
      * @param priorityFeeEvvm Priority fee for faster transaction processing
      * @param nonceEvvm Nonce for the EVVM payment transaction
-     * @param isAsyncExecEvvm True for async payment, false for sync payment
+
      * @param signatureEvvm Signature for the EVVM payment transaction
      */
     function removeCustomMetadata(
@@ -655,7 +617,6 @@ contract NameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         state.validateAndConsumeNonce(
@@ -677,7 +638,6 @@ contract NameService {
             getPriceToRemoveCustomMetadata(),
             priorityFeeEvvm,
             nonceEvvm,
-            isAsyncExecEvvm,
             signatureEvvm
         );
 
@@ -716,7 +676,7 @@ contract NameService {
      * @param signature Signature proving authorization for this operation
      * @param priorityFeeEvvm Priority fee for faster transaction processing
      * @param nonceEvvm Nonce for the EVVM payment transaction
-     * @param isAsyncExecEvvm True for async payment, false for sync payment
+
      * @param signatureEvvm Signature for the EVVM payment transaction
      */
     function flushCustomMetadata(
@@ -726,7 +686,6 @@ contract NameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         state.validateAndConsumeNonce(
@@ -748,7 +707,6 @@ contract NameService {
             getPriceToFlushCustomMetadata(identity),
             priorityFeeEvvm,
             nonceEvvm,
-            isAsyncExecEvvm,
             signatureEvvm
         );
 
@@ -781,7 +739,6 @@ contract NameService {
      * @param signature Signature proving authorization for this operation
      * @param priorityFeeEvvm Priority fee for faster transaction processing
      * @param nonceEvvm Nonce for the EVVM payment transaction
-     * @param isAsyncExecEvvm True for async payment, false for sync payment
      * @param signatureEvvm Signature for the EVVM payment transaction
      */
     function flushUsername(
@@ -791,7 +748,6 @@ contract NameService {
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
-        bool isAsyncExecEvvm,
         bytes memory signatureEvvm
     ) external {
         state.validateAndConsumeNonce(
@@ -816,7 +772,6 @@ contract NameService {
             getPriceToFlushUsername(username),
             priorityFeeEvvm,
             nonceEvvm,
-            isAsyncExecEvvm,
             signatureEvvm
         );
 
@@ -983,15 +938,14 @@ contract NameService {
      * @param amount Amount to pay in Principal Tokens
      * @param priorityFee Additional priority fee for faster processing
      * @param nonce Nonce for the EVVM transaction
-     * @param isAsyncExec True for async payment, false for sync payment
      * @param signature Signature authorizing the payment
+     * @dev all evvm nonce execution are async (true)
      */
     function requestPay(
         address user,
         uint256 amount,
         uint256 priorityFee,
         uint256 nonce,
-        bool isAsyncExec,
         bytes memory signature
     ) internal {
         evvm.pay(
@@ -1003,7 +957,7 @@ contract NameService {
             priorityFee,
             address(this),
             nonce,
-            isAsyncExec,
+            true,
             signature
         );
     }

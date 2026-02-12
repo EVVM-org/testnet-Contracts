@@ -34,7 +34,6 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
@@ -115,14 +114,13 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         uint256 nonce;
         uint32 priorityFee;
         uint256 nonceAsyncEVVM;
-        bool isAsyncExecEvvm;
     }
 
-    function test__fuzz__preRegistrationUsername__noStaker(
+    function test__fuzz__registrationUsername__noStaker(
         Input memory input
     ) external {
-        vm.assume(input.nonce > 0);
-        vm.assume(input.nonceAsyncEVVM > 0);
+        vm.assume(input.nonce > 2);
+        vm.assume(input.nonceAsyncEVVM > 2);
         vm.assume(input.nonce != input.nonceAsyncEVVM);
 
         string memory USERNAME = generateValidUsername(
@@ -145,10 +143,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.isAsyncExecEvvm
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(USER.Address),
-            isAsyncExecEvvm: input.isAsyncExecEvvm,
+            nonceEVVM: input.nonceAsyncEVVM,
             signatureEVVM: ""
         });
         _addBalance(params.user, params.username, params.priorityFee);
@@ -161,8 +156,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             params.lockNumber,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -174,7 +168,6 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -203,11 +196,11 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
     }
 
 
-    function test__fuzz__preRegistrationUsername__staker(
+    function test__fuzz__registrationUsername__staker(
         Input memory input
     ) external {
-        vm.assume(input.nonce > 0);
-        vm.assume(input.nonceAsyncEVVM > 0);
+        vm.assume(input.nonce > 2);
+        vm.assume(input.nonceAsyncEVVM > 2);
         vm.assume(input.nonce != input.nonceAsyncEVVM);
         string memory USERNAME = generateValidUsername(
             uint256(input.seed),
@@ -229,10 +222,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.isAsyncExecEvvm
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(USER.Address),
-            isAsyncExecEvvm: input.isAsyncExecEvvm,
+            nonceEVVM: input.nonceAsyncEVVM,
             signatureEVVM: ""
         });
         _addBalance(params.user, params.username, params.priorityFee);
@@ -245,8 +235,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             params.lockNumber,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -258,7 +247,6 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();

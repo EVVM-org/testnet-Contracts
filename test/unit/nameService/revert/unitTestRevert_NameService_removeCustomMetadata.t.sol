@@ -56,6 +56,9 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             )
         );
 
@@ -64,12 +67,11 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             USERNAME,
             CUSTOM_METADATA_VALUE_0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
-            ),
-            uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
             ),
-            true
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
+            )
         );
     }
 
@@ -136,9 +138,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -147,7 +147,6 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -199,15 +198,12 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 INDEX_CUSTOM_METADATA,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -216,7 +212,6 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -268,15 +263,12 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 INDEX_CUSTOM_METADATA,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -285,7 +277,6 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -337,15 +328,12 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 INDEX_CUSTOM_METADATA + 1,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -354,7 +342,6 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -406,15 +393,12 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 /* 🢃 different nonce 🢃 */
                 nonce + 1,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -423,7 +407,6 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -478,8 +461,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 INDEX_CUSTOM_METADATA,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -494,7 +476,6 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -525,7 +506,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_revert__removeCustomMetadata__AsyncNonceAlreadyUsed()
+    function test__unit_revert__removeCustomMetadata_NonceAlreadyUsed()
         external
     {
         (
@@ -548,8 +529,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 INDEX_CUSTOM_METADATA,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -563,7 +543,6 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -613,8 +592,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 INDEX_CUSTOM_METADATA + 1,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -629,7 +607,6 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -673,9 +650,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
                 /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1,
-                /* 🢃 different isAsyncExec 🢃 */
-                false
+                nonceEVVM + 1
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -689,7 +664,6 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -735,8 +709,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 INDEX_CUSTOM_METADATA,
                 nonce,
                 1 ether,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -750,7 +723,6 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService,
             1 ether,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 

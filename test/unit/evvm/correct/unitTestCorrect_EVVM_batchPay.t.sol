@@ -30,6 +30,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             "dummy",
+            444,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),

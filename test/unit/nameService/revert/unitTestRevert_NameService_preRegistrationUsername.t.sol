@@ -85,7 +85,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             signatureNameService,
             0,
             0,
-            false,
             hex""
         );
 
@@ -119,8 +118,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 lockNumber,
                 nonce,
                 0,
-                0,
-                false
+                0
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -133,7 +131,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             signatureNameService,
             0,
             0,
-            false,
             hex""
         );
 
@@ -167,8 +164,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 /* 🢃 different nonce 🢃 */
                 nonce + 67,
                 0,
-                0,
-                false
+                0
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -181,7 +177,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             signatureNameService,
             0,
             0,
-            false,
             hex""
         );
 
@@ -216,8 +211,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 /**************************/
                 nonce,
                 0,
-                0,
-                false
+                0
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -230,7 +224,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             signatureNameService,
             0,
             0,
-            false,
             hex""
         );
 
@@ -248,7 +241,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         assertEq(user, address(0), "username should not be preregistered");
     }
 
-    function test__unit_revert__preRegistrationUsername__AsyncNonceAlreadyUsed()
+    function test__unit_revert__preRegistrationUsername_NonceAlreadyUsed()
         external
     {
         string memory username = "test";
@@ -272,8 +265,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 /* 🢃 nonce already used 🢃 */
                 nonce,
                 0,
-                0,
-                false
+                0
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -287,7 +279,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             signatureNameService,
             0,
             0,
-            false,
             hex""
         );
 
@@ -321,8 +312,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 lockNumber,
                 nonce,
                 0.0001 ether,
-                6767,
-                true
+                6767
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -336,7 +326,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             /* 🢃 different priority fee 🢃 */
             1 ether,
             6767,
-            true,
             signatureEvvm
         );
 
@@ -369,8 +358,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
                 lockNumber,
                 nonce,
                 0.1 ether,
-                676767,
-                true
+                676767
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -384,7 +372,6 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             signatureNameService,
             0.1 ether,
             676767,
-            true,
             signatureEvvm
         );
 

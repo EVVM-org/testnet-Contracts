@@ -49,6 +49,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
+            444,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -72,7 +73,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
             ),
-            true,
             COMMON_USER_NO_STAKER_3
         );
     }
@@ -136,7 +136,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            true,
             signatureEVVM
         );
 
@@ -186,8 +185,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 offerID,
                 10000000001,
                 amountPriorityFee,
-                1001,
-                true
+                1001
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -202,7 +200,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            true,
             signatureEVVM
         );
 
@@ -252,8 +249,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 offerID,
                 10000000001,
                 amountPriorityFee,
-                1001,
-                true
+                1001
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -268,7 +264,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            true,
             signatureEVVM
         );
 
@@ -318,8 +313,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 offerID + 1,
                 10000000001,
                 amountPriorityFee,
-                1001,
-                true
+                1001
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -334,7 +328,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            true,
             signatureEVVM
         );
 
@@ -384,8 +377,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 /* 🢃 different nameServiceNonce 🢃 */
                 67,
                 amountPriorityFee,
-                1001,
-                true
+                1001
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -400,7 +392,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            true,
             signatureEVVM
         );
 
@@ -449,8 +440,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 diferentOfferID,
                 10000000001,
                 amountPriorityFee,
-                1001,
-                true
+                1001
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -465,7 +455,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            true,
             signatureEVVM
         );
 
@@ -517,8 +506,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 offerID,
                 10000000001,
                 amountPriorityFee,
-                1001,
-                true
+                1001
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -533,7 +521,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            true,
             signatureEVVM
         );
 
@@ -565,7 +552,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
     }
 
-    function test__unit_revert__acceptOffer__AsyncNonceAlreadyUsed() external {
+    function test__unit_revert__acceptOffer_NonceAlreadyUsed() external {
         uint256 amountPriorityFee = _addBalance(
             COMMON_USER_NO_STAKER_1,
             0.001 ether
@@ -585,8 +572,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 offerID,
                 nonce,
                 amountPriorityFee,
-                1001,
-                true
+                1001
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -601,7 +587,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            true,
             signatureEVVM
         );
 
@@ -651,8 +636,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 offerID,
                 10000000001,
                 amountPriorityFee,
-                1001,
-                true
+                1001
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -668,7 +652,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            true,
             signatureEVVM
         );
 
@@ -711,9 +694,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 /* 🢃 different totalPriorityFee 🢃 */
                 10 ether,
                 /* 🢃 different nonceEVVM 🢃 */
-                6767676767,
-                /* 🢃 different isAsyncExec 🢃 */
-                false
+                6767676767
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -728,7 +709,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            true,
             signatureEVVM
         );
 
@@ -780,8 +760,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 offerID,
                 10000000001,
                 amountPriorityFee,
-                1001,
-                true
+                1001
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -796,7 +775,6 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            true,
             signatureEVVM
         );
 

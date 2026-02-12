@@ -59,6 +59,9 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             )
         );
 
@@ -67,12 +70,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             USERNAME,
             CUSTOM_METADATA_VALUE_0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
-            ),
-            uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
-            true
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
+            )
         );
 
         _executeFn_nameService_addCustomMetadata(
@@ -80,12 +82,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             USERNAME,
             CUSTOM_METADATA_VALUE_1,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
-            ),
-            uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
             ),
-            true
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6
+            )
         );
 
         _executeFn_nameService_addCustomMetadata(
@@ -93,12 +94,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             USERNAME,
             CUSTOM_METADATA_VALUE_2,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6
-            ),
-            uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7
             ),
-            true
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8
+            )
         );
     }
 
@@ -175,7 +175,6 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -218,8 +217,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 USERNAME,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -236,7 +234,6 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -279,8 +276,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 "diferent",
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -297,7 +293,6 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -340,8 +335,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 /* 🢃 different nonce 🢃 */
                 nonce + 1,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -358,7 +352,6 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -402,8 +395,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 USERNAME,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -421,7 +413,6 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -456,6 +447,9 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             ),
             uint256(
                 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00
+            ),
+            uint256(
+                0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff10
             )
         );
 
@@ -476,8 +470,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 "testing",
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -494,7 +487,6 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -516,7 +508,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_revert__flushCustomMetadata__AsyncNonceAlreadyUsed()
+    function test__unit_revert__flushCustomMetadata_NonceAlreadyUsed()
         external
     {
         (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
@@ -539,8 +531,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 USERNAME,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -557,7 +548,6 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -601,9 +591,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
                 /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1,
-                /* 🢃 different isAsyncExec 🢃 */
-                false
+                nonceEVVM + 1
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -620,7 +608,6 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -656,8 +643,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 USERNAME,
                 nonce,
                 0,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -674,7 +660,6 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService,
             0,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 

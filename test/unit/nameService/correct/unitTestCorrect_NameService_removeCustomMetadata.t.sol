@@ -43,7 +43,6 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
@@ -51,6 +50,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            444,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -71,8 +71,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
-            ),
-            true
+            )
         );
         _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
@@ -83,8 +82,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6
-            ),
-            true
+            )
         );
         _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
@@ -95,8 +93,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8
-            ),
-            true
+            )
         );
     }
 
@@ -115,21 +112,9 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
     function test__unit_correct__removeCustomMetadata__noStaking_noPriorityFee()
         external
     {
-        Params memory params1 = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            key: 1,
-            nonce: 100010001,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
 
-        Params memory params2 = Params({
+
+        Params memory params1 = Params({
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 0,
@@ -137,11 +122,9 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 67,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         _addBalance(params1.user, params1.priorityFee);
 
@@ -154,8 +137,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.key,
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.isAsyncExecEvvm
+            params1.nonceEVVM
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -168,87 +150,23 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata1 = nameService
+        string memory customMetadata2 = nameService
             .getSingleCustomMetadataOfIdentity(params1.identity, params1.key);
 
         assertEq(
-            customMetadata1,
-            CUSTOM_METADATA_VALUE_3,
-            "Error 1: custom metadata incorrectly removed"
+            customMetadata2,
+            CUSTOM_METADATA_VALUE_2,
+            "Error 2: custom metadata incorrectly removed"
         );
 
         assertEq(
             nameService.getCustomMetadataMaxSlotsOfIdentity(params1.identity),
             2,
-            "Error 1: custom metadata max slots incorrectly changed after removal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error 1: user balance incorrectly changed after removing custom metadata"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error 1: fisher balance incorrectly changed after removing custom metadata"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        _addBalance(params2.user, params2.priorityFee);
-
-        (
-            params2.signatureNameService,
-            params2.signatureEVVM
-        ) = _executeSig_nameService_removeCustomMetadata(
-            params2.user,
-            params2.identity,
-            params2.key,
-            params2.nonce,
-            params2.priorityFee,
-            params2.nonceEVVM,
-            params2.isAsyncExecEvvm
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.removeCustomMetadata(
-            params2.user.Address,
-            params2.identity,
-            params2.key,
-            params2.nonce,
-            params2.signatureNameService,
-            params2.priorityFee,
-            params2.nonceEVVM,
-            params2.isAsyncExecEvvm,
-            params2.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata2 = nameService
-            .getSingleCustomMetadataOfIdentity(params2.identity, params2.key);
-
-        assertEq(
-            customMetadata2,
-            CUSTOM_METADATA_VALUE_3,
-            "Error 2: custom metadata incorrectly removed"
-        );
-
-        assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity(params2.identity),
-            1,
             "Error 2: custom metadata max slots incorrectly changed after removal"
         );
 
@@ -271,21 +189,8 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
     function test__unit_correct__removeCustomMetadata__staking_noPriorityFee()
         external
     {
-        Params memory params1 = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            key: 1,
-            nonce: 100010001,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
 
-        Params memory params2 = Params({
+        Params memory params1 = Params({
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 0,
@@ -293,11 +198,8 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 67,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         _addBalance(params1.user, params1.priorityFee);
 
@@ -313,8 +215,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.key,
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.isAsyncExecEvvm
+            params1.nonceEVVM
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -327,90 +228,23 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata1 = nameService
+        string memory customMetadata2 = nameService
             .getSingleCustomMetadataOfIdentity(params1.identity, params1.key);
 
         assertEq(
-            customMetadata1,
-            CUSTOM_METADATA_VALUE_3,
-            "Error 1: custom metadata incorrectly removed"
+            customMetadata2,
+            CUSTOM_METADATA_VALUE_2,
+            "Error 2: custom metadata incorrectly removed"
         );
 
         assertEq(
             nameService.getCustomMetadataMaxSlotsOfIdentity(params1.identity),
             2,
-            "Error 1: custom metadata max slots incorrectly changed after removal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error 1: user balance incorrectly changed after removing custom metadata"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            amountReward1,
-            "Error 1: fisher balance incorrectly changed after removing custom metadata"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        _addBalance(params2.user, params2.priorityFee);
-
-        uint256 amountReward2 = (5 * evvm.getRewardAmount()) +
-            params2.priorityFee;
-
-        (
-            params2.signatureNameService,
-            params2.signatureEVVM
-        ) = _executeSig_nameService_removeCustomMetadata(
-            params2.user,
-            params2.identity,
-            params2.key,
-            params2.nonce,
-            params2.priorityFee,
-            params2.nonceEVVM,
-            params2.isAsyncExecEvvm
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.removeCustomMetadata(
-            params2.user.Address,
-            params2.identity,
-            params2.key,
-            params2.nonce,
-            params2.signatureNameService,
-            params2.priorityFee,
-            params2.nonceEVVM,
-            params2.isAsyncExecEvvm,
-            params2.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata2 = nameService
-            .getSingleCustomMetadataOfIdentity(params2.identity, params2.key);
-
-        assertEq(
-            customMetadata2,
-            CUSTOM_METADATA_VALUE_3,
-            "Error 2: custom metadata incorrectly removed"
-        );
-
-        assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity(params2.identity),
-            1,
             "Error 2: custom metadata max slots incorrectly changed after removal"
         );
 
@@ -425,7 +259,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
 
         assertEq(
             evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            amountReward1 + amountReward2,
+             amountReward1,
             "Error 2: fisher balance incorrectly changed after removing custom metadata"
         );
     }
@@ -433,21 +267,9 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
     function test__unit_correct__removeCustomMetadata__noStaking_priorityFee()
         external
     {
-        Params memory params1 = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            key: 1,
-            nonce: 100010001,
-            signatureNameService: "",
-            priorityFee: 0.0001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
+        
 
-        Params memory params2 = Params({
+        Params memory params1 = Params({
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 0,
@@ -455,11 +277,10 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService: "",
             priorityFee: 0.0001 ether,
             nonceEVVM: 67,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        
 
         _addBalance(params1.user, params1.priorityFee);
 
@@ -472,8 +293,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.key,
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.isAsyncExecEvvm
+            params1.nonceEVVM
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -486,87 +306,23 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata1 = nameService
+        string memory customMetadata2 = nameService
             .getSingleCustomMetadataOfIdentity(params1.identity, params1.key);
 
         assertEq(
-            customMetadata1,
-            CUSTOM_METADATA_VALUE_3,
-            "Error 1: custom metadata incorrectly removed"
+            customMetadata2,
+            CUSTOM_METADATA_VALUE_2,
+            "Error 2: custom metadata incorrectly removed"
         );
 
         assertEq(
             nameService.getCustomMetadataMaxSlotsOfIdentity(params1.identity),
             2,
-            "Error 1: custom metadata max slots incorrectly changed after removal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error 1: user balance incorrectly changed after removing custom metadata"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error 1: fisher balance incorrectly changed after removing custom metadata"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        _addBalance(params2.user, params2.priorityFee);
-
-        (
-            params2.signatureNameService,
-            params2.signatureEVVM
-        ) = _executeSig_nameService_removeCustomMetadata(
-            params2.user,
-            params2.identity,
-            params2.key,
-            params2.nonce,
-            params2.priorityFee,
-            params2.nonceEVVM,
-            params2.isAsyncExecEvvm
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.removeCustomMetadata(
-            params2.user.Address,
-            params2.identity,
-            params2.key,
-            params2.nonce,
-            params2.signatureNameService,
-            params2.priorityFee,
-            params2.nonceEVVM,
-            params2.isAsyncExecEvvm,
-            params2.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata2 = nameService
-            .getSingleCustomMetadataOfIdentity(params2.identity, params2.key);
-
-        assertEq(
-            customMetadata2,
-            CUSTOM_METADATA_VALUE_3,
-            "Error 2: custom metadata incorrectly removed"
-        );
-
-        assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity(params2.identity),
-            1,
             "Error 2: custom metadata max slots incorrectly changed after removal"
         );
 
@@ -589,21 +345,8 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
     function test__unit_correct__removeCustomMetadata__staking_priorityFee()
         external
     {
-        Params memory params1 = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            key: 1,
-            nonce: 100010001,
-            signatureNameService: "",
-            priorityFee: 0.0001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
 
-        Params memory params2 = Params({
+        Params memory params1 = Params({
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             key: 0,
@@ -611,11 +354,10 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             signatureNameService: "",
             priorityFee: 0.0001 ether,
             nonceEVVM: 67,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+    
 
         _addBalance(params1.user, params1.priorityFee);
 
@@ -631,8 +373,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.key,
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.isAsyncExecEvvm
+            params1.nonceEVVM
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -645,90 +386,23 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.signatureNameService,
             params1.priorityFee,
             params1.nonceEVVM,
-            params1.isAsyncExecEvvm,
             params1.signatureEVVM
         );
 
         vm.stopPrank();
 
-        string memory customMetadata1 = nameService
+        string memory customMetadata2 = nameService
             .getSingleCustomMetadataOfIdentity(params1.identity, params1.key);
 
         assertEq(
-            customMetadata1,
-            CUSTOM_METADATA_VALUE_3,
-            "Error 1: custom metadata incorrectly removed"
+            customMetadata2,
+            CUSTOM_METADATA_VALUE_2,
+            "Error 2: custom metadata incorrectly removed"
         );
 
         assertEq(
             nameService.getCustomMetadataMaxSlotsOfIdentity(params1.identity),
             2,
-            "Error 1: custom metadata max slots incorrectly changed after removal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error 1: user balance incorrectly changed after removing custom metadata"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            amountReward1,
-            "Error 1: fisher balance incorrectly changed after removing custom metadata"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        _addBalance(params2.user, params2.priorityFee);
-
-        uint256 amountReward2 = (5 * evvm.getRewardAmount()) +
-            params2.priorityFee;
-
-        (
-            params2.signatureNameService,
-            params2.signatureEVVM
-        ) = _executeSig_nameService_removeCustomMetadata(
-            params2.user,
-            params2.identity,
-            params2.key,
-            params2.nonce,
-            params2.priorityFee,
-            params2.nonceEVVM,
-            params2.isAsyncExecEvvm
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.removeCustomMetadata(
-            params2.user.Address,
-            params2.identity,
-            params2.key,
-            params2.nonce,
-            params2.signatureNameService,
-            params2.priorityFee,
-            params2.nonceEVVM,
-            params2.isAsyncExecEvvm,
-            params2.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata2 = nameService
-            .getSingleCustomMetadataOfIdentity(params2.identity, params2.key);
-
-        assertEq(
-            customMetadata2,
-            CUSTOM_METADATA_VALUE_3,
-            "Error 2: custom metadata incorrectly removed"
-        );
-
-        assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity(params2.identity),
-            1,
             "Error 2: custom metadata max slots incorrectly changed after removal"
         );
 
@@ -743,7 +417,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
 
         assertEq(
             evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            amountReward1 + amountReward2,
+             amountReward1,
             "Error 2: fisher balance incorrectly changed after removing custom metadata"
         );
     }

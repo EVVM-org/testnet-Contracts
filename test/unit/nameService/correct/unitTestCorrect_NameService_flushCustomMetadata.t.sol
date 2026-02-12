@@ -42,7 +42,6 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
@@ -50,6 +49,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            444,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -70,8 +70,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
-            ),
-            true
+            )
         );
         _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
@@ -82,8 +81,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6
-            ),
-            true
+            )
         );
         _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
@@ -94,8 +92,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8
-            ),
-            true
+            )
         );
     }
 
@@ -121,70 +118,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    function test__unit_correct__flushCustomMetadata_noStaker_noPriorityFee_sync()
-        external
-    {
-        Params memory params = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            nonce: 100010001,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params.user, params.identity, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _executeSig_nameService_flushCustomMetadata(
-            params.user,
-            params.identity,
-            params.nonce,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.flushCustomMetadata(
-            params.user.Address,
-            params.identity,
-            params.nonce,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm,
-            params.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata(params.identity),
-            0,
-            "amount of custom metadata after flushCustomMetadata is incorrect"
-        );
-
-        assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "user balance after flushCustomMetadata is incorrect"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "fisher balance after flushCustomMetadata is incorrect"
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata_noStaker_noPriorityFee_async()
+    function test__unit_correct__flushCustomMetadata_noStaker_noPriorityFee()
         external
     {
         Params memory params = Params({
@@ -194,7 +128,6 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 1001,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -208,8 +141,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             params.identity,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -221,7 +153,6 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
@@ -245,71 +176,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-
-    function test__unit_correct__flushCustomMetadata_noStaker_priorityFee_sync()
-        external
-    {
-        Params memory params = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            nonce: 100010001,
-            signatureNameService: "",
-            priorityFee: 0.0001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params.user, params.identity, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _executeSig_nameService_flushCustomMetadata(
-            params.user,
-            params.identity,
-            params.nonce,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.flushCustomMetadata(
-            params.user.Address,
-            params.identity,
-            params.nonce,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm,
-            params.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata(params.identity),
-            0,
-            "amount of custom metadata after flushCustomMetadata is incorrect"
-        );
-
-        assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "user balance after flushCustomMetadata is incorrect"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "fisher balance after flushCustomMetadata is incorrect"
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata_noStaker_priorityFee_async()
+    function test__unit_correct__flushCustomMetadata_noStaker_priorityFee()
         external
     {
         Params memory params = Params({
@@ -319,7 +186,6 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService: "",
             priorityFee: 0.0001 ether,
             nonceEVVM: 1001,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -333,8 +199,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             params.identity,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -346,7 +211,6 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
@@ -370,7 +234,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushCustomMetadata_staker_noPriorityFee_sync()
+    function test__unit_correct__flushCustomMetadata_staker_noPriorityFee()
         external
     {
         Params memory params = Params({
@@ -379,10 +243,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             nonce: 100010001,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            isAsyncExecEvvm: false,
+            nonceEVVM: 1001,
             signatureEVVM: ""
         });
 
@@ -400,8 +261,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             params.identity,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -413,7 +273,6 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
@@ -438,142 +297,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_correct__flushCustomMetadata_staker_noPriorityFee_async()
-        external
-    {
-        Params memory params = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            nonce: 100010001,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: 1001,
-            isAsyncExecEvvm: true,
-            signatureEVVM: ""
-        });
-
-        uint256 sizeOfCustomMetadata = nameService.getAmountOfCustomMetadata(
-            params.identity
-        );
-
-        _addBalance(params.user, params.identity, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _executeSig_nameService_flushCustomMetadata(
-            params.user,
-            params.identity,
-            params.nonce,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.flushCustomMetadata(
-            params.user.Address,
-            params.identity,
-            params.nonce,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm,
-            params.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata(params.identity),
-            0,
-            "amount of custom metadata after flushCustomMetadata is incorrect"
-        );
-
-        assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "user balance after flushCustomMetadata is incorrect"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * sizeOfCustomMetadata) +
-                params.priorityFee,
-            "fisher balance after flushCustomMetadata is incorrect"
-        );
-    }
-
-
-    function test__unit_correct__flushCustomMetadata_staker_priorityFee_sync()
-        external
-    {
-        Params memory params = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            nonce: 100010001,
-            signatureNameService: "",
-            priorityFee: 0.0001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
-
-        uint256 sizeOfCustomMetadata = nameService.getAmountOfCustomMetadata(
-            params.identity
-        );
-
-        _addBalance(params.user, params.identity, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _executeSig_nameService_flushCustomMetadata(
-            params.user,
-            params.identity,
-            params.nonce,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.flushCustomMetadata(
-            params.user.Address,
-            params.identity,
-            params.nonce,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm,
-            params.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        assertEq(
-            nameService.getAmountOfCustomMetadata(params.identity),
-            0,
-            "amount of custom metadata after flushCustomMetadata is incorrect"
-        );
-
-        assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "user balance after flushCustomMetadata is incorrect"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * sizeOfCustomMetadata) +
-                params.priorityFee,
-            "fisher balance after flushCustomMetadata is incorrect"
-        );
-    }
-
-    function test__unit_correct__flushCustomMetadata_staker_priorityFee_async()
+    function test__unit_correct__flushCustomMetadata_staker_priorityFee()
         external
     {
         Params memory params = Params({
@@ -583,7 +307,6 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             signatureNameService: "",
             priorityFee: 0.0001 ether,
             nonceEVVM: 1001,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -601,8 +324,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             params.identity,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -614,7 +336,6 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 

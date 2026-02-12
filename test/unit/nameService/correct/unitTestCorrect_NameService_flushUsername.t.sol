@@ -42,7 +42,6 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
@@ -50,6 +49,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            444,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -70,8 +70,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
-            ),
-            true
+            )
         );
         _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
@@ -82,8 +81,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6
-            ),
-            true
+            )
         );
         _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
@@ -94,8 +92,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8
-            ),
-            true
+            )
         );
     }
 
@@ -120,78 +117,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    function test__unit_correct__flushUsername__noStaker_noPriorityFee_sync()
-        external
-    {
-        Params memory params = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonce: 110010011,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params.user, params.username, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _executeSig_nameService_flushUsername(
-            params.user,
-            params.username,
-            params.nonce,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
-        );
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            params.username
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.flushUsername(
-            params.user.Address,
-            params.username,
-            params.nonce,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm,
-            params.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, uint256 expirationDate) = nameService
-            .getIdentityBasicMetadata(params.username);
-
-        assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expirationDate, 0, "username expire date should be flushed");
-
-        assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "username owner balance should be zeroed"
-        );
-        assertEq(
-            evvm.getBalance(
-                FISHER_NO_STAKER.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
-                params.priorityFee,
-            "fisher no staker balance should be increased correctly"
-        );
-    }
-
-    function test__unit_correct__flushUsername__noStaker_noPriorityFee_async()
+    function test__unit_correct__flushUsername__noStaker_noPriorityFee()
         external
     {
         Params memory params = Params({
@@ -201,7 +127,6 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 1001,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -215,8 +140,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.username,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -232,7 +156,6 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
@@ -250,89 +173,14 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             "username owner balance should be zeroed"
         );
         assertEq(
-            evvm.getBalance(
-                FISHER_NO_STAKER.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
+            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
                 params.priorityFee,
             "fisher no staker balance should be increased correctly"
         );
     }
 
-
-    function test__unit_correct__flushUsername__noStaker_priorityFee_sync()
-        external
-    {
-        Params memory params = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonce: 110010011,
-            signatureNameService: "",
-            priorityFee: 0.001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params.user, params.username, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _executeSig_nameService_flushUsername(
-            params.user,
-            params.username,
-            params.nonce,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
-        );
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            params.username
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.flushUsername(
-            params.user.Address,
-            params.username,
-            params.nonce,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm,
-            params.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, uint256 expirationDate) = nameService
-            .getIdentityBasicMetadata(params.username);
-
-        assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expirationDate, 0, "username expire date should be flushed");
-
-        assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "username owner balance should be zeroed"
-        );
-        assertEq(
-            evvm.getBalance(
-                FISHER_NO_STAKER.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
-                params.priorityFee,
-            "fisher no staker balance should be increased correctly"
-        );
-    }
-
-    function test__unit_correct__flushUsername__noStaker_priorityFee_async()
+    function test__unit_correct__flushUsername__noStaker_priorityFee()
         external
     {
         Params memory params = Params({
@@ -342,7 +190,6 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             signatureNameService: "",
             priorityFee: 0.001 ether,
             nonceEVVM: 1001,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -356,8 +203,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.username,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -373,7 +219,6 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
@@ -391,17 +236,14 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             "username owner balance should be zeroed"
         );
         assertEq(
-            evvm.getBalance(
-                FISHER_NO_STAKER.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
+            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
                 params.priorityFee,
             "fisher no staker balance should be increased correctly"
         );
     }
 
-    function test__unit_correct__flushUsername__staker_noPriorityFee_sync()
+    function test__unit_correct__flushUsername__staker_noPriorityFee()
         external
     {
         Params memory params = Params({
@@ -410,10 +252,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            isAsyncExecEvvm: false,
+            nonceEVVM: 1001,
             signatureEVVM: ""
         });
 
@@ -427,8 +266,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.username,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -444,7 +282,6 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
@@ -462,160 +299,14 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             "username owner balance should be zeroed"
         );
         assertEq(
-            evvm.getBalance(
-                FISHER_STAKER.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
+            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
                 params.priorityFee,
             "fisher staker balance should be increased correctly"
         );
     }
 
-    function test__unit_correct__flushUsername__staker_noPriorityFee_async()
-        external
-    {
-        Params memory params = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonce: 110010011,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: 1001,
-            isAsyncExecEvvm: true,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params.user, params.username, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _executeSig_nameService_flushUsername(
-            params.user,
-            params.username,
-            params.nonce,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
-        );
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            params.username
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.flushUsername(
-            params.user.Address,
-            params.username,
-            params.nonce,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm,
-            params.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, uint256 expirationDate) = nameService
-            .getIdentityBasicMetadata(params.username);
-
-        assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expirationDate, 0, "username expire date should be flushed");
-
-        assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "username owner balance should be zeroed"
-        );
-        assertEq(
-            evvm.getBalance(
-                FISHER_STAKER.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
-                params.priorityFee,
-            "fisher staker balance should be increased correctly"
-        );
-    }
-
-
-    function test__unit_correct__flushUsername__staker_priorityFee_sync()
-        external
-    {
-        Params memory params = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonce: 110010011,
-            signatureNameService: "",
-            priorityFee: 0.001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            isAsyncExecEvvm: false,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params.user, params.username, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _executeSig_nameService_flushUsername(
-            params.user,
-            params.username,
-            params.nonce,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
-        );
-
-        uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
-            params.username
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.flushUsername(
-            params.user.Address,
-            params.username,
-            params.nonce,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm,
-            params.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (address user, uint256 expirationDate) = nameService
-            .getIdentityBasicMetadata(params.username);
-
-        assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expirationDate, 0, "username expire date should be flushed");
-
-        assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "username owner balance should be zeroed"
-        );
-        assertEq(
-            evvm.getBalance(
-                FISHER_STAKER.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
-                params.priorityFee,
-            "fisher staker balance should be increased correctly"
-        );
-    }
-
-    function test__unit_correct__flushUsername__staker_priorityFee_async()
-        external
-    {
+    function test__unit_correct__flushUsername__staker_priorityFee() external {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
@@ -623,7 +314,6 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             signatureNameService: "",
             priorityFee: 0.001 ether,
             nonceEVVM: 1001,
-            isAsyncExecEvvm: true,
             signatureEVVM: ""
         });
 
@@ -637,8 +327,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.username,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -654,7 +343,6 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
@@ -672,10 +360,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             "username owner balance should be zeroed"
         );
         assertEq(
-            evvm.getBalance(
-                FISHER_STAKER.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
+            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
                 params.priorityFee,
             "fisher staker balance should be increased correctly"

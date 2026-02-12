@@ -38,7 +38,6 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
@@ -63,6 +62,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
         _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            444,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -114,10 +114,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             nonce: input.nonce,
             signatureNameService: "",
             priorityFee: uint256(input.priorityFee),
-            nonceEVVM: input.isAsyncExecEvvm
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(USER.Address),
-            isAsyncExecEvvm: input.isAsyncExecEvvm,
+            nonceEVVM: input.nonceAsyncEVVM,
             signatureEVVM: ""
         });
 
@@ -133,8 +130,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.expiratonDate,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -147,7 +143,6 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();
@@ -210,10 +205,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             nonce: input.nonce,
             signatureNameService: "",
             priorityFee: uint256(input.priorityFee),
-            nonceEVVM: input.isAsyncExecEvvm
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(USER.Address),
-            isAsyncExecEvvm: input.isAsyncExecEvvm,
+            nonceEVVM: input.nonceAsyncEVVM,
             signatureEVVM: ""
         });
 
@@ -229,8 +221,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.expiratonDate,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -243,7 +234,6 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
         vm.stopPrank();

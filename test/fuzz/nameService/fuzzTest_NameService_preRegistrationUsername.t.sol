@@ -31,7 +31,6 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         uint256 nonce;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool isAsyncExecEvvm;
     }
 
     function _addBalance(
@@ -62,10 +61,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             lockNumber: input.lockNumber,
             nonce: input.nonce,
             priorityFee: input.priorityFee,
-            nonceEVVM: input.isAsyncExecEvvm
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            isAsyncExecEvvm: input.isAsyncExecEvvm
+            nonceEVVM: input.nonceAsyncEVVM
         });
 
         _addBalance(params.user, params.priorityFee);
@@ -79,8 +75,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                 params.lockNumber,
                 params.nonce,
                 params.priorityFee,
-                params.nonceEVVM,
-                params.isAsyncExecEvvm
+                params.nonceEVVM
             );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -94,7 +89,6 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             signatureNameServiceOne,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             signatureEvvmOne
         );
 
@@ -145,10 +139,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             lockNumber: input.lockNumber,
             nonce: input.nonce,
             priorityFee: input.priorityFee,
-            nonceEVVM: input.isAsyncExecEvvm
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            isAsyncExecEvvm: input.isAsyncExecEvvm
+            nonceEVVM: input.nonceAsyncEVVM
         });
 
         _addBalance(params.user, params.priorityFee);
@@ -162,8 +153,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                 params.lockNumber,
                 params.nonce,
                 params.priorityFee,
-                params.nonceEVVM,
-                params.isAsyncExecEvvm
+                params.nonceEVVM
             );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -177,7 +167,6 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             signatureNameServiceOne,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             signatureEvvmOne
         );
 

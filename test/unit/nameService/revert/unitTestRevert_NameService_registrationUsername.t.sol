@@ -126,7 +126,6 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             222,
-            true,
             signatureEVVM
         );
         vm.stopPrank();
@@ -175,8 +174,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
                 777,
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -189,7 +187,6 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
             signatureEVVM
         );
         vm.stopPrank();
@@ -238,8 +235,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
                 777,
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -252,7 +248,6 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
             signatureEVVM
         );
         vm.stopPrank();
@@ -301,8 +296,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
                 888,
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -315,7 +309,6 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
             signatureEVVM
         );
         vm.stopPrank();
@@ -364,8 +357,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
                 /* 🢃 different nameServiceNonce 🢃 */
                 67,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -378,7 +370,6 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
             signatureEVVM
         );
         vm.stopPrank();
@@ -427,8 +418,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
                 777,
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -441,7 +431,6 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
             signatureEVVM
         );
         vm.stopPrank();
@@ -469,6 +458,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             "test",
+            444,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -503,8 +493,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
                 777,
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -517,7 +506,6 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
             signatureEVVM
         );
         vm.stopPrank();
@@ -540,7 +528,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         );
     }
 
-    function test__unit_revert__registrationUsername__AsyncNonceAlreadyUsed()
+    function test__unit_revert__registrationUsername_NonceAlreadyUsed()
         external
     {
         _executeFn_nameService_preRegistrationUsername(
@@ -567,8 +555,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
                 /* 🢃 reuse nonce 111 🢃 */
                 111,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -582,7 +569,6 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
             signatureEVVM
         );
         vm.stopPrank();
@@ -631,8 +617,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
                 10101,
                 totalPriorityFeeAmount,
                 /* 🢃 different evvm nonce 🢃 */
-                67,
-                true
+                67
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -645,7 +630,6 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
             signatureEVVM
         );
         vm.stopPrank();
@@ -697,8 +681,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
                 777,
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -711,7 +694,6 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
             signatureEVVM
         );
         vm.stopPrank();

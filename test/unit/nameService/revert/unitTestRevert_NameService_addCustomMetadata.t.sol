@@ -48,6 +48,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
+            444,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -126,9 +127,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -137,7 +136,6 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -184,15 +182,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 customMetadata,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -201,7 +196,6 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -248,15 +242,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 customMetadata,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -265,7 +256,6 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -312,15 +302,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 string.concat(USERNAME, ">2"),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -329,7 +316,6 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -376,15 +362,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 /* 🢃 different nonce 🢃 */
                 nonce + 1,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(StateError.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
@@ -393,7 +376,6 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -424,7 +406,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         (
             uint256 totalPriceToAddCustomMetadata,
             uint256 totalPriorityFeeAmount
-         /* 🢃 different user (not owner) 🢃 */) = addBalance(
+        ) = /* 🢃 different user (not owner) 🢃 */ addBalance(
                 COMMON_USER_NO_STAKER_2,
                 0.0001 ether
             );
@@ -443,8 +425,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 customMetadata,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -459,7 +440,6 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -506,8 +486,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 customMetadata,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -521,7 +500,6 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -546,9 +524,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_revert__addCustomMetadata__AsyncNonceAlreadyUsed()
-        external
-    {
+    function test__unit_revert__addCustomMetadata_NonceAlreadyUsed() external {
         (
             uint256 totalPriceToAddCustomMetadata,
             uint256 totalPriorityFeeAmount
@@ -570,8 +546,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 customMetadata,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -585,7 +560,6 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -633,9 +607,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
                 /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1,
-                /* 🢃 different isAsyncExec 🢃 */
-                false
+                nonceEVVM + 1
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -649,7 +621,6 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -690,8 +661,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 customMetadata,
                 nonce,
                 0,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -705,7 +675,6 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             signatureNameService,
             0,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 

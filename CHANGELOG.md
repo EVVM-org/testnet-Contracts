@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.0.0] - [Unreleased]
 
-### Codename: "Ichiban Kasuga"
+### Codename: "Ichiban"
 
 ### Added
 
@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Update variable name `clowNumber` to `lockNumber` and `expireDate` to `expirationDate` for better clarity
   - Updated `NameServiceStructs` to be a library instead of an abstract contract for better modularity and reuse across services
   - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
+  - Now both `nonce` and `nonceEvvm` are async nonces managed by `State.sol` to prevent replay attacks in multi-service transactions, replacing the previous service-specific nonce management
 - **P2PSwap**:
   - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
 - **Staking**:

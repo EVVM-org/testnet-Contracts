@@ -36,7 +36,6 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
         bytes signatureNameService;
         uint256 priorityFee;
         uint256 nonceEVVM;
-        bool isAsyncExecEvvm;
         bytes signatureEVVM;
     }
 
@@ -44,6 +43,9 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
         _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            uint256(
+                0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+            ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -65,8 +67,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
                 ) + i,
                 uint256(
                     0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000
-                ) + i,
-                true
+                ) + i
             );
         }
     }
@@ -120,10 +121,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.isAsyncExecEvvm
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            isAsyncExecEvvm: input.isAsyncExecEvvm,
+            nonceEVVM: input.nonceAsyncEVVM,
             signatureEVVM: ""
         });
 
@@ -138,8 +136,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             params.key,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -152,7 +149,6 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 
@@ -220,10 +216,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.isAsyncExecEvvm
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            isAsyncExecEvvm: input.isAsyncExecEvvm,
+            nonceEVVM: input.nonceAsyncEVVM,
             signatureEVVM: ""
         });
 
@@ -238,8 +231,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             params.key,
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.isAsyncExecEvvm
+            params.nonceEVVM
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -252,7 +244,6 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             params.signatureNameService,
             params.priorityFee,
             params.nonceEVVM,
-            params.isAsyncExecEvvm,
             params.signatureEVVM
         );
 

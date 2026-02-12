@@ -60,6 +60,9 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             ),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             )
         );
 
@@ -68,12 +71,11 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             USERNAME,
             CUSTOM_METADATA_VALUE_0,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
-            ),
-            uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
-            true
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
+            )
         );
 
         _executeFn_nameService_addCustomMetadata(
@@ -81,12 +83,11 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             USERNAME,
             CUSTOM_METADATA_VALUE_1,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
-            ),
-            uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
             ),
-            true
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6
+            )
         );
 
         _executeFn_nameService_addCustomMetadata(
@@ -94,12 +95,11 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             USERNAME,
             CUSTOM_METADATA_VALUE_2,
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6
-            ),
-            uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7
             ),
-            true
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8
+            )
         );
     }
 
@@ -170,7 +170,6 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -218,8 +217,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 USERNAME,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -235,7 +233,6 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -283,8 +280,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 "differentUsername",
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -300,7 +296,6 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -348,8 +343,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 /* 🢃 different nonce 🢃 */
                 nonce + 1,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -365,7 +359,6 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -414,8 +407,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 USERNAME,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -432,7 +424,6 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -482,8 +473,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 USERNAME,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -499,7 +489,6 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -565,8 +554,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 invalidUsername,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -582,7 +570,6 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -613,7 +600,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
     }
 
 
-    function test__unit_revert__flushUsername__AsyncNonceAlreadyUsed() external {
+    function test__unit_revert__flushUsername_NonceAlreadyUsed() external {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
@@ -633,8 +620,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 USERNAME,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -650,7 +636,6 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -699,9 +684,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
                 /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1,
-                /* 🢃 different isAsyncExec 🢃 */
-                false
+                nonceEVVM + 1
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -717,7 +700,6 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -760,8 +742,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 USERNAME,
                 nonce,
                 0,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -777,7 +758,6 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             signatureNameService,
             0,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 

@@ -50,6 +50,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
+            444,
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -129,7 +130,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -174,8 +174,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 USERNAME,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -191,7 +190,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -236,8 +234,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 "differentUsername",
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -253,7 +250,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -298,8 +294,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 /* 🢃 different nonce 🢃 */
                 nonce + 67,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -315,7 +310,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -376,8 +370,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 invalidUsername,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -390,7 +383,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -426,8 +418,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 USERNAME,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -444,7 +435,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -491,7 +481,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 nonceLoopA + i,
                 0,
                 nonceLoopB + i,
-                true,
                 COMMON_USER_NO_STAKER_3
             );
         }
@@ -512,8 +501,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 USERNAME,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -529,7 +517,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -555,7 +542,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
     }
 
 
-    function test__unit_revert__renewUsername__AsyncNonceAlreadyUsed() external {
+    function test__unit_revert__renewUsername_NonceAlreadyUsed() external {
         (
             uint256 totalRenewalAmount,
             uint256 totalPriorityFeeAmount
@@ -575,8 +562,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 USERNAME,
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -592,7 +578,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -637,9 +622,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
                 /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1,
-                /* 🢃 different isAsyncExec 🢃 */
-                false
+                nonceEVVM + 1
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -655,7 +638,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
@@ -693,8 +675,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 USERNAME,
                 nonce,
                 0,
-                nonceEVVM,
-                true
+                nonceEVVM
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -710,7 +691,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             signatureNameService,
             0,
             nonceEVVM,
-            true,
             signatureEVVM
         );
 
