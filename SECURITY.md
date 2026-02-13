@@ -5,7 +5,6 @@
 | Version | Supported          |
 | ------- | ------------------ |
 | 3.0.x   | :white_check_mark: |
-| 2.3.x   | :white_check_mark: |
 | < 2.3   | :x:                |
 
 ## Reporting a Vulnerability
@@ -24,7 +23,7 @@ Instead, please report vulnerabilities through one of these channels:
    - Provide detailed information about the vulnerability
 
 2. **Email**
-   - Send an email to: `security@evvm.dev` (replace with your actual security email)
+   - Send an email to: `jistro@evvm.dev` (replace with your actual security email)
    - Use the subject line: `[SECURITY] EVVM Vulnerability Report`
 
 ### What to Include
@@ -37,7 +36,7 @@ Please include the following information in your report:
   - [ ] Name Service (`nameService/`)
   - [ ] Staking (`staking/`)
   - [ ] Treasury (`treasury/`)
-  - [ ] State (`State.sol`)
+  - [ ] State (`state/`)
   - [ ] Library (`library/`)
   - [ ] CLI Tools (`cli/`)
   - [ ] Other: _______________

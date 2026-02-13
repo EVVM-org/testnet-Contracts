@@ -17,6 +17,7 @@
 ## Related Component(s)
 <!-- Select the component(s) affected -->
 - [ ] EVVM Core (`evvm/`)
+- [ ] State (`state/`)
 - [ ] Name Service (`nameService/`)
 - [ ] Staking (`staking/`)
 - [ ] Treasury (`treasury/`)

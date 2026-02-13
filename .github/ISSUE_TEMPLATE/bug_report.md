@@ -13,6 +13,7 @@ A clear and concise description of what the bug is.
 ## Affected Component
 <!-- Select the component(s) affected -->
 - [ ] EVVM Core (`evvm/`)
+- [ ] State (`state/`)
 - [ ] Name Service (`nameService/`)
 - [ ] Staking (`staking/`)
 - [ ] Treasury (`treasury/`)
