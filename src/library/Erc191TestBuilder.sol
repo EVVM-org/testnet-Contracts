@@ -436,6 +436,34 @@ library Erc191TestBuilder {
     }
 
     //-----------------------------------------------------------------------------------
+    // P2PSwap functions
+    //-----------------------------------------------------------------------------------
+
+    function buildMessageSignedForStateTest(
+        uint256 evvmID,
+        address servicePointer,
+        string memory testA,
+        uint256 testB,
+        address testC,
+        bool testD,
+        uint256 nonce,
+        bool isAsyncExec
+    ) internal pure returns (bytes32) {
+        return
+            buildHashForSign(
+                AdvancedStrings.buildSignaturePayload(
+                    evvmID,
+                    servicePointer,
+                    keccak256(
+                        abi.encode("StateTest", testA, testB, testC, testD)
+                    ),
+                    nonce,
+                    isAsyncExec
+                )
+            );
+    }
+
+    //-----------------------------------------------------------------------------------
     // General functions
     //-----------------------------------------------------------------------------------
 

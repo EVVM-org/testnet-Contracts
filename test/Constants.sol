@@ -1074,6 +1074,62 @@ abstract contract Constants is Test {
 
         vm.stopPrank();
     }
+
+    function _executeSig_state_test(
+        AccountData memory user,
+        address servicePointer,
+        string memory testA,
+        uint256 testB,
+        address testC,
+        bool testD,
+        uint256 nonce,
+        bool isAsyncExec
+    ) internal virtual returns (bytes memory signatureEVVM) {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForStateTest(
+                evvm.getEvvmID(),
+                servicePointer,
+                testA,
+                testB,
+                testC,
+                testD,
+                nonce,
+                isAsyncExec
+            )
+        );
+        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
+    }
+
+    function _executeFn_state_test(
+        AccountData memory user,
+        address servicePointer,
+        string memory testA,
+        uint256 testB,
+        address testC,
+        bool testD,
+        uint256 nonce,
+        bool isAsyncExec
+    ) internal virtual {
+        bytes memory signature = _executeSig_state_test(
+            user,
+            servicePointer,
+            testA,
+            testB,
+            testC,
+            testD,
+            nonce,
+            isAsyncExec
+        );
+
+        state.validateAndConsumeNonce(
+            user.Address,
+            keccak256(abi.encode("StateTest", testA, testB, testC, testD)),
+            nonce,
+            isAsyncExec,
+            signature
+        );
+    }
 }
 
 contract MockContractToStake is StakingServiceUtils {

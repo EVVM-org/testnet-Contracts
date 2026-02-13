@@ -45,4 +45,8 @@ library StateError {
     error ProposalForUserValidatorNotReady();
 
     error MsgSenderIsNotAContract();
+
+    error ProposalForEvvmAddressNotReady();
+
+    error InvalidServiceAddress();
 }

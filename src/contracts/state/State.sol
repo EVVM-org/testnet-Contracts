@@ -32,16 +32,15 @@ import {
 import {
     Admin
 } from "@evvm/testnet-contracts/library/utils/governance/Admin.sol";
-import {
-    CAUtils
-} from "@evvm/testnet-contracts/library/utils/CAUtils.sol";
+import {CAUtils} from "@evvm/testnet-contracts/library/utils/CAUtils.sol";
 
 contract State is Admin {
     uint256 private constant DELAY = 1 days;
 
     Evvm private evvm;
 
-    ProposalStructs.AddressTypeProposal public userValidatorAddress;
+    ProposalStructs.AddressTypeProposal userValidatorAddress;
+    ProposalStructs.AddressTypeProposal evvmAddress;
 
     /**
      * @notice Flexible nonce tracking for asynchronous transactions
@@ -62,8 +61,11 @@ contract State is Admin {
      */
     mapping(address user => uint256 nonce) private nextSyncNonce;
 
-    constructor(address evvmAddress, address initialAdmin) Admin(initialAdmin) {
-        evvm = Evvm(evvmAddress);
+    constructor(
+        address _evvmAddress,
+        address _initialAdmin
+    ) Admin(_initialAdmin) {
+        evvm = Evvm(_evvmAddress);
     }
 
     function validateAndConsumeNonce(
@@ -114,17 +116,15 @@ contract State is Admin {
         }
     }
 
-    function reserveAsyncNonce(
-        address user,
-        uint256 nonce,
-        address serviceAddress
-    ) external {
-        if (asyncNonce[user][nonce]) revert Error.AsyncNonceAlreadyUsed();
+    function reserveAsyncNonce(uint256 nonce, address serviceAddress) external {
+        if (serviceAddress == address(0)) revert Error.InvalidServiceAddress();
+        
+        if (asyncNonce[msg.sender][nonce]) revert Error.AsyncNonceAlreadyUsed();
 
-        if (asyncNonceReservedPointers[user][nonce] != address(0))
+        if (asyncNonceReservedPointers[msg.sender][nonce] != address(0))
             revert Error.AsyncNonceAlreadyReserved();
 
-        asyncNonceReservedPointers[user][nonce] = serviceAddress;
+        asyncNonceReservedPointers[msg.sender][nonce] = serviceAddress;
     }
 
     function revokeAsyncNonce(address user, uint256 nonce) external {
@@ -134,6 +134,71 @@ contract State is Admin {
             revert Error.AsyncNonceNotReserved();
 
         asyncNonceReservedPointers[user][nonce] = address(0);
+    }
+
+    function proposeUserValidator(address newValidator) external onlyAdmin {
+        userValidatorAddress.proposal = newValidator;
+        userValidatorAddress.timeToAccept = block.timestamp + DELAY;
+    }
+
+    function cancelUserValidatorProposal() external onlyAdmin {
+        userValidatorAddress.proposal = address(0);
+        userValidatorAddress.timeToAccept = 0;
+    }
+
+    function acceptUserValidatorProposal() external onlyAdmin {
+        if (block.timestamp < userValidatorAddress.timeToAccept)
+            revert Error.ProposalForUserValidatorNotReady();
+
+        userValidatorAddress.current = userValidatorAddress.proposal;
+        userValidatorAddress.proposal = address(0);
+        userValidatorAddress.timeToAccept = 0;
+    }
+
+    function proposeEvvmAddress(address newEvvm) external onlyAdmin {
+        evvmAddress.proposal = newEvvm;
+        evvmAddress.timeToAccept = block.timestamp + DELAY;
+    }
+
+    function cancelEvvmAddressProposal() external onlyAdmin {
+        evvmAddress.proposal = address(0);
+        evvmAddress.timeToAccept = 0;
+    }
+
+    function acceptEvvmAddressProposal() external onlyAdmin {
+        if (block.timestamp < evvmAddress.timeToAccept)
+            revert Error.ProposalForEvvmAddressNotReady();
+
+        evvmAddress.current = evvmAddress.proposal;
+        evvmAddress.proposal = address(0);
+        evvmAddress.timeToAccept = 0;
+
+        evvm = Evvm(evvmAddress.current);
+    }
+
+    function getAsyncNonceReservation(
+        address user,
+        uint256 nonce
+    ) public view returns (address) {
+        return asyncNonceReservedPointers[user][nonce];
+    }
+
+    /*returns bnyte1
+            0x00 = available
+            0x01 = used
+            0x02 = reserved
+         */
+    function asyncNonceStatus(
+        address user,
+        uint256 nonce
+    ) public view returns (bytes1) {
+        if (asyncNonce[user][nonce]) {
+            return 0x01;
+        } else if (asyncNonceReservedPointers[user][nonce] != address(0)) {
+            return 0x02;
+        } else {
+            return 0x00;
+        }
     }
 
     /**
@@ -170,55 +235,24 @@ contract State is Admin {
         return address(evvm);
     }
 
-    function getAsyncNonceReservation(
-        address user,
-        uint256 nonce
-    ) public view returns (address) {
-        return asyncNonceReservedPointers[user][nonce];
+    function getEvvmAddressDetails()
+        public
+        view
+        returns (ProposalStructs.AddressTypeProposal memory)
+    {
+        return evvmAddress;
     }
 
-    function isAsyncNonceReserved(
-        address user,
-        uint256 nonce
-    ) public view returns (bool) {
-        return asyncNonceReservedPointers[user][nonce] != address(0);
+    function getUserValidatorAddress() public view returns (address) {
+        return userValidatorAddress.current;
     }
 
-    /*returns bnyte1
-            0x00 = available
-            0x01 = used
-            0x02 = reserved
-         */
-    function asyncNonceStatus(
-        address user,
-        uint256 nonce
-    ) public view returns (bytes1) {
-        if (asyncNonce[user][nonce]) {
-            return 0x01;
-        } else if (asyncNonceReservedPointers[user][nonce] != address(0)) {
-            return 0x02;
-        } else {
-            return 0x00;
-        }
-    }
-
-    function proposeUserValidator(address newValidator) external onlyAdmin {
-        userValidatorAddress.proposal = newValidator;
-        userValidatorAddress.timeToAccept = block.timestamp + DELAY;
-    }
-
-    function cancelUserValidatorProposal() external onlyAdmin {
-        userValidatorAddress.proposal = address(0);
-        userValidatorAddress.timeToAccept = 0;
-    }
-
-    function acceptUserValidatorProposal() external onlyAdmin {
-        if (block.timestamp < userValidatorAddress.timeToAccept)
-            revert Error.ProposalForUserValidatorNotReady();
-
-        userValidatorAddress.current = userValidatorAddress.proposal;
-        userValidatorAddress.proposal = address(0);
-        userValidatorAddress.timeToAccept = 0;
+    function getUserValidatorAddressDetails()
+        public
+        view
+        returns (ProposalStructs.AddressTypeProposal memory)
+    {
+        return userValidatorAddress;
     }
 
     function canExecuteUserTransaction(
