@@ -3,19 +3,10 @@
 
 pragma solidity ^0.8.0;
 /**
- * @title ErrorsLib
+ * @title Staking Error Library
  * @author Mate Labs
- * @notice Library containing all custom error definitions for the Staking contract
- * @dev This library is exclusive to the Staking.sol contract and provides descriptive
- * error types for better gas efficiency and debugging compared to revert strings.
- *
- * Error Categories:
- * - Access Control: Permission and authorization errors
- * - Signature Verification: EIP-191 signature validation errors
- * - Presale Staking: Presale-specific staking limitations
- * - Public Staking: General staking state errors
- * - Service Staking: Smart contract (service) staking errors
- * - Time Lock: Time-delayed governance and cooldown errors
+ * @notice Custom errors for Staking.sol
+ * @dev Gas-efficient errors for Staking.sol. State.sol validates signatures, Evvm.sol processes payments.
  */
 
 library StakingError {
@@ -23,66 +14,66 @@ library StakingError {
     /// Access Control Errors
     /// ▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀
 
-    /// @dev Thrown when a non-admin address attempts to call an admin-only function
+    /// @dev Thrown when non-admin calls admin-only function (onlyOwner)
     error SenderIsNotAdmin();
 
-    /// @dev Thrown when a non-golden-fisher address attempts to call a golden fisher function
+    /// @dev Thrown when non-goldenFisher attempts goldenStaking (sync nonces with Evvm.sol)
     error SenderIsNotGoldenFisher();
 
-    /// @dev Thrown when a non-proposed-admin address attempts to accept an admin proposal
+    /// @dev Thrown when non-proposed admin attempts acceptNewAdmin (1d delay)
     error SenderIsNotProposedAdmin();
 
     ///▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀
     /// Presale Staking Errors
     ///▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀
 
-    /// @dev Thrown when presale staking is attempted while disabled or when public staking is active
+    /// @dev Thrown when presale staking attempted while disabled (allowPresaleStaking.flag == false)
     error PresaleStakingDisabled();
 
-    /// @dev Thrown when a presale user tries to stake more than the 2-staking limit
+    /// @dev Thrown when presale user tries to stake beyond 2-token cap
     error UserPresaleStakerLimitExceeded();
 
-    /// @dev Thrown when a non-presale-registered address attempts presale staking
+    /// @dev Thrown when non-whitelisted user attempts presaleStaking (max 800 presale stakers)
     error UserIsNotPresaleStaker();
 
-    /// @dev Thrown when attempting to add more presale stakers beyond the 800 limit
+    /// @dev Thrown when adding presale staker beyond 800 limit (LIMIT_PRESALE_STAKER)
     error LimitPresaleStakersExceeded();
 
     ///▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀
     /// Public Staking Errors
     ///▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀
 
-    /// @dev Thrown when public staking is attempted while the feature is disabled
+    /// @dev Thrown when public staking attempted while disabled (allowPublicStaking.flag == false). Uses State.sol async nonces.
     error PublicStakingDisabled();
 
     ///Service Staking Errors
 
-    /// @dev Thrown when a non-contract address attempts to call a service-only function
+    /// @dev Thrown when EOA calls service-only function (onlyCA checks code size)
     error AddressIsNotAService();
 
-    /// @dev Thrown when the user address doesn't match the service address in staking metadata
+    /// @dev Thrown when service stakes for wrong user (user must equal service address)
     error UserAndServiceMismatch();
 
-    /// @dev Thrown when confirmServiceStaking is called by a different address than prepareServiceStaking
+    /// @dev Thrown when confirmServiceStaking caller != prepareServiceStaking caller
     error AddressMismatch();
 
-    /// @dev Thrown when the payment amount doesn't match the required staking cost
-    /// @param requiredAmount The exact amount of Principal Tokens that should have been transferred
+    /// @dev Thrown when Principal Token transfer != PRICE_OF_STAKING * amountOfStaking (via Evvm.caPay)
+    /// @param requiredAmount Exact Principal Tokens needed
     error ServiceDoesNotFulfillCorrectStakingAmount(uint256 requiredAmount);
 
-    /// @dev Thrown when confirmServiceStaking is not called in the same transaction as prepareServiceStaking
+    /// @dev Thrown when confirm timestamp != prepare timestamp (atomic 3-step process required)
     error ServiceDoesNotStakeInSameTx();
 
     ///▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀
     /// Time Lock Errors
     ///▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀
 
-    /// @dev Thrown when a user attempts to stake before their cooldown period expires
+    /// @dev Thrown when re-staking before cooldown expires (secondsToUnlockStaking.current)
     error AddressMustWaitToStakeAgain();
 
-    /// @dev Thrown when a user attempts full unstaking before the 21-day lock period expires
+    /// @dev Thrown when full unstake attempted before lock period (secondsToUnllockFullUnstaking.current = 5 days)
     error AddressMustWaitToFullUnstake();
 
-    /// @dev Thrown when attempting to accept a proposal before the time delay has passed
+    /// @dev Thrown when accepting governance proposal before 1-day delay (TIME_TO_ACCEPT_PROPOSAL)
     error TimeToAcceptProposalNotReached();
 }

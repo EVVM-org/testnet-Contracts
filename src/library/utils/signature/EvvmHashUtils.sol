@@ -6,8 +6,25 @@ import {
     EvvmStructs
 } from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
 
+/**
+ * @title EvvmHashUtils
+ * @author Mate labs
+ * @notice Hash generation for Evvm.sol payment operations (pay/dispersePay)
+ * @dev Deterministic keccak256 hashes used with State.validateAndConsumeNonce for EIP-191 signature verification.
+ */
 library EvvmHashUtils {
 
+    /**
+     * @notice Generates hash for single payment operation
+     * @dev Hash: keccak256("pay", to_address, to_identity, token, amount, priorityFee, executor)
+     * @param to_address Direct recipient address
+     * @param to_identity Username for NameService resolution
+     * @param token Token address
+     * @param amount Token amount
+     * @param priorityFee Fee for executor
+     * @param executor Authorized executor (address(0) = any)
+     * @return Hash for State.sol validation
+     */
     function hashDataForPay(
         address to_address,
         string memory to_identity,
@@ -30,6 +47,16 @@ library EvvmHashUtils {
             );
     }
 
+    /**
+     * @notice Generates hash for batch payment operation
+     * @dev Hash: keccak256("dispersePay", toData, token, amount, priorityFee, executor). Single nonce for entire batch.
+     * @param toData Array of recipients and amounts
+     * @param token Token address
+     * @param amount Total amount (must equal sum)
+     * @param priorityFee Fee for executor
+     * @param executor Authorized executor (address(0) = any)
+     * @return Hash for State.sol validation
+     */
     function hashDataForDispersePay(
         EvvmStructs.DispersePayMetadata[] memory toData,
         address token,

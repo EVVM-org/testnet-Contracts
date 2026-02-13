@@ -6,19 +6,8 @@ pragma solidity ^0.8.0;
 /**
  * @title EvvmStructs
  * @author Mate labs
- * @notice Library of data structures used exclusively by the Evvm.sol core contract
- * @dev This contract defines the type system for the Evvm.sol contract,
- *      providing structured data types for payment operations, governance proposals,
- *      and system configuration. These structures are not shared with external services.
- *
- * Structure Categories:
- * - Payment Structures: BatchData, DisperseBatchData, CaBatchData for transaction processing
- * - Governance Structures: AddressTypeProposal, UintTypeProposal for time-delayed changes
- * - Metadata Structures: EvvmMetadata for system-wide configuration
- *
- * @custom:inheritance This contract is inherited by EvvmStorage, which is then inherited by Evvm.sol
- * @custom:scope Exclusive to the Evvm.sol contract and its storage layout
- * @custom:version 1.0.0
+ * @notice Data structures for Evvm.sol (payments, governance, metadata)
+ * @dev Payment structures validated via State.sol nonces. CA structures bypass nonces. Used by EvvmStorage then Evvm.sol.
  */
 
 library EvvmStructs {
@@ -26,18 +15,17 @@ library EvvmStructs {
 
     /**
      * @notice Data structure for single payment operations
-     * @dev Used in pay() and batchPay() functions for individual transfers
-     *
-     * @param from Address of the payment sender (signer of the transaction)
-     * @param to_address Direct recipient address (used if to_identity is empty)
-     * @param to_identity Username/identity to resolve via NameService (takes priority)
-     * @param token Address of the token to transfer (address(0) for ETH)
-     * @param amount Amount of tokens to transfer to the recipient
-     * @param priorityFee Additional fee paid to staker for transaction processing
-     * @param nonce Transaction nonce for replay protection
-     * @param isAsyncExec False for sync nonce (sequential), true for async nonce (flexible)
-     * @param executor Address authorized to execute this transaction (address(0) = any)
-     * @param signature EIP-191 signature authorizing this payment
+     * @dev Used in pay() and batchPay(). Validated via State.validateAndConsumeNonce.
+     * @param from Payment sender (signer)
+     * @param to_address Direct recipient
+     * @param to_identity Username via NameService (priority over to_address)
+     * @param token Token address (address(0) = ETH)
+     * @param amount Token amount
+     * @param priorityFee Fee for staker
+     * @param executor Authorized executor (address(0) = any)
+     * @param nonce Replay protection nonce
+     * @param isAsyncExec Nonce type (false=sync, true=async)
+     * @param signature EIP-191 signature
      */
     struct BatchData {
         address from;
@@ -53,18 +41,17 @@ library EvvmStructs {
     }
 
     /**
-     * @notice Data structure for single-source multi-recipient payment distributions
-     * @dev Used in dispersePay() for efficient batch distributions from one sender
-     *
-     * @param from Address of the payment sender (signer of the transaction)
-     * @param toData Array of recipient metadata with individual amounts and addresses
-     * @param token Address of the token to distribute (address(0) for ETH)
-     * @param totalAmount Total amount being distributed (must equal sum of toData amounts)
-     * @param priorityFee Fee paid to staker for processing the distribution
-     * @param nonce Transaction nonce for replay protection
-     * @param isAsyncExec False for sync nonce, true for async nonce
-     * @param executor Address authorized to execute this distribution (address(0) = any)
-     * @param signature EIP-191 signature authorizing this distribution
+     * @notice Single-source multi-recipient payment data
+     * @dev Used in dispersePay(). Single nonce for entire batch.
+     * @param from Payment sender (signer)
+     * @param toData Recipients and amounts
+     * @param token Token address (address(0) = ETH)
+     * @param totalAmount Total distributed (must equal sum)
+     * @param priorityFee Fee for staker
+     * @param executor Authorized executor (address(0) = any)
+     * @param nonce Replay protection nonce
+     * @param isAsyncExec Nonce type (false=sync, true=async)
+     * @param signature EIP-191 signature
      */
     struct DisperseBatchData {
         address from;
@@ -79,13 +66,12 @@ library EvvmStructs {
     }
 
     /**
-     * @notice Data structure for contract-to-address payments without signatures
-     * @dev Used in caPay() for authorized contract distributions
-     *
-     * @param from Address of the sending contract (must be a contract, not EOA)
-     * @param to Address of the token recipient
-     * @param token Address of the token to transfer (address(0) for ETH)
-     * @param amount Amount of tokens to transfer
+     * @notice Contract-to-address payment data
+     * @dev Used in caPay(). No State.sol validation (contract-authorized).
+     * @param from Sending contract (must be CA)
+     * @param to Recipient address
+     * @param token Token address (address(0) = ETH)
+     * @param amount Token amount
      */
     struct CaBatchData {
         address from;
@@ -95,13 +81,12 @@ library EvvmStructs {
     }
 
     /**
-     * @notice Data structure for contract-based multi-recipient distributions
-     * @dev Used in disperseCaPay() for batch distributions from contracts
-     *
-     * @param from Address of the sending contract (must be a contract, not EOA)
-     * @param toData Array of recipient metadata with individual amounts and addresses
-     * @param token Address of the token to distribute (address(0) for ETH)
-     * @param amount Total amount being distributed (must equal sum of toData amounts)
+     * @notice Contract-based multi-recipient distribution
+     * @dev Used in disperseCaPay(). No State.sol validation (contract-authorized).
+     * @param from Sending contract (must be CA)
+     * @param toData Recipients and amounts
+     * @param token Token address (address(0) = ETH)
+     * @param amount Total distributed (must equal sum)
      */
     struct DisperseCaBatchData {
         address from;
@@ -113,12 +98,10 @@ library EvvmStructs {
     //░▒▓█ Payment Metadata Structures ██████████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Recipient metadata for user-signed disperse payments
-     * @dev Used within DisperseBatchData to specify individual recipients
-     *
-     * @param amount Amount of tokens to send to this recipient
-     * @param to_address Direct recipient address (used if to_identity is empty)
-     * @param to_identity Username/identity to resolve via NameService (takes priority)
+     * @notice Recipient metadata for user-signed disperses
+     * @param amount Tokens to send
+     * @param to_address Direct recipient
+     * @param to_identity Username via NameService (priority)
      */
     struct DispersePayMetadata {
         uint256 amount;
@@ -127,12 +110,9 @@ library EvvmStructs {
     }
 
     /**
-     * @notice Recipient metadata for contract-based disperse payments
-     * @dev Used within DisperseCaBatchData to specify individual recipients
-     *      Simpler than DispersePayMetadata as identity resolution is not supported
-     *
-     * @param amount Amount of tokens to send to this recipient
-     * @param toAddress Direct recipient address
+     * @notice Recipient metadata for contract disperses
+     * @param amount Tokens to send
+     * @param toAddress Recipient address
      */
     struct DisperseCaPayMetadata {
         uint256 amount;
@@ -142,22 +122,16 @@ library EvvmStructs {
     //░▒▓█ System Configuration Structures ██████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Core metadata configuration for the EVVM instance
-     * @dev Contains all system-wide parameters for the EVVM ecosystem
-     *
-     * Economic Model:
-     * - reward: Base Principal Tokens distributed per successful transaction
-     * - eraTokens: Supply threshold that triggers the next reward halving
-     * - totalSupply: Current total supply tracking for era calculations
-     *
-     * @param EvvmName Human-readable name of this EVVM instance
-     * @param EvvmID Unique identifier used in signature verification to prevent cross-chain replay
-     * @param principalTokenName Full name of the principal token (customizable)
-     * @param principalTokenSymbol Symbol of the principal token (customizable)
-     * @param principalTokenAddress Virtual address representing the Principal Token in balance mappings
-     * @param totalSupply Current total supply of principal tokens in circulation
-     * @param eraTokens Token supply threshold for next reward halving era
-     * @param reward Current reward amount in Principal Tokens per successful transaction
+     * @notice Core metadata configuration for EVVM instance
+     * @dev EvvmID used by State.sol for cross-chain replay protection. Reward halvings occur at eraTokens supply thresholds.
+     * @param EvvmName Human-readable instance name
+     * @param EvvmID Unique ID for signature verification
+     * @param principalTokenName Principal token name
+     * @param principalTokenSymbol Principal token symbol
+     * @param principalTokenAddress Virtual token address
+     * @param totalSupply Current PT supply
+     * @param eraTokens Supply threshold for next era
+     * @param reward Current reward per transaction
      */
     struct EvvmMetadata {
         string EvvmName;

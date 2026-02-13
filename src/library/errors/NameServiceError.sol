@@ -4,146 +4,76 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title ErrorsLib
+ * @title NameServiceError - Error Definitions for NameService
  * @author Mate labs
- * @notice Library containing custom error definitions exclusively for the NameService.sol contract
- * @dev This library defines all custom errors used by the NameService.sol contract.
- *      Custom errors are more gas-efficient than require statements with strings
- *      and provide better error handling in client applications.
- *
- * Error Categories:
- * - Access Control: Errors related to ownership and admin permissions
- * - Validation: Errors for invalid usernames, signatures, and input validation
- * - Registration: Errors specific to username registration and pre-registration
- * - Marketplace: Errors for offer management and username trading
- * - Metadata: Errors for custom metadata operations
- * - Time-Lock: Errors for governance and renewal timing
- *
- * @custom:scope Exclusive to the NameService.sol contract
- * @custom:security All errors provide clear failure reasons without exposing sensitive data
+ * @notice Custom errors for NameService.sol
+ * @dev Gas-efficient errors used exclusively by NameService.sol. Works with State.sol (nonce) and Evvm.sol (payment).
  */
 library NameServiceError {
     //█ Access Control Errors ███████████████████████████████████████████████████
 
-    /**
-     * @notice Thrown when a function restricted to admin is called by a non-admin address
-     * @dev Used in functions with the `onlyAdmin` modifier
-     */
+    /// @dev Thrown when non-admin calls admin-only function (onlyAdmin modifier)
     error SenderIsNotAdmin();
 
-    /**
-     * @notice Thrown when an operation is attempted by someone other than the username owner
-     * @dev Used in functions that modify username data or accept offers
-     */
+    /// @dev Thrown when non-owner attempts to modify username or accept offers
     error UserIsNotOwnerOfIdentity();
 
-    /**
-     * @notice Thrown when an operation is attempted by someone other than the offer creator
-     * @dev Used in withdrawOffer to ensure only the offerer can withdraw their own offer
-     */
+    /// @dev Thrown when non-creator attempts withdrawOffer
     error UserIsNotOwnerOfOffer();
 
-    /**
-     * @notice Thrown when the proposed admin tries to accept before meeting requirements
-     * @dev Part of the time-delayed admin transfer mechanism
-     */
+    /// @dev Thrown when non-proposed admin attempts acceptNewAdmin before timelock
     error SenderIsNotProposedAdmin();
 
     //█ Validation Errors ███████████████████████████████████████████████████████
 
-    /**
-     * @notice Thrown when a username doesn't meet format requirements
-     * @dev Username must be 4+ characters, start with letter, contain only alphanumeric
-     */
+    /// @dev Thrown when username format invalid (4+ chars, start with letter, alphanumeric)
     error InvalidUsername();
 
-    /**
-     * @notice Thrown when an amount parameter is zero but should be positive
-     * @dev Used in makeOffer to ensure offers have value
-     */
+    /// @dev Thrown when amount == 0 (e.g., makeOffer requires value)
     error AmountMustBeGreaterThanZero();
 
-    /**
-     * @notice Thrown when a custom metadata key is invalid
-     * @dev Used when trying to remove metadata with a key that doesn't exist
-     */
+    /// @dev Thrown when removing non-existent custom metadata key
     error InvalidKey();
 
-    /**
-     * @notice Thrown when attempting to add empty custom metadata
-     * @dev Custom metadata value cannot be an empty string
-     */
+    /// @dev Thrown when custom metadata value == empty string
     error EmptyCustomMetadata();
 
-    /**
-     * @notice Thrown when a proposed address or configuration is invalid
-     * @dev Used in admin proposal functions
-     */
+    /// @dev Thrown when admin proposal address/config invalid
     error InvalidAdminProposal();
 
-    /**
-     * @notice Thrown when the EVVM address being proposed is invalid
-     * @dev Used when updating the EVVM contract integration address
-     */
+    /// @dev Thrown when proposed EVVM address invalid
     error InvalidEvvmAddress();
 
-    /**
-     * @notice Thrown when the withdrawal amount is invalid or exceeds available balance
-     * @dev Used in token withdrawal functions
-     */
+    /// @dev Thrown when withdrawal amount invalid or > balance
     error InvalidWithdrawAmount();
 
     //█ Registration and Time-Based Errors █████████████████████████████████████
 
-    /**
-     * @notice Thrown when attempting to register a username that is already taken
-     * @dev Usernames are unique and cannot be registered twice
-     */
+    /// @dev Thrown when attempting to register already-taken username
     error UsernameAlreadyRegistered();
 
-    /**
-     * @notice Thrown when the pre-registration doesn't exist or has expired
-     * @dev Pre-registration must be completed within 30 minutes and by the same user
-     */
+    /// @dev Thrown when pre-registration doesn't exist or expired (30min window)
     error PreRegistrationNotValid();
 
-    /**
-     * @notice Thrown when a timestamp/date is set to before the current time
-     * @dev Used for offer expiration dates and other future-dated operations
-     */
+    /// @dev Thrown when timestamp < current time (offer expiration, future ops)
     error CannotBeBeforeCurrentTime();
 
-    /**
-     * @notice Thrown when attempting operations on an expired username
-     * @dev Username ownership expires after the expireDate timestamp
-     */
+    /// @dev Thrown when operating on expired username (after expireDate)
     error OwnershipExpired();
 
-    /**
-     * @notice Thrown when trying to renew a username beyond the maximum allowed period
-     * @dev Usernames can only be renewed up to 100 years in advance
-     */
+    /// @dev Thrown when renewing > 100 years in advance
     error RenewalTimeLimitExceeded();
 
-    /**
-     * @notice Thrown when attempting to execute a time-locked action prematurely
-     * @dev Used in governance functions with time-delay requirements
-     */
+    /// @dev Thrown when time-locked governance action attempted prematurely
     error LockTimeNotExpired();
 
     //█ Marketplace and Offer Errors ███████████████████████████████████████████
 
-    /**
-     * @notice Thrown when trying to accept or interact with an expired or non-existent offer
-     * @dev Offers expire at their expireDate timestamp or when offerer is address(0)
-     */
+    /// @dev Thrown when accepting/interacting with expired/non-existent offer (offerer == 0)
     error OfferInactive();
 
     //█ Identity Type Errors ██████████████████████████████████████████████████
 
-    /**
-     * @notice Thrown when an operation requiring a fully registered username is attempted on a pre-registration
-     * @dev Pre-registrations have flagNotAUsername = 0x01, full usernames have 0x00
-     */
+    /// @dev Thrown when username operation attempted on pre-registration (flagNotAUsername: 0x01=pre-reg, 0x00=username)
     error IdentityIsNotAUsername();
 }

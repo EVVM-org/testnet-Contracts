@@ -11,53 +11,40 @@ import {
 } from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
 
 /**
- * @title EvvmStorage
+ * @title EvvmStorage - Storage Layout for EVVM Core
  * @author Mate labs
- * @notice Storage layout contract exclusively for the Evvm.sol core contract
- * @dev This contract inherits all structures from EvvmStructs and defines
- *      the storage layout used by the Evvm.sol proxy pattern implementation.
- *      All state variables declared here are used by Evvm.sol and its upgradeable
- *      implementation contracts.
- *
- * Storage Organization:
- * - Constants: System-wide immutable values
- * - External Addresses: Integration points with other contracts
- * - Governance State: Admin and proposal management
- * - Balance Management: User token balances and nonce tracking
- * - Configuration: System parameters and metadata
- *
- * @custom:inheritance Inherited by Evvm.sol, should not be deployed directly
- * @custom:scope Exclusive to Evvm.sol contract and its implementations
- * @custom:proxy Storage layout must remain consistent across upgrades
+ * @notice Storage layout for Evvm.sol proxy pattern
+ * @dev Storage layout for upgradeable Evvm.sol. Constants, external addresses (State, NameService, Treasury, Staking), governance, balance management, configuration. Append-only for upgrade safety.
  */
 
 abstract contract EvvmStorage {
     //░▒▓█ Constants ██████████████████████████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Sentinel address representing native ETH in token operations
-     * @dev address(0) is used to represent the native blockchain token (ETH, MATIC, etc.)
+     * @notice Sentinel for native ETH in token operations
+     * @dev address(0) represents native blockchain token
+     *      (ETH, MATIC, BNB, etc.)
      */
     address constant ETH_ADDRESS = address(0);
 
     /**
-     * @notice Flag value indicating an address is a registered staker
-     * @dev Used in stakerList mapping to mark addresses with staking privileges
-     *      Value of 0x01 indicates active staker status
+     * @notice Flag value for registered staker status
+     * @dev Used in stakerList mapping to mark addresses
+     *      Value 0x01 indicates active staker status
      */
     bytes1 constant FLAG_IS_STAKER = 0x01;
 
     /**
-     * @notice Time delay required before accepting admin change proposals
-     * @dev 1 day delay provides time for community review of admin changes
+     * @notice Time delay for admin change proposals
+     * @dev 1 day delay for community review of admin changes
      *      Used in proposeAdmin and acceptAdmin functions
      */
     uint256 constant TIME_TO_ACCEPT_PROPOSAL = 1 days;
 
     /**
-     * @notice Time delay required before accepting implementation upgrades
-     * @dev 30 day delay provides extended review period for critical contract upgrades
-     *      Used in proposeImplementation and acceptImplementation functions
+     * @notice Time delay for implementation upgrades
+     * @dev 30 day delay for review of critical upgrades
+     *      Used in proposeImplementation and accept functions
      */
     uint256 constant TIME_TO_ACCEPT_IMPLEMENTATION = 30 days;
 
@@ -89,47 +76,48 @@ abstract contract EvvmStorage {
     //░▒▓█ Token Whitelist Proposal State ██████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Address of the token pending whitelist approval
+     * @notice Token address pending whitelist approval
      * @dev Part of time-delayed token whitelisting mechanism
-     *      Set during prepareWhitelistToken(), cleared on acceptance
+     *      Set during prepareWhitelistToken(), cleared on
+     *      acceptance
      */
     address whitelistTokenToBeAdded_address;
 
     /**
-     * @notice Liquidity pool address for the token pending whitelist approval
-     * @dev Used to validate token has sufficient liquidity before whitelisting
-     *      Typically a Uniswap V3 pool address
+     * @notice Liquidity pool for pending whitelist token
+     * @dev Validates token has sufficient liquidity before
+     *      whitelisting (typically Uniswap V3 pool address)
      */
     address whitelistTokenToBeAdded_pool;
 
     /**
-     * @notice Timestamp when the pending token whitelist can be accepted
-     * @dev After this timestamp, the token can be officially whitelisted
-     *      Zero value indicates no pending whitelist proposal
+     * @notice Timestamp when pending token can be accepted
+     * @dev After this timestamp, token can be whitelisted
+     *      Zero value indicates no pending proposal
      */
     uint256 whitelistTokenToBeAdded_dateToSet;
 
     //░▒▓█ Proxy Implementation State ██████████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Address of the current active implementation contract
-     * @dev All non-matching function calls are delegated to this address
+     * @notice Address of current active implementation
+     * @dev All non-matching function calls delegated here
      *      Updated through time-delayed governance process
-     * @custom:proxy Slot used by assembly in fallback for delegatecall
+     * @custom:proxy Slot used by assembly in fallback
      */
     address currentImplementation;
 
     /**
-     * @notice Address of the proposed implementation for upgrade
-     * @dev Set by admin, becomes active after time delay via acceptImplementation()
-     *      Zero address indicates no pending upgrade proposal
+     * @notice Address of proposed implementation upgrade
+     * @dev Set by admin, becomes active after time delay via
+     *      acceptImplementation(). Zero = no pending upgrade
      */
     address proposalImplementation;
 
     /**
-     * @notice Timestamp after which the implementation upgrade can be accepted
-     * @dev Must be >= current timestamp to call acceptImplementation()
-     *      Zero value indicates no pending implementation proposal
+     * @notice Timestamp after which upgrade can be accepted
+     * @dev Must be >= current timestamp to call
+     *      acceptImplementation(). Zero = no pending proposal
      */
     uint256 timeToAcceptImplementation;
 
@@ -137,21 +125,27 @@ abstract contract EvvmStorage {
 
     /**
      * @notice Deadline for changing the EVVM ID
-     * @dev EVVM ID can only be changed within 24 hours of deployment or last change
-     *      Prevents unauthorized ID changes after initial configuration period
+     * @dev EVVM ID changeable within 24 hours of deployment
+     *      or last change. Prevents unauthorized ID changes
+     *      after initial configuration period.
      */
     uint256 windowTimeToChangeEvvmID;
 
     /**
-     * @notice Core metadata configuration for the EVVM instance
+     * @notice Core metadata configuration for EVVM instance
      * @dev Contains:
-     *      - EvvmName: Human-readable name of this EVVM instance
-     *      - EvvmID: Unique identifier used in signature verification
-     *      - principalTokenName/Symbol: Principal token details
-     *      - principalTokenAddress: Address representing the Principal Token in balances
-     *      - totalSupply: Current total supply of principal token
-     *      - eraTokens: Threshold for next reward halving era
+     *      - EvvmName: Human-readable name of this EVVM
+     *      - EvvmID: Unique ID used in signature validation
+     *      - principalTokenName/Symbol: Principal token info
+     *      - principalTokenAddress: Principal Token address
+     *      - totalSupply: Current total supply of token
+     *      - eraTokens: Threshold for next reward halving
      *      - reward: Current reward amount per transaction
+     *
+     * State.sol Integration:
+     * - EvvmID used by State.sol for signature validation
+     * - Part of EIP-191 signature payload in State
+     * - Prevents cross-chain replay attacks
      */
     EvvmStructs.EvvmMetadata evvmMetadata;
 

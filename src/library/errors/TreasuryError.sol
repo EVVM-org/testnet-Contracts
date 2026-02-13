@@ -3,39 +3,31 @@
 
 pragma solidity ^0.8.0;
 /**
- * @title ErrorsLib
+ * @title TreasuryError
  * @author Mate Labs
- * @notice Library containing all custom error definitions for the Treasury contract
- * @dev This library is exclusive to the Treasury.sol contract and provides descriptive
- * error types for deposit and withdrawal operations.
- *
- * Error Categories:
- * - Balance Errors: Insufficient funds for operations
- * - Deposit Errors: Invalid deposit amounts or configurations
- * - Withdrawal Restrictions: Token withdrawal limitations
+ * @notice Custom errors for Treasury.sol
+ * @dev Gas-efficient error definitions for deposit/withdrawal operations.
  */
 
 library TreasuryError {
     //█ Balance Errors ███████████████████████████████████████████████████████████████████████████████
 
-    /// @dev Thrown when a user attempts to withdraw more tokens than their available balance
+    /// @dev Thrown when withdrawal amount > user balance
     error InsufficientBalance();
 
     //█ Withdrawal Restriction Errors ████████████████████████████████████████████████████████████████
 
-    /// @dev Thrown when attempting to withdraw Principal Tokens through the Treasury
-    /// @notice Principal Tokens can only be transferred through EVVM pay operations, not direct withdrawal
+    /// @dev Thrown when attempting to withdraw Principal Token (must use EVVM pay operations)
     error PrincipalTokenIsNotWithdrawable();
 
     //█ Deposit Errors ███████████████████████████████████████████████████████████████████████████████
 
-    /// @dev Thrown when the deposit amount doesn't match msg.value for ETH deposits,
-    ///      or when msg.value is non-zero for ERC20 deposits
+    /// @dev Thrown when deposit amount != msg.value (ETH) or msg.value != 0 (ERC20)
     error InvalidDepositAmount();
 
-    /// @dev Thrown when attempting to deposit zero amount of tokens or ETH
+    /// @dev Thrown when deposit amount == 0
     error DepositAmountMustBeGreaterThanZero();
 
-    /// @dev Thrown when attempting to deposit blockchain native coin while also sending ERC20 tokens
+    /// @dev Thrown when attempting to deposit both native coin and ERC20 simultaneously
     error DepositCoinWithToken();
 }

@@ -25,20 +25,21 @@ pragma solidity ^0.8.0;
    ╚═╝   ╚══════╝╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚══════╝   ╚═╝   
  * @title Staking Mate contract
  * @author Mate labs
- * @notice This contract manages the staking mechanism for the EVVM ecosystem
- * @dev Handles presale staking, public staking, and service staking with time locks and signature verification
+ * @notice Staking mechanism for EVVM ecosystem validators
+
+ * Security Features:
+ * - EIP-191 signature verification via State.sol
+ * - Async/sync nonce-based replay protection
+ * - Time-locked administrative changes (1 day delay)
+ * - Atomic service staking (single tx requirement)
+ * - Cooldown periods prevent abuse
  *
- * The contract supports three types of staking:
- * 1. Golden Staking: Exclusive to the goldenFisher address
- * 2. Presale Staking: Limited to 800 presale users with 2 staking token limit
- * 3. Public Staking: Open to all users when enabled
- * 4. Service Staking: Allows smart contracts to stake on behalf of users
+ * History Tracking:
+ * - Complete transaction history per user
+ * - Records staking, unstaking, yield events
+ * - Used for cooldown calculations
+ * - Enables totalStaked snapshots
  *
- * Key features:
- * - Time-locked unstaking mechanisms
- * - Signature-based authorization
- * - Integration with EVVM core contract for payments and rewards
- * - Estimator integration for yield calculations
  */
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
@@ -164,10 +165,29 @@ contract Staking {
     }
 
     /**
-     * @notice One-time setup function for estimator and EVVM addresses
-     * @dev Can only be called once during contract initialization
-     * @param _estimator Address of the Estimator contract
-     * @param _evvm Address of the EVVM core contract
+     * @notice One-time initialization of system contracts
+     * @dev Sets Estimator, Evvm, and State contract addresses
+     *
+     * Setup Process:
+     * - Can only be called once (breaker protection)
+     * - Sets estimatorAddress.current
+     * - Sets EVVM_ADDRESS
+     * - Initializes evvm, estimator, state instances
+     * - Sets breaker to 0x00 (prevents re-init)
+     *
+     * Integration Setup:
+     * - State.sol: Nonce validation for all staking ops
+     * - Evvm.sol: Payment processing for staking tokens
+     * - Estimator.sol: Yield calculation for rewards
+     *
+     * Security:
+     * - One-time initialization via breaker flag
+     * - Must be called before any staking operations
+     * - No access control (assumed deployment context)
+     *
+     * @param _estimator Address of Estimator contract
+     * @param _evvm Address of Evvm core contract
+     * @param _state Address of State coordinator
      */
     function initializeSystemContracts(
         address _estimator,
@@ -186,11 +206,37 @@ contract Staking {
     }
 
     /**
-     * @notice Allows the golden fisher to stake/unstake with synchronized EVVM nonces
-     * @dev Only the golden fisher address can call this function
+     * @notice Golden fisher exclusive staking function
+     * @dev Unlimited staking with sync nonces for special
+     * privileges
+     *
+     * Golden Fisher Privileges:
+     * - Unlimited staking capacity (no 2-token limit)
+     * - Uses sync nonces (isAsyncExec = false)
+     * - Bypasses presale/public staking flags
+     * - Direct access without signature validation
+     *
+     * Sync Nonce Usage:
+     * - goldenFisher uses Evvm.sol sync nonces
+     * - isAsync = false in stakingBaseProcess
+     * - Nonces managed by Evvm.sol, not State.sol
+     * - Enables tight synchronization with Evvm ops
+     *
+     * Evvm.sol Integration:
+     * - Payment via makePay (if isStaking=true)
+     * - Cost: PRICE_OF_STAKING * amountOfStaking
+     * - Refund via makeCaPay (if isStaking=false)
+     * - signatureEvvm for Evvm.sol payment validation
+     *
+     * Staking Flow:
+     * - isStaking=true: Purchase staking tokens
+     * - isStaking=false: Unstake and refund
+     * - No cooldown or time lock restrictions
+     * - History recorded in userHistory
+     *
      * @param isStaking True for staking, false for unstaking
-     * @param amountOfStaking Amount of staking tokens to stake/unstake
-     * @param signatureEvvm Signature for the EVVM contract transaction
+     * @param amountOfStaking Number of staking tokens
+     * @param signatureEvvm Signature for Evvm.sol validation
      */
     function goldenStaking(
         bool isStaking,
@@ -215,15 +261,44 @@ contract Staking {
     }
 
     /**
-     * @notice Allows presale users to stake/unstake with a limit of 2 staking tokens
-     * @dev Only registered presale users can call this function when presale staking is enabled
-     * @param user Address of the user performing the staking operation
+     * @notice Presale whitelist staking with 2-token limit
+     * @dev Limited staking for registered presale addresses
+     *
+     * Presale Requirements:
+     * - allowPresaleStaking.flag must be true
+     * - allowPublicStaking.flag must be false
+     * - user must be in presale whitelist (isAllow)
+     * - Maximum 2 staking tokens per presale user
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash generated via StakingHashUtils
+     * - Prevents replay attacks
+     *
+     * Evvm.sol Integration:
+     * - Payment via stakingBaseProcess -> makePay
+     * - Cost: PRICE_OF_STAKING * 1 (fixed 1 token)
+     * - Refund via makeCaPay for unstaking
+     * - priorityFee_EVVM for faster processing
+     *
+     * Limit Enforcement:
+     * - isStaking=true: Requires current < 2
+     * - isStaking=false: Requires current > 0
+     * - stakingAmount updated after validation
+     *
+     * Usage:
+     * - Exclusive to presale phase
+     * - Cannot run with public staking
+     * - 800 total presale slots available
+     *
+     * @param user Address performing staking operation
      * @param isStaking True for staking, false for unstaking
-     * @param nonce Unique nonce for this staking operation
-     * @param signature Signature proving authorization for this staking operation
-     * @param priorityFee_EVVM Priority fee for the EVVM transaction
-     * @param nonceEvvm Nonce for the EVVM contract transaction
-     * @param signatureEvvm Signature for the EVVM contract transaction
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFee_EVVM Priority fee for transaction
+     * @param nonceEvvm Nonce for Evvm.sol payment
+     * @param signatureEvvm Signature for Evvm.sol payment
      */
     function presaleStaking(
         address user,
@@ -269,16 +344,44 @@ contract Staking {
     }
 
     /**
-     * @notice Allows any user to stake/unstake when public staking is enabled
-     * @dev Requires signature verification and handles nonce management
-     * @param user Address of the user performing the staking operation
+     * @notice Public staking open to all users
+     * @dev Unlimited staking when public phase enabled
+     *
+     * Public Requirements:
+     * - allowPublicStaking.flag must be true
+     * - No whitelist or user limits
+     * - Available to any address
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes user, isStaking, amountOfStaking
+     * - Prevents replay attacks
+     *
+     * Evvm.sol Integration:
+     * - Payment via stakingBaseProcess -> makePay
+     * - Cost: PRICE_OF_STAKING * amountOfStaking
+     * - Refund via makeCaPay for unstaking
+     * - priorityFee_EVVM for faster processing
+     *
+     * Staking Flexibility:
+     * - amountOfStaking: User-specified quantity
+     * - No per-user limits (unlike presale)
+     * - Subject to cooldown and time lock rules
+     *
+     * Time Locks:
+     * - Staking cooldown: secondsToUnlockStaking
+     * - Full unstake lock: secondsToUnllockFullUnstaking
+     * - Enforced in stakingBaseProcess
+     *
+     * @param user Address performing staking operation
      * @param isStaking True for staking, false for unstaking
-     * @param amountOfStaking Amount of staking tokens to stake/unstake
-     * @param nonce Unique nonce for this staking operation
-     * @param signature Signature proving authorization for this staking operation
-     * @param priorityFee_EVVM Priority fee for the EVVM transaction
-     * @param nonceEvvm Nonce for the EVVM contract transaction
-     * @param signatureEvvm Signature for the EVVM contract transaction
+     * @param amountOfStaking Number of staking tokens
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFee_EVVM Priority fee for transaction
+     * @param nonceEvvm Nonce for Evvm.sol payment
+     * @param signatureEvvm Signature for Evvm.sol payment
      */
     function publicStaking(
         address user,
@@ -312,20 +415,39 @@ contract Staking {
     }
 
     /**
-     * @notice Prepares a service/contract account for staking by recording pre-staking state
-     * @dev First step in the service staking process. Must be followed by payment via caPay and confirmServiceStaking in the same transaction
-     * @param amountOfStaking Amount of staking tokens the service intends to stake
+     * @notice Step 1: Prepare service (contract) staking
+     * @dev Records pre-staking state for atomic validation
      *
-     * Service Staking Process:
-     * 1. Call prepareServiceStaking(amount) - Records balances and metadata
-     * 2. Use EVVM.caPay() to transfer the required Principal Tokens to this contract
-     * 3. Call confirmServiceStaking() - Validates payment and completes staking
+     * Service Staking Process (ATOMIC - Same TX):
+     * 1. prepareServiceStaking: Record balances
+     * 2. Evvm.caPay: Transfer Principal Tokens
+     * 3. confirmServiceStaking: Validate and complete
      *
-     * @dev All three steps MUST occur in the same transaction or the staking will fail
-     * @dev CRITICAL WARNING: If the process is not completed properly (especially if caPay is called
-     *      but confirmServiceStaking is not), the Principal Tokens will remain locked in the staking
-     *      contract with no way to recover them. The service will lose the tokens permanently.
-     * @dev Only callable by contract accounts (services), not EOAs
+     * CRITICAL WARNING:
+     * - All 3 steps MUST occur in single transaction
+     * - If incomplete, tokens permanently locked
+     * - No recovery mechanism for failed process
+     * - Service loses tokens if not atomic
+     *
+     * Metadata Recorded:
+     * - service: msg.sender (contract address)
+     * - timestamp: block.timestamp (atomicity check)
+     * - amountOfStaking: Requested staking tokens
+     * - amountServiceBeforeStaking: Service PT balance
+     * - amountStakingBeforeStaking: Staking PT balance
+     *
+     * Evvm.sol Payment (Step 2):
+     * - Service must call Evvm.caPay after this
+     * - Transfer: PRICE_OF_STAKING * amountOfStaking
+     * - Recipient: address(this) (Staking contract)
+     * - Token: Principal Token from Evvm.sol
+     *
+     * Access Control:
+     * - onlyCA modifier: Only contracts allowed
+     * - Checks code size via assembly
+     * - EOAs rejected (size == 0)
+     *
+     * @param amountOfStaking Number of staking tokens to acquire
      */
     function prepareServiceStaking(uint256 amountOfStaking) external onlyCA {
         serviceStakingData = StakingStructs.ServiceStakingMetadata({
@@ -344,17 +466,44 @@ contract Staking {
     }
 
     /**
-     * @notice Confirms and completes the service staking operation after payment verification
-     * @dev Final step in service staking. Validates that payment was made correctly and completes the staking process
+     * @notice Step 3: Confirm service staking after payment
+     * @dev Validates payment and completes atomic staking
      *
-     * Validation checks:
-     * - Service balance decreased by the exact staking cost
-     * - Staking contract balance increased by the exact staking cost
-     * - Operation occurs in the same transaction as prepareServiceStaking
-     * - Caller matches the service that initiated the preparation
+     * Validation Checks:
+     * 1. Timestamp: Must equal prepareServiceStaking tx
+     *    - Ensures atomicity (same transaction)
+     *    - serviceStakingData.timestamp == block.timestamp
      *
-     * @dev Only callable by the same contract that called prepareServiceStaking
-     * @dev Must be called in the same transaction as prepareServiceStaking
+     * 2. Caller: Must match prepareServiceStaking caller
+     *    - serviceStakingData.service == msg.sender
+     *    - Prevents staking hijacking
+     *
+     * 3. Payment Amount: Validates exact transfer
+     *    - Service balance decreased by exact amount
+     *    - Staking balance increased by exact amount
+     *    - totalStakingRequired = PRICE_OF_STAKING *
+     *      amountOfStaking
+     *
+     * Evvm.sol Integration:
+     * - Validates caPay occurred between steps 1 and 3
+     * - Checks balance deltas via Evvm.getBalance
+     * - Token: evvm.getPrincipalTokenAddress()
+     * - Must be exact amount (no overpayment/underpayment)
+     *
+     * Completion:
+     * - Calls stakingBaseProcess on success
+     * - Records history with transaction type 0x01
+     * - Updates userHistory with staking event
+     * - Service becomes staker (isAddressStaker = true)
+     *
+     * Error Cases:
+     * - ServiceDoesNotStakeInSameTx: timestamp mismatch
+     * - AddressMismatch: caller mismatch
+     * - ServiceDoesNotFulfillCorrectStakingAmount:
+     *   payment incorrect
+     *
+     * Access Control:
+     * - onlyCA modifier: Only contracts allowed
      */
     function confirmServiceStaking() external onlyCA {
         uint256 totalStakingRequired = PRICE_OF_STAKING *

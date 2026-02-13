@@ -4,49 +4,45 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title ErrorsLib
+ * @title StateError - Error Definitions for State Contract
  * @author Mate labs
- * @notice Library containing custom error definitions exclusively for the Evvm.sol contract
- * @dev This library defines all custom errors used by the Evvm.sol core contract.
- *      Custom errors are more gas-efficient than require statements with strings
- *      and provide better error handling in client applications.
- *
- * Error Categories:
- * - Access Control: Errors related to unauthorized access attempts
- * - Validation: Errors for invalid inputs or state conditions
- * - Nonce Management: Errors for transaction replay protection
- * - Time-Lock: Errors for governance time delay mechanisms
- * - Balance: Errors for insufficient funds or invalid amounts
- *
- * @custom:scope Exclusive to the Evvm.sol contract
- * @custom:security All errors are designed to provide clear failure reasons
- *                  without exposing sensitive internal state information
+ * @notice Custom errors for State.sol nonce coordinator
+ * @dev Gas-efficient errors for async/sync nonce validation and EIP-191 signature verification.
  */
 library StateError {
-        /// @dev Thrown when attempting to use a nonce that has already been consumed
+    /// @dev Thrown when async nonce already consumed
     error AsyncNonceAlreadyUsed();
 
-    /// @dev Thrown when the provided nonce does not match the expected next nonce
+    /// @dev Thrown when sync nonce != expected sequential nonce
     error SyncNonceMismatch();
 
-    /// @dev Thrown when the recovered signer does not match the expected user address
+    /// @dev Thrown when EIP-191 signature signer != expected user
     error InvalidSignature();
 
+    /// @dev Thrown when reserving already-reserved async nonce
     error AsyncNonceAlreadyReserved();
 
+    /// @dev Thrown when revoking non-reserved async nonce
     error AsyncNonceNotReserved();
 
+    /// @dev Thrown when using reserved async nonce (general check)
     error AsyncNonceIsReserved();
 
+    /// @dev Thrown when UserValidator blocks user transaction
     error UserCannotExecuteTransaction();
 
+    /// @dev Thrown when using async nonce reserved by different service
     error AsyncNonceIsReservedByAnotherService();
 
+    /// @dev Thrown when accepting UserValidator proposal before timelock
     error ProposalForUserValidatorNotReady();
 
+    /// @dev Thrown when validateAndConsumeNonce caller is EOA (contracts only)
     error MsgSenderIsNotAContract();
 
+    /// @dev Thrown when accepting EVVM address proposal before timelock
     error ProposalForEvvmAddressNotReady();
 
+    /// @dev Thrown when reserving nonce with service == address(0)
     error InvalidServiceAddress();
 }

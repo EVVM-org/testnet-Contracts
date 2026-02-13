@@ -17,23 +17,8 @@ pragma solidity ^0.8.0;
 
  * @title P2P Swap Service
  * @author Mate labs  
- * @notice Peer-to-peer decentralized exchange for token trading within the EVVM ecosystem
- * @dev Implements order book-style trading with dynamic market creation, fee distribution,
- *      and integration with EVVM's staking and payment systems. Supports both proportional
- *      and fixed fee models with time-delayed governance for parameter updates.
- * 
- * Key Features:
- * - Dynamic market creation for any token pair
- * - Order management (create, cancel, execute)
- * - Configurable fee structure with multi-party distribution
- * - Service staking capabilities via StakingServiceHooks inheritance
- * - ERC-191 signature verification for all operations
- * - Time-delayed administrative governance
- * 
- * Fee Distribution:
- * - Seller: 50% (configurable)
- * - Service: 40% (configurable) 
- * - Staker Rewards: 10% (configurable)
+ * @notice Peer-to-peer DEX for token trading in EVVM
+ * @dev Order book-style trading with dynamic markets. Fee models: Proportional/Fixed/Tolerance. Fee split: 50% seller, 40% service, 10% staker (configurable). State.sol (async nonces), Evvm.sol (payments: lock/fill/settle). Time-delayed governance (1d). EIP-191 signatures.
  */
 
 import {
@@ -101,6 +86,44 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         });
     }
 
+    /**
+     * @notice Creates new order in market for token swap
+     * @dev Locks tokenA, creates order, assigns slot in market
+     *
+     * Order Creation Flow:
+     * 1. Validates signature via State.sol
+     * 2. Locks metadata.amountA of tokenA via Evvm.sol
+     * 3. Finds or creates market for token pair
+     * 4. Assigns order slot (reuses empty slots)
+     * 5. Stores order in ordersInsideMarket mapping
+     * 6. Rewards staker if applicable
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes tokenA, tokenB, amountA, amountB
+     * - Prevents replay attacks
+     *
+     * Evvm.sol Integration:
+     * - Locks tokenA via requestPay (metadata.amountA)
+     * - Priority fee handling (if priorityFeeEvvm > 0)
+     * - Staker reward: 2-3x MATE via _rewardExecutor
+     * - makeCaPay distributes priority fee to staker
+     *
+     * Market Management:
+     * - Creates market if token pair doesn't exist
+     * - Reuses deleted order slots (seller == address(0))
+     * - Increments ordersAvailable counter
+     *
+     * @param user Address creating the order
+     * @param metadata Order details (tokens, amounts, nonce)
+     * @param signature State.sol validation signature
+     * @param priorityFeeEvvm Optional priority fee for staker
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
+     * @return market Market ID where order was created
+     * @return orderId Order slot ID within market
+     */
     function makeOrder(
         address user,
         MetadataMakeOrder memory metadata,
@@ -171,6 +194,41 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         _rewardExecutor(msg.sender, priorityFeeEvvm > 0 ? 3 : 2);
     }
 
+    /**
+     * @notice Cancels existing order and refunds locked tokens
+     * @dev Validates ownership, refunds tokenA, deletes order
+     *
+     * Cancellation Flow:
+     * 1. Validates signature via State.sol
+     * 2. Validates user is order owner
+     * 3. Processes optional priority fee
+     * 4. Refunds locked tokenA to user
+     * 5. Deletes order (sets seller to address(0))
+     * 6. Rewards staker if applicable
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes tokenA, tokenB, orderId
+     * - Prevents replay attacks and double cancellation
+     *
+     * Evvm.sol Integration:
+     * - Refunds tokenA via makeCaPay (order.amountA)
+     * - Priority fee via requestPay (if > 0)
+     * - Staker reward: 2-3x MATE via _rewardExecutor
+     * - makeCaPay handles staker priority fee distribution
+     *
+     * Security:
+     * - Only order owner can cancel
+     * - Atomic refund + deletion
+     * - Market slot becomes available for reuse
+     *
+     * @param user Address that owns the order
+     * @param metadata Cancel details (tokens, orderId, nonce)
+     * @param priorityFeeEvvm Optional priority fee for staker
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
+     */
     function cancelOrder(
         address user,
         MetadataCancelOrder memory metadata,
@@ -220,6 +278,49 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         _rewardExecutor(msg.sender, priorityFeeEvvm > 0 ? 3 : 2);
     }
 
+    /**
+     * @notice Fills order using proportional fee model
+     * @dev Fee = amountB * percentageFee / 10,000
+     *
+     * Proportional Fee Execution Flow:
+     * 1. Validates signature via State.sol
+     * 2. Validates market and order exist
+     * 3. Calculates fee: (amountB * percentageFee) / 10,000
+     * 4. Validates amountOfTokenBToFill >= amountB + fee
+     * 5. Collects tokenB + fee via Evvm.requestPay
+     * 6. Handles overpayment refund if any
+     * 7. Distributes payments (seller, service, staker)
+     * 8. Transfers tokenA to buyer via Evvm.makeCaPay
+     * 9. Rewards staker (4-5x MATE)
+     * 10. Deletes order
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes tokenA, tokenB, orderId
+     * - Prevents double filling
+     *
+     * Evvm.sol Integration:
+     * - Collects tokenB via requestPay (amountB + fee)
+     * - Distributes via makeDisperseCaPay:
+     *   * Seller: amountB + (fee * seller%)
+     *   * Staker: priorityFee + (fee * staker%)
+     *   * Service: fee * service% (accumulated)
+     * - Transfers tokenA to buyer via makeCaPay
+     * - Staker reward: 4-5x MATE via _rewardExecutor
+     *
+     * Fee Calculation:
+     * - Base: amountB (order requirement)
+     * - Fee: (amountB * percentageFee) / 10,000
+     * - Total: amountB + fee
+     * - Example: 5% fee = 500 / 10,000
+     *
+     * @param user Address filling the order (buyer)
+     * @param metadata Dispatch details (tokens, orderId, amount)
+     * @param priorityFeeEvvm Optional priority fee for staker
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
+     */
     function dispatchOrder_fillPropotionalFee(
         address user,
         MetadataDispatchOrder memory metadata,
@@ -286,6 +387,61 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         _clearOrderAndUpdateMarket(market, metadata.orderId);
     }
 
+    /**
+     * @notice Fills order using fixed/capped fee model
+     * @dev Fee = min(proportionalFee, maxLimitFillFixedFee)
+     * with -10% tolerance
+     *
+     * Fixed Fee Execution Flow:
+     * 1. Validates signature via State.sol
+     * 2. Validates market and order exist
+     * 3. Calculates capped fee and 10% tolerance
+     * 4. Validates amountOfTokenBToFill >= amountB + fee - 10%
+     * 5. Collects tokenB + amount via Evvm.requestPay
+     * 6. Calculates final fee based on actual payment
+     * 7. Handles overpayment refund if any
+     * 8. Distributes payments (seller, service, staker)
+     * 9. Transfers tokenA to buyer via Evvm.makeCaPay
+     * 10. Rewards staker (4-5x MATE)
+     * 11. Deletes order
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes tokenA, tokenB, orderId
+     * - Prevents double filling
+     *
+     * Evvm.sol Integration:
+     * - Collects tokenB via requestPay (variable amount)
+     * - Distributes via makeDisperseCaPay:
+     *   * Seller: amountB + (finalFee * seller%)
+     *   * Staker: priorityFee + (finalFee * staker%)
+     *   * Service: finalFee * service% (accumulated)
+     * - Transfers tokenA to buyer via makeCaPay
+     * - Staker reward: 4-5x MATE via _rewardExecutor
+     *
+     * Fee Calculation:
+     * - Base: amountB (order requirement)
+     * - ProportionalFee: (amountB * percentageFee) / 10,000
+     * - Fee: min(proportionalFee, maxLimitFillFixedFee)
+     * - Tolerance: fee * 10% (fee10)
+     * - MinRequired: amountB + fee - fee10
+     * - FullRequired: amountB + fee
+     * - FinalFee: Based on actual payment amount
+     *
+     * Tolerance Range:
+     * - Accepts payment between [amountB + 90% fee] and
+     *   [amountB + 100% fee]
+     * - Calculates actual fee from payment received
+     * - Enables flexible fee payment for users
+     *
+     * @param user Address filling the order (buyer)
+     * @param metadata Dispatch details (tokens, orderId, amount)
+     * @param priorityFeeEvvm Optional priority fee for staker
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
+     * @param maxFillFixedFee Max fee cap (for testing)
+     */
     function dispatchOrder_fillFixedFee(
         address user,
         MetadataDispatchOrder memory metadata,

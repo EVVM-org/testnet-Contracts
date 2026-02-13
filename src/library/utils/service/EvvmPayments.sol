@@ -3,46 +3,37 @@
 
 pragma solidity ^0.8.0;
 /**
- * @title EvvmPayments
- * @author Mate Labs
- * @notice Abstract contract providing EVVM payment integration for services
- * @dev This contract provides a standardized interface for interacting with
- * the EVVM core contract for payment operations. It supports:
- *
- * Payment Types:
- * - Single payments (pay): Transfer tokens from a user to the service
- * - Disperse payments (dispersePay): Batch payments from multiple sources
- * - Contract-authorized payments (caPay): Service-initiated token distributions
- * - Disperse CA payments: Batch service-initiated distributions
- *
- * This contract is designed for use by community-developed services that need
- * to process payments through the EVVM ecosystem.
+ * @title EVVM Payment Integration for Services
+ * @author Mate labs
+ * @notice Abstract contract providing Evvm.sol payment processing interface
+ * @dev Four payment types: requestPay (user-to-service with signature), requestDispersePay (batch user-to-service),  makeCaPay (contract-authorized service-to-user), makeDisperseCaPay (batch CA).
  */
 
 import {IEvvm, EvvmStructs} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
 
 abstract contract EvvmPayments {
-    /// @dev Reference to the EVVM core contract for payment operations
+    /// @notice EVVM core contract reference
+    /// @dev Used for all payment operations
     IEvvm internal evvm;
 
     /**
-     * @notice Initializes the EvvmPayments contract with the EVVM address
-     * @param evvmAddress Address of the EVVM core contract
+     * @notice Initializes EVVM payment integration
+     * @param evvmAddress Address of Evvm.sol contract
      */
     constructor(address evvmAddress) {
         evvm = IEvvm(evvmAddress);
     }
 
     /**
-     * @notice Requests a payment from a user to this contract
-     * @dev Calls the EVVM pay function to transfer tokens with signature verification
-     * @param from Address of the user making the payment
-     * @param token Address of the token being transferred
-     * @param amount Amount of tokens to transfer
-     * @param priorityFee Additional fee for priority processing
-     * @param nonce Nonce for replay protection in EVVM
-     * @param isAsyncExec True for async nonce, false for sync nonce in EVVM
-     * @param signature EIP-191 signature authorizing the payment
+     * @notice Requests payment from user to service via Evvm.pay with signature validation
+     * @dev Calls evvm.pay(from, address(this), "", ...). Signature validated by State.validateAndConsumeNonce.
+     * @param from User paying (signer)
+     * @param token Token address
+     * @param amount Token amount
+     * @param priorityFee Executor fee
+     * @param nonce Sequential or async nonce
+     * @param isAsyncExec Nonce type (true=async, false=sync)
+     * @param signature User's ECDSA signature
      */
     function requestPay(
         address from,
@@ -68,15 +59,15 @@ abstract contract EvvmPayments {
     }
 
     /**
-     * @notice Requests a batch payment from the caller to multiple recipients
-     * @dev Calls the EVVM dispersePay function for efficient batch transfers
-     * @param toData Array of recipient addresses and amounts
-     * @param token Address of the token being transferred
-     * @param amount Total amount being transferred (for signature verification)
-     * @param priorityFee Additional fee for priority processing
-     * @param nonce Nonce for replay protection in EVVM
-     * @param isAsyncExec True for async nonce, false for sync nonce in EVVM
-     * @param signature EIP-191 signature authorizing the batch payment
+     * @notice Requests batch payment from user via Evvm.dispersePay
+     * @dev Signature validated by State.sol. Total amount must match sum of toData amounts.
+     * @param toData Array of (recipient, amount) pairs
+     * @param token Token address
+     * @param amount Total amount (must match sum)
+     * @param priorityFee Executor fee
+     * @param nonce Sequential or async nonce
+     * @param isAsyncExec Nonce type (true=async, false=sync)
+     * @param signature User's ECDSA signature
      */
     function requestDispersePay(
         EvvmStructs.DispersePayMetadata[] memory toData,
@@ -101,12 +92,11 @@ abstract contract EvvmPayments {
     }
 
     /**
-     * @notice Sends tokens from this contract to a recipient (contract-authorized)
-     * @dev Calls the EVVM caPay function for service-initiated token transfers.
-     *      This function does not require user signature as it's authorized by the contract.
-     * @param to Address of the recipient
-     * @param token Address of the token to transfer
-     * @param amount Amount of tokens to transfer
+     * @notice Sends tokens from service to recipient via contract authorization (no signature)
+     * @dev Calls evvm.caPay(to, token, amount). Service must have sufficient Evvm balance.
+     * @param to Recipient address
+     * @param token Token address
+     * @param amount Token amount
      */
     function makeCaPay(
         address to,
@@ -117,12 +107,11 @@ abstract contract EvvmPayments {
     }
 
     /**
-     * @notice Sends tokens from this contract to multiple recipients (batch CA pay)
-     * @dev Calls the EVVM disperseCaPay for efficient batch distributions.
-     *      This function does not require user signatures.
-     * @param toData Array of recipient addresses and amounts
-     * @param token Address of the token to transfer
-     * @param amount Total amount being distributed
+     * @notice Sends tokens to multiple recipients via contract authorization (batch)
+     * @dev Calls evvm.disperseCaPay. Total amount must match sum of toData amounts.
+     * @param toData Array of (recipient, amount) pairs
+     * @param token Token address
+     * @param amount Total amount (must match sum)
      */
     function makeDisperseCaPay(
         EvvmStructs.DisperseCaPayMetadata[] memory toData,
@@ -133,10 +122,9 @@ abstract contract EvvmPayments {
     }
 
     /**
-     * @notice Updates the EVVM contract address
-     * @dev Internal function for governance-controlled EVVM address changes.
-     *      Should be protected by time-delayed governance in implementing contracts.
-     * @param newEvvmAddress Address of the new EVVM contract
+     * @notice Updates Evvm.sol contract address for governance-controlled upgrades
+     * @dev Should be protected with onlyAdmin and time-delay (ProposalStructs pattern recommended).
+     * @param newEvvmAddress New Evvm.sol contract address
      */
     function _changeEvvmAddress(address newEvvmAddress) internal virtual {
         evvm = IEvvm(newEvvmAddress);

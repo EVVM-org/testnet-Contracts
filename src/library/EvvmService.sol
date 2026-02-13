@@ -3,47 +3,10 @@
 
 pragma solidity ^0.8.0;
 /**
- * @title EvvmService
+ * @title EVVM Service Base Contract
  * @author Mate Labs
- * @notice Abstract base contract for building services on the EVVM ecosystem
- * @dev This contract provides a complete foundation for creating EVVM-compatible services.
- * It combines multiple utility contracts to offer:
- *
- * Core Capabilities:
- * - Async nonce management for replay protection (AsyncNonce)
- * - Staking utilities for service-level staking (StakingServiceUtils)
- * - Payment processing through the EVVM core (EvvmPayments)
- * - EIP-191 signature verification for gasless transactions
- *
- * Usage:
- * Inherit from this contract and implement your service logic. All signature
- * verification, payment processing, and nonce management are handled automatically.
- *
- * Example:
- * ```solidity
- * contract MyService is EvvmService {
- *     constructor(address evvm, address staking)
- *         EvvmService(evvm, staking) {}
- *
- *     function myFunction(address user, ..., bytes memory sig) external {
- *      validateAndConsumeNonce(
- *          user,
- *          keccak256(
- *              abi.encodePacked(
- *                  "myFunction",
- *                  <input1>,
- *                  ...,
- *                  <inputN>
- *              )
- *          ),
- *          nonce,
- *          isAsyncExec, // if you want to set as a only async transaction, set this to true.
- *          signature
- *      )
- *         // Your logic here
- *     }
- * }
- * ```
+ * @notice Abstract base contract for building EVVM services with payment, staking, and nonce management
+ * @dev Inherits StakingServiceUtils, EvvmPayments, StateManagment. Signatures validated via State.sol. Community can build custom services.
  */
 
 import {EvvmStructs} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
@@ -62,13 +25,15 @@ abstract contract EvvmService is
     EvvmPayments,
     StateManagment
 {
-    /// @dev Thrown when a signature verification fails for a service operation
+    /// @dev Thrown when signature validation fails
     error InvalidServiceSignature();
 
     /**
-     * @notice Initializes the EvvmService with EVVM and Staking contract addresses
-     * @param evvmAddress Address of the EVVM core contract for payment processing
-     * @param stakingAddress Address of the Staking contract for service staking operations
+     * @notice Initializes EVVM service with core contract references
+     * @dev Initializes StakingServiceUtils, EvvmPayments, StateManagment in order
+     * @param evvmAddress Address of Evvm.sol contract
+     * @param stakingAddress Address of Staking.sol contract
+     * @param stateAddress Address of State.sol contract
      */
     constructor(
         address evvmAddress,
@@ -81,14 +46,19 @@ abstract contract EvvmService is
     {}
 
     /**
-     * @notice Retrieves the unique EVVM instance identifier
-     * @dev Used internally for signature verification to ensure signatures are chain-specific
-     * @return The unique identifier of the connected EVVM instance
+     * @notice Gets unique EVVM instance identifier for signature validation
+     * @dev Returns evvm.getEvvmID(). Prevents cross-chain replays.
+     * @return Unique EVVM instance identifier
      */
     function getEvvmID() internal view returns (uint256) {
         return evvm.getEvvmID();
     }
 
+    /**
+     * @notice Gets Principal Token (MATE) address
+     * @dev Returns evvm.getPrincipalTokenAddress(). Used for payment operations.
+     * @return Address of Principal Token (MATE)
+     */
     function getPrincipalTokenAddress() internal view returns (address) {
         return evvm.getPrincipalTokenAddress();
     }

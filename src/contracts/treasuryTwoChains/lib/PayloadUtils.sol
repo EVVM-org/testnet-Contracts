@@ -5,10 +5,8 @@ pragma solidity ^0.8.0;
 /**
  * @title PayloadUtils Library
  * @author Mate labs
- * @notice Utility library for encoding and decoding cross-chain transfer payloads
- * @dev Provides standardized payload format for cross-chain treasury operations
- *      Used by both TreasuryHostChainStation and TreasuryExternalChainStation
- *      to ensure consistent data format across Hyperlane, LayerZero, and Axelar protocols
+ * @notice Utility library for encoding/decoding cross-chain transfer payloads
+ * @dev Standardized payload format (ABI encoding) for TreasuryHostChainStation and TreasuryExternalChainStation. Used across Hyperlane, LayerZero, Axelar.
  */
 library PayloadUtils {
     /// @notice Encodes transfer data into a standardized cross-chain payload

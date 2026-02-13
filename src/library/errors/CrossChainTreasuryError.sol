@@ -4,41 +4,33 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title ErrorsLib
+ * @title Cross-Chain Treasury Error Library
  * @author Mate labs
- * @notice Custom error definitions for Treasury Cross-Chain operations
- * @dev Centralized error library for both TreasuryHostChainStation and TreasuryExternalChainStation
- *      Provides gas-efficient custom errors with descriptive names for better debugging
- *      and user experience across all cross-chain treasury operations
+ * @notice Custom errors for cross-chain treasury operations
+ * @dev Gas-efficient errors for TreasuryHostChainStation and TreasuryExternalChainStation. Independent from State.sol (own nonces).
  */
 library CrossChainTreasuryError {
-    /// @notice Thrown when a user has insufficient balance for the requested operation
-    /// @dev Used in withdraw operations and Fisher bridge transfers when EVVM balance is too low
+    /// @dev Thrown when Evvm.sol balance < withdrawal amount (host chain only)
     error InsufficientBalance();
 
-    /// @notice Thrown when attempting to withdraw or bridge the Principal Token (MATE)
-    /// @dev Principal Token is reserved for EVVM ecosystem operations and cannot be withdrawn cross-chain
+    /// @dev Thrown when attempting to withdraw/bridge Principal Token (MATE). Cannot leave host chain.
     error PrincipalTokenIsNotWithdrawable();
 
-    /// @notice Thrown when deposit amount validation fails
-    /// @dev Generic validation error for deposit amount issues beyond zero checks
+    /// @dev Thrown when deposit amount validation fails (bounds check or msg.value mismatch)
     error InvalidDepositAmount();
 
-    /// @notice Thrown when deposit or transfer amount is zero or negative
-    /// @dev Prevents meaningless transactions and ensures positive value transfers
+    /// @dev Thrown when deposit/bridge amount == 0
     error DepositAmountMustBeGreaterThanZero();
 
-    /// @notice Thrown when Hyperlane message sender is not the authorized mailbox contract
-    /// @dev Security check to prevent unauthorized cross-chain message execution via Hyperlane
+    /// @dev Thrown when msg.sender != Hyperlane mailbox in message handler
     error MailboxNotAuthorized();
 
-    /// @notice Thrown when cross-chain message sender is not the authorized counterpart station
-    /// @dev Security check across all protocols (Hyperlane, LayerZero, Axelar) to prevent impersonation
+    /// @dev Thrown when message sender address != authorized station (Hyperlane/LayerZero/Axelar validation)
     error SenderNotAuthorized();
 
-    /// @notice Thrown when cross-chain message originates from non-authorized chain
-    /// @dev Prevents cross-chain attacks from unauthorized chains or wrong network configurations
+    /// @dev Thrown when origin chain ID != configured chain (Hyperlane domain/LayerZero eid/Axelar chainName)
     error ChainIdNotAuthorized();
 
-    error WindowToChangeEvvmIDExpired();
+    /// @dev Thrown when setEvvmID called after grace period (windowTimeToChangeEvvmID)
+     error WindowToChangeEvvmIDExpired();
 }

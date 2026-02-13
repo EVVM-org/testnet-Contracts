@@ -13,30 +13,8 @@ MMMMMMMMMMMM
                                                                             
  * @title Staking Estimator Contract
  * @author Mate Labs
- * @notice Contract responsible for calculating staking rewards based on time-weighted averages
- * @dev This contract works in conjunction with the Staking contract to calculate
- * and distribute rewards to stakers based on their participation during epochs.
- *
- * Key Responsibilities:
- * - Track epoch metadata (pool, total staked, time periods)
- * - Calculate time-weighted average stake for each user
- * - Determine proportional reward distribution
- *
- * Reward Calculation Formula:
- * The time-weighted average is calculated as:
- *   Sum of [(ti - ti-1) x Si-1] x 10^18 / (tFinal - tStart)
- *
- * Where:
- * - ti: timestamp of current iteration
- * - ti-1: timestamp of previous iteration
- * - Si-1: stake amount at previous iteration
- * - tFinal: epoch end timestamp
- * - tStart: epoch start timestamp
- *
- * Access Control:
- * - onlyStaking: Functions callable only by the Staking contract
- * - onlyActivator: Functions callable only by the epoch activator
- * - onlyAdmin: Administrative functions for governance
+ * @notice Calculates staking rewards based on time-weighted averages
+ * @dev Works with Staking.sol. Tracks epoch metadata (pool, total staked, time). Time-weighted average: Sum[(ti - ti-1) × Si-1] × 10^18 / (tFinal - tStart). Access control: onlyStaking, onlyActivator, onlyAdmin.
  */
 
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";

@@ -104,7 +104,8 @@ contract fuzzTest_EVVM_pay is Test, Constants {
                 input.token != PRINCIPAL_TOKEN_ADDRESS &&
                 input.executor != input.toAddress &&
                 input.executor != COMMON_USER_NO_STAKER_1.Address &&
-                input.toAddress != COMMON_USER_NO_STAKER_1.Address
+                input.toAddress != COMMON_USER_NO_STAKER_1.Address &&
+                input.executor != address(staking)
         );
 
         uint256 nonce = input.isUsingAsyncNonce
@@ -193,7 +194,8 @@ contract fuzzTest_EVVM_pay is Test, Constants {
             input.amount > 0 &&
                 input.token != PRINCIPAL_TOKEN_ADDRESS &&
                 input.executor != COMMON_USER_NO_STAKER_1.Address &&
-                input.executor != COMMON_USER_NO_STAKER_2.Address
+                input.executor != COMMON_USER_NO_STAKER_2.Address &&
+                input.executor != address(staking)
         );
 
         uint256 nonce = input.isUsingAsyncNonce

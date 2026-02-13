@@ -3,23 +3,18 @@
 
 pragma solidity ^0.8.0;
 /**
- * @title StakingStructs
+ * @title Staking Data Structures
  * @author Mate Labs
- * @notice Abstract contract containing all data structures used by the Staking contract
- * @dev This contract is exclusive to the Staking.sol contract and defines the data
- * structures for managing staking operations, governance proposals, and user history.
- *
- * Structure Categories:
- * - Staker Metadata: presaleStakerMetadata, HistoryMetadata
- * - Governance Proposals: AddressTypeProposal, UintTypeProposal, BoolTypeProposal
- * - Service Staking: ServiceStakingMetadata, AccountMetadata
+ * @notice Core data structures for Staking.sol (presale, history, service staking)
+ * @dev Operations validated via State.sol. Payments via Evvm.sol. Cost: PRICE_OF_STAKING (5083 PT) per token.
  */
 
 library StakingStructs {
     /**
-     * @dev Metadata for presale stakers
-     * @param isAllow Whether the address is allowed to participate in presale staking
-     * @param stakingAmount Current number of staking tokens staked (max 2 for presale)
+     * @notice Metadata for presale staker whitelist
+     * @dev Max 800 presale stakers globally. Each limited to 2 staking tokens.
+     * @param isAllow Presale whitelist status
+     * @param stakingAmount Current staking tokens staked (max 2)
      */
     struct PresaleStakerMetadata {
         bool isAllow;
@@ -27,14 +22,12 @@ library StakingStructs {
     }
 
     /**
-     * @dev Struct to store the history of the user
-     * @param transactionType Type of transaction:
-     *          - 0x01 for staking
-     *          - 0x02 for unstaking
-     *          - Other values for yield/reward transactions
-     * @param amount Amount of staking staked/unstaked or reward received
-     * @param timestamp Timestamp when the transaction occurred
-     * @param totalStaked Total amount of staking currently staked after this transaction
+     * @notice Historical record of staking transactions
+     * @dev Transaction types: 0x01=staking, 0x02=unstaking, others=yield/rewards.
+     * @param transactionType Operation type identifier
+     * @param amount Staking tokens affected
+     * @param timestamp Block timestamp
+     * @param totalStaked Total after operation
      */
     struct HistoryMetadata {
         bytes32 transactionType;
@@ -44,12 +37,13 @@ library StakingStructs {
     }
 
     /**
-     * @dev Struct to store service staking metadata during the staking process
-     * @param service Address of the service or contract account
-     * @param timestamp Timestamp when the prepareServiceStaking was called
-     * @param amountOfStaking Amount of staking tokens to be staked
-     * @param amountServiceBeforeStaking Service's Principal Token balance before staking
-     * @param amountStakingBeforeStaking Staking contract's Principal Token balance before staking
+     * @notice Temporary metadata for service staking process
+     * @dev Atomic 3-step process: prepareServiceStaking → Evvm.caPay → confirmServiceStaking. All steps MUST occur in same tx.
+     * @param service Contract performing staking
+     * @param timestamp Block timestamp of prepare
+     * @param amountOfStaking Staking tokens to acquire
+     * @param amountServiceBeforeStaking Service PT balance before
+     * @param amountStakingBeforeStaking Staking PT balance before
      */
     struct ServiceStakingMetadata {
         address service;
@@ -60,9 +54,10 @@ library StakingStructs {
     }
 
     /**
-     * @dev Struct to encapsulate account metadata for staking operations
-     * @param Address Address of the account
-     * @param IsAService Boolean indicating if the account is a smart contract (service) account
+     * @notice Account metadata with service/EOA indicator
+     * @dev IsAService: true if code size > 0 (contract), false if code size == 0 (EOA).
+     * @param Address Account address
+     * @param IsAService Contract flag
      */
     struct AccountMetadata {
         address Address;

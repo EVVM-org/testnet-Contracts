@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Cross Chain Treasury**:
   - Implemented `State.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
   - Updated `ExternalChainStationStructs` and `HostChainStationStructs` to be a library instead of an abstract contract for better modularity and reuse across services
+- **NatSpec documentation**: Updated and added NatSpec documentation across all contracts for improved clarity and maintainability
 
 ### Removed
 

@@ -28,32 +28,8 @@ pragma solidity ^0.8.0;
  *
  * @title EVVM Name Service Contract
  * @author Mate labs
- * @notice This contract manages username registration and domain name services for the EVVM ecosystem
- * @dev Provides a comprehensive domain name system with features including:
- *
- * Core Features:
- * - Username registration with pre-registration protection against front-running
- * - Custom metadata management with schema-based data storage
- * - Username trading system with offers and marketplace functionality
- * - Renewal system with dynamic pricing based on market demand
- * - Time-delayed governance for administrative functions
- *
- * Registration Process:
- * 1. Pre-register: Commit to a username hash to prevent front-running
- * 2. Register: Reveal the username and complete registration within 30 minutes
- * 3. Manage: Add custom metadata, handle offers, and renew as needed
- *
- * Security Features:
- * - Signature verification for all operations
- * - Nonce-based replay protection
- * - Time-locked administrative changes
- * - Integration with EVVM core for secure payments
- *
- * Economic Model:
- * - Registration costs 100x EVVM reward amount
- * - Custom metadata operations cost 10x EVVM reward amount
- * - Renewal pricing varies based on market demand and timing
- * - Marketplace takes 0.5% fee on username sales
+ * @notice Username registration and domain name system for EVVM
+ * @dev Username registration with pre-registration (30min anti-frontrun). Custom metadata, marketplace (0.5% fee), dynamic renewal pricing. State.sol (async nonces), Evvm.sol (payments: 100x reward registration, 10x metadata). Time-delayed governance (1d). EIP-191 signatures.
  */
 
 import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
@@ -78,52 +54,68 @@ import {
 } from "@evvm/testnet-contracts/contracts/nameService/lib/IdentityValidation.sol";
 
 contract NameService {
-    /// @dev Time delay constant for accepting proposals
+    /// @dev Time delay for accepting proposals (1 day)
     uint256 constant TIME_TO_ACCEPT_PROPOSAL = 1 days;
 
-    /// @dev Amount of Principal Tokens locked in pending marketplace offers
+    /// @dev Principal Tokens locked in pending marketplace
     uint256 private principalTokenTokenLockedForWithdrawOffers;
 
-    /// @dev Nested mapping: username => offer ID => offer details
+    /// @dev Nested mapping: username => offer ID => offer
     mapping(string username => mapping(uint256 id => NameServiceStructs.OfferMetadata))
         private usernameOffers;
 
-    /// @dev Nested mapping: username => metadata key => custom value string
+    /// @dev Nested mapping: username => key => custom value
     mapping(string username => mapping(uint256 numberKey => string customValue))
         private identityCustomMetadata;
 
-    /// @dev Proposal system for token withdrawal amounts with time delay
+    /// @dev Proposal system for token withdrawal with delay
     ProposalStructs.UintTypeProposal amountToWithdrawTokens;
 
-    /// @dev Proposal system for EVVM contract address changes with time delay
+    /// @dev Proposal system for EVVM address changes
     ProposalStructs.AddressTypeProposal evvmAddress;
 
+    /// @dev Proposal system for State address changes
     ProposalStructs.AddressTypeProposal stateAddress;
 
-    /// @dev Proposal system for admin address changes with time delay
+    /// @dev Proposal system for admin address changes
     ProposalStructs.AddressTypeProposal admin;
 
-    /// @dev Mapping from username to its core metadata and registration details
+    /// @dev Mapping from username to core metadata
     mapping(string username => NameServiceStructs.IdentityBaseMetadata basicMetadata)
         private identityDetails;
 
-    /// @dev Instance of the EVVM core contract for payment processing and token operations
+    /// @dev EVVM contract for payment processing
     Evvm private evvm;
 
+    /// @dev State contract for nonce coordination
     State private state;
 
-    /// @dev Restricts function access to the current admin address only
+    /// @dev Restricts function access to current admin only
     modifier onlyAdmin() {
         if (msg.sender != admin.current) revert Error.SenderIsNotAdmin();
 
         _;
     }
 
+    //█ Initialization ████████████████████████████████████████████████████████████████████████
+
     /**
-     * @notice Initializes the NameService contract
-     * @dev Sets up the EVVM integration and initial admin
-     * @param _evvmAddress Address of the EVVM core contract for payment processing
-     * @param _initialOwner Address that will have admin privileges
+     * @notice Initializes NameService with integrations
+     * @dev Sets up State.sol and Evvm.sol integration
+     *
+     * Initial Configuration:
+     * - Connects to EVVM for payment processing
+     * - Connects to State for nonce coordination
+     * - Sets initial admin for governance
+     *
+     * Integration Setup:
+     * - evvm: Handles all payment operations
+     * - state: Validates signatures and consumes nonces
+     * - All nonces in NameService are async (true)
+     *
+     * @param _evvmAddress Address of EVVM core contract
+     * @param _stateAddress Address of State coordinator
+     * @param _initialOwner Address with admin privileges
      */
     constructor(
         address _evvmAddress,
@@ -137,17 +129,36 @@ contract NameService {
         state = State(_stateAddress);
     }
 
-    /**
-     * @notice Pre-registers a username hash to prevent front-running attacks
-     * @dev Creates a temporary reservation that can be registered 30 minutes later
-     * @param user Address of the user making the pre-registration
-     * @param hashPreRegisteredUsername Keccak256 hash of username + random number
-     * @param nonce Asynchronous nonce for replay protection
-     * @param signature Signature proving authorization for this operation
-     * @param priorityFeeEvvm Priority fee for faster transaction processing
-     * @param nonceEvvm Nonce for the EVVM payment transaction
+    //█ Registration Functions ████████████████████████████████████████████████████████████████████████
 
-     * @param signatureEvvm Signature for the EVVM payment transaction
+    /**
+     * @notice Pre-registers username hash to prevent front-run
+     * @dev Creates temp reservation via commit-reveal scheme
+     *
+     * Commit-Reveal Process:
+     * - User commits hash(username + random number)
+     * - Prevents others from seeing desired username
+     * - Valid for 30 minutes after commitment
+     * - Must complete with registrationUsername
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Atomically validates + consumes nonce
+     * - Prevents replay attacks
+     *
+     * Evvm.sol Integration:
+     * - Optional priority fee for faster processing
+     * - Paid through requestPay (if priorityFeeEvvm > 0)
+     * - Staker reward via makeCaPay if caller is staker
+     *
+     * @param user Address making pre-registration
+     * @param hashPreRegisteredUsername Hash of username + random
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFeeEvvm Priority fee for faster processing
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
      */
     function preRegistrationUsername(
         address user,
@@ -187,17 +198,42 @@ contract NameService {
     }
 
     /**
-     * @notice Completes username registration using a pre-registration commitment
-     * @dev Must be called after the pre-registration period (30 minutes) has reached
-     * @param user Address of the user completing the registration
-     * @param username The actual username being registered (revealed from hash)
-     * @param lockNumber Random number used in the pre-registration hash
-     * @param nonce Unique nonce to prevent replay attacks
-     * @param signature Signature proving authorization for this operation
-     * @param priorityFeeEvvm Priority fee for faster transaction processing
-     * @param nonceEvvm Nonce for the EVVM payment transaction
-
-     * @param signatureEvvm Signature for the EVVM payment transaction
+     * @notice Completes registration using pre-registration
+     * @dev Reveals username from hash, validates, and processes
+     *
+     * Registration Flow:
+     * 1. Validates 30min passed since preRegistrationUsername
+     * 2. Reveals username from hash(username + lockNumber)
+     * 3. Validates username format via IdentityValidation
+     * 4. Checks availability (no duplicates)
+     * 5. Processes payment via Evvm.sol
+     * 6. Creates 366-day registration
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes username + lockNumber for reveal
+     * - Prevents replay attacks
+     *
+     * Evvm.sol Integration:
+     * - Payment: getPriceOfRegistration (100x reward)
+     * - Paid through requestPay (locks tokens)
+     * - Staker reward: 50x reward + priority fee
+     * - makeCaPay distributes rewards to stakers
+     *
+     * Anti-Front-Running:
+     * - Requires valid preRegistrationUsername first
+     * - Hash commitment prevents username visibility
+     * - 30-minute window enforces time-lock
+     *
+     * @param user Address completing registration
+     * @param username Actual username being registered
+     * @param lockNumber Random number from pre-registration
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFeeEvvm Priority fee for faster processing
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
      */
     function registrationUsername(
         address user,
@@ -260,20 +296,48 @@ contract NameService {
         delete identityDetails[_key];
     }
 
-    /**
-     * @notice Creates a marketplace offer to purchase a username
-     * @dev Locks the offer amount in the contract until withdrawn or accepted
-     * @param user Address making the offer
-     * @param username Target username for the offer
-     * @param expirationDate Timestamp when the offer expires
-     * @param amount Amount being offered in Principal Tokens
-     * @param nonce Unique nonce to prevent replay attacks
-     * @param signature Signature proving authorization for this operation
-     * @param priorityFeeEvvm Priority fee for faster transaction processing
-     * @param nonceEvvm Nonce for the EVVM payment transaction
+    //█ Marketplace Functions ████████████████████████████████████████████████████████████████████████
 
-     * @param signatureEvvm Signature for the EVVM payment transaction
-     * @return offerID Unique identifier for the created offer
+    /**
+     * @notice Creates marketplace offer to purchase username
+     * @dev Locks tokens in contract until withdrawn or accepted
+     *
+     * Offer Process:
+     * 1. Validates username exists and is not reserved
+     * 2. Validates expiration is in future
+     * 3. Locks offer amount in contract
+     * 4. Takes 0.5% marketplace fee (5/1000)
+     * 5. Assigns unique offer ID
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes username, amount, expiration
+     * - Prevents replay attacks
+     *
+     * Evvm.sol Integration:
+     * - Payment: full offer amount via requestPay
+     * - Fee Breakdown:
+     *   * 99.5% locked for potential sale (995/1000)
+     *   * 0.5% marketplace fee (5/1000)
+     * - Staker reward: 1x reward + 0.125% + priority
+     * - makeCaPay distributes rewards
+     *
+     * Token Locking:
+     * - principalTokenTokenLockedForWithdrawOffers tracks
+     * - Locked amount = offer amount + fee
+     * - Released on withdrawal or acceptance
+     *
+     * @param user Address making offer
+     * @param username Target username for offer
+     * @param amount Offer amount in Principal Tokens
+     * @param expirationDate Timestamp when offer expires
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFeeEvvm Priority fee for faster processing
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
+     * @return offerID Unique identifier for created offer
      */
     function makeOffer(
         address user,
@@ -336,17 +400,41 @@ contract NameService {
     }
 
     /**
-     * @notice Withdraws a marketplace offer and refunds the locked tokens
-     * @dev Can only be called by the offer creator before expiration
-     * @param user Address that made the original offer
-     * @param username Username the offer was made for
-     * @param offerID Unique identifier of the offer to withdraw
-     * @param nonce Unique nonce to prevent replay attacks
-     * @param signature Signature proving authorization for this operation
-     * @param priorityFeeEvvm Priority fee for faster transaction processing
-     * @param nonceEvvm Nonce for the EVVM payment transaction
-
-     * @param signatureEvvm Signature for the EVVM payment transaction
+     * @notice Withdraws marketplace offer and refunds tokens
+     * @dev Can only be called by offer creator or after expire
+     *
+     * Withdrawal Flow:
+     * 1. Validates offer exists and belongs to user
+     * 2. Optionally validates expiration date passed
+     * 3. Refunds locked tokens to offerer
+     * 4. Processes optional priority fee
+     * 5. Deletes offer and updates slot count
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes username + offer ID
+     * - Prevents replay attacks and double withdrawals
+     *
+     * Evvm.sol Integration:
+     * - Refund: offer amount via makeTransfer to offerer
+     * - Priority fee: via requestPay (if > 0)
+     * - Staker reward: 1x reward + priority fee
+     * - makeCaPay distributes to caller if staker
+     *
+     * Token Unlocking:
+     * - Decreases principalTokenTokenLockedForWithdrawOffers
+     * - Releases both offer amount and marketplace fee
+     * - Returns funds to original offerer
+     *
+     * @param user Address that made original offer
+     * @param username Username offer was made for
+     * @param offerID Unique identifier of offer to withdraw
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFeeEvvm Priority fee for faster processing
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
      */
     function withdrawOffer(
         address user,
@@ -389,17 +477,49 @@ contract NameService {
     }
 
     /**
-     * @notice Accepts a marketplace offer and transfers username ownership
-     * @dev Can only be called by the current username owner before offer expiration
-     * @param user Address of the current username owner
+     * @notice Accepts marketplace offer and transfers ownership
+     * @dev Can only be called by current owner before expiration
+     *
+     * Acceptance Flow:
+     * 1. Validates user is current username owner
+     * 2. Validates offer exists and not expired
+     * 3. Transfers offer amount to seller
+     * 4. Transfers ownership to offerer
+     * 5. Processes optional priority fee
+     * 6. Deletes offer and unlocks tokens
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes username + offer ID
+     * - Prevents replay attacks and double acceptance
+     *
+     * Evvm.sol Integration:
+     * - Payment: offer amount via makeCaPay to seller
+     * - Priority fee: via requestPay (if > 0)
+     * - Fee Distribution:
+     *   * 99.5% to seller (locked amount)
+     *   * 0.5% + reward to staker (if applicable)
+     * - makeCaPay transfers from locked funds
+     *
+     * Ownership Transfer:
+     * - Changes identityDetails[username].owner
+     * - Preserves all metadata and expiration
+     * - Transfers all custom metadata slots
+     *
+     * Token Unlocking:
+     * - Decreases principalTokenTokenLockedForWithdrawOffers
+     * - Releases offer amount + marketplace fee
+     * - Distributes to seller and staker
+     *
+     * @param user Address of current username owner
      * @param username Username being sold
-     * @param offerID Unique identifier of the offer to accept
-     * @param nonce Unique nonce to prevent replay attacks
-     * @param signature Signature proving authorization for this operation
-     * @param priorityFeeEvvm Priority fee for faster transaction processing
-     * @param nonceEvvm Nonce for the EVVM payment transaction
-
-     * @param signatureEvvm Signature for the EVVM payment transaction
+     * @param offerID Unique identifier of offer to accept
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFeeEvvm Priority fee for faster processing
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
      */
     function acceptOffer(
         address user,
@@ -454,23 +574,39 @@ contract NameService {
     }
 
     /**
-     * @notice Renews a username registration for another year
-     * @dev Pricing varies based on timing and market demand for the username
+     * @notice Renews username registration for another year
+     * @dev Dynamic pricing based on timing and market demand
      *
      * Pricing Rules:
-     * - Free renewal if done within 1 year of expiration (limited time offer)
-     * - Variable cost based on highest active offer (minimum 500 Principal Token)
-     * - Fixed 500,000 Principal Token if renewed more than 1 year before expiration
-     * - Can be renewed up to 100 years in advance
+     * - Free: Renewed within grace period after expiration
+     * - Variable: Based on highest active offer (min 500 PT)
+     * - Fixed: 500,000 PT if renewed >1 year early
+     * - Can renew up to 100 years in advance
      *
-     * @param user Address of the username owner
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes username only
+     * - Prevents replay attacks
+     *
+     * Evvm.sol Integration:
+     * - Payment: seePriceToRenew calculates cost
+     * - Paid through requestPay (locks tokens)
+     * - Staker reward: 1x reward + 50% of price + fee
+     * - makeCaPay distributes rewards
+     *
+     * Renewal Logic:
+     * - Extends expirationDate by 366 days
+     * - Preserves ownership and all metadata
+     * - Cannot exceed 100 years (36500 days)
+     *
+     * @param user Address of username owner
      * @param username Username to renew
-     * @param nonce Unique nonce to prevent replay attacks
-     * @param signature Signature proving authorization for this operation
-     * @param priorityFeeEvvm Priority fee for faster transaction processing
-     * @param nonceEvvm Nonce for the EVVM payment transaction
-
-     * @param signatureEvvm Signature for the EVVM payment transaction
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFeeEvvm Priority fee for faster processing
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
      */
     function renewUsername(
         address user,
@@ -522,32 +658,50 @@ contract NameService {
         identityDetails[username].expirationDate += 366 days;
     }
 
+    //█ Metadata Functions ████████████████████████████████████████████████████████████████████████
+
     /**
-     * @notice Adds custom metadata to a username following a standardized schema format
-     * @dev Metadata follows format: [schema]:[subschema]>[value]
+     * @notice Adds custom metadata to username using schema format
+     * @dev Metadata format: [schema]:[subschema]>[value]
      *
      * Standard Format Examples:
      * - memberOf:>EVVM
      * - socialMedia:x>jistro (Twitter/X handle)
-     * - email:dev>jistro[at]evvm.org (development email)
-     * - email:callme>contact[at]jistro.xyz (contact email)
+     * - email:dev>jistro[at]evvm.org (dev email)
+     * - email:callme>contact[at]jistro.xyz (contact)
      *
      * Schema Guidelines:
      * - Based on https://schema.org/docs/schemas.html
      * - ':' separates schema from subschema
      * - '>' separates metadata from value
-     * - Pad with spaces if schema/subschema < 5 characters
-     * - Use "socialMedia" for social networks with network name as subschema
+     * - Pad spaces if schema/subschema < 5 chars
+     * - Use "socialMedia" for social networks
      *
-     * @param user Address of the username owner
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes identity + value
+     * - Prevents replay attacks
+     *
+     * Evvm.sol Integration:
+     * - Payment: 10x EVVM reward amount
+     * - Paid through requestPay (locks tokens)
+     * - Staker reward: 5x reward + priority fee
+     * - makeCaPay distributes rewards
+     *
+     * Slot Management:
+     * - Increments customMetadataMaxSlots
+     * - Each slot holds one metadata entry
+     * - No limit on number of slots
+     *
+     * @param user Address of username owner
      * @param identity Username to add metadata to
-     * @param value Metadata string following the standardized format
-     * @param nonce Unique nonce to prevent replay attacks
-     * @param signature Signature proving authorization for this operation
-     * @param priorityFeeEvvm Priority fee for faster transaction processing
-     * @param nonceEvvm Nonce for the EVVM payment transaction
-
-     * @param signatureEvvm Signature for the EVVM payment transaction
+     * @param value Metadata string following format
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFeeEvvm Priority fee for faster processing
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
      */
     function addCustomMetadata(
         address user,
@@ -597,17 +751,41 @@ contract NameService {
     }
 
     /**
-     * @notice Removes a specific custom metadata entry by key and reorders the array
-     * @dev Shifts all subsequent metadata entries to fill the gap after removal
-     * @param user Address of the username owner
+     * @notice Removes specific custom metadata entry by key
+     * @dev Shifts all subsequent entries to fill gap
+     *
+     * Removal Process:
+     * 1. Validates user owns username
+     * 2. Validates key exists in metadata slots
+     * 3. Deletes entry at key position
+     * 4. Shifts all entries after key down by 1
+     * 5. Decrements customMetadataMaxSlots
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes identity + key
+     * - Prevents replay attacks
+     *
+     * Evvm.sol Integration:
+     * - Payment: 10x EVVM reward amount
+     * - Paid through requestPay (locks tokens)
+     * - Staker reward: 5x reward + priority fee
+     * - makeCaPay distributes rewards
+     *
+     * Array Reordering:
+     * - Shifts entries from key+1 to maxSlots
+     * - Maintains continuous slot indexing
+     * - No gaps in metadata array
+     *
+     * @param user Address of username owner
      * @param identity Username to remove metadata from
-     * @param key Index of the metadata entry to remove
-     * @param nonce Unique nonce to prevent replay attacks
-     * @param signature Signature proving authorization for this operation
-     * @param priorityFeeEvvm Priority fee for faster transaction processing
-     * @param nonceEvvm Nonce for the EVVM payment transaction
-
-     * @param signatureEvvm Signature for the EVVM payment transaction
+     * @param key Index of metadata entry to remove
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFeeEvvm Priority fee for faster processing
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
      */
     function removeCustomMetadata(
         address user,
@@ -668,16 +846,41 @@ contract NameService {
     }
 
     /**
-     * @notice Removes all custom metadata entries for a username
-     * @dev More gas-efficient than removing entries individually
-     * @param user Address of the username owner
+     * @notice Removes all custom metadata entries for username
+     * @dev More gas-efficient than removing individually
+     *
+     * Flush Process:
+     * 1. Validates user owns username
+     * 2. Validates metadata slots exist (not empty)
+     * 3. Calculates cost based on slot count
+     * 4. Deletes all metadata entries in loop
+     * 5. Resets customMetadataMaxSlots to 0
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes identity only
+     * - Prevents replay attacks
+     *
+     * Evvm.sol Integration:
+     * - Payment: getPriceToFlushCustomMetadata (per slot)
+     * - Cost: 10x EVVM reward per metadata entry
+     * - Paid through requestPay (locks tokens)
+     * - Staker reward: 5x reward per slot + priority
+     * - makeCaPay distributes batch rewards
+     *
+     * Efficiency:
+     * - Single transaction for all metadata
+     * - Batch pricing for multiple entries
+     * - Cheaper than calling removeCustomMetadata N times
+     *
+     * @param user Address of username owner
      * @param identity Username to flush all metadata from
-     * @param nonce Unique nonce to prevent replay attacks
-     * @param signature Signature proving authorization for this operation
-     * @param priorityFeeEvvm Priority fee for faster transaction processing
-     * @param nonceEvvm Nonce for the EVVM payment transaction
-
-     * @param signatureEvvm Signature for the EVVM payment transaction
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFeeEvvm Priority fee for faster processing
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
      */
     function flushCustomMetadata(
         address user,
@@ -731,15 +934,48 @@ contract NameService {
     }
 
     /**
-     * @notice Completely removes a username registration and all associated data
-     * @dev Deletes the username, all custom metadata, and makes it available for re-registration
-     * @param user Address of the username owner
-     * @param username Username to completely remove from the system
-     * @param nonce Unique nonce to prevent replay attacks
-     * @param signature Signature proving authorization for this operation
-     * @param priorityFeeEvvm Priority fee for faster transaction processing
-     * @param nonceEvvm Nonce for the EVVM payment transaction
-     * @param signatureEvvm Signature for the EVVM payment transaction
+     * @notice Completely removes username and all data
+     * @dev Deletes username, metadata, makes available for
+     * re-registration
+     *
+     * Flush Process:
+     * 1. Validates user owns username
+     * 2. Validates not expired (must be active)
+     * 3. Validates is actual username (not temp hash)
+     * 4. Calculates cost based on metadata + username
+     * 5. Deletes all metadata entries
+     * 6. Resets username to default state
+     * 7. Preserves offerMaxSlots history
+     *
+     * State.sol Integration:
+     * - Validates signature with State.validateAndConsumeNonce
+     * - Uses async nonce (isAsyncExec = true)
+     * - Hash includes username only
+     * - Prevents replay attacks
+     *
+     * Evvm.sol Integration:
+     * - Payment: getPriceToFlushUsername
+     * - Cost: Base + (10x reward per metadata slot)
+     * - Paid through requestPay (locks tokens)
+     * - Staker reward: 5x reward per slot + priority
+     * - makeCaPay distributes to caller
+     *
+     * Cleanup:
+     * - Deletes all custom metadata slots
+     * - Sets owner to address(0)
+     * - Sets expirationDate to 0
+     * - Resets customMetadataMaxSlots to 0
+     * - Keeps offerMaxSlots for history
+     * - Sets flagNotAUsername to 0x00
+     * - Username becomes available for re-registration
+     *
+     * @param user Address of username owner
+     * @param username Username to completely remove
+     * @param nonce Async nonce for replay protection
+     * @param signature Signature for State.sol validation
+     * @param priorityFeeEvvm Priority fee for faster processing
+     * @param nonceEvvm Nonce for EVVM payment transaction
+     * @param signatureEvvm Signature for EVVM payment
      */
     function flushUsername(
         address user,
@@ -799,11 +1035,11 @@ contract NameService {
         });
     }
 
-    //█ Administrative Functions with Time-Delayed Governance ████████████████████████████████████
-
-    /**
-     * @notice Proposes a new admin address with 1-day time delay
-     * @dev Part of the time-delayed governance system for admin changes
+    //█ Administrative Functions ████████████████████████████████████████████████████████████████████████
+    
+     /**
+     * @notice Proposes new admin address with 1-day delay
+     * @dev Time-delayed governance system for admin changes
      * @param _adminToPropose Address of the proposed new admin
      */
     function proposeAdmin(address _adminToPropose) public onlyAdmin {

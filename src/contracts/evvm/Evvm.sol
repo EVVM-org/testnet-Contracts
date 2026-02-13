@@ -20,57 +20,8 @@ pragma solidity ^0.8.0;
                                                              
  * @title EVVM (Ethereum Virtual Machine Virtualization) Core Contract
  * @author Mate labs
- * @notice Core payment processing and token management system for the EVVM ecosystem
- * @dev This contract serves as the central hub for:
- *      - Multi-token payment processing with signature verification
- *      - Staker reward distribution and incentive mechanisms
- *      - Cross-chain bridge functionality (Fisher Bridge)
- *      - Balance management across the EVVM ecosystem
- *      - Integration with NameService for identity-based payments
- *      - Treasury integration for privileged balance operations
- * 
- * Key Features:
- * - Synchronous and asynchronous payment processing with nonce management
- * - Staker privilege system with enhanced rewards and transaction processing benefits
- * - Multi-recipient payment batching (batchPay, dispersePay)
- * - Administrative payment distribution (caPay, disperseCaPay)
- * - Proxy pattern support with delegatecall fallback for upgradeability
- * - Cross-chain asset bridging capabilities through Fisher Bridge
- * - Deflationary tokenomics with era-based reward halving mechanism
- * - Treasury-controlled balance management for minting and burning operations
- * 
- * Payment Types:
- * - `payNoStaker_*`: Standard payments for non-stakers with basic functionality
- * - `payStaker_*`: Enhanced payments for Principal Token stakers with priority fee rewards
- * - `batchPay`: Batch payments to multiple recipients with individual success tracking
- * - `dispersePay`: Single-source multi-recipient distribution with signature verification
- * - `caPay`: Administrative token distribution for smart contracts
- * - Treasury functions: Direct balance manipulation for authorized operations
- * 
- * Economic Model:
- * - Principal Token as principal token with reward distribution system
- * - Era-based reward halving when supply thresholds are reached
- * - Staker incentives through transaction processing rewards
- * - Random bonus rewards for triggering era transitions
- * 
- * Security Features:
- * - Signature-based transaction authorization with EIP-191 compliance
- * - Dual nonce system: synchronous (sequential) and asynchronous (custom)
- * - Executor validation for delegated transaction processing
- * - Balance verification before transfers to prevent overdrafts
- * - Time-delayed governance for critical upgrades (30-day implementation, 1-day admin)
- * - Access control through admin and treasury authorization
- * 
- * Integration Points:
- * - NameService: Identity resolution for username-based payments
- * - Staking Contract: Staker status management and reward distribution
- * - Treasury Contract: Privileged balance operations and token management
- * - Implementation Contract: Proxy pattern for contract upgradeability
- * 
- * @custom:version 1.0.0
- * @custom:testnet This contract is deployed on testnet for development and testing
- * @custom:security Time-delayed governance, signature verification, access control
- * @custom:upgrade-pattern Transparent proxy with admin-controlled implementation
+ * @notice Core payment processing and token management for EVVM ecosystem
+ * @dev Multi-token payments with signature verification. Staker rewards, Fisher Bridge, balance management. State.sol (nonces), NameService (identity), Treasury (privileged ops). Proxy pattern with delegatecall. Era-based deflationary tokenomics. Time-delayed governance (30d impl, 1d admin).
  */
 
 import {
@@ -620,8 +571,10 @@ contract Evvm is EvvmStorage {
     }
 
     /**
-     * @notice Contract-to-address payment function for authorized smart contracts
-     * @dev Allows registered contracts to distribute tokens without signature verification
+     * @notice Contract-to-address payment function for authorized 
+     *         smart contracts
+     * @dev Allows registered contracts to distribute tokens without 
+     *      signature verification
      *
      * Authorization Model:
      * - Only smart contracts (non-EOA addresses) can call this function

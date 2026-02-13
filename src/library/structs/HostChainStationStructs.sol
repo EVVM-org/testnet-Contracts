@@ -4,43 +4,47 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title HostChainStationStructs
+ * @title Host Chain Station Data Structures
  * @author Mate labs
- * @notice Shared data structures for Host Chain Station cross-chain treasury operations
- * @dev Defines all structural types used by TreasuryHostChainStation contract
- *      These structures ensure type safety and consistency for cross-chain operations
- *      from the host chain to external chains in the EVVM ecosystem
+ * @notice Data structures for host to external chain bridge
+ * @dev Structures for TreasuryHostChainStation: multi-protocol messaging (Hyperlane, LayerZero, Axelar). Independent from State.sol. Evvm.sol balance management on host only.
  */
 
 library HostChainStationStructs {
-    /// @notice Hyperlane protocol configuration for cross-chain messaging
-    /// @dev Configuration for reliable cross-chain communication via Hyperlane
-    /// @param externalChainStationDomainId Hyperlane domain identifier for the external chain
-    /// @param externalChainStationAddress External chain station address in bytes32 format
-    /// @param mailboxAddress Hyperlane mailbox contract address on this host chain
+    /**
+     * @notice Hyperlane protocol configuration
+     * @dev Hyperlane cross-chain messaging: domain ID + mailbox. Host → External via mailbox.dispatch.
+     * @param externalChainStationDomainId Hyperlane domain for external
+     * @param externalChainStationAddress External station (bytes32)
+     * @param mailboxAddress Hyperlane mailbox on host chain
+     */
     struct HyperlaneConfig {
         uint32 externalChainStationDomainId;
         bytes32 externalChainStationAddress;
         address mailboxAddress;
     }
 
-    /// @notice LayerZero protocol configuration for omnichain messaging
-    /// @dev Configuration for omnichain interoperability via LayerZero V2
-    /// @param externalChainStationEid LayerZero endpoint identifier for the external chain
-    /// @param externalChainStationAddress External chain station address in bytes32 format
-    /// @param endpointAddress LayerZero V2 endpoint contract address on this host chain
+    /**
+     * @notice LayerZero V2 protocol configuration
+     * @dev LayerZero V2 omnichain: eid + endpoint. Host → External via endpoint.send. Gas limit 200k.
+     * @param externalChainStationEid LayerZero eid for external chain
+     * @param externalChainStationAddress External station (bytes32)
+     * @param endpointAddress LayerZero V2 endpoint address
+     */
     struct LayerZeroConfig {
         uint32 externalChainStationEid;
         bytes32 externalChainStationAddress;
         address endpointAddress;
     }
 
-    /// @notice Axelar protocol configuration for cross-chain communication
-    /// @dev Configuration for secure cross-chain transfers via Axelar Network
-    /// @param externalChainStationChainName Axelar chain identifier for the external chain
-    /// @param externalChainStationAddress External chain station address in string format
-    /// @param gasServiceAddress Axelar gas service contract address for fee payments
-    /// @param gatewayAddress Axelar gateway contract address for message routing
+    /**
+     * @notice Axelar protocol configuration
+     * @dev Axelar cross-chain: chainName + gateway. Host → External via gateway.callContract.
+     * @param externalChainStationChainName Axelar chain name
+     * @param externalChainStationAddress External station (string)
+     * @param gasServiceAddress Axelar gas service
+     * @param gatewayAddress Axelar gateway contract
+     */
     struct AxelarConfig {
         string externalChainStationChainName;
         string externalChainStationAddress;
@@ -48,26 +52,23 @@ library HostChainStationStructs {
         address gatewayAddress;
     }
 
-    /// @notice Unified cross-chain configuration for all supported protocols
-    /// @dev Single structure containing all protocol configurations for deployment
-    /// @param externalChainStationDomainId Hyperlane domain ID for external chain
-    /// @param mailboxAddress Hyperlane mailbox contract address
-    /// @param externalChainStationEid LayerZero endpoint ID for external chain
-    /// @param endpointAddress LayerZero V2 endpoint contract address
-    /// @param externalChainStationChainName Axelar chain name for external chain
-    /// @param gasServiceAddress Axelar gas service contract address
-    /// @param gatewayAddress Axelar gateway contract address
+    /**
+     * @notice Unified deployment configuration
+     * @dev Groups all protocol configs: Hyperlane, LayerZero V2, Axelar.
+     */
     struct CrosschainConfig {
         HyperlaneConfig hyperlane;
         LayerZeroConfig layerZero;
         AxelarConfig axelar;
     }
 
-    /// @notice Parameters for coordinated external chain address changes across all protocols
-    /// @dev Used to propose and execute synchronized address updates with time delay
-    /// @param porposeAddress_AddressType Address format for Hyperlane and LayerZero protocols
-    /// @param porposeAddress_StringType String format for Axelar protocol compatibility
-    /// @param timeToAccept Timestamp when the address change proposal can be executed
+    /**
+     * @notice Coordinated external chain address change proposal
+     * @dev 1-day delay to update external station across all protocols. AddressType for Hyperlane/LZ, StringType for Axelar.
+     * @param porposeAddress_AddressType Address for Hyperlane/LZ
+     * @param porposeAddress_StringType String for Axelar
+     * @param timeToAccept Timestamp when acceptable
+     */
     struct ChangeExternalChainAddressParams {
         address porposeAddress_AddressType;
         string porposeAddress_StringType;
