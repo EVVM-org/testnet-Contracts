@@ -23,7 +23,7 @@ Instead, please report vulnerabilities through one of these channels:
    - Provide detailed information about the vulnerability
 
 2. **Email**
-   - Send an email to: `jistro@evvm.dev` (replace with your actual security email)
+   - Send an email to: `jistro@evvm.dev` 
    - Use the subject line: `[SECURITY] EVVM Vulnerability Report`
 
 ### What to Include
