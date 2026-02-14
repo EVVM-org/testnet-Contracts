@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **IUserValidator**: Interface for user validation logic in Core.sol, allowing for flexible access control in evvm transactions
 - **CA Verification Library**: Added `CAUtils.sol` for verifying if a certain address is a CA, which can be used in user validation logic in Core.sol
 - **CoreExecution Library**: Added `CoreExecutionUtils.sol` for handling core execution logic on services.
+- **Github templates**:
+  - Added `CONTRIBUTING.md` with contribution guidelines for the community
+  - Added `PULL_REQUEST_TEMPLATE.md` to standardize pull request submissions and ensure necessary information is provided for reviews
+  - Added `SECURITY.md` with security best practices and reporting guidelines for responsible disclosure of vulnerabilities
 
 ### Changed
 
