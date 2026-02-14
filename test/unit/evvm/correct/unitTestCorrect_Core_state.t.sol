@@ -21,7 +21,10 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 contract unitTestCorrect_Core_state is Test, Constants {
-    //function executeBeforeSetUp() internal override {}
+    HelperStateTest helper;
+    function executeBeforeSetUp() internal override {
+        helper = new HelperStateTest(address(core));
+    }
 
     /**
      *  @dev because this script behaves like a smart contract we dont
@@ -117,6 +120,50 @@ contract unitTestCorrect_Core_state is Test, Constants {
             false,
             signature
         );
+
+        assertEq(
+            core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            1,
+            "Sync nonce should be incremented after successful consumption"
+        );
+    }
+
+
+    function test__unit_correct__validateAndConsumeNonce_originExecutor() external {
+        InputsValidateAndConsumeNonce
+            memory inputs = InputsValidateAndConsumeNonce({
+                user: COMMON_USER_NO_STAKER_1,
+                testA: "textTest",
+                testB: 123,
+                testC: address(321),
+                testD: false
+            });
+        bytes memory signature = _executeSig_state_test(
+            COMMON_USER_NO_STAKER_1,
+            address(helper),
+            inputs.testA,
+            inputs.testB,
+            inputs.testC,
+            inputs.testD,
+            COMMON_USER_NO_STAKER_2.Address,
+            core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            false
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_2.Address, COMMON_USER_NO_STAKER_2.Address);
+        helper.StateTest(
+            COMMON_USER_NO_STAKER_1.Address,
+            inputs.testA,
+            inputs.testB,
+            inputs.testC,
+            inputs.testD,
+            COMMON_USER_NO_STAKER_2.Address,
+            core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            false,
+            signature
+        );
+        vm.stopPrank();
+    
 
         assertEq(
             core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),

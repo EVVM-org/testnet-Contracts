@@ -1249,8 +1249,8 @@ contract TestERC20 is ERC20 {
 contract HelperCa {
     Core core;
 
-    constructor(address _evvm) {
-        core = Core(_evvm);
+    constructor(address _core) {
+        core = Core(_core);
     }
 
     function makeCaPay(address user, address token, uint256 amount) public {
@@ -1263,6 +1263,37 @@ contract HelperCa {
         uint256 totalAmount
     ) public {
         core.disperseCaPay(toData, token, totalAmount);
+    }
+
+}
+
+
+contract HelperStateTest {
+    Core core;
+
+    constructor(address _core) {
+        core = Core(_core);
+    }
+
+    function StateTest(
+        address user,
+        string memory testA,
+        uint256 testB,
+        address testC,
+        bool testD,
+        address originExecutor,
+        uint256 nonce,
+        bool isAsyncExec,
+        bytes memory signature
+    ) public {
+        core.validateAndConsumeNonce(
+            user,
+            keccak256(abi.encode("StateTest", testA, testB, testC, testD)),
+            originExecutor,
+            nonce,
+            isAsyncExec,
+            signature
+        );
     }
 }
 
