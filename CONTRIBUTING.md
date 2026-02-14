@@ -222,7 +222,7 @@ When submitting issues or pull requests:
 ```
 ├── src/
 │   ├── contracts/          # Main contracts
-│   │   ├── evvm/           # EVVM core
+│   │   ├── core/           # EVVM core
 │   │   ├── nameService/    # Name service
 │   │   ├── staking/        # Staking contracts
 │   │   └── treasury*/      # Treasury contracts
