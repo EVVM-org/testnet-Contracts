@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Codename: "Ichiban"
 
-Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from [Yakuza: Like a Dragon](https://en.wikipedia.org/wiki/Yakuza:_Like_a_Dragon), embodies the spirit of rebuilding from the ground up. Just as Ichiban rebuilt his life and united scattered allies into a cohesive team, this release fundamentally restructures EVVM by centralizing previously fragmented functionalities into a unified Core. The name reflects both its literal meaning ("number one") and the protagonist's journey of transforming chaos into order—mirroring how this version consolidates from disparate services into a single, robust foundation for the entire EVVM ecosystem.
+Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from [Yakuza: Like a Dragon](https://en.wikipedia.org/wiki/Yakuza:_Like_a_Dragon), embodies the spirit of rebuilding from the ground up. Just as Ichiban rebuilt his life and united scattered allies into a cohesive team, this release fundamentally restructures EVVM by centralizing previously fragmented functionalities into a unified Core. The name reflects both its literal meaning ("number one") and the protagonist's journey of transforming chaos into order mirroring how this version consolidates from disparate services into a single, robust foundation for the entire EVVM ecosystem.
 
 
 ### Added
