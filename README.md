@@ -1,18 +1,19 @@
 # EVVM Testnet Contracts
 
-![Solidity](https://img.shields.io/badge/Solidity-^0.8.0-363636?logo=solidity) 
-![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C?logo=foundry) 
+![Version](https://img.shields.io/badge/version-3.0.0%20%22Ichiban%22-red.svg)
+![Solidity](https://img.shields.io/badge/Solidity-^0.8.0-363636?logo=solidity)
+![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C?logo=foundry)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript)
 ![Bun](https://img.shields.io/badge/Runtime-Bun-000000?logo=bun)
-[![npm version](https://img.shields.io/npm/v/@evvm/testnet-contracts.svg)](https://www.npmjs.com/package/@evvm/testnet-contracts) 
-[![license](https://img.shields.io/badge/license-EVVM--NONCOMMERCIAL--1.0-blue.svg)](LICENSE) 
+[![license](https://img.shields.io/badge/license-EVVM--NONCOMMERCIAL--1.0-blue.svg)](LICENSE)
 [![docs](https://img.shields.io/badge/docs-evvm.info-blue.svg)](https://www.evvm.info/)
 [![npm downloads](https://img.shields.io/npm/dw/@evvm/testnet-contracts.svg)](https://www.npmjs.com/package/@evvm/testnet-contracts)
-![Status](https://img.shields.io/badge/Status-Active-brightgreen) 
+![Status](https://img.shields.io/badge/Status-Active-brightgreen)
 
 A compact toolkit for creating virtual EVM chains on testnets.
 
 Two ways to use EVVM:
+
 1. As a library - Import Solidity contracts in your dApp
 2. As a CLI tool - Deploy and manage EVVM instances on testnets
 
@@ -23,16 +24,19 @@ Docs & hosted library: https://www.evvm.info/
 ### Install the library (1 min)
 
 **NPM (recommended):**
+
 ```bash
 npm install @evvm/testnet-contracts
 ```
 
 **Or with Forge:**
+
 ```bash
 forge install EVVM-org/Testnet-Contracts
 ```
 
 **Import in your contracts:**
+
 ```solidity
 import "@evvm/testnet-contracts/interfaces/ICore.sol";
 ```
@@ -50,7 +54,9 @@ Before deploying with the CLI, ensure you have the following installed:
 - **Git** - [Install](https://git-scm.com/downloads)
 
 ### Quick start (2 min)
-1) Clone & install
+
+1. Clone & install
+
 ```bash
 git clone --recursive https://github.com/EVVM-org/Testnet-Contracts
 cd Testnet-Contracts
@@ -64,30 +70,35 @@ bun install
 forge install
 ```
 
-2) Prepare environment
+2. Prepare environment
+
 ```bash
 cp .env.example .env
 # Edit RPC_URL, ETHERSCAN_API, etc.
 ```
 
-3) Import wallet (secure)
+3. Import wallet (secure)
+
 ```bash
 cast wallet import defaultKey --interactive
 ```
 
-4) Deploy (interactive)
+4. Deploy (interactive)
 
 If you are on Linux or macOS, run:
+
 ```bash
 ./evvm deploy
 ```
 
 If you are on Windows, run on PowerShell:
+
 ```powershell
 .\evvm.bat deploy
 ```
 
 Or use Bun from any directory:
+
 ```bash
 bun run evvm deploy
 ```
@@ -97,6 +108,7 @@ bun run evvm deploy
 The repository includes platform-specific wrapper scripts to easily call the CLI:
 
 **Linux/macOS:**
+
 ```bash
 # Make script executable (first time only)
 chmod +x ./evvm
@@ -109,6 +121,7 @@ chmod +x ./evvm
 ```
 
 **Windows (PowerShell):**
+
 ```powershell
 # Run any EVVM CLI command
 .\evvm.bat deploy
@@ -124,23 +137,27 @@ Quick Start (CLI): https://www.evvm.info/docs/QuickStart
 ## CLI - Available Commands
 
 **Deployment & Registration:**
-- `evvm deploy`                           # Deploy EVVM (single or cross-chain)
-- `evvm deploy --skipInputConfig`         # Deploy with existing config (no prompts)
-- `evvm deploy --crossChain`              # Deploy cross-chain EVVM instance
-- `evvm register --coreAddress <addr>`    # Register EVVM in registry
-- `evvm register --crossChain`            # Register cross-chain EVVM
+
+- `evvm deploy` # Deploy EVVM (single or cross-chain)
+- `evvm deploy --skipInputConfig` # Deploy with existing config (no prompts)
+- `evvm deploy --crossChain` # Deploy cross-chain EVVM instance
+- `evvm register --coreAddress <addr>` # Register EVVM in registry
+- `evvm register --crossChain` # Register cross-chain EVVM
 
 **Cross-Chain Management:**
-- `evvm setUpCrossChainTreasuries`        # Configure treasury station connections
+
+- `evvm setUpCrossChainTreasuries` # Configure treasury station connections
 
 **Developer Utilities:**
-- `evvm developer --makeInterface`        # Generate Solidity interfaces from contracts
-- `evvm developer --runTest`              # Run test suites with custom filters
-- `evvm install`                          # Install Bun and Foundry dependencies
+
+- `evvm developer --makeInterface` # Generate Solidity interfaces from contracts
+- `evvm developer --runTest` # Run test suites with custom filters
+- `evvm install` # Install Bun and Foundry dependencies
 
 **Information:**
-- `evvm help`                             # Show comprehensive CLI help
-- `evvm version`                          # Show CLI version
+
+- `evvm help` # Show comprehensive CLI help
+- `evvm version` # Show CLI version
 
 ## Library Usage (Quick Reference)
 
@@ -149,6 +166,7 @@ Quick Start (CLI): https://www.evvm.info/docs/QuickStart
 - **Import in Solidity:** `import "@evvm/testnet-contracts/interfaces/ICore.sol";`
 
 ## Troubleshooting
+
 - **RPC timeouts**: CLI automatically tries fallback RPCs; set `RPC_URL` in `.env` to a reliable endpoint.
 - **Wallet not found**: import with `cast wallet import <name> --interactive`.
 - **Bun missing**: install Bun (`curl -fsSL https://bun.sh/install | bash`).
@@ -157,6 +175,7 @@ Quick Start (CLI): https://www.evvm.info/docs/QuickStart
 - **Wrong architecture detected**: The wrapper scripts auto-detect OS/architecture. If issues occur, manually run the correct binary from `.executables/`.
 
 Files & structure (short)
+
 - `src/contracts/` — core contracts (Evvm, NameService, Staking, Treasury, P2PSwap)
 - `cli/` — TypeScript CLI source
 - `script/` — Foundry deployment scripts
@@ -189,6 +208,7 @@ We welcome contributions from the community! Here's how you can help:
 - **Commit Messages**: Write clear, descriptive commit messages
 
 ## Security Best Practices
+
 - **Never commit private keys**: Always use `cast wallet import <YOUR_ALIAS> --interactive` to securely store your keys
 - **Use test credentials only**: This repository is for testnet deployment only
 - **Environment variables**: Store sensitive data like API keys in `.env` files (not committed to git)
