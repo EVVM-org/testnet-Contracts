@@ -42,6 +42,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
         _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
+            address(0),
             uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0),
             0,
             uint256(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1),
@@ -54,7 +55,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
         bool isStaking,
         uint256 priorityFee
     ) private returns (uint256 amount, uint256 amountPriorityFee) {
-        evvm.addBalance(
+        core.addBalance(
             user,
             PRINCIPAL_TOKEN_ADDRESS,
             (isStaking ? staking.priceOfStaking() : 0) + priorityFee
@@ -65,7 +66,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
     function calculateRewardPerExecution(
         uint256 numberOfTx
     ) private view returns (uint256) {
-        return (evvm.getRewardAmount() * 2) * numberOfTx;
+        return (core.getRewardAmount() * 2) * numberOfTx;
     }
 
     struct PresaleStakingFuzzTestInput {
@@ -99,7 +100,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
             }
 
             if (
-                evvm.getIfUsedAsyncNonce(
+                core.getIfUsedAsyncNonce(
                     COMMON_USER_NO_STAKER_1.Address,
                     input[i].nonceEVVM
                 )
@@ -117,12 +118,12 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                 ? COMMON_USER_STAKER
                 : COMMON_USER_NO_STAKER_2;
 
-            amountBeforeFisher = evvm.getBalance(
+            amountBeforeFisher = core.getBalance(
                 FISHER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             );
 
-            amountBeforeUser = evvm.getBalance(
+            amountBeforeUser = core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             );
@@ -162,6 +163,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                 _executeFn_staking_presaleStaking(
                     COMMON_USER_NO_STAKER_1,
                     true,
+                    address(0),
                     input[i].nonceStaking,
                     uint256(input[i].priorityFeeAmountEVVM),
                     input[i].nonceEVVM,
@@ -199,6 +201,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                 _executeFn_staking_presaleStaking(
                     COMMON_USER_NO_STAKER_1,
                     false,
+                    address(0),
                     input[i].nonceStaking,
                     uint256(input[i].priorityFeeAmountEVVM),
                     input[i].nonceEVVM,
@@ -212,7 +215,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
             );
 
             assertEq(
-                evvm.getBalance(
+                core.getBalance(
                     COMMON_USER_NO_STAKER_1.Address,
                     PRINCIPAL_TOKEN_ADDRESS
                 ),
@@ -223,7 +226,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
 
             if (FISHER.Address == COMMON_USER_STAKER.Address) {
                 assertEq(
-                    evvm.getBalance(FISHER.Address, PRINCIPAL_TOKEN_ADDRESS),
+                    core.getBalance(FISHER.Address, PRINCIPAL_TOKEN_ADDRESS),
                     amountBeforeFisher +
                         calculateRewardPerExecution(1) +
                         uint256(input[i].priorityFeeAmountEVVM),
@@ -231,7 +234,7 @@ contract fuzzTest_Staking_presaleStaking is Test, Constants {
                 );
             } else {
                 assertEq(
-                    evvm.getBalance(FISHER.Address, PRINCIPAL_TOKEN_ADDRESS),
+                    core.getBalance(FISHER.Address, PRINCIPAL_TOKEN_ADDRESS),
                     amountBeforeFisher,
                     "Error: balance of non-staker is not correct after presale staking tx"
                 );

@@ -12,14 +12,14 @@ pragma solidity ^0.8.0;
  */
 
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 import {
     AdvancedStrings
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {
-    EvvmHashUtils
-} from "@evvm/testnet-contracts/library/utils/signature/EvvmHashUtils.sol";
+    CoreHashUtils
+} from "@evvm/testnet-contracts/library/utils/signature/CoreHashUtils.sol";
 import {
     NameServiceHashUtils
 } from "@evvm/testnet-contracts/library/utils/signature/NameServiceHashUtils.sol";
@@ -43,7 +43,7 @@ library Erc191TestBuilder {
         address token,
         uint256 amount,
         uint256 priorityFee,
-        address executor,
+        address senderExecutor,
         uint256 nonce,
         bool isAsyncExec
     ) internal pure returns (bytes32) {
@@ -52,14 +52,14 @@ library Erc191TestBuilder {
                 AdvancedStrings.buildSignaturePayload(
                     evvmID,
                     servicePointer,
-                    EvvmHashUtils.hashDataForPay(
+                    CoreHashUtils.hashDataForPay(
                         to_address,
                         to_identity,
                         token,
                         amount,
-                        priorityFee,
-                        executor
+                        priorityFee
                     ),
+                    senderExecutor,
                     nonce,
                     isAsyncExec
                 )
@@ -69,11 +69,11 @@ library Erc191TestBuilder {
     function buildMessageSignedForDispersePay(
         uint256 evvmID,
         address servicePointer,
-        EvvmStructs.DispersePayMetadata[] memory toData,
+        CoreStructs.DispersePayMetadata[] memory toData,
         address token,
         uint256 amount,
         uint256 priorityFee,
-        address executor,
+        address senderExecutor,
         uint256 nonce,
         bool isAsyncExec
     ) public pure returns (bytes32) {
@@ -82,13 +82,13 @@ library Erc191TestBuilder {
                 AdvancedStrings.buildSignaturePayload(
                     evvmID,
                     servicePointer,
-                    EvvmHashUtils.hashDataForDispersePay(
+                    CoreHashUtils.hashDataForDispersePay(
                         toData,
                         token,
                         amount,
-                        priorityFee,
-                        executor
+                        priorityFee
                     ),
+                    senderExecutor,
                     nonce,
                     isAsyncExec
                 )
@@ -103,6 +103,7 @@ library Erc191TestBuilder {
         uint256 evvmID,
         address servicePointer,
         bytes32 hashPreRegisteredUsername,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -113,6 +114,7 @@ library Erc191TestBuilder {
                     NameServiceHashUtils.hashDataForPreRegistrationUsername(
                         hashPreRegisteredUsername
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -124,6 +126,7 @@ library Erc191TestBuilder {
         address servicePointer,
         string memory username,
         uint256 lockNumber,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -135,6 +138,7 @@ library Erc191TestBuilder {
                         username,
                         lockNumber
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -147,6 +151,7 @@ library Erc191TestBuilder {
         string memory username,
         uint256 amount,
         uint256 expirationDate,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -159,6 +164,7 @@ library Erc191TestBuilder {
                         amount,
                         expirationDate
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -170,6 +176,7 @@ library Erc191TestBuilder {
         address servicePointer,
         string memory username,
         uint256 offerId,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -181,6 +188,7 @@ library Erc191TestBuilder {
                         username,
                         offerId
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -192,6 +200,7 @@ library Erc191TestBuilder {
         address servicePointer,
         string memory username,
         uint256 offerId,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -203,6 +212,7 @@ library Erc191TestBuilder {
                         username,
                         offerId
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -213,6 +223,7 @@ library Erc191TestBuilder {
         uint256 evvmID,
         address servicePointer,
         string memory username,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -221,6 +232,7 @@ library Erc191TestBuilder {
                     evvmID,
                     servicePointer,
                     NameServiceHashUtils.hashDataForRenewUsername(username),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -232,6 +244,7 @@ library Erc191TestBuilder {
         address servicePointer,
         string memory username,
         string memory value,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -243,6 +256,7 @@ library Erc191TestBuilder {
                         username,
                         value
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -254,6 +268,7 @@ library Erc191TestBuilder {
         address servicePointer,
         string memory username,
         uint256 key,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -265,6 +280,7 @@ library Erc191TestBuilder {
                         username,
                         key
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -275,6 +291,7 @@ library Erc191TestBuilder {
         uint256 evvmID,
         address servicePointer,
         string memory username,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -285,6 +302,7 @@ library Erc191TestBuilder {
                     NameServiceHashUtils.hashDataForFlushCustomMetadata(
                         username
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -295,6 +313,7 @@ library Erc191TestBuilder {
         uint256 evvmID,
         address servicePointer,
         string memory username,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -303,6 +322,7 @@ library Erc191TestBuilder {
                     evvmID,
                     servicePointer,
                     NameServiceHashUtils.hashDataForFlushUsername(username),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -318,6 +338,7 @@ library Erc191TestBuilder {
         address servicePointer,
         bool isStaking,
         uint256 amountOfStaking,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -329,6 +350,7 @@ library Erc191TestBuilder {
                         isStaking,
                         amountOfStaking
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -340,6 +362,7 @@ library Erc191TestBuilder {
         address servicePointer,
         bool isStaking,
         uint256 amountOfStaking,
+        address originExecutor,
         uint256 nonce
     ) internal pure returns (bytes32) {
         return
@@ -351,6 +374,7 @@ library Erc191TestBuilder {
                         isStaking,
                         amountOfStaking
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -364,6 +388,7 @@ library Erc191TestBuilder {
     function buildMessageSignedForMakeOrder(
         uint256 evvmID,
         address servicePointer,
+        address originExecutor,
         uint256 nonce,
         address tokenA,
         address tokenB,
@@ -381,6 +406,7 @@ library Erc191TestBuilder {
                         amountA,
                         amountB
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -390,6 +416,7 @@ library Erc191TestBuilder {
     function buildMessageSignedForCancelOrder(
         uint256 evvmID,
         address servicePointer,
+        address originExecutor,
         uint256 nonce,
         address tokenA,
         address tokenB,
@@ -405,6 +432,7 @@ library Erc191TestBuilder {
                         tokenB,
                         orderId
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -414,6 +442,7 @@ library Erc191TestBuilder {
     function buildMessageSignedForDispatchOrder(
         uint256 evvmID,
         address servicePointer,
+        address originExecutor,
         uint256 nonce,
         address tokenA,
         address tokenB,
@@ -429,6 +458,7 @@ library Erc191TestBuilder {
                         tokenB,
                         orderId
                     ),
+                    originExecutor,
                     nonce,
                     true
                 )
@@ -436,7 +466,7 @@ library Erc191TestBuilder {
     }
 
     //-----------------------------------------------------------------------------------
-    // P2PSwap functions
+    // nonceConsumer functions
     //-----------------------------------------------------------------------------------
 
     function buildMessageSignedForStateTest(
@@ -446,6 +476,7 @@ library Erc191TestBuilder {
         uint256 testB,
         address testC,
         bool testD,
+        address originExecutor,
         uint256 nonce,
         bool isAsyncExec
     ) internal pure returns (bytes32) {
@@ -457,6 +488,7 @@ library Erc191TestBuilder {
                     keccak256(
                         abi.encode("StateTest", testA, testB, testC, testD)
                     ),
+                    originExecutor,
                     nonce,
                     isAsyncExec
                 )

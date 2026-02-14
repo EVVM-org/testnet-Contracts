@@ -10,6 +10,6 @@ interface ITreasury {
     error PrincipalTokenIsNotWithdrawable();
 
     function deposit(address token, uint256 amount) external payable;
-    function getEvvmAddress() external view returns (address);
+    function getCoreAddress() external view returns (address);
     function withdraw(address token, uint256 amount) external;
 }

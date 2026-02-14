@@ -27,7 +27,7 @@ contract fuzzTest_Treasury is Test, Constants {
         uint256 amount,
         address token
     ) private returns (uint256) {
-        evvm.addBalance(user, token, amount);
+        core.addBalance(user, token, amount);
 
         return amount;
     }
@@ -63,7 +63,7 @@ contract fuzzTest_Treasury is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 input.user,
                 (address(input.isHostNative ? address(0) : address(testToken)))
             ),
@@ -123,7 +123,7 @@ contract fuzzTest_Treasury is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 input.user,
                 (address(input.isHostNative ? address(0) : address(testToken)))
             ),

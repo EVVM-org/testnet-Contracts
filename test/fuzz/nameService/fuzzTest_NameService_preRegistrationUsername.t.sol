@@ -37,7 +37,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         AccountData memory user,
         uint256 priorityFee
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(user.Address, PRINCIPAL_TOKEN_ADDRESS, priorityFee);
+        core.addBalance(user.Address, PRINCIPAL_TOKEN_ADDRESS, priorityFee);
 
         return priorityFee;
     }
@@ -73,6 +73,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                 params.user,
                 params.username,
                 params.lockNumber,
+                address(0),
                 params.nonce,
                 params.priorityFee,
                 params.nonceEVVM
@@ -85,6 +86,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             keccak256(
                 abi.encodePacked(params.username, uint256(params.lockNumber))
             ),
+            address(0),
             params.nonce,
             signatureNameServiceOne,
             params.priorityFee,
@@ -115,7 +117,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -123,7 +125,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             "Error NonStaker: balance incorrectly changed after preRegistrationUsername"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error NonStaker: balance incorrectly changed after preRegistrationUsername"
         );
@@ -151,6 +153,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                 params.user,
                 params.username,
                 params.lockNumber,
+                address(0),
                 params.nonce,
                 params.priorityFee,
                 params.nonceEVVM
@@ -163,6 +166,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             keccak256(
                 abi.encodePacked(params.username, uint256(params.lockNumber))
             ),
+            address(0),
             params.nonce,
             signatureNameServiceOne,
             params.priorityFee,
@@ -193,7 +197,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -201,8 +205,8 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             "Error NonStaker: balance incorrectly changed after preRegistrationUsername"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            evvm.getRewardAmount() + params.priorityFee,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getRewardAmount() + params.priorityFee,
             "Error Staker: balance incorrectly changed after preRegistrationUsername"
         );
     }

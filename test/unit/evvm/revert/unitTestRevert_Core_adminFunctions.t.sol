@@ -22,21 +22,19 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
-    Evvm public evvmMock;
+contract unitTestRevert_Core_adminFunctions is Test, Constants {
+    Core public coreMock;
     AccountData COMMON_USER = WILDCARD_USER;
 
     function setUp() public override {
         staking = new Staking(ADMIN.Address, GOLDEN_STAKER.Address);
-        evvm = new Evvm(
+        core = new Core(
             ADMIN.Address,
             address(staking),
-            EvvmStructs.EvvmMetadata({
+            CoreStructs.EvvmMetadata({
                 EvvmName: "EVVM",
                 EvvmID: 0,
                 principalTokenName: "EVVM Staking Token",
@@ -47,38 +45,26 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
                 reward: 5000000000000000000
             })
         );
-        state = new State(address(evvm), ADMIN.Address);
+
         estimator = new Estimator(
             ACTIVATOR.Address,
-            address(evvm),
+            address(core),
             address(staking),
             ADMIN.Address
         );
-        nameService = new NameService(
-            address(evvm),
-            address(state),
-            ADMIN.Address
-        );
+        nameService = new NameService(address(core), ADMIN.Address);
 
-        staking.initializeSystemContracts(
-            address(estimator),
-            address(evvm),
-            address(state)
-        );
-        treasury = new Treasury(address(evvm));
-        evvm.initializeSystemContracts(
-            address(nameService),
-            address(treasury),
-            address(state)
-        );
+        staking.initializeSystemContracts(address(estimator), address(core));
+        treasury = new Treasury(address(core));
+        core.initializeSystemContracts(address(nameService), address(treasury));
 
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
 
         executeBeforeSetUp();
     }
 
     function addBalance(address user, address token, uint256 amount) private {
-        evvm.addBalance(user, token, amount);
+        core.addBalance(user, token, amount);
     }
 
     /**
@@ -92,11 +78,11 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
     function test__unit_revert__constructor__AddressCantBeZero() external {
         uint256 sizeOfOpcode;
         address addressEvvmMock;
-        vm.expectRevert(EvvmError.AddressCantBeZero.selector);
-        evvmMock = new Evvm(
+        vm.expectRevert(CoreError.AddressCantBeZero.selector);
+        coreMock = new Core(
             address(0),
             address(staking),
-            EvvmStructs.EvvmMetadata({
+            CoreStructs.EvvmMetadata({
                 EvvmName: "EVVM",
                 EvvmID: 0,
                 principalTokenName: "EVVM Staking Token",
@@ -108,7 +94,7 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
             })
         );
 
-        addressEvvmMock = address(evvmMock);
+        addressEvvmMock = address(coreMock);
 
         assembly {
             /// @dev check the size of the opcode of the address
@@ -121,11 +107,11 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
             "Evvm should not be deployed with zero address as admin"
         );
 
-        vm.expectRevert(EvvmError.AddressCantBeZero.selector);
-        evvmMock = new Evvm(
+        vm.expectRevert(CoreError.AddressCantBeZero.selector);
+        coreMock = new Core(
             ADMIN.Address,
             address(0),
-            EvvmStructs.EvvmMetadata({
+            CoreStructs.EvvmMetadata({
                 EvvmName: "EVVM",
                 EvvmID: 0,
                 principalTokenName: "EVVM Staking Token",
@@ -137,7 +123,7 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
             })
         );
 
-        addressEvvmMock = address(evvmMock);
+        addressEvvmMock = address(coreMock);
 
         assembly {
             /// @dev check the size of the opcode of the address
@@ -153,36 +139,36 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
 
     function test__unit_revert__setEvvmID__SenderIsNotAdmin() external {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(EvvmError.SenderIsNotAdmin.selector);
-        evvm.setEvvmID(1);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.setEvvmID(1);
         vm.stopPrank();
     }
 
     function test__unit_revert__setEvvmID__WindowExpired() external {
         vm.startPrank(ADMIN.Address);
-        evvm.setEvvmID(1);
+        core.setEvvmID(1);
         skip(26 hours);
-        vm.expectRevert(EvvmError.WindowExpired.selector);
-        evvm.setEvvmID(67);
+        vm.expectRevert(CoreError.WindowExpired.selector);
+        core.setEvvmID(67);
         vm.stopPrank();
     }
 
     function test__unit_revert__proposeAdmin__SenderIsNotAdmin() external {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(EvvmError.SenderIsNotAdmin.selector);
-        evvm.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
         vm.stopPrank();
     }
 
     function test__unit_revert__proposeAdmin__IncorrectAddressInput() external {
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(EvvmError.IncorrectAddressInput.selector);
-        evvm.proposeAdmin(address(0));
+        vm.expectRevert(CoreError.IncorrectAddressInput.selector);
+        core.proposeAdmin(address(0));
         vm.stopPrank();
 
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(EvvmError.IncorrectAddressInput.selector);
-        evvm.proposeAdmin(ADMIN.Address);
+        vm.expectRevert(CoreError.IncorrectAddressInput.selector);
+        core.proposeAdmin(ADMIN.Address);
         vm.stopPrank();
     }
 
@@ -191,14 +177,14 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
     {
         vm.startPrank(ADMIN.Address);
 
-        evvm.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
+        core.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
 
         vm.stopPrank();
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmError.SenderIsNotAdmin.selector);
-        evvm.rejectProposalAdmin();
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.rejectProposalAdmin();
 
         vm.stopPrank();
     }
@@ -206,14 +192,14 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
     function test__unit_revert__acceptAdmin__TimeLockNotExpired() external {
         vm.startPrank(ADMIN.Address);
 
-        evvm.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
+        core.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
 
         vm.stopPrank();
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(EvvmError.TimeLockNotExpired.selector);
-        evvm.acceptAdmin();
+        vm.expectRevert(CoreError.TimeLockNotExpired.selector);
+        core.acceptAdmin();
 
         vm.stopPrank();
     }
@@ -223,13 +209,65 @@ contract unitTestRevert_EVVM_adminFunctions is Test, Constants {
     {
         vm.startPrank(ADMIN.Address);
 
-        evvm.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
+        core.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
 
         skip(200 days);
 
-        vm.expectRevert(EvvmError.SenderIsNotTheProposedAdmin.selector);
-        evvm.acceptAdmin();
+        vm.expectRevert(CoreError.SenderIsNotTheProposedAdmin.selector);
+        core.acceptAdmin();
 
+        vm.stopPrank();
+    }
+
+    /**
+     *  @dev because this script behaves like a smart contract we dont
+     *       need to implement a new contract
+     */
+
+    function test__unit_revert__proposeUserValidator__SenderIsNotAdmin()
+        external
+    {
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.proposeUserValidator(address(125));
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__cancelUserValidatorProposal__SenderIsNotAdmin()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeUserValidator(address(125));
+        vm.stopPrank();
+
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.cancelUserValidatorProposal();
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__acceptUserValidatorProposal__SenderIsNotAdmin()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeUserValidator(address(125));
+        vm.stopPrank();
+        skip(1 days);
+
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.acceptUserValidatorProposal();
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__acceptUserValidatorProposal__ProposalForUserValidatorNotReady()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeUserValidator(address(125));
+        skip(10 minutes);
+        vm.expectRevert(CoreError.ProposalForUserValidatorNotReady.selector);
+        core.acceptUserValidatorProposal();
         vm.stopPrank();
     }
 }

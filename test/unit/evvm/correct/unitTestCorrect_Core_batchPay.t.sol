@@ -21,19 +21,21 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-contract unitTestCorrect_EVVM_batchPay is Test, Constants {
+contract unitTestCorrect_Core_batchPay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
     function executeBeforeSetUp() internal override {
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             "dummy",
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -49,7 +51,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         uint256 _amount,
         uint256 _priorityFee
     ) private returns (uint256 amount, uint256 priorityFee) {
-        evvm.addBalance(_user.Address, _token, _amount + _priorityFee);
+        core.addBalance(_user.Address, _token, _amount + _priorityFee);
         return (_amount, _priorityFee);
     }
 
@@ -110,16 +112,16 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        uint256 syncNonce_1 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_1 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         );
-        uint256 syncNonce_2 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_2 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         ) + 1;
-        uint256 syncNonce_3 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_3 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         ) + 2;
-        uint256 syncNonce_4 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_4 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         ) + 3;
 
@@ -130,7 +132,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
 
         AccountData memory executor = COMMON_USER_NO_STAKER_3;
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             8
         );
 
@@ -150,7 +152,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
             syncNonce_1,
             false
         );
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -164,7 +166,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toAddress -- Executor 🢃 */
-        batchData[1] = EvvmStructs.BatchData(
+        batchData[1] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -188,7 +190,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toUsername -- No executor 🢃 */
-        batchData[2] = EvvmStructs.BatchData(
+        batchData[2] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -212,7 +214,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toUsername -- Executor 🢃 */
-        batchData[3] = EvvmStructs.BatchData(
+        batchData[3] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -238,7 +240,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Async execution ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         /* 🢃 toAddress -- No executor 🢃 */
-        batchData[4] = EvvmStructs.BatchData(
+        batchData[4] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -262,7 +264,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toAddress -- Executor 🢃 */
-        batchData[5] = EvvmStructs.BatchData(
+        batchData[5] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -286,7 +288,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toUsername -- No executor 🢃 */
-        batchData[6] = EvvmStructs.BatchData(
+        batchData[6] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -310,7 +312,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toUsername -- Executor 🢃 */
-        batchData[7] = EvvmStructs.BatchData(
+        batchData[7] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -334,7 +336,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         vm.startPrank(executor.Address);
-        (uint256 successfulTransactions, bool[] memory results) = evvm.batchPay(
+        (uint256 successfulTransactions, bool[] memory results) = core.batchPay(
             batchData
         );
         vm.stopPrank();
@@ -351,7 +353,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         assertTrue(results[7], "tx 8 should succeed");
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1 +
                 amount_2 +
                 amount_3 +
@@ -364,7 +366,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             priorityFee_1 +
                 priorityFee_2 +
                 priorityFee_3 +
@@ -377,13 +379,13 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(executor.Address, ETHER_ADDRESS),
+            core.getBalance(executor.Address, ETHER_ADDRESS),
             0,
             "executor should not have received any priority fees because there is no fisher staker"
         );
 
         assertEq(
-            evvm.getBalance(executor.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(executor.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "executor should not have received any rewards because there is no fisher staker"
         );
@@ -446,16 +448,16 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        uint256 syncNonce_1 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_1 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         );
-        uint256 syncNonce_2 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_2 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         ) + 1;
-        uint256 syncNonce_3 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_3 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         ) + 2;
-        uint256 syncNonce_4 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_4 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         ) + 3;
 
@@ -466,7 +468,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
 
         AccountData memory executor = COMMON_USER_STAKER;
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             8
         );
 
@@ -486,7 +488,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
             syncNonce_1,
             false
         );
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -500,7 +502,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toAddress -- Executor 🢃 */
-        batchData[1] = EvvmStructs.BatchData(
+        batchData[1] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -524,7 +526,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toUsername -- No executor 🢃 */
-        batchData[2] = EvvmStructs.BatchData(
+        batchData[2] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -548,7 +550,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toUsername -- Executor 🢃 */
-        batchData[3] = EvvmStructs.BatchData(
+        batchData[3] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -574,7 +576,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Async execution ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         /* 🢃 toAddress -- No executor 🢃 */
-        batchData[4] = EvvmStructs.BatchData(
+        batchData[4] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -598,7 +600,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toAddress -- Executor 🢃 */
-        batchData[5] = EvvmStructs.BatchData(
+        batchData[5] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -622,7 +624,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toUsername -- No executor 🢃 */
-        batchData[6] = EvvmStructs.BatchData(
+        batchData[6] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -646,7 +648,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         /* 🢃 toUsername -- Executor 🢃 */
-        batchData[7] = EvvmStructs.BatchData(
+        batchData[7] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -670,7 +672,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         vm.startPrank(executor.Address);
-        (uint256 successfulTransactions, bool[] memory results) = evvm.batchPay(
+        (uint256 successfulTransactions, bool[] memory results) = core.batchPay(
             batchData
         );
         vm.stopPrank();
@@ -687,7 +689,7 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         assertTrue(results[7], "tx 8 should succeed");
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1 +
                 amount_2 +
                 amount_3 +
@@ -700,13 +702,13 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0,
             "sender should have send all priority fees because there is a fisher staker"
         );
 
         assertEq(
-            evvm.getBalance(executor.Address, ETHER_ADDRESS),
+            core.getBalance(executor.Address, ETHER_ADDRESS),
             priorityFee_1 +
                 priorityFee_2 +
                 priorityFee_3 +
@@ -719,8 +721,8 @@ contract unitTestCorrect_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(executor.Address, PRINCIPAL_TOKEN_ADDRESS),
-            evvm.getRewardAmount() * 8,
+            core.getBalance(executor.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getRewardAmount() * 8,
             "executor should have received rewards because there is a fisher staker"
         );
     }

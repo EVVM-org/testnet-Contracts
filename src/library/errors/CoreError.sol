@@ -4,9 +4,9 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title EvvmError - Error Definitions for EVVM Core
+ * @title CoreError - Error Definitions for EVVM Core
  * @author Mate labs
- * @notice Custom error definitions for Evvm.sol core contract
+ * @notice Custom error definitions for Core.sol core contract
  * @dev Custom errors are more gas-efficient than require
  *      statements with strings and provide better error
  *      handling in client applications.
@@ -19,14 +19,14 @@ pragma solidity ^0.8.0;
  * - Initialization: Setup and configuration errors
  *
  * Integration:
- * - Used exclusively by Evvm.sol core contract
+ * - Used exclusively by Core.sol core contract
  * - Complements State.sol error handling
  * - Provides clear failure reasons for users
  *
- * @custom:scope Exclusive to Evvm.sol contract
+ * @custom:scope Exclusive to Core.sol contract
  * @custom:security Clear failures without exposing state
  */
-library EvvmError {
+library CoreError {
     //░▒▓█ Access Control Errors ████████████████████████████████████████████████▓▒░
 
     /// @dev Thrown when non-admin calls admin-only function (onlyAdmin modifier)
@@ -38,14 +38,16 @@ library EvvmError {
     /// @dev Thrown when EIP-191 signature invalid or signer mismatch
     error InvalidSignature();
 
-    /// @dev Thrown when msg.sender != tx executor address
-    error SenderIsNotTheExecutor();
+    /// @dev Thrown when msg.sender != sender executor address
+    error SenderIsNotTheSenderExecutor();
 
     /// @dev Thrown when non-treasury calls treasury-only function
     error SenderIsNotTreasury();
 
     /// @dev Thrown when non-proposed admin attempts acceptAdmin before timelock
     error SenderIsNotTheProposedAdmin();
+
+    error OriginIsNotTheOriginExecutor();
 
     /// @dev Thrown when EOA calls caPay/disperseCaPay (contract-only functions)
     error NotAnCA();
@@ -76,4 +78,39 @@ library EvvmError {
 
     /// @dev Thrown when attempting time-locked action before delay (30d impl, 1d admin)
     error TimeLockNotExpired();
+
+
+
+    /// @dev Thrown when async nonce already consumed
+    error AsyncNonceAlreadyUsed();
+
+    /// @dev Thrown when sync nonce != expected sequential nonce
+    error SyncNonceMismatch();
+
+    /// @dev Thrown when reserving already-reserved async nonce
+    error AsyncNonceAlreadyReserved();
+
+    /// @dev Thrown when revoking non-reserved async nonce
+    error AsyncNonceNotReserved();
+
+    /// @dev Thrown when using reserved async nonce (general check)
+    error AsyncNonceIsReserved();
+
+    /// @dev Thrown when UserValidator blocks user transaction
+    error UserCannotExecuteTransaction();
+
+    /// @dev Thrown when using async nonce reserved by different service
+    error AsyncNonceIsReservedByAnotherService();
+
+    /// @dev Thrown when accepting UserValidator proposal before timelock
+    error ProposalForUserValidatorNotReady();
+
+    /// @dev Thrown when validateAndConsumeNonce caller is EOA (contracts only)
+    error MsgSenderIsNotAContract();
+
+    /// @dev Thrown when accepting EVVM address proposal before timelock
+    error ProposalForEvvmAddressNotReady();
+
+    /// @dev Thrown when reserving nonce with service == address(0)
+    error InvalidServiceAddress();
 }

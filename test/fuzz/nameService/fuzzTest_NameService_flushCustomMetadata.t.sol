@@ -45,9 +45,11 @@ contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
             uint256(
                 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -61,6 +63,7 @@ contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
                 USER_USERNAME_OWNER,
                 USERNAME,
                 string.concat("test>", AdvancedStrings.uintToString(i)),
+                address(0),
                 uint256(
                     0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
                 ) + i,
@@ -79,7 +82,7 @@ contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
         private
         returns (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToFlushCustomMetadata(
@@ -136,7 +139,7 @@ contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
             params.signatureEVVM
         ) = _executeSig_nameService_flushCustomMetadata(
             params.user,
-            params.identity,
+            params.identity,address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -146,7 +149,7 @@ contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
 
         nameService.flushCustomMetadata(
             params.user.Address,
-            params.identity,
+            params.identity,address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -163,12 +166,12 @@ contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "user balance after flushCustomMetadata is incorrect"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "fisher balance after flushCustomMetadata is incorrect"
         );
@@ -214,7 +217,7 @@ contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
             params.signatureEVVM
         ) = _executeSig_nameService_flushCustomMetadata(
             params.user,
-            params.identity,
+            params.identity,address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -224,7 +227,7 @@ contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
 
         nameService.flushCustomMetadata(
             params.user.Address,
-            params.identity,
+            params.identity,address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -241,13 +244,13 @@ contract fuzzTest_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "user balance after flushCustomMetadata is incorrect"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * sizeOfCustomMetadata) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((5 * core.getRewardAmount()) * sizeOfCustomMetadata) +
                 params.priorityFee,
             "fisher balance after flushCustomMetadata is incorrect"
         );

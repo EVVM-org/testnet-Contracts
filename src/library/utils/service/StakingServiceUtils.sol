@@ -5,35 +5,35 @@ pragma solidity ^0.8.0;
  * @title Staking Utilities for EVVM Services
  * @author Mate labs
  * @notice Abstract contract for Staking.sol integration enabling services to stake and earn Fisher fees
- * @dev Three-step staking: prepareServiceStaking → evvm.caPay(5083 PT * amount) → confirmServiceStaking. Cost: 5083 PT per staking token.
+ * @dev Three-step staking: prepareServiceStaking → core.caPay(5083 PT * amount) → confirmServiceStaking. Cost: 5083 PT per staking token.
  */
 
-import {IStaking} from "@evvm/testnet-contracts/interfaces/IStaking.sol";
-import {IEvvm} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
+import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 
 abstract contract StakingServiceUtils {
     /// @notice Staking contract reference
     /// @dev Used for all staking operations
-    IStaking internal staking;
+    Staking internal staking;
 
     /**
      * @notice Initializes staking integration
      * @param stakingAddress Address of Staking.sol
      */
     constructor(address stakingAddress) {
-        staking = IStaking(stakingAddress);
+        staking = Staking(stakingAddress);
     }
 
     /**
      * @notice Stakes tokens for this service via 3-step atomic process
-     * @dev Calls prepareServiceStaking → evvm.caPay(PT, cost) → confirmServiceStaking. Requires 5083 PT * amountToStake in service Evvm balance.
+     * @dev Calls prepareServiceStaking → core.caPay(PT, cost) → confirmServiceStaking. Requires 5083 PT * amountToStake in service Evvm balance.
      * @param amountToStake Number of staking tokens to purchase
      */
     function _makeStakeService(uint256 amountToStake) internal {
         staking.prepareServiceStaking(amountToStake);
-        IEvvm(staking.getEvvmAddress()).caPay(
+        Core(staking.getCoreAddress()).caPay(
             address(staking),
-            IEvvm(staking.getEvvmAddress()).getPrincipalTokenAddress(),
+            Core(staking.getCoreAddress()).getPrincipalTokenAddress(),
             staking.priceOfStaking() * amountToStake
         );
         staking.confirmServiceStaking();
@@ -54,6 +54,6 @@ abstract contract StakingServiceUtils {
      * @param newStakingAddress New Staking.sol contract address
      */
     function _changeStakingAddress(address newStakingAddress) internal virtual {
-        staking = IStaking(newStakingAddress);
+        staking = Staking(newStakingAddress);
     }
 }

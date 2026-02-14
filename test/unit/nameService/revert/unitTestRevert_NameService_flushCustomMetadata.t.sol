@@ -32,12 +32,8 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-import {
-    StateError
-} from "@evvm/testnet-contracts/library/errors/StateError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -54,9 +50,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             1,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -69,6 +67,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             CUSTOM_METADATA_VALUE_0,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
@@ -81,6 +80,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             CUSTOM_METADATA_VALUE_1,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
             ),
@@ -93,6 +93,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             CUSTOM_METADATA_VALUE_2,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7
             ),
@@ -110,7 +111,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         private
         returns (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToFlushCustomMetadata(
@@ -127,11 +128,10 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_revert__flushCustomMetadata__InvalidSignatureOnNameService_evvmID()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
-            COMMON_USER_NO_STAKER_1,
-            USERNAME,
-            0.0001 ether
-        );
+        (
+            uint256 totalAmountFlush,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 100010001;
         uint256 nonceEVVM = 1000001;
@@ -140,9 +140,10 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
                 address(nameService),
                 USERNAME,
+                address(0),
                 nonce
             )
         );
@@ -167,10 +168,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.flushCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -187,7 +189,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -199,11 +201,10 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_revert__flushCustomMetadata__InvalidSignatureOnNameService_signer()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
-            COMMON_USER_NO_STAKER_1,
-            USERNAME,
-            0.0001 ether
-        );
+        (
+            uint256 totalAmountFlush,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 100010001;
         uint256 nonceEVVM = 1000001;
@@ -215,6 +216,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -226,10 +228,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.flushCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -246,7 +249,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -258,11 +261,10 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_revert__flushCustomMetadata__InvalidSignatureOnNameService_identity()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
-            COMMON_USER_NO_STAKER_1,
-            USERNAME,
-            0.0001 ether
-        );
+        (
+            uint256 totalAmountFlush,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 100010001;
         uint256 nonceEVVM = 1000001;
@@ -274,6 +276,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different identity 🢃 */
                 "diferent",
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -285,10 +288,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.flushCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -305,7 +309,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -317,11 +321,10 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_revert__flushCustomMetadata__InvalidSignatureOnNameService_nonce()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
-            COMMON_USER_NO_STAKER_1,
-            USERNAME,
-            0.0001 ether
-        );
+        (
+            uint256 totalAmountFlush,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 100010001;
         uint256 nonceEVVM = 1000001;
@@ -332,6 +335,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         ) = _executeSig_nameService_flushCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 /* 🢃 different nonce 🢃 */
                 nonce + 1,
                 totalPriorityFeeAmount,
@@ -344,10 +348,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.flushCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -364,7 +369,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -376,12 +381,15 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_revert__flushCustomMetadata__UserIsNotOwnerOfIdentity()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
-            /* 🢃 different user 🢃 */
-            COMMON_USER_NO_STAKER_2,
-            USERNAME,
-            0.0001 ether
-        );
+        (
+            uint256 totalAmountFlush,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(
+                /* 🢃 different user 🢃 */
+                COMMON_USER_NO_STAKER_2,
+                USERNAME,
+                0.0001 ether
+            );
 
         uint256 nonce = 100010001;
         uint256 nonceEVVM = 1000001;
@@ -393,6 +401,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 /* 🢃 different user 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -409,6 +418,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             /* 🢃 different user 🢃 */
             COMMON_USER_NO_STAKER_2.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -425,7 +435,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -436,15 +446,17 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
 
     function test__unit_revert__flushCustomMetadata__EmptyCustomMetadata()
         external
-    {   
+    {
         /* 🢃 identity has no custom metadata 🢃 */
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             "testing",
             1,
+            address(0),
             uint256(
                 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01
             ),
+            address(0),
             uint256(
                 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00
             ),
@@ -453,11 +465,10 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             )
         );
 
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
-            COMMON_USER_NO_STAKER_1,
-            "testing",
-            0.0001 ether
-        );
+        (
+            uint256 totalAmountFlush,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, "testing", 0.0001 ether);
 
         uint256 nonce = 100010001;
         uint256 nonceEVVM = 1000001;
@@ -468,6 +479,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         ) = _executeSig_nameService_flushCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 "testing",
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -482,7 +494,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         vm.expectRevert(NameServiceError.EmptyCustomMetadata.selector);
         nameService.flushCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
-            "testing",
+            "testing",address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -499,7 +511,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -511,11 +523,10 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_revert__flushCustomMetadata_NonceAlreadyUsed()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
-            COMMON_USER_NO_STAKER_1,
-            USERNAME,
-            0.0001 ether
-        );
+        (
+            uint256 totalAmountFlush,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         /* 🢃 nonce already used 🢃 */
         uint256 nonce = uint256(
@@ -529,6 +540,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         ) = _executeSig_nameService_flushCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -540,10 +552,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
         nameService.flushCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -560,7 +573,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -572,11 +585,10 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
     function test__unit_revert__flushCustomMetadata__InvalidSignature_fromEvvm()
         external
     {
-        (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount) = _addBalance(
-            COMMON_USER_NO_STAKER_1,
-            USERNAME,
-            0.0001 ether
-        );
+        (
+            uint256 totalAmountFlush,
+            uint256 totalPriorityFeeAmount
+        ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 100010001;
         uint256 nonceEVVM = 1000001;
@@ -587,6 +599,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         ) = _executeSig_nameService_flushCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
@@ -600,10 +613,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.flushCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -620,7 +634,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -641,6 +655,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         ) = _executeSig_nameService_flushCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 nonce,
                 0,
                 nonceEVVM
@@ -652,10 +667,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         nameService.flushCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             0,
@@ -672,7 +688,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),

@@ -3,13 +3,13 @@
 
 pragma solidity ^0.8.0;
 /**
-░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓██████████████▓▒░  
-░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░ 
-░▒▓█▓▒░       ░▒▓█▓▒▒▓█▓▒░ ░▒▓█▓▒▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░ 
-░▒▓██████▓▒░  ░▒▓█▓▒▒▓█▓▒░ ░▒▓█▓▒▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░ 
-░▒▓█▓▒░        ░▒▓█▓▓█▓▒░   ░▒▓█▓▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░ 
-░▒▓█▓▒░        ░▒▓█▓▓█▓▒░   ░▒▓█▓▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░ 
-░▒▓████████▓▒░  ░▒▓██▓▒░     ░▒▓██▓▒░  ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░ 
+ ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓████████▓▒░ 
+░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        
+░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        
+░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓██████▓▒░   
+░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        
+░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        
+ ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░ 
 
 ████████╗███████╗███████╗████████╗███╗   ██╗███████╗████████╗
 ╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝████╗  ██║██╔════╝╚══██╔══╝
@@ -18,39 +18,41 @@ pragma solidity ^0.8.0;
    ██║   ███████╗███████║   ██║   ██║ ╚████║███████╗   ██║   
    ╚═╝   ╚══════╝╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚══════╝   ╚═╝   
                                                              
- * @title EVVM (Ethereum Virtual Machine Virtualization) Core Contract
+ * @title EVVM Core Contract
  * @author Mate labs
  * @notice Core payment processing and token management for EVVM ecosystem
- * @dev Multi-token payments with signature verification. Staker rewards, Fisher Bridge, balance management. State.sol (nonces), NameService (identity), Treasury (privileged ops). Proxy pattern with delegatecall. Era-based deflationary tokenomics. Time-delayed governance (30d impl, 1d admin).
  */
 
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
 import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
+    CoreStorage
+} from "@evvm/testnet-contracts/contracts/core/lib/CoreStorage.sol";
 import {
-    EvvmError as Error
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+    CoreError as Error
+} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 import {
-    EvvmHashUtils as Hash
-} from "@evvm/testnet-contracts/library/utils/signature/EvvmHashUtils.sol";
+    CoreHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/CoreHashUtils.sol";
 import {
     AdvancedStrings
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 import {
     ProposalStructs
 } from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+import {CAUtils} from "@evvm/testnet-contracts/library/utils/CAUtils.sol";
 import {
-    CAUtils
-} from "@evvm/testnet-contracts/library/utils/CAUtils.sol";
+    IUserValidator
+} from "@evvm/testnet-contracts/interfaces/IUserValidator.sol";
+import {
+    SignatureRecover
+} from "@evvm/testnet-contracts/library/primitives/SignatureRecover.sol";
 
-contract Evvm is EvvmStorage {
+contract Core is CoreStorage {
     /**
      * @notice Access control modifier restricting function calls to the current admin
      * @dev Validates that msg.sender matches the current admin address before function execution
@@ -113,7 +115,7 @@ contract Evvm is EvvmStorage {
     constructor(
         address _initialOwner,
         address _stakingContractAddress,
-        EvvmStructs.EvvmMetadata memory _evvmMetadata
+        CoreStructs.EvvmMetadata memory _evvmMetadata
     ) {
         if (
             _initialOwner == address(0) || _stakingContractAddress == address(0)
@@ -164,17 +166,13 @@ contract Evvm is EvvmStorage {
      */
     function initializeSystemContracts(
         address _nameServiceAddress,
-        address _treasuryAddress,
-        address _stateAddress
+        address _treasuryAddress
     ) external {
         if (breakerSetupNameServiceAddress == 0x00)
             revert Error.BreakerExploded();
 
-        if (
-            _nameServiceAddress == address(0) ||
-            _treasuryAddress == address(0) ||
-            _stateAddress == address(0)
-        ) revert Error.AddressCantBeZero();
+        if (_nameServiceAddress == address(0) || _treasuryAddress == address(0))
+            revert Error.AddressCantBeZero();
 
         nameServiceAddress = _nameServiceAddress;
         balances[nameServiceAddress][evvmMetadata.principalTokenAddress] =
@@ -183,7 +181,6 @@ contract Evvm is EvvmStorage {
         stakerList[nameServiceAddress] = FLAG_IS_STAKER;
 
         treasuryAddress = _treasuryAddress;
-        stateAddress = _stateAddress;
     }
 
     /**
@@ -299,7 +296,7 @@ contract Evvm is EvvmStorage {
         stakerList[user] = answer;
     }
 
-    //░▒▓█ Payment Functions ████████████████████████████████████████████████████████▓▒░
+    //░▒▓█ Payment Functions ██████████████████████████████████████████████████████▓▒░
 
     /**
      * @notice Processes single payments
@@ -324,7 +321,7 @@ contract Evvm is EvvmStorage {
      * @param priorityFee Additional fee for transaction priority (not used in non-staker payments)
      * @param nonce Transaction nonce
      * @param isAsyncExec Execution type flag (false = sync nonce, true = async nonce)
-     * @param executor Address authorized to execute this transaction (zero address = sender only)
+     * @param senderExecutor Address authorized to execute this payment (zero address = sender only)
      * @param signature Cryptographic signature authorizing this payment
      */
     function pay(
@@ -334,28 +331,55 @@ contract Evvm is EvvmStorage {
         address token,
         uint256 amount,
         uint256 priorityFee,
-        address executor,
+        address senderExecutor,
         uint256 nonce,
         bool isAsyncExec,
         bytes memory signature
     ) external {
-        State(stateAddress).validateAndConsumeNonce(
-            from,
-            Hash.hashDataForPay(
-                to_address,
-                to_identity,
-                token,
-                amount,
-                priorityFee,
-                executor
-            ),
-            nonce,
-            isAsyncExec,
-            signature
-        );
+        if (
+            SignatureRecover.recoverSigner(
+                AdvancedStrings.buildSignaturePayload(
+                    evvmMetadata.EvvmID,
+                    address(this),
+                    Hash.hashDataForPay(
+                        to_address,
+                        to_identity,
+                        token,
+                        amount,
+                        priorityFee
+                    ),
+                    senderExecutor,
+                    nonce,
+                    isAsyncExec
+                ),
+                signature
+            ) != from
+        ) revert Error.InvalidSignature();
 
-        if ((executor != address(0)) && (msg.sender != executor))
-            revert Error.SenderIsNotTheExecutor();
+        if (!canExecuteUserTransaction(from))
+            revert Error.UserCannotExecuteTransaction();
+
+        if (isAsyncExec) {
+            bytes1 statusNonce = asyncNonceStatus(from, nonce);
+            if (asyncNonceStatus(from, nonce) == 0x01)
+                revert Error.AsyncNonceAlreadyUsed();
+
+            if (
+                statusNonce == 0x02 &&
+                asyncNonceReservedPointers[from][nonce] != address(this)
+            ) revert Error.AsyncNonceIsReservedByAnotherService();
+
+            asyncNonce[from][nonce] = true;
+        } else {
+            if (nonce != nextSyncNonce[from]) revert Error.SyncNonceMismatch();
+
+            unchecked {
+                ++nextSyncNonce[from];
+            }
+        }
+
+        if ((senderExecutor != address(0)) && (msg.sender != senderExecutor))
+            revert Error.SenderIsNotTheSenderExecutor();
 
         address to = !AdvancedStrings.equal(to_identity, "")
             ? NameService(nameServiceAddress).verifyStrictAndGetOwnerOfIdentity(
@@ -399,77 +423,111 @@ contract Evvm is EvvmStorage {
      * @return results Boolean array with success status for each payment
      */
     function batchPay(
-        EvvmStructs.BatchData[] memory batchData
+        CoreStructs.BatchData[] memory batchData
     ) external returns (uint256 successfulTransactions, bool[] memory results) {
         bool isSenderStaker = isAddressStaker(msg.sender);
         address to_aux;
-        EvvmStructs.BatchData memory payment;
+        CoreStructs.BatchData memory payment;
         results = new bool[](batchData.length);
 
         for (uint256 iteration = 0; iteration < batchData.length; iteration++) {
             payment = batchData[iteration];
-            try
-                State(stateAddress).validateAndConsumeNonce(
-                    payment.from,
-                    Hash.hashDataForPay(
-                        payment.to_address,
-                        payment.to_identity,
-                        payment.token,
-                        payment.amount,
-                        payment.priorityFee,
-                        payment.executor
+
+            if (
+                SignatureRecover.recoverSigner(
+                    AdvancedStrings.buildSignaturePayload(
+                        evvmMetadata.EvvmID,
+                        address(this),
+                        Hash.hashDataForPay(
+                            payment.to_address,
+                            payment.to_identity,
+                            payment.token,
+                            payment.amount,
+                            payment.priorityFee
+                        ),
+                        payment.senderExecutor,
+                        payment.nonce,
+                        payment.isAsyncExec
                     ),
-                    payment.nonce,
-                    payment.isAsyncExec,
                     payment.signature
-                )
-            {
+                ) != payment.from
+            ) {
+                results[iteration] = false;
+                continue;
+            }
+
+            if (!canExecuteUserTransaction(payment.from)) {
+                results[iteration] = false;
+                continue;
+            }
+
+            if (payment.isAsyncExec) {
+                bytes1 statusNonce = asyncNonceStatus(
+                    payment.from,
+                    payment.nonce
+                );
+                if (asyncNonceStatus(payment.from, payment.nonce) == 0x01) {
+                    results[iteration] = false;
+                    continue;
+                }
+
                 if (
-                    (payment.executor != address(0) &&
-                        msg.sender != payment.executor) ||
-                    ((isSenderStaker ? payment.priorityFee : 0) +
-                        payment.amount >
-                        balances[payment.from][payment.token])
+                    statusNonce == 0x02 &&
+                    asyncNonceReservedPointers[payment.from][payment.nonce] !=
+                    address(this)
                 ) {
                     results[iteration] = false;
                     continue;
                 }
 
-                if (!AdvancedStrings.equal(payment.to_identity, "")) {
-                    to_aux = NameService(nameServiceAddress).getOwnerOfIdentity(
-                        payment.to_identity
-                    );
-                    if (to_aux == address(0)) {
-                        results[iteration] = false;
-                        continue;
-                    }
-                } else {
-                    to_aux = payment.to_address;
+                asyncNonce[payment.from][payment.nonce] = true;
+            } else {
+                if (payment.nonce != nextSyncNonce[payment.from]) {
+                    results[iteration] = false;
+                    continue;
                 }
 
-                /// @dev Because of the previous check, _updateBalance can´t fail
+                unchecked {
+                    ++nextSyncNonce[payment.from];
+                }
+            }
 
-                _updateBalance(
-                    payment.from,
-                    to_aux,
-                    payment.token,
-                    payment.amount
-                );
-
-                if (payment.priorityFee > 0 && isSenderStaker)
-                    _updateBalance(
-                        payment.from,
-                        msg.sender,
-                        payment.token,
-                        payment.priorityFee
-                    );
-
-                successfulTransactions++;
-                results[iteration] = true;
-            } catch {
+            if (
+                (payment.senderExecutor != address(0) &&
+                    msg.sender != payment.senderExecutor) ||
+                ((isSenderStaker ? payment.priorityFee : 0) + payment.amount >
+                    balances[payment.from][payment.token])
+            ) {
                 results[iteration] = false;
                 continue;
             }
+
+            if (!AdvancedStrings.equal(payment.to_identity, "")) {
+                to_aux = NameService(nameServiceAddress).getOwnerOfIdentity(
+                    payment.to_identity
+                );
+                if (to_aux == address(0)) {
+                    results[iteration] = false;
+                    continue;
+                }
+            } else {
+                to_aux = payment.to_address;
+            }
+
+            /// @dev Because of the previous check, _updateBalance can´t fail
+
+            _updateBalance(payment.from, to_aux, payment.token, payment.amount);
+
+            if (payment.priorityFee > 0 && isSenderStaker)
+                _updateBalance(
+                    payment.from,
+                    msg.sender,
+                    payment.token,
+                    payment.priorityFee
+                );
+
+            successfulTransactions++;
+            results[iteration] = true;
         }
 
         if (isSenderStaker) _giveReward(msg.sender, successfulTransactions);
@@ -503,36 +561,63 @@ contract Evvm is EvvmStorage {
      * @param priorityFee Fee amount for the transaction executor
      * @param nonce Transaction nonce for replay protection
      * @param isAsyncExec True for async nonce, false for sync nonce
-     * @param executor Address authorized to execute this distribution
+     * @param senderExecutor Address authorized to execute this distribution
      * @param signature Cryptographic signature authorizing this distribution
      */
     function dispersePay(
         address from,
-        EvvmStructs.DispersePayMetadata[] memory toData,
+        CoreStructs.DispersePayMetadata[] memory toData,
         address token,
         uint256 amount,
         uint256 priorityFee,
-        address executor,
+        address senderExecutor,
         uint256 nonce,
         bool isAsyncExec,
         bytes memory signature
     ) external {
-        State(stateAddress).validateAndConsumeNonce(
-            from,
-            Hash.hashDataForDispersePay(
-                toData,
-                token,
-                amount,
-                priorityFee,
-                executor
-            ),
-            nonce,
-            isAsyncExec,
-            signature
-        );
+        if (
+            SignatureRecover.recoverSigner(
+                AdvancedStrings.buildSignaturePayload(
+                    evvmMetadata.EvvmID,
+                    address(this),
+                    Hash.hashDataForDispersePay(
+                        toData,
+                        token,
+                        amount,
+                        priorityFee
+                    ),
+                    senderExecutor,
+                    nonce,
+                    isAsyncExec
+                ),
+                signature
+            ) != from
+        ) revert Error.InvalidSignature();
 
-        if ((executor != address(0)) && (msg.sender != executor))
-            revert Error.SenderIsNotTheExecutor();
+        if (!canExecuteUserTransaction(from))
+            revert Error.UserCannotExecuteTransaction();
+
+        if (isAsyncExec) {
+            bytes1 statusNonce = asyncNonceStatus(from, nonce);
+            if (asyncNonceStatus(from, nonce) == 0x01)
+                revert Error.AsyncNonceAlreadyUsed();
+
+            if (
+                statusNonce == 0x02 &&
+                asyncNonceReservedPointers[from][nonce] != address(this)
+            ) revert Error.AsyncNonceIsReservedByAnotherService();
+
+            asyncNonce[from][nonce] = true;
+        } else {
+            if (nonce != nextSyncNonce[from]) revert Error.SyncNonceMismatch();
+
+            unchecked {
+                ++nextSyncNonce[from];
+            }
+        }
+
+        if ((senderExecutor != address(0)) && (msg.sender != senderExecutor))
+            revert Error.SenderIsNotTheSenderExecutor();
 
         bool isSenderStaker = isAddressStaker(msg.sender);
 
@@ -571,9 +656,9 @@ contract Evvm is EvvmStorage {
     }
 
     /**
-     * @notice Contract-to-address payment function for authorized 
+     * @notice Contract-to-address payment function for authorized
      *         smart contracts
-     * @dev Allows registered contracts to distribute tokens without 
+     * @dev Allows registered contracts to distribute tokens without
      *      signature verification
      *
      * Authorization Model:
@@ -633,7 +718,7 @@ contract Evvm is EvvmStorage {
      * @param amount Total amount to distribute (must equal sum of individual amounts)
      */
     function disperseCaPay(
-        EvvmStructs.DisperseCaPayMetadata[] memory toData,
+        CoreStructs.DisperseCaPayMetadata[] memory toData,
         address token,
         uint256 amount
     ) external {
@@ -657,7 +742,235 @@ contract Evvm is EvvmStorage {
         if (isAddressStaker(from)) _giveReward(from, 1);
     }
 
-    //░▒▓█Treasury exclusive functions██████████████████████████████████████████▓▒░
+    //░▒▓█ Nonce and Signature Functions ██████████████████████████████████████████▓▒░
+
+    /**
+     * @notice Validates signature and consumes nonce atomically
+     * @dev Central coordination function for all EVVM transactions
+     *
+     * Validation Workflow:
+     * - Verifies caller is a contract (services only)
+     * - Reconstructs EIP-191 signature payload
+     * - Recovers signer and validates against user address
+     * - Checks user transaction permission via validator
+     * - Validates and consumes nonce based on type
+     *
+     * Nonce Management:
+     * - Async: Checks availability/reservation, marks as used
+     * - Sync: Validates sequential order, increments counter
+     * - Prevents replay attacks through atomic consumption
+     *
+     * Service Integration:
+     * - Called by all EVVM services for transaction validation
+     * - Service address becomes part of signature payload
+     * - Ensures service-specific nonce reservations are honored
+     *
+     * Security Features:
+     * - Atomic signature validation + nonce consumption
+     * - Contract-only caller restriction
+     * - UserValidator integration for transaction filtering
+     * - Service-specific nonce reservation enforcement
+     *
+     * @param user Address that signed the transaction
+     * @param hashPayload Keccak256 hash of transaction parameters
+     * @param nonce Nonce value to validate and consume
+     * @param isAsyncExec True for async nonce, false for sync
+     * @param signature EIP-191 signature from the user
+     */
+    function validateAndConsumeNonce(
+        address user,
+        bytes32 hashPayload,
+        address originExecutor,
+        uint256 nonce,
+        bool isAsyncExec,
+        bytes memory signature
+    ) external {
+        address servicePointer = msg.sender;
+
+        if (!CAUtils.verifyIfCA(servicePointer))
+            revert Error.MsgSenderIsNotAContract();
+
+        if (
+            SignatureRecover.recoverSigner(
+                AdvancedStrings.buildSignaturePayload(
+                    evvmMetadata.EvvmID,
+                    servicePointer,
+                    hashPayload,
+                    originExecutor,
+                    nonce,
+                    isAsyncExec
+                ),
+                signature
+            ) != user
+        ) revert Error.InvalidSignature();
+
+        if (originExecutor != address(0) && tx.origin != originExecutor)
+            revert Error.OriginIsNotTheOriginExecutor();
+
+        if (!canExecuteUserTransaction(user))
+            revert Error.UserCannotExecuteTransaction();
+
+        if (isAsyncExec) {
+            bytes1 statusNonce = asyncNonceStatus(user, nonce);
+            if (asyncNonceStatus(user, nonce) == 0x01)
+                revert Error.AsyncNonceAlreadyUsed();
+
+            if (
+                statusNonce == 0x02 &&
+                asyncNonceReservedPointers[user][nonce] != servicePointer
+            ) revert Error.AsyncNonceIsReservedByAnotherService();
+
+            asyncNonce[user][nonce] = true;
+        } else {
+            if (nonce != nextSyncNonce[user]) revert Error.SyncNonceMismatch();
+
+            unchecked {
+                ++nextSyncNonce[user];
+            }
+        }
+    }
+
+    //░▒▓█ Nonce Reservation Functions ████████████████████████████████████████████▓▒░
+
+    /**
+     * @notice Reserves an async nonce for exclusive service use
+     * @dev Allows users to pre-allocate nonces to specific services
+     *
+     * Reservation System:
+     * - Users reserve nonces for specific service addresses
+     * - Prevents other services from using reserved nonces
+     * - Useful for multi-step or delayed operations
+     * - Reservation persists until revoked or nonce is used
+     *
+     * Use Cases:
+     * - Cross-chain operations requiring coordination
+     * - Multi-signature workflows with specific executors
+     * - Service-specific transaction queues
+     * - Preventing front-running by other services
+     *
+     * Security Features:
+     * - User-controlled reservation (msg.sender)
+     * - Validates service address is not zero
+     * - Prevents double reservation of same nonce
+     * - Cannot reserve already-used nonces
+     *
+     * @param nonce The async nonce value to reserve
+     * @param serviceAddress Service contract that can use nonce
+     */
+    function reserveAsyncNonce(uint256 nonce, address serviceAddress) external {
+        if (serviceAddress == address(0)) revert Error.InvalidServiceAddress();
+
+        if (asyncNonce[msg.sender][nonce]) revert Error.AsyncNonceAlreadyUsed();
+
+        if (asyncNonceReservedPointers[msg.sender][nonce] != address(0))
+            revert Error.AsyncNonceAlreadyReserved();
+
+        asyncNonceReservedPointers[msg.sender][nonce] = serviceAddress;
+    }
+
+    /**
+     * @notice Revokes a previously reserved async nonce
+     * @dev Allows clearing of nonce reservations for reuse
+     *
+     * Revocation Process:
+     * - Validates nonce has not been used yet
+     * - Checks that nonce is currently reserved
+     * - Clears the service address reservation
+     * - Nonce becomes available for any service
+     *
+     * Authorization:
+     * - Currently callable by anyone (potential security issue)
+     * - Should validate msg.sender is user or authorized
+     * - Allows cancellation of mistaken reservations
+     *
+     * Use Cases:
+     * - Canceling pending service operations
+     * - Correcting accidental reservations
+     * - Freeing nonces for different services
+     *
+     * @param user Address that reserved the nonce
+     * @param nonce The async nonce to revoke reservation for
+     */
+    function revokeAsyncNonce(address user, uint256 nonce) external {
+        if (asyncNonce[user][nonce]) revert Error.AsyncNonceAlreadyUsed();
+
+        if (asyncNonceReservedPointers[user][nonce] == address(0))
+            revert Error.AsyncNonceNotReserved();
+
+        asyncNonceReservedPointers[user][nonce] = address(0);
+    }
+
+    //░▒▓█ UserValidator Management Functions █████████████████████████████████████▓▒░
+
+    /**
+     * @notice Proposes new UserValidator contract address
+     * @dev Initiates time-delayed governance for validator changes
+     *
+     * Governance Process:
+     * - Admin proposes new validator contract address
+     * - 1-day delay enforced before acceptance
+     * - Allows community review of validator changes
+     * - Can be canceled before acceptance
+     *
+     * UserValidator Integration:
+     * - Optional contract for transaction filtering
+     * - Called during validateAndConsumeNonce execution
+     * - Can block specific users from executing transactions
+     * - Useful for compliance or security requirements
+     *
+     * Security Features:
+     * - Time-delayed governance (DELAY constant)
+     * - Admin-only proposal capability
+     * - Cancellation mechanism before activation
+     *
+     * @param newValidator Address of proposed UserValidator
+     */
+    function proposeUserValidator(address newValidator) external onlyAdmin {
+        userValidatorAddress.proposal = newValidator;
+        userValidatorAddress.timeToAccept =
+            block.timestamp +
+            TIME_TO_ACCEPT_PROPOSAL;
+    }
+
+    /**
+     * @notice Cancels pending UserValidator proposal
+     * @dev Resets proposal state before time-lock expires
+     *
+     * @custom:access Admin only
+     */
+    function cancelUserValidatorProposal() external onlyAdmin {
+        userValidatorAddress.proposal = address(0);
+        userValidatorAddress.timeToAccept = 0;
+    }
+
+    /**
+     * @notice Accepts UserValidator proposal after time-lock
+     * @dev Activates new validator after delay period expires
+     *
+     * Activation Process:
+     * - Validates time-lock period has passed
+     * - Sets new validator as current active validator
+     * - Clears proposal state
+     * - Validator becomes active immediately
+     *
+     * Impact:
+     * - All future transactions checked by new validator
+     * - Affects validateAndConsumeNonce behavior
+     * - Can block users from executing transactions
+     *
+     * @custom:access Admin only
+     * @custom:timelock Requires DELAY (1 day) to have passed
+     */
+    function acceptUserValidatorProposal() external onlyAdmin {
+        if (block.timestamp < userValidatorAddress.timeToAccept)
+            revert Error.ProposalForUserValidatorNotReady();
+
+        userValidatorAddress.current = userValidatorAddress.proposal;
+        userValidatorAddress.proposal = address(0);
+        userValidatorAddress.timeToAccept = 0;
+    }
+
+    //░▒▓█ Treasury Exclusive Functions ███████████████████████████████████████████▓▒░
 
     /**
      * @notice Adds tokens to a user's balance in the EVVM system
@@ -740,79 +1053,9 @@ contract Evvm is EvvmStorage {
         balances[user][token] -= amount;
     }
 
-    //█ Internal Functions ███████████████████████████████████████████████████████████████████
+    //░▒▓█ Administrative Functions ████████████████████████████████████████████████████████▓▒░
 
-    //█ Balance Management Functions █████████████████████████████████████████████
-
-    /**
-     * @notice Internal function to safely transfer tokens between addresses
-     * @dev Performs balance validation and atomic transfer with overflow protection
-     *
-     * Transfer Process:
-     * - Validates sender has sufficient balance
-     * - Performs atomic balance updates using unchecked arithmetic
-     * - Returns success/failure status for error handling
-     *
-     * Security Features:
-     * - Balance validation prevents overdrafts
-     * - Unchecked arithmetic for gas optimization (overflow impossible)
-     * - Returns boolean for caller error handling
-     *
-     * @param from Address to transfer tokens from
-     * @param to Address to transfer tokens to
-     * @param token Address of the token contract
-     * @param value Amount of tokens to transfer
-     */
-    function _updateBalance(
-        address from,
-        address to,
-        address token,
-        uint256 value
-    ) internal {
-        uint256 fromBalance = balances[from][token];
-        if (fromBalance < value) revert Error.InsufficientBalance();
-
-        unchecked {
-            balances[from][token] = fromBalance - value;
-            balances[to][token] += value;
-        }
-    }
-
-    /**
-     * @notice Internal function to distribute Principal Token rewards to stakers
-     * @dev Provides incentive distribution for transaction processing and staking participation
-     *
-     * Reward System:
-     * - Calculates reward based on system reward rate and transaction count
-     * - Directly increases principal token balance for gas efficiency
-     * - Returns success status for error handling in calling functions
-     *
-     * Reward Calculation:
-     * - Base reward per transaction: evvmMetadata.reward
-     * - Total reward: base_reward × transaction_amount
-     * - Added directly to user's Principal Token balance
-     *
-     * @param user Address of the staker to receive principal tokenrewards
-     * @param amount Number of transactions or reward multiplier
-     * @return success True if reward distribution completed successfully
-     */
-    function _giveReward(address user, uint256 amount) internal returns (bool) {
-        uint256 principalReward = evvmMetadata.reward * amount;
-        uint256 userBalance = balances[user][
-            evvmMetadata.principalTokenAddress
-        ];
-
-        balances[user][evvmMetadata.principalTokenAddress] =
-            userBalance +
-            principalReward;
-
-        return (userBalance + principalReward ==
-            balances[user][evvmMetadata.principalTokenAddress]);
-    }
-
-    //█ Administrative Functions ██████████████████████████████████████████████████████████████
-
-    //█ Proxy Management Functions █████████████████████████████████████████████
+    //██ Proxy Management █████████████████████████████████████████████
 
     /**
      * @notice Proposes a new implementation contract for the proxy with time delay
@@ -856,7 +1099,7 @@ contract Evvm is EvvmStorage {
         timeToAcceptImplementation = 0;
     }
 
-    //█ Admin Management Functions ███████████████████████████████████████████████
+    //██ Admin Management █████████████████████████████████████████████─
 
     /**
      * @notice Proposes a new admin address with 1-day time delay
@@ -904,7 +1147,7 @@ contract Evvm is EvvmStorage {
         });
     }
 
-    //█ Reward System Functions ███████████████████████████████████████████████████████████████
+    //░▒▓█ Reward System Functions █████████████████████████████████████████████████████████▓▒░
 
     /**
      * @notice Triggers a reward recalculation and era transition in the token economy
@@ -963,7 +1206,7 @@ contract Evvm is EvvmStorage {
             ) % (max - min + 1));
     }
 
-    //█ Staking Integration Functions █████████████████████████████████████████████████████████
+    //░▒▓█ Staking Integration Functions █████████████████████████████████████████████████▓▒░
 
     /**
      * @notice Updates staker status for a user address
@@ -987,7 +1230,7 @@ contract Evvm is EvvmStorage {
         stakerList[user] = answer;
     }
 
-    //█ View Functions ████████████████████████████████████████████████████████████████████████
+    //░▒▓█ View Functions █████████████████████████████████████████████████████████████████▓▒░
 
     /**
      * @notice Returns the complete EVVM metadata configuration
@@ -1005,7 +1248,7 @@ contract Evvm is EvvmStorage {
     function getEvvmMetadata()
         external
         view
-        returns (EvvmStructs.EvvmMetadata memory)
+        returns (CoreStructs.EvvmMetadata memory)
     {
         return evvmMetadata;
     }
@@ -1068,32 +1311,6 @@ contract Evvm is EvvmStorage {
      */
     function getStakingContractAddress() external view returns (address) {
         return stakingContractAddress;
-    }
-
-    /**
-     * @notice Gets the next synchronous nonce for a user
-     * @dev Returns the expected nonce for the next sync payment transaction
-     * @param user Address to check sync nonce for
-     * @return Next synchronous nonce value
-     */
-    function getNextCurrentSyncNonce(
-        address user
-    ) external view returns (uint256) {
-        return State(stateAddress).getNextCurrentSyncNonce(user);
-    }
-
-    /**
-     * @notice Checks if a specific async nonce has been used by a user
-     * @dev Verifies nonce status to prevent replay attacks in async payments
-     * @param user Address to check nonce usage for
-     * @param nonce Specific nonce value to verify
-     * @return True if the nonce has been used, false if still available
-     */
-    function getIfUsedAsyncNonce(
-        address user,
-        uint256 nonce
-    ) external view returns (bool) {
-        return State(stateAddress).getIfUsedAsyncNonce(user, nonce);
     }
 
     /**
@@ -1220,5 +1437,195 @@ contract Evvm is EvvmStorage {
      */
     function getWhitelistTokenToBeAdded() public view returns (address) {
         return whitelistTokenToBeAdded_address;
+    }
+
+    /**
+     * @notice Gets service address that reserved an async nonce
+     * @dev Returns address(0) if nonce is not reserved
+     *
+     * @param user Address of the user who owns the nonce
+     * @param nonce Async nonce to check reservation for
+     * @return Service address that reserved the nonce, or
+     *         address(0) if not reserved
+     */
+    function getAsyncNonceReservation(
+        address user,
+        uint256 nonce
+    ) public view returns (address) {
+        return asyncNonceReservedPointers[user][nonce];
+    }
+
+    /**
+     * @notice Gets comprehensive status of an async nonce
+     * @dev Returns byte code indicating nonce state
+     *
+     * Status Codes:
+     * - 0x00: Available (can be used by any service)
+     * - 0x01: Used (already consumed, cannot be reused)
+     * - 0x02: Reserved (allocated to specific service)
+     *
+     * @param user Address of the user who owns the nonce
+     * @param nonce Async nonce to check status for
+     * @return Status code: 0x00 (available), 0x01 (used),
+     *         or 0x02 (reserved)
+     */
+    function asyncNonceStatus(
+        address user,
+        uint256 nonce
+    ) public view returns (bytes1) {
+        if (asyncNonce[user][nonce]) {
+            return 0x01;
+        } else if (asyncNonceReservedPointers[user][nonce] != address(0)) {
+            return 0x02;
+        } else {
+            return 0x00;
+        }
+    }
+
+    /**
+     * @notice Checks if a specific nonce has been used by a user
+     * @dev Public view function for external queries and UI integration
+     * @param user Address of the user to check
+     * @param nonce The nonce value to query
+     * @return True if the nonce has been used, false if available
+     */
+    function getIfUsedAsyncNonce(
+        address user,
+        uint256 nonce
+    ) public view virtual returns (bool) {
+        return asyncNonce[user][nonce];
+    }
+
+    /**
+     * @notice Gets the current (next expected) nonce for a user
+     * @dev Public view function for external queries and transaction preparation
+     * @param user Address of the user to query
+     * @return The next nonce value that must be used by the user
+     */
+    function getNextCurrentSyncNonce(
+        address user
+    ) public view virtual returns (uint256) {
+        return nextSyncNonce[user];
+    }
+
+    /**
+     * @notice Gets current UserValidator contract address
+     * @dev Returns address(0) if no validator is configured
+     *
+     * @return Address of active UserValidator contract
+     */
+    function getUserValidatorAddress() public view returns (address) {
+        return userValidatorAddress.current;
+    }
+
+    /**
+     * @notice Gets full UserValidator proposal details
+     * @dev Returns current, proposed address and time-lock info
+     *
+     * @return Proposal struct with current validator address,
+     *         proposed address, and time to accept
+     */
+    function getUserValidatorAddressDetails()
+        public
+        view
+        returns (ProposalStructs.AddressTypeProposal memory)
+    {
+        return userValidatorAddress;
+    }
+
+    //░▒▓█ Internal Functions █████████████████████████████████████████████████████▓▒░
+
+    //██ Balance Management █████████████████████████████████████████████
+
+    /**
+     * @notice Internal function to safely transfer tokens between addresses
+     * @dev Performs balance validation and atomic transfer with overflow protection
+     *
+     * Transfer Process:
+     * - Validates sender has sufficient balance
+     * - Performs atomic balance updates using unchecked arithmetic
+     * - Returns success/failure status for error handling
+     *
+     * Security Features:
+     * - Balance validation prevents overdrafts
+     * - Unchecked arithmetic for gas optimization (overflow impossible)
+     * - Returns boolean for caller error handling
+     *
+     * @param from Address to transfer tokens from
+     * @param to Address to transfer tokens to
+     * @param token Address of the token contract
+     * @param value Amount of tokens to transfer
+     */
+    function _updateBalance(
+        address from,
+        address to,
+        address token,
+        uint256 value
+    ) internal {
+        uint256 fromBalance = balances[from][token];
+        if (fromBalance < value) revert Error.InsufficientBalance();
+
+        unchecked {
+            balances[from][token] = fromBalance - value;
+            balances[to][token] += value;
+        }
+    }
+
+    /**
+     * @notice Internal function to distribute Principal Token rewards to stakers
+     * @dev Provides incentive distribution for transaction processing and staking participation
+     *
+     * Reward System:
+     * - Calculates reward based on system reward rate and transaction count
+     * - Directly increases principal token balance for gas efficiency
+     * - Returns success status for error handling in calling functions
+     *
+     * Reward Calculation:
+     * - Base reward per transaction: evvmMetadata.reward
+     * - Total reward: base_reward × transaction_amount
+     * - Added directly to user's Principal Token balance
+     *
+     * @param user Address of the staker to receive principal token rewards
+     * @param amount Number of transactions or reward multiplier
+     * @return success True if reward distribution completed successfully
+     */
+    function _giveReward(address user, uint256 amount) internal returns (bool) {
+        uint256 principalReward = evvmMetadata.reward * amount;
+        uint256 userBalance = balances[user][
+            evvmMetadata.principalTokenAddress
+        ];
+
+        balances[user][evvmMetadata.principalTokenAddress] =
+            userBalance +
+            principalReward;
+
+        return (userBalance + principalReward ==
+            balances[user][evvmMetadata.principalTokenAddress]);
+    }
+
+    //██ User Validation █████████████████████████████████████████████
+
+    /**
+     * @notice Validates if user can execute transactions
+     * @dev Checks with UserValidator if configured, allows all if not
+     *
+     * Validation Logic:
+     * - If no validator configured: Returns true (all allowed)
+     * - If validator configured: Delegates to validator.canExecute
+     * - Used by validateAndConsumeNonce before nonce consumption
+     *
+     * Integration:
+     * - Called during every transaction validation
+     * - Allows external filtering of user transactions
+     * - Supports compliance and security requirements
+     *
+     * @param user Address to check execution permission for
+     * @return True if user can execute, false if blocked
+     */
+    function canExecuteUserTransaction(
+        address user
+    ) internal view returns (bool) {
+        if (userValidatorAddress.current == address(0)) return true;
+        return IUserValidator(userValidatorAddress.current).canExecute(user);
     }
 }

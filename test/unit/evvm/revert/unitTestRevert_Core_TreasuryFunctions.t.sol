@@ -23,11 +23,11 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-contract unitTestRevert_EVVM_TreasuryFunctions is Test, Constants {
+    CoreError
+} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+contract unitTestRevert_Core_TreasuryFunctions is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     //function executeBeforeSetUp() internal override {}
@@ -35,8 +35,8 @@ contract unitTestRevert_EVVM_TreasuryFunctions is Test, Constants {
     function test__unit_revert__addAmountToUser__SenderIsNotTreasury() external {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(EvvmError.SenderIsNotTreasury.selector);
-        evvm.addAmountToUser(
+        vm.expectRevert(CoreError.SenderIsNotTreasury.selector);
+        core.addAmountToUser(
             COMMON_USER_NO_STAKER_1.Address,
             ETHER_ADDRESS,
             100000000000 ether
@@ -45,19 +45,19 @@ contract unitTestRevert_EVVM_TreasuryFunctions is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0,
             "Sender balance must be 0 because is not the Treasury.sol"
         );
     }
 
     function test__unit_revert__removeAmountFromUser__SenderIsNotTreasury() external {
-        evvm.addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, 10 ether);
+        core.addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, 10 ether);
         
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(EvvmError.SenderIsNotTreasury.selector);
-        evvm.addAmountToUser(
+        vm.expectRevert(CoreError.SenderIsNotTreasury.selector);
+        core.addAmountToUser(
             COMMON_USER_NO_STAKER_1.Address,
             ETHER_ADDRESS,
             10 ether
@@ -66,7 +66,7 @@ contract unitTestRevert_EVVM_TreasuryFunctions is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             10 ether,
             "Sender balance must be 10 ether because is not the Treasury.sol"
         );

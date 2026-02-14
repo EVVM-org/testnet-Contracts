@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
-// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
+// Full license terms available at: https://www.core.info/docs/EVVMNoncommercialLicense
 
 pragma solidity ^0.8.0;
 
@@ -24,26 +24,26 @@ pragma solidity ^0.8.0;
  * @title Treasury Contract
  * @author Mate labs
  * @notice Treasury for managing deposits and withdrawals in EVVM
- * @dev Secure vault for ETH and ERC20 tokens with EVVM integration. Deposit: ETH (token=0x0) or ERC20. Withdraw: Principal Token blocked. Balance sync with Evvm.sol.
+ * @dev Secure vault for ETH and ERC20 tokens with EVVM integration. Deposit: ETH (token=0x0) or ERC20. Withdraw: Principal Token blocked. Balance sync with Core.sol.
  */
 
 import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
 import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     TreasuryError as Error
 } from "@evvm/testnet-contracts/library/errors/TreasuryError.sol";
 
 contract Treasury {
     /// @dev Reference to the EVVM core contract for balance management
-    Evvm evvm;
+    Core core;
 
     /**
      * @notice Initialize Treasury with EVVM contract address
-     * @param _evvmAddress Address of the EVVM core contract
+     * @param _coreAddress Address of the EVVM core contract
      */
-    constructor(address _evvmAddress) {
-        evvm = Evvm(_evvmAddress);
+    constructor(address _coreAddress) {
+        core = Core(_coreAddress);
     }
 
     /**
@@ -65,7 +65,7 @@ contract Treasury {
 
             if (amount != msg.value) revert Error.InvalidDepositAmount();
 
-            evvm.addAmountToUser(msg.sender, address(0), msg.value);
+            core.addAmountToUser(msg.sender, address(0), msg.value);
         } else {
             /// user is sending ERC20 tokens
 
@@ -75,7 +75,7 @@ contract Treasury {
                 revert Error.DepositAmountMustBeGreaterThanZero();
 
             IERC20(token).transferFrom(msg.sender, address(this), amount);
-            evvm.addAmountToUser(msg.sender, token, amount);
+            core.addAmountToUser(msg.sender, token, amount);
         }
     }
 
@@ -90,21 +90,21 @@ contract Treasury {
      * @custom:throws InsufficientBalance If user's EVVM balance is less than withdrawal amount
      */
     function withdraw(address token, uint256 amount) external {
-        if (token == evvm.getPrincipalTokenAddress())
+        if (token == core.getPrincipalTokenAddress())
             revert Error.PrincipalTokenIsNotWithdrawable();
 
-        if (evvm.getBalance(msg.sender, token) < amount)
+        if (core.getBalance(msg.sender, token) < amount)
             revert Error.InsufficientBalance();
 
         if (token == address(0)) {
             /// user is trying to withdraw native coin
 
-            evvm.removeAmountFromUser(msg.sender, address(0), amount);
+            core.removeAmountFromUser(msg.sender, address(0), amount);
             SafeTransferLib.safeTransferETH(msg.sender, amount);
         } else {
             /// user is trying to withdraw ERC20 tokens
 
-            evvm.removeAmountFromUser(msg.sender, token, amount);
+            core.removeAmountFromUser(msg.sender, token, amount);
             IERC20(token).transfer(msg.sender, amount);
         }
     }
@@ -114,7 +114,7 @@ contract Treasury {
      * @dev Used for verification and integration purposes
      * @return Address of the EVVM contract managing balances
      */
-    function getEvvmAddress() external view returns (address) {
-        return address(evvm);
+    function getCoreAddress() external view returns (address) {
+        return address(core);
     }
 }

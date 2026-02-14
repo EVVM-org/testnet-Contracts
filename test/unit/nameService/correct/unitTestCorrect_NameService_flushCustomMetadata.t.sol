@@ -50,9 +50,11 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -65,6 +67,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_1,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
@@ -76,6 +79,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_2,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
             ),
@@ -87,6 +91,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_3,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7
             ),
@@ -104,7 +109,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         private
         returns (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToFlushCustomMetadata(
@@ -139,6 +144,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         ) = _executeSig_nameService_flushCustomMetadata(
             params.user,
             params.identity,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -149,6 +155,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         nameService.flushCustomMetadata(
             params.user.Address,
             params.identity,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -165,12 +172,12 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "user balance after flushCustomMetadata is incorrect"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "fisher balance after flushCustomMetadata is incorrect"
         );
@@ -197,6 +204,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         ) = _executeSig_nameService_flushCustomMetadata(
             params.user,
             params.identity,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -207,6 +215,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         nameService.flushCustomMetadata(
             params.user.Address,
             params.identity,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -223,12 +232,12 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "user balance after flushCustomMetadata is incorrect"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "fisher balance after flushCustomMetadata is incorrect"
         );
@@ -259,6 +268,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         ) = _executeSig_nameService_flushCustomMetadata(
             params.user,
             params.identity,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -269,6 +279,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         nameService.flushCustomMetadata(
             params.user.Address,
             params.identity,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -285,13 +296,13 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "user balance after flushCustomMetadata is incorrect"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * sizeOfCustomMetadata) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((5 * core.getRewardAmount()) * sizeOfCustomMetadata) +
                 params.priorityFee,
             "fisher balance after flushCustomMetadata is incorrect"
         );
@@ -322,6 +333,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         ) = _executeSig_nameService_flushCustomMetadata(
             params.user,
             params.identity,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -332,6 +344,7 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         nameService.flushCustomMetadata(
             params.user.Address,
             params.identity,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -348,13 +361,13 @@ contract unitTestCorrect_NameService_flushCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "user balance after flushCustomMetadata is incorrect"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * sizeOfCustomMetadata) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((5 * core.getRewardAmount()) * sizeOfCustomMetadata) +
                 params.priorityFee,
             "fisher balance after flushCustomMetadata is incorrect"
         );

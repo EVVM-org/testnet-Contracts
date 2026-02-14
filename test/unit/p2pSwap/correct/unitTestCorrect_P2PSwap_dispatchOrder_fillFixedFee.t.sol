@@ -25,7 +25,7 @@ import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     Erc191TestBuilder
 } from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
@@ -33,11 +33,11 @@ import {
     Estimator
 } from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
 import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
+    CoreStorage
+} from "@evvm/testnet-contracts/contracts/core/lib/CoreStorage.sol";
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 import {
     Treasury
 } from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
@@ -48,7 +48,7 @@ import {
 
 contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
     function addBalance(address user, address token, uint256 amount) private {
-        evvm.addBalance(user, token, amount);
+        core.addBalance(user, token, amount);
     }
 
     /// @notice Creates an order for testing purposes
@@ -66,6 +66,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 amountA: amountA,
@@ -75,8 +76,9 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -94,8 +96,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         (v, r, s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenA,
@@ -172,14 +174,15 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             nonceEVVM
         );
 
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
+        assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
         // 3. dispatch that order
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -196,6 +199,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
             .MetadataDispatchOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 orderId: orderId,
@@ -206,8 +210,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenB,
@@ -238,12 +242,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
 
         // 4. assertions
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
             amountA
         );
         uint256 sellerAmount = amountB + ((fee * 5000) / 10_000);
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
             sellerAmount
         );
     }
@@ -302,14 +306,15 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             nonceEVVM
         );
 
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
+        assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
         // 3. dispatch that order
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -326,6 +331,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
             .MetadataDispatchOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 orderId: orderId,
@@ -336,8 +342,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenB,
@@ -368,12 +374,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
 
         // 4. assertions
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
             amountA
         );
         uint256 sellerAmount = amountB + ((fee * 5000) / 10_000);
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
             sellerAmount
         );
     }
@@ -424,14 +430,15 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             nonceEVVM
         );
 
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
+        assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
         // 3. dispatch that order
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -448,6 +455,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
             .MetadataDispatchOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 orderId: orderId,
@@ -458,8 +466,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenB,
@@ -490,12 +498,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
 
         // 4. assertions
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
             amountA
         );
         uint256 sellerAmount = amountB + ((fee * 5000) / 10_000);
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
             sellerAmount
         );
     }
@@ -554,14 +562,15 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             nonceEVVM
         );
 
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
+        assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
         // 3. dispatch that order
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -578,6 +587,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
             .MetadataDispatchOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 orderId: orderId,
@@ -588,8 +598,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenB,
@@ -620,12 +630,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
 
         // 4. assertions
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
             amountA
         );
         uint256 sellerAmount = amountB + ((fee * 5000) / 10_000);
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
             sellerAmount
         );
     }

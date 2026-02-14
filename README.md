@@ -34,7 +34,7 @@ forge install EVVM-org/Testnet-Contracts
 
 **Import in your contracts:**
 ```solidity
-import "@evvm/testnet-contracts/interfaces/IEvvm.sol";
+import "@evvm/testnet-contracts/interfaces/ICore.sol";
 ```
 
 Guide: How to build on top of EVVM: https://www.evvm.info/docs/HowToMakeAEVVMService
@@ -103,7 +103,7 @@ chmod +x ./evvm
 
 # Run any EVVM CLI command
 ./evvm deploy
-./evvm register --evvmAddress 0x...
+./evvm register --coreAddress 0x...
 ./evvm developer --makeInterface
 ./evvm help
 ```
@@ -112,7 +112,7 @@ chmod +x ./evvm
 ```powershell
 # Run any EVVM CLI command
 .\evvm.bat deploy
-.\evvm.bat register --evvmAddress 0x...
+.\evvm.bat register --coreAddress 0x...
 .\evvm.bat developer --makeInterface
 .\evvm.bat help
 ```
@@ -127,7 +127,7 @@ Quick Start (CLI): https://www.evvm.info/docs/QuickStart
 - `evvm deploy`                           # Deploy EVVM (single or cross-chain)
 - `evvm deploy --skipInputConfig`         # Deploy with existing config (no prompts)
 - `evvm deploy --crossChain`              # Deploy cross-chain EVVM instance
-- `evvm register --evvmAddress <addr>`    # Register EVVM in registry
+- `evvm register --coreAddress <addr>`    # Register EVVM in registry
 - `evvm register --crossChain`            # Register cross-chain EVVM
 
 **Cross-Chain Management:**
@@ -146,7 +146,7 @@ Quick Start (CLI): https://www.evvm.info/docs/QuickStart
 
 - **NPM install:** `npm install @evvm/testnet-contracts`
 - **Forge install:** `forge install EVVM-org/Testnet-Contracts`
-- **Import in Solidity:** `import "@evvm/testnet-contracts/interfaces/IEvvm.sol";`
+- **Import in Solidity:** `import "@evvm/testnet-contracts/interfaces/ICore.sol";`
 
 ## Troubleshooting
 - **RPC timeouts**: CLI automatically tries fallback RPCs; set `RPC_URL` in `.env` to a reliable endpoint.

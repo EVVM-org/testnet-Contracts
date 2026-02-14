@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
  * @title External Chain Station Data Structures
  * @author Mate labs
  * @notice Data structures for external to host chain bridge
- * @dev Structures for TreasuryExternalChainStation: multi-protocol messaging (Hyperlane, LayerZero, Axelar). Independent from State.sol/Evvm.sol.
+ * @dev Structures for TreasuryExternalChainStation: multi-protocol messaging (Hyperlane, LayerZero, Axelar). Independent from State.sol/Core.sol.
  */
 library ExternalChainStationStructs {
     /**

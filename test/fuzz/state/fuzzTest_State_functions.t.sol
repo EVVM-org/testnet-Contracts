@@ -35,6 +35,7 @@ contract fuzzTest_State_functions is Test, Constants {
         bool testD;
         uint256 nonceAsync;
         bool isAsyncExec;
+        bool callFromEOA;
     }
 
     function test__fuzz__validateAndConsumeNonce(
@@ -47,15 +48,16 @@ contract fuzzTest_State_functions is Test, Constants {
             inputs.testB,
             inputs.testC,
             inputs.testD,
+            address(0),
             inputs.isAsyncExec
                 ? inputs.nonceAsync
-                : state.getNextCurrentSyncNonce(
+                : core.getNextCurrentSyncNonce(
                     COMMON_USER_NO_STAKER_1.Address
                 ),
             inputs.isAsyncExec
         );
 
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(
                 abi.encode(
@@ -66,9 +68,10 @@ contract fuzzTest_State_functions is Test, Constants {
                     inputs.testD
                 )
             ),
+            address(0),
             inputs.isAsyncExec
                 ? inputs.nonceAsync
-                : state.getNextCurrentSyncNonce(
+                : core.getNextCurrentSyncNonce(
                     COMMON_USER_NO_STAKER_1.Address
                 ),
             inputs.isAsyncExec,
@@ -77,7 +80,7 @@ contract fuzzTest_State_functions is Test, Constants {
 
         if (inputs.isAsyncExec) {
             assertTrue(
-                state.getIfUsedAsyncNonce(
+                core.getIfUsedAsyncNonce(
                     COMMON_USER_NO_STAKER_1.Address,
                     inputs.nonceAsync
                 ),
@@ -85,7 +88,7 @@ contract fuzzTest_State_functions is Test, Constants {
             );
         } else {
             assertEq(
-                state.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+                core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
                 1,
                 "Sync nonce should be incremented after successful consumption"
             );
@@ -105,17 +108,17 @@ contract fuzzTest_State_functions is Test, Constants {
         vm.assume(inputs.serviceAddress != address(0));
 
         vm.startPrank(inputs.user);
-        state.reserveAsyncNonce(inputs.nonceAsync, inputs.serviceAddress);
+        core.reserveAsyncNonce(inputs.nonceAsync, inputs.serviceAddress);
         vm.stopPrank();
 
         assertEq(
-            state.getAsyncNonceReservation(inputs.user, inputs.nonceAsync),
+            core.getAsyncNonceReservation(inputs.user, inputs.nonceAsync),
             inputs.serviceAddress,
             "Async nonce reservation should store the correct service address"
         );
         assertEq(
             uint256(
-                uint8(state.asyncNonceStatus(inputs.user, inputs.nonceAsync))
+                uint8(core.asyncNonceStatus(inputs.user, inputs.nonceAsync))
             ),
             uint256(0x02),
             "Async nonce status should be 0x02 (reserved) after reservation"
@@ -129,19 +132,19 @@ contract fuzzTest_State_functions is Test, Constants {
         vm.assume(inputs.serviceAddress != address(0));
 
         vm.startPrank(inputs.user);
-        state.reserveAsyncNonce(inputs.nonceAsync, inputs.serviceAddress);
-        state.revokeAsyncNonce(inputs.user, inputs.nonceAsync);
+        core.reserveAsyncNonce(inputs.nonceAsync, inputs.serviceAddress);
+        core.revokeAsyncNonce(inputs.user, inputs.nonceAsync);
         vm.stopPrank();
 
         assertEq(
-            state.getAsyncNonceReservation(inputs.user, inputs.nonceAsync),
+            core.getAsyncNonceReservation(inputs.user, inputs.nonceAsync),
             address(0),
             "Async nonce reservation should be cleared after revocation"
         );
 
         assertEq(
             uint256(
-                uint8(state.asyncNonceStatus(inputs.user, inputs.nonceAsync))
+                uint8(core.asyncNonceStatus(inputs.user, inputs.nonceAsync))
             ),
             uint256(0x00),
             "Async nonce status should be 0x00 (available) after revocation"

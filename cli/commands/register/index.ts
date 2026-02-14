@@ -22,7 +22,7 @@ import { registerCross } from "./registerCross";
  * @param {string[]} args - Command-line arguments passed to registration
  * @param {any} options - Command options including:
  *   - crossChain: Boolean flag to enable cross-chain mode
- *   - evvmAddress: Address of deployed EVVM contract
+ *   - coreAddress: Address of deployed EVVM contract
  *   - treasuryExternalStationAddress: Address of external station (cross-chain only)
  *   - walletName/walletNameHost/walletNameExternal: Wallet accounts
  *   - useCustomEthRpc: Use custom Ethereum Sepolia RPC for registry

@@ -47,9 +47,11 @@ contract fuzzTest_NameService_addCustomMetadata is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -63,7 +65,7 @@ contract fuzzTest_NameService_addCustomMetadata is Test, Constants {
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToAddCustomMetadata() + priorityFeeAmount
@@ -120,6 +122,7 @@ contract fuzzTest_NameService_addCustomMetadata is Test, Constants {
             params.user,
             params.identity,
             params.value,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -131,6 +134,7 @@ contract fuzzTest_NameService_addCustomMetadata is Test, Constants {
             params.user.Address,
             params.identity,
             params.value,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -156,12 +160,12 @@ contract fuzzTest_NameService_addCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "user balance incorrectly changed after adding custom metadata"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "fisher balance incorrectly changed after adding custom metadata"
         );
@@ -208,6 +212,7 @@ contract fuzzTest_NameService_addCustomMetadata is Test, Constants {
             params.user,
             params.identity,
             params.value,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -219,6 +224,7 @@ contract fuzzTest_NameService_addCustomMetadata is Test, Constants {
             params.user.Address,
             params.identity,
             params.value,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -244,13 +250,13 @@ contract fuzzTest_NameService_addCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "user balance incorrectly changed after adding custom metadata"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (5 * evvm.getRewardAmount()) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (5 * core.getRewardAmount()) +
                 ((nameService.getPriceToAddCustomMetadata() * 50) / 100) +
                 params.priorityFee,
             "fisher balance incorrectly changed after adding custom metadata"

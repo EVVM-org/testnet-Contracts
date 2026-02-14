@@ -27,7 +27,7 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
     MockContractToStake mockContract;
 
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
 
         vm.startPrank(ADMIN.Address);
 
@@ -44,7 +44,7 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
         address user,
         uint256 stakingAmount
     ) private returns (uint256 totalOfMate) {
-        evvm.addBalance(
+        core.addBalance(
             user,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking() * stakingAmount)
@@ -56,11 +56,11 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
     function getAmountOfRewardsPerExecution(
         uint256 numberOfTx
     ) private view returns (uint256) {
-        return (evvm.getRewardAmount() * 2) * numberOfTx;
+        return (core.getRewardAmount() * 2) * numberOfTx;
     }
 
     function test__unit_correct__publicServiceStaking__stake() external {
-        uint256 amountStakingBefore = evvm.getBalance(
+        uint256 amountStakingBefore = core.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -70,18 +70,18 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
         mockContract.stake(10);
 
         assertTrue(
-            evvm.isAddressStaker(address(mockContract)),
+            core.isAddressStaker(address(mockContract)),
             "Error: address should be recognized as staker"
         );
 
         assertEq(
-            evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error: staker principal token balance should be zero after staking"
         );
 
         assertEq(
-            evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
             amountStakingBefore + totalOfMate,
             "Error: staking contract principal token balance should be increased after staking"
         );
@@ -116,7 +116,7 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
     }
 
     function test__unit_correct__publicServiceStaking__unstake() external {
-        uint256 amountStakingBefore = evvm.getBalance(
+        uint256 amountStakingBefore = core.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -128,20 +128,20 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
         mockContract.unstake(5);
 
         assertTrue(
-            evvm.isAddressStaker(address(mockContract)),
+            core.isAddressStaker(address(mockContract)),
             "Error: address should be recognized as staker"
         );
         assertEq(
-            evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
             staking.priceOfStaking() * 5,
             "Error: staker principal token balance mismatch after unstaking"
         );
 
         assertEq(
-            evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
             amountStakingBefore +
                 (staking.priceOfStaking() * 5) +
-                evvm.getRewardAmount(),
+                core.getRewardAmount(),
             "Error: staking contract principal token balance mismatch after unstaking"
         );
 
@@ -175,7 +175,7 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
     }
 
     function test__unit_correct__publicServiceStaking__fullUnstake() external {
-        uint256 amountStakingBefore = evvm.getBalance(
+        uint256 amountStakingBefore = core.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -189,19 +189,19 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
         mockContract.unstake(10);
 
         assertFalse(
-            evvm.isAddressStaker(address(mockContract)),
+            core.isAddressStaker(address(mockContract)),
             "Error: address should not be recognized as staker after full unstake"
         );
 
         assertEq(
-            evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
             staking.priceOfStaking() * 10,
             "Error: staker principal token balance mismatch after full unstake"
         );
 
         assertEq(
-            evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
-            amountStakingBefore + evvm.getRewardAmount(),
+            core.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
+            amountStakingBefore + core.getRewardAmount(),
             "Error: staking contract principal token balance mismatch after full unstake"
         );
 
@@ -242,7 +242,7 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
     function test__unit_correct__publicServiceStaking__stakeAfterFullUnstake()
         external
     {
-        uint256 amountStakingBefore = evvm.getBalance(
+        uint256 amountStakingBefore = core.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -260,21 +260,21 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
         mockContract.stake(10);
 
         assertTrue(
-            evvm.isAddressStaker(address(mockContract)),
+            core.isAddressStaker(address(mockContract)),
             "Error: address should be recognized as staker after staking again"
         );
 
         assertEq(
-            evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error: staker principal token balance should be zero after staking again"
         );
 
         assertEq(
-            evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
             amountStakingBefore +
                 (staking.priceOfStaking() * 10) +
-                evvm.getRewardAmount(),
+                core.getRewardAmount(),
             "Error: staking contract principal token balance mismatch after staking again"
         );
 

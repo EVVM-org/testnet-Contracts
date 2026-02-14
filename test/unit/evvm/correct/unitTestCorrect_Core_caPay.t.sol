@@ -20,12 +20,12 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+    CoreError
+} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-contract unitTestCorrect_EVVM_caPay is Test, Constants {
+contract unitTestCorrect_Core_caPay is Test, Constants {
     //function executeBeforeSetUp() internal override {}
 
     function _addBalance(
@@ -33,7 +33,7 @@ contract unitTestCorrect_EVVM_caPay is Test, Constants {
         address _token,
         uint256 _amount
     ) private returns (uint256 amount) {
-        evvm.addBalance(_ca, _token, _amount);
+        core.addBalance(_ca, _token, _amount);
         return (_amount);
     }
 
@@ -43,22 +43,22 @@ contract unitTestCorrect_EVVM_caPay is Test, Constants {
     function test__unit_correct__caPay__noStaker() external {
         uint256 amount = _addBalance(address(this), ETHER_ADDRESS, 0.001 ether);
 
-        evvm.caPay(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS, amount);
+        core.caPay(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS, amount);
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount,
             "Amount should be recibed"
         );
 
         assertEq(
-            evvm.getBalance(address(this), ETHER_ADDRESS),
+            core.getBalance(address(this), ETHER_ADDRESS),
             0,
             "Amount should be deducted"
         );
 
         assertEq(
-            evvm.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ca dont recieve rewards because is not an staker"
         );
@@ -66,25 +66,25 @@ contract unitTestCorrect_EVVM_caPay is Test, Constants {
 
     function test__unit_correct__caPay__staker() external {
         uint256 amount = _addBalance(address(this), ETHER_ADDRESS, 0.001 ether);
-        evvm.setPointStaker(address(this), 0x01);
+        core.setPointStaker(address(this), 0x01);
 
-        evvm.caPay(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS, amount);
+        core.caPay(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS, amount);
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount,
             "Amount should be recibed"
         );
 
         assertEq(
-            evvm.getBalance(address(this), ETHER_ADDRESS),
+            core.getBalance(address(this), ETHER_ADDRESS),
             0,
             "Amount should be deducted"
         );
 
         assertEq(
-            evvm.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
-            evvm.getRewardAmount(),
+            core.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
+            core.getRewardAmount(),
             "ca recieve rewards because is an staker"
         );
     }

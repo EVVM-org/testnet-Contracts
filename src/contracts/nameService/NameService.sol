@@ -29,11 +29,10 @@ pragma solidity ^0.8.0;
  * @title EVVM Name Service Contract
  * @author Mate labs
  * @notice Username registration and domain name system for EVVM
- * @dev Username registration with pre-registration (30min anti-frontrun). Custom metadata, marketplace (0.5% fee), dynamic renewal pricing. State.sol (async nonces), Evvm.sol (payments: 100x reward registration, 10x metadata). Time-delayed governance (1d). EIP-191 signatures.
+ * @dev Username registration with pre-registration (30min anti-frontrun). Custom metadata, marketplace (0.5% fee), dynamic renewal pricing. State.sol (async nonces), Core.sol (payments: 100x reward registration, 10x metadata). Time-delayed governance (1d). EIP-191 signatures.
  */
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     NameServiceStructs
 } from "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
@@ -71,11 +70,8 @@ contract NameService {
     /// @dev Proposal system for token withdrawal with delay
     ProposalStructs.UintTypeProposal amountToWithdrawTokens;
 
-    /// @dev Proposal system for EVVM address changes
-    ProposalStructs.AddressTypeProposal evvmAddress;
-
-    /// @dev Proposal system for State address changes
-    ProposalStructs.AddressTypeProposal stateAddress;
+    /// @dev Proposal system for Core address changes
+    ProposalStructs.AddressTypeProposal coreAddress;
 
     /// @dev Proposal system for admin address changes
     ProposalStructs.AddressTypeProposal admin;
@@ -85,10 +81,7 @@ contract NameService {
         private identityDetails;
 
     /// @dev EVVM contract for payment processing
-    Evvm private evvm;
-
-    /// @dev State contract for nonce coordination
-    State private state;
+    Core private core;
 
     /// @dev Restricts function access to current admin only
     modifier onlyAdmin() {
@@ -101,7 +94,7 @@ contract NameService {
 
     /**
      * @notice Initializes NameService with integrations
-     * @dev Sets up State.sol and Evvm.sol integration
+     * @dev Sets up State.sol and Core.sol integration
      *
      * Initial Configuration:
      * - Connects to EVVM for payment processing
@@ -113,20 +106,13 @@ contract NameService {
      * - state: Validates signatures and consumes nonces
      * - All nonces in NameService are async (true)
      *
-     * @param _evvmAddress Address of EVVM core contract
-     * @param _stateAddress Address of State coordinator
+     * @param _coreAddress Address of core contract
      * @param _initialOwner Address with admin privileges
      */
-    constructor(
-        address _evvmAddress,
-        address _stateAddress,
-        address _initialOwner
-    ) {
-        evvmAddress.current = _evvmAddress;
+    constructor(address _coreAddress, address _initialOwner) {
+        coreAddress.current = _coreAddress;
         admin.current = _initialOwner;
-        stateAddress.current = _stateAddress;
-        evvm = Evvm(_evvmAddress);
-        state = State(_stateAddress);
+        core = Core(_coreAddress);
     }
 
     //█ Registration Functions ████████████████████████████████████████████████████████████████████████
@@ -147,7 +133,7 @@ contract NameService {
      * - Atomically validates + consumes nonce
      * - Prevents replay attacks
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Optional priority fee for faster processing
      * - Paid through requestPay (if priorityFeeEvvm > 0)
      * - Staker reward via makeCaPay if caller is staker
@@ -163,15 +149,17 @@ contract NameService {
     function preRegistrationUsername(
         address user,
         bytes32 hashPreRegisteredUsername,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForPreRegistrationUsername(hashPreRegisteredUsername),
+            originExecutor,
             nonce,
             true,
             signature
@@ -193,8 +181,8 @@ contract NameService {
             flagNotAUsername: 0x01
         });
 
-        if (evvm.isAddressStaker(msg.sender))
-            makeCaPay(msg.sender, evvm.getRewardAmount() + priorityFeeEvvm);
+        if (core.isAddressStaker(msg.sender))
+            makeCaPay(msg.sender, core.getRewardAmount() + priorityFeeEvvm);
     }
 
     /**
@@ -206,7 +194,7 @@ contract NameService {
      * 2. Reveals username from hash(username + lockNumber)
      * 3. Validates username format via IdentityValidation
      * 4. Checks availability (no duplicates)
-     * 5. Processes payment via Evvm.sol
+     * 5. Processes payment via Core.sol
      * 6. Creates 366-day registration
      *
      * State.sol Integration:
@@ -215,7 +203,7 @@ contract NameService {
      * - Hash includes username + lockNumber for reveal
      * - Prevents replay attacks
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Payment: getPriceOfRegistration (100x reward)
      * - Paid through requestPay (locks tokens)
      * - Staker reward: 50x reward + priority fee
@@ -239,15 +227,17 @@ contract NameService {
         address user,
         string memory username,
         uint256 lockNumber,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForRegistrationUsername(username, lockNumber),
+            originExecutor,
             nonce,
             true,
             signature
@@ -287,10 +277,10 @@ contract NameService {
             flagNotAUsername: 0x00
         });
 
-        if (evvm.isAddressStaker(msg.sender))
+        if (core.isAddressStaker(msg.sender))
             makeCaPay(
                 msg.sender,
-                (50 * evvm.getRewardAmount()) + priorityFeeEvvm
+                (50 * core.getRewardAmount()) + priorityFeeEvvm
             );
 
         delete identityDetails[_key];
@@ -315,7 +305,7 @@ contract NameService {
      * - Hash includes username, amount, expiration
      * - Prevents replay attacks
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Payment: full offer amount via requestPay
      * - Fee Breakdown:
      *   * 99.5% locked for potential sale (995/1000)
@@ -344,15 +334,17 @@ contract NameService {
         string memory username,
         uint256 amount,
         uint256 expirationDate,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external returns (uint256 offerID) {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForMakeOffer(username, amount, expirationDate),
+            originExecutor,
             nonce,
             true,
             signature
@@ -383,7 +375,7 @@ contract NameService {
 
         makeCaPay(
             msg.sender,
-            evvm.getRewardAmount() +
+            core.getRewardAmount() +
                 ((amount * 125) / 100_000) +
                 priorityFeeEvvm
         );
@@ -416,7 +408,7 @@ contract NameService {
      * - Hash includes username + offer ID
      * - Prevents replay attacks and double withdrawals
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Refund: offer amount via makeTransfer to offerer
      * - Priority fee: via requestPay (if > 0)
      * - Staker reward: 1x reward + priority fee
@@ -440,15 +432,17 @@ contract NameService {
         address user,
         string memory username,
         uint256 offerID,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForWithdrawOffer(username, offerID),
+            originExecutor,
             nonce,
             true,
             signature
@@ -466,7 +460,7 @@ contract NameService {
 
         makeCaPay(
             msg.sender,
-            evvm.getRewardAmount() +
+            core.getRewardAmount() +
                 ((usernameOffers[username][offerID].amount * 1) / 796) +
                 priorityFeeEvvm
         );
@@ -494,7 +488,7 @@ contract NameService {
      * - Hash includes username + offer ID
      * - Prevents replay attacks and double acceptance
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Payment: offer amount via makeCaPay to seller
      * - Priority fee: via requestPay (if > 0)
      * - Fee Distribution:
@@ -525,15 +519,17 @@ contract NameService {
         address user,
         string memory username,
         uint256 offerID,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForAcceptOffer(username, offerID),
+            originExecutor,
             nonce,
             true,
             signature
@@ -558,10 +554,10 @@ contract NameService {
 
         usernameOffers[username][offerID].offerer = address(0);
 
-        if (evvm.isAddressStaker(msg.sender)) {
+        if (core.isAddressStaker(msg.sender)) {
             makeCaPay(
                 msg.sender,
-                (evvm.getRewardAmount()) +
+                (core.getRewardAmount()) +
                     (((usernameOffers[username][offerID].amount * 1) / 199) /
                         4) +
                     priorityFeeEvvm
@@ -589,7 +585,7 @@ contract NameService {
      * - Hash includes username only
      * - Prevents replay attacks
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Payment: seePriceToRenew calculates cost
      * - Paid through requestPay (locks tokens)
      * - Staker reward: 1x reward + 50% of price + fee
@@ -611,15 +607,17 @@ contract NameService {
     function renewUsername(
         address user,
         string memory username,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForRenewUsername(username),
+            originExecutor,
             nonce,
             true,
             signature
@@ -646,10 +644,10 @@ contract NameService {
             signatureEvvm
         );
 
-        if (evvm.isAddressStaker(msg.sender)) {
+        if (core.isAddressStaker(msg.sender)) {
             makeCaPay(
                 msg.sender,
-                evvm.getRewardAmount() +
+                core.getRewardAmount() +
                     ((priceOfRenew * 50) / 100) +
                     priorityFeeEvvm
             );
@@ -683,7 +681,7 @@ contract NameService {
      * - Hash includes identity + value
      * - Prevents replay attacks
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Payment: 10x EVVM reward amount
      * - Paid through requestPay (locks tokens)
      * - Staker reward: 5x reward + priority fee
@@ -707,15 +705,17 @@ contract NameService {
         address user,
         string memory identity,
         string memory value,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForAddCustomMetadata(identity, value),
+            originExecutor,
             nonce,
             true,
             signature
@@ -734,10 +734,10 @@ contract NameService {
             signatureEvvm
         );
 
-        if (evvm.isAddressStaker(msg.sender)) {
+        if (core.isAddressStaker(msg.sender)) {
             makeCaPay(
                 msg.sender,
-                (5 * evvm.getRewardAmount()) +
+                (5 * core.getRewardAmount()) +
                     ((getPriceToAddCustomMetadata() * 50) / 100) +
                     priorityFeeEvvm
             );
@@ -767,7 +767,7 @@ contract NameService {
      * - Hash includes identity + key
      * - Prevents replay attacks
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Payment: 10x EVVM reward amount
      * - Paid through requestPay (locks tokens)
      * - Staker reward: 5x reward + priority fee
@@ -791,15 +791,17 @@ contract NameService {
         address user,
         string memory identity,
         uint256 key,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForRemoveCustomMetadata(identity, key),
+            originExecutor,
             nonce,
             true,
             signature
@@ -838,10 +840,10 @@ contract NameService {
 
         identityDetails[identity].customMetadataMaxSlots--;
 
-        if (evvm.isAddressStaker(msg.sender))
+        if (core.isAddressStaker(msg.sender))
             makeCaPay(
                 msg.sender,
-                (5 * evvm.getRewardAmount()) + priorityFeeEvvm
+                (5 * core.getRewardAmount()) + priorityFeeEvvm
             );
     }
 
@@ -862,7 +864,7 @@ contract NameService {
      * - Hash includes identity only
      * - Prevents replay attacks
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Payment: getPriceToFlushCustomMetadata (per slot)
      * - Cost: 10x EVVM reward per metadata entry
      * - Paid through requestPay (locks tokens)
@@ -885,15 +887,17 @@ contract NameService {
     function flushCustomMetadata(
         address user,
         string memory identity,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForFlushCustomMetadata(identity),
+            originExecutor,
             nonce,
             true,
             signature
@@ -921,10 +925,10 @@ contract NameService {
             delete identityCustomMetadata[identity][i];
         }
 
-        if (evvm.isAddressStaker(msg.sender)) {
+        if (core.isAddressStaker(msg.sender)) {
             makeCaPay(
                 msg.sender,
-                ((5 * evvm.getRewardAmount()) *
+                ((5 * core.getRewardAmount()) *
                     identityDetails[identity].customMetadataMaxSlots) +
                     priorityFeeEvvm
             );
@@ -953,7 +957,7 @@ contract NameService {
      * - Hash includes username only
      * - Prevents replay attacks
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Payment: getPriceToFlushUsername
      * - Cost: Base + (10x reward per metadata slot)
      * - Paid through requestPay (locks tokens)
@@ -980,15 +984,17 @@ contract NameService {
     function flushUsername(
         address user,
         string memory username,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForFlushUsername(username),
+            originExecutor,
             nonce,
             true,
             signature
@@ -1021,7 +1027,7 @@ contract NameService {
 
         makeCaPay(
             msg.sender,
-            ((5 * evvm.getRewardAmount()) *
+            ((5 * core.getRewardAmount()) *
                 identityDetails[username].customMetadataMaxSlots) +
                 priorityFeeEvvm
         );
@@ -1036,8 +1042,8 @@ contract NameService {
     }
 
     //█ Administrative Functions ████████████████████████████████████████████████████████████████████████
-    
-     /**
+
+    /**
      * @notice Proposes new admin address with 1-day delay
      * @dev Time-delayed governance system for admin changes
      * @param _adminToPropose Address of the proposed new admin
@@ -1084,9 +1090,9 @@ contract NameService {
      */
     function proposeWithdrawPrincipalTokens(uint256 _amount) public onlyAdmin {
         if (
-            evvm.getBalance(address(this), evvm.getPrincipalTokenAddress()) -
+            core.getBalance(address(this), core.getPrincipalTokenAddress()) -
                 (5083 +
-                    evvm.getRewardAmount() +
+                    core.getRewardAmount() +
                     principalTokenTokenLockedForWithdrawOffers) <
             _amount ||
             _amount == 0
@@ -1133,8 +1139,8 @@ contract NameService {
     ) public onlyAdmin {
         if (_newEvvmAddress == address(0)) revert Error.InvalidEvvmAddress();
 
-        evvmAddress.proposal = _newEvvmAddress;
-        evvmAddress.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
+        coreAddress.proposal = _newEvvmAddress;
+        coreAddress.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
     }
 
     /**
@@ -1142,8 +1148,8 @@ contract NameService {
      * @dev Only the current admin can cancel pending proposals
      */
     function cancelChangeEvvmAddress() public onlyAdmin {
-        evvmAddress.proposal = address(0);
-        evvmAddress.timeToAccept = 0;
+        coreAddress.proposal = address(0);
+        coreAddress.timeToAccept = 0;
     }
 
     /**
@@ -1151,16 +1157,16 @@ contract NameService {
      * @dev Can only be called after the time delay has passed
      */
     function acceptChangeEvvmAddress() public onlyAdmin {
-        if (block.timestamp < evvmAddress.timeToAccept)
+        if (block.timestamp < coreAddress.timeToAccept)
             revert Error.LockTimeNotExpired();
 
-        evvmAddress = ProposalStructs.AddressTypeProposal({
-            current: evvmAddress.proposal,
+        coreAddress = ProposalStructs.AddressTypeProposal({
+            current: coreAddress.proposal,
             proposal: address(0),
             timeToAccept: 0
         });
 
-        evvm = Evvm(evvmAddress.current);
+        core = Core(coreAddress.current);
     }
 
     //█ Utility Functions ████████████████████████████████████████████████████████████████████████
@@ -1184,11 +1190,11 @@ contract NameService {
         uint256 nonce,
         bytes memory signature
     ) internal {
-        evvm.pay(
+        core.pay(
             user,
             address(this),
             "",
-            evvm.getPrincipalTokenAddress(),
+            core.getPrincipalTokenAddress(),
             amount,
             priorityFee,
             address(this),
@@ -1205,7 +1211,7 @@ contract NameService {
      * @param amount Amount of Principal Tokens to distribute
      */
     function makeCaPay(address user, uint256 amount) internal {
-        evvm.caPay(user, evvm.getPrincipalTokenAddress(), amount);
+        core.caPay(user, core.getPrincipalTokenAddress(), amount);
     }
 
     //█ Username Hashing Functions ███████████████████████████████████████████████████████████████████
@@ -1340,14 +1346,14 @@ contract NameService {
             if (price == 0) {
                 price = 500 * 10 ** 18;
             } else {
-                uint256 principalTokenReward = evvm.getRewardAmount();
+                uint256 principalTokenReward = core.getRewardAmount();
 
                 price = ((price * 5) / 1000) > (500000 * principalTokenReward)
                     ? (500000 * principalTokenReward)
                     : ((price * 5) / 1000);
             }
         } else {
-            price = 500_000 * evvm.getRewardAmount();
+            price = 500_000 * core.getRewardAmount();
         }
     }
 
@@ -1357,7 +1363,7 @@ contract NameService {
      * @return price Cost in Principal Tokens (10x current reward amount)
      */
     function getPriceToAddCustomMetadata() public view returns (uint256 price) {
-        price = 10 * evvm.getRewardAmount();
+        price = 10 * core.getRewardAmount();
     }
 
     /**
@@ -1370,7 +1376,7 @@ contract NameService {
         view
         returns (uint256 price)
     {
-        price = 10 * evvm.getRewardAmount();
+        price = 10 * core.getRewardAmount();
     }
 
     /**
@@ -1383,7 +1389,7 @@ contract NameService {
         string memory _identity
     ) public view returns (uint256 price) {
         price =
-            (10 * evvm.getRewardAmount()) *
+            (10 * core.getRewardAmount()) *
             identityDetails[_identity].customMetadataMaxSlots;
     }
 
@@ -1397,9 +1403,9 @@ contract NameService {
         string memory _identity
     ) public view returns (uint256 price) {
         price =
-            ((10 * evvm.getRewardAmount()) *
+            ((10 * core.getRewardAmount()) *
                 identityDetails[_identity].customMetadataMaxSlots) +
-            evvm.getRewardAmount();
+            core.getRewardAmount();
     }
 
     //█ Identity Availability Functions ██████████████████████████████████████████████████████████████
@@ -1571,7 +1577,7 @@ contract NameService {
         return
             identityDetails[username].offerMaxSlots > 0
                 ? seePriceToRenew(username)
-                : evvm.getRewardAmount() * 100;
+                : core.getRewardAmount() * 100;
     }
 
     //█ Administrative Getters ███████████████████████████████████████████████████████████████████████
@@ -1630,7 +1636,7 @@ contract NameService {
      * @return Unique EvvmID string
      */
     function getEvvmID() external view returns (uint256) {
-        return evvm.getEvvmID();
+        return core.getEvvmID();
     }
 
     /**
@@ -1638,8 +1644,8 @@ contract NameService {
      * @dev Returns the address of the EVVM contract used for payment processing
      * @return The current EVVM contract address
      */
-    function getEvvmAddress() public view returns (address) {
-        return evvmAddress.current;
+    function getCoreAddress() public view returns (address) {
+        return coreAddress.current;
     }
 
     /**
@@ -1649,7 +1655,7 @@ contract NameService {
      * @return proposalEvvmAddress Proposed new EVVM address (if any)
      * @return timeToAcceptEvvmAddress Timestamp when proposal can be accepted
      */
-    function getEvvmAddressFullDetails()
+    function getCoreAddressFullDetails()
         public
         view
         returns (
@@ -1659,9 +1665,9 @@ contract NameService {
         )
     {
         return (
-            evvmAddress.current,
-            evvmAddress.proposal,
-            evvmAddress.timeToAccept
+            coreAddress.current,
+            coreAddress.proposal,
+            coreAddress.timeToAccept
         );
     }
 }

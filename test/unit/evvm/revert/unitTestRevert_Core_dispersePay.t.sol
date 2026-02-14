@@ -23,13 +23,10 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-import {
-    StateError
-} from "@evvm/testnet-contracts/library/errors/StateError.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-contract unitTestRevert_EVVM_dispersePay is Test, Constants {
+contract unitTestRevert_Core_dispersePay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
@@ -37,9 +34,11 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             COMMON_USER_NO_STAKER_2,
             "dummy",
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -47,7 +46,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             )
         );
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
     }
 
     function _addBalance(
@@ -56,7 +55,7 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         uint256 _amount,
         uint256 _priorityFee
     ) private returns (uint256 amount, uint256 priorityFee) {
-        evvm.addBalance(_user.Address, _token, _amount + _priorityFee);
+        core.addBalance(_user.Address, _token, _amount + _priorityFee);
         return (_amount, _priorityFee);
     }
 
@@ -82,16 +81,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -101,8 +100,8 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispersePay(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
-                address(evvm),
+                core.getEvvmID() + 1,
+                address(core),
                 toData,
                 ETHER_ADDRESS,
                 amount,
@@ -120,8 +119,8 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.dispersePay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -136,13 +135,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -158,16 +157,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -186,8 +185,8 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.dispersePay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -202,13 +201,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -224,25 +223,25 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
         });
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toDataFake = new EvvmStructs.DispersePayMetadata[](1);
+        CoreStructs.DispersePayMetadata[]
+            memory toDataFake = new CoreStructs.DispersePayMetadata[](1);
 
-        toDataFake[0] = EvvmStructs.DispersePayMetadata({
+        toDataFake[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
@@ -261,8 +260,8 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.dispersePay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -277,13 +276,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -297,16 +296,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -324,8 +323,8 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             false
         );
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.dispersePay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -340,13 +339,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -362,16 +361,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -391,8 +390,8 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             false
         );
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.dispersePay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -407,13 +406,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -429,16 +428,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -457,8 +456,8 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.dispersePay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -473,13 +472,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -493,16 +492,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -521,8 +520,8 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.dispersePay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -537,13 +536,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -559,16 +558,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -587,8 +586,8 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.dispersePay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -603,13 +602,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -625,16 +624,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -653,8 +652,8 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.dispersePay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -669,13 +668,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -689,16 +688,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -718,8 +717,8 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         /* 🢃 executor different than msg.sender 🢃 */
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmError.SenderIsNotTheExecutor.selector);
-        evvm.dispersePay(
+        vm.expectRevert(CoreError.SenderIsNotTheSenderExecutor.selector);
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -734,13 +733,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -769,16 +768,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -798,9 +797,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
 
-        evvm.dispersePay(
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -816,13 +815,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -836,16 +835,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -865,9 +864,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(StateError.SyncNonceMismatch.selector);
+        vm.expectRevert(CoreError.SyncNonceMismatch.selector);
 
-        evvm.dispersePay(
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -883,13 +882,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -905,17 +904,17 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             /* 🢃 amount for [0] too high 🢃 */
             amount: amount + priorityFee,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             /* 🢃 amount for [1] too high 🢃 */
             amount: amount + priorityFee,
             to_address: address(0),
@@ -936,9 +935,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
 
-        evvm.dispersePay(
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -954,13 +953,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -976,16 +975,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -1005,9 +1004,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
 
         vm.startPrank(COMMON_USER_STAKER.Address);
 
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
 
-        evvm.dispersePay(
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -1023,13 +1022,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );
@@ -1043,16 +1042,16 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 5,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 5,
             to_address: address(0),
             to_identity: "dummy"
@@ -1071,9 +1070,9 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmError.InvalidAmount.selector);
+        vm.expectRevert(CoreError.InvalidAmount.selector);
 
-        evvm.dispersePay(
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -1088,13 +1087,13 @@ contract unitTestRevert_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
         );

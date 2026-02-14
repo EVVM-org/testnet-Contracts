@@ -22,9 +22,9 @@ import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import "@evvm/testnet-contracts/library/errors/StateError.sol";
+import "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-contract unitTestRevert_State_functions is Test, Constants {
+contract unitTestRevert_Core_state is Test, Constants {
     UserValidator private userValidatorMock;
     function executeBeforeSetUp() internal override {
         userValidatorMock = new UserValidator();
@@ -61,14 +61,15 @@ contract unitTestRevert_State_functions is Test, Constants {
             inputs.testB,
             inputs.testC,
             inputs.testD,
+            address(0),
             67,
             true
         );
 
         /* 🢃 non CA tries to interact 🢃 */
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StateError.MsgSenderIsNotAContract.selector);
-        state.validateAndConsumeNonce(
+        vm.expectRevert(CoreError.MsgSenderIsNotAContract.selector);
+        core.validateAndConsumeNonce(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(
                 abi.encode(
@@ -79,6 +80,7 @@ contract unitTestRevert_State_functions is Test, Constants {
                     inputs.testD
                 )
             ),
+            address(0),
             67,
             true,
             signature
@@ -104,12 +106,13 @@ contract unitTestRevert_State_functions is Test, Constants {
             inputs.testB,
             inputs.testC,
             inputs.testD,
+            address(0),
             67,
             true
         );
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
-        state.validateAndConsumeNonce(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.validateAndConsumeNonce(
             COMMON_USER_NO_STAKER_1.Address,
             /* 🢃 diferent input compared to signature 🢃 */
             keccak256(
@@ -121,6 +124,7 @@ contract unitTestRevert_State_functions is Test, Constants {
                     inputs.testD
                 )
             ),
+            address(0),
             67,
             true,
             signature
@@ -131,9 +135,9 @@ contract unitTestRevert_State_functions is Test, Constants {
         external
     {
         vm.startPrank(ADMIN.Address);
-        state.proposeUserValidator(address(userValidatorMock));
+        core.proposeUserValidator(address(userValidatorMock));
         skip(1 days);
-        state.acceptUserValidatorProposal();
+        core.acceptUserValidatorProposal();
         vm.stopPrank();
 
         InputsValidateAndConsumeNonce
@@ -151,12 +155,13 @@ contract unitTestRevert_State_functions is Test, Constants {
             inputs.testB,
             inputs.testC,
             inputs.testD,
+            address(0),
             67,
             true
         );
 
-        vm.expectRevert(StateError.UserCannotExecuteTransaction.selector);
-        state.validateAndConsumeNonce(
+        vm.expectRevert(CoreError.UserCannotExecuteTransaction.selector);
+        core.validateAndConsumeNonce(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(
                 abi.encode(
@@ -167,6 +172,7 @@ contract unitTestRevert_State_functions is Test, Constants {
                     inputs.testD
                 )
             ),
+            address(0),
             67,
             true,
             signature
@@ -192,6 +198,7 @@ contract unitTestRevert_State_functions is Test, Constants {
             123,
             address(321),
             false,
+            address(0),
             67,
             true
         );
@@ -202,12 +209,13 @@ contract unitTestRevert_State_functions is Test, Constants {
             inputs.testB,
             inputs.testC,
             inputs.testD,
+            address(0),
             67,
             true
         );
 
-        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
-        state.validateAndConsumeNonce(
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
+        core.validateAndConsumeNonce(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(
                 abi.encode(
@@ -218,6 +226,7 @@ contract unitTestRevert_State_functions is Test, Constants {
                     inputs.testD
                 )
             ),
+            address(0),
             67,
             true,
             signature
@@ -237,7 +246,7 @@ contract unitTestRevert_State_functions is Test, Constants {
             });
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        state.reserveAsyncNonce(67, address(125));
+        core.reserveAsyncNonce(67, address(125));
         vm.stopPrank();
 
         bytes memory signature = _executeSig_state_test(
@@ -247,14 +256,15 @@ contract unitTestRevert_State_functions is Test, Constants {
             inputs.testB,
             inputs.testC,
             inputs.testD,
+            address(0),
             67,
             true
         );
 
         vm.expectRevert(
-            StateError.AsyncNonceIsReservedByAnotherService.selector
+            CoreError.AsyncNonceIsReservedByAnotherService.selector
         );
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(
                 abi.encode(
@@ -265,6 +275,7 @@ contract unitTestRevert_State_functions is Test, Constants {
                     inputs.testD
                 )
             ),
+            address(0),
             67,
             true,
             signature
@@ -282,7 +293,7 @@ contract unitTestRevert_State_functions is Test, Constants {
                 testC: address(321),
                 testD: false
             });
-        uint256 currentSyncNonce = state.getNextCurrentSyncNonce(
+        uint256 currentSyncNonce = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         );
         _executeFn_state_test(
@@ -292,6 +303,7 @@ contract unitTestRevert_State_functions is Test, Constants {
             123,
             address(321),
             false,
+            address(0),
             currentSyncNonce,
             false
         );
@@ -303,12 +315,13 @@ contract unitTestRevert_State_functions is Test, Constants {
             inputs.testB,
             inputs.testC,
             inputs.testD,
+            address(0),
             currentSyncNonce,
             false
         );
 
-        vm.expectRevert(StateError.SyncNonceMismatch.selector);
-        state.validateAndConsumeNonce(
+        vm.expectRevert(CoreError.SyncNonceMismatch.selector);
+        core.validateAndConsumeNonce(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(
                 abi.encode(
@@ -319,6 +332,7 @@ contract unitTestRevert_State_functions is Test, Constants {
                     inputs.testD
                 )
             ),
+            address(0),
             currentSyncNonce,
             false,
             signature
@@ -329,8 +343,8 @@ contract unitTestRevert_State_functions is Test, Constants {
         external
     {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(StateError.InvalidServiceAddress.selector);
-        state.reserveAsyncNonce(67, address(0));
+        vm.expectRevert(CoreError.InvalidServiceAddress.selector);
+        core.reserveAsyncNonce(67, address(0));
         vm.stopPrank();
     }
 
@@ -344,13 +358,14 @@ contract unitTestRevert_State_functions is Test, Constants {
             123,
             address(321),
             false,
+            address(0),
             67,
             true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
-        state.reserveAsyncNonce(67, address(this));
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
+        core.reserveAsyncNonce(67, address(this));
         vm.stopPrank();
     }
 
@@ -358,12 +373,12 @@ contract unitTestRevert_State_functions is Test, Constants {
         external
     {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        state.reserveAsyncNonce(67, address(125));
+        core.reserveAsyncNonce(67, address(125));
         vm.stopPrank();
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(StateError.AsyncNonceAlreadyReserved.selector);
-        state.reserveAsyncNonce(67, address(this));
+        vm.expectRevert(CoreError.AsyncNonceAlreadyReserved.selector);
+        core.reserveAsyncNonce(67, address(this));
         vm.stopPrank();
     }
 
@@ -377,13 +392,14 @@ contract unitTestRevert_State_functions is Test, Constants {
             123,
             address(321),
             false,
+            address(0),
             67,
             true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
-        state.revokeAsyncNonce(COMMON_USER_NO_STAKER_1.Address, 67);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
+        core.revokeAsyncNonce(COMMON_USER_NO_STAKER_1.Address, 67);
         vm.stopPrank();
     }
 
@@ -391,8 +407,8 @@ contract unitTestRevert_State_functions is Test, Constants {
         external
     {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(StateError.AsyncNonceNotReserved.selector);
-        state.revokeAsyncNonce(COMMON_USER_NO_STAKER_1.Address, 67);
+        vm.expectRevert(CoreError.AsyncNonceNotReserved.selector);
+        core.revokeAsyncNonce(COMMON_USER_NO_STAKER_1.Address, 67);
         vm.stopPrank();
     }
 }

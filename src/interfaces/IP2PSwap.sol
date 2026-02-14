@@ -12,6 +12,7 @@ library P2PSwapStructs {
 
     struct MetadataCancelOrder {
         uint256 nonce;
+        address originExecutor;
         address tokenA;
         address tokenB;
         uint256 orderId;
@@ -20,6 +21,7 @@ library P2PSwapStructs {
 
     struct MetadataDispatchOrder {
         uint256 nonce;
+        address originExecutor;
         address tokenA;
         address tokenB;
         uint256 orderId;
@@ -29,6 +31,7 @@ library P2PSwapStructs {
 
     struct MetadataMakeOrder {
         uint256 nonce;
+        address originExecutor;
         address tokenA;
         address tokenB;
         uint256 amountA;
@@ -130,7 +133,7 @@ interface IP2PSwap {
     function rejectProposeOwner() external;
     function rejectProposePercentageFee() external;
     function rejectProposeWithdrawal() external;
-    function reserveAsyncNonceToService(address user, uint256 nonce) external;
+    function reserveAsyncNonceToService(uint256 nonce) external;
     function revokeAsyncNonceToService(address user, uint256 nonce) external;
     function stake(uint256 amount) external;
     function unstake(uint256 amount) external;

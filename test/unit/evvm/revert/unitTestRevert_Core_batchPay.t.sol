@@ -24,19 +24,21 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-contract unitTestRevert_EVVM_batchPay is Test, Constants {
+contract unitTestRevert_Core_batchPay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
     function executeBeforeSetUp() internal override {
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             "dummy",
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -52,7 +54,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         uint256 _amount,
         uint256 _priorityFee
     ) private returns (uint256 amount, uint256 priorityFee) {
-        evvm.addBalance(_user.Address, _token, _amount + _priorityFee);
+        core.addBalance(_user.Address, _token, _amount + _priorityFee);
         return (_amount, _priorityFee);
     }
 
@@ -64,7 +66,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
@@ -72,8 +74,8 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
-                address(evvm),
+                core.getEvvmID() + 1,
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -90,7 +92,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             s
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -105,7 +107,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -115,13 +117,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -135,11 +137,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -165,7 +167,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -175,13 +177,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -197,11 +199,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -227,7 +229,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -237,13 +239,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -259,11 +261,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -289,7 +291,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -299,13 +301,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -319,11 +321,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -349,7 +351,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -359,13 +361,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -379,11 +381,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -409,7 +411,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -419,13 +421,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -441,11 +443,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -471,7 +473,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -481,13 +483,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -501,11 +503,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -531,7 +533,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -541,13 +543,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -563,11 +565,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -593,7 +595,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -603,13 +605,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -623,11 +625,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -653,7 +655,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -663,13 +665,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -685,11 +687,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -715,7 +717,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         /* 🢃 Different executor 🢃 */
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -725,13 +727,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay skipped"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay skipped"
         );
@@ -747,11 +749,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             2
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -774,7 +776,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             )
         );
 
-        batchData[1] = EvvmStructs.BatchData(
+        batchData[1] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -801,7 +803,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, bool[] memory results) = evvm.batchPay(
+        (uint256 successfulTransactions, bool[] memory results) = core.batchPay(
             batchData
         );
         vm.stopPrank();
@@ -815,13 +817,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         assertFalse(results[1], "Second transaction should be skipped");
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount / 2 + priorityFee,
             "Sender balance must be half of amount + priority fee the same because pay skipped"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount / 2,
             "Receiver balance must be executed ones because next pay skipped"
         );
@@ -835,11 +837,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -866,7 +868,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -876,13 +878,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay skipped"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay skipped"
         );
@@ -898,11 +900,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -929,7 +931,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -939,13 +941,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay skipped"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay skipped"
         );
@@ -961,11 +963,11 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             1
         );
 
-        batchData[0] = EvvmStructs.BatchData(
+        batchData[0] = CoreStructs.BatchData(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -992,7 +994,7 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
 
         vm.startPrank(COMMON_USER_STAKER.Address);
 
-        (uint256 successfulTransactions, ) = evvm.batchPay(batchData);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
         vm.stopPrank();
 
         assertEq(
@@ -1002,13 +1004,13 @@ contract unitTestRevert_EVVM_batchPay is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay skipped"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay skipped"
         );

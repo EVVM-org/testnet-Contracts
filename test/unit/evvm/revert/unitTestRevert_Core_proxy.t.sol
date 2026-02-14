@@ -23,11 +23,11 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-contract unitTestRevert_EVVM_proxy is Test, Constants {
+    CoreError
+} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+contract unitTestRevert_Core_proxy is Test, Constants {
     /**
      * Naming Convention for Init Test Functions
      * Basic Structure:
@@ -83,9 +83,9 @@ contract unitTestRevert_EVVM_proxy is Test, Constants {
     }
 
     function test__unit_revert__fallback__ImplementationIsNotActive() external {
-        vm.expectRevert(EvvmError.ImplementationIsNotActive.selector);
+        vm.expectRevert(CoreError.ImplementationIsNotActive.selector);
 
-        ITartarusV1(address(evvm)).burnToken(
+        ITartarusV1(address(core)).burnToken(
             COMMON_USER_NO_STAKER_1.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             10
@@ -96,8 +96,8 @@ contract unitTestRevert_EVVM_proxy is Test, Constants {
         external
     {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(EvvmError.SenderIsNotAdmin.selector);
-        evvm.proposeImplementation(addressV1);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.proposeImplementation(addressV1);
         vm.stopPrank();
     }
 
@@ -105,8 +105,8 @@ contract unitTestRevert_EVVM_proxy is Test, Constants {
         external
     {
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(EvvmError.IncorrectAddressInput.selector);
-        evvm.proposeImplementation(address(0));
+        vm.expectRevert(CoreError.IncorrectAddressInput.selector);
+        core.proposeImplementation(address(0));
         vm.stopPrank();
     }
 
@@ -114,11 +114,11 @@ contract unitTestRevert_EVVM_proxy is Test, Constants {
         external
     {
         vm.startPrank(ADMIN.Address);
-        evvm.proposeImplementation(addressV1);
+        core.proposeImplementation(addressV1);
         vm.stopPrank();
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(EvvmError.SenderIsNotAdmin.selector);
-        evvm.rejectUpgrade();
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.rejectUpgrade();
         vm.stopPrank();
     }
 
@@ -126,11 +126,11 @@ contract unitTestRevert_EVVM_proxy is Test, Constants {
         external
     {
         vm.startPrank(ADMIN.Address);
-        evvm.proposeImplementation(addressV1);
+        core.proposeImplementation(addressV1);
         vm.stopPrank();
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(EvvmError.SenderIsNotAdmin.selector);
-        evvm.acceptImplementation();
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.acceptImplementation();
         vm.stopPrank();
     }
 
@@ -138,10 +138,10 @@ contract unitTestRevert_EVVM_proxy is Test, Constants {
         external
     {
         vm.startPrank(ADMIN.Address);
-        evvm.proposeImplementation(addressV1);
+        core.proposeImplementation(addressV1);
 
-        vm.expectRevert(EvvmError.TimeLockNotExpired.selector);
-        evvm.acceptImplementation();
+        vm.expectRevert(CoreError.TimeLockNotExpired.selector);
+        core.acceptImplementation();
         vm.stopPrank();
     }
 }

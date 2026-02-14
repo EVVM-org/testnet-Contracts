@@ -24,9 +24,9 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
-import "@evvm/testnet-contracts/library/errors/StateError.sol";
+import "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_Staking_publicStaking is Test, Constants {
     AccountData USER = COMMON_USER_NO_STAKER_1;
@@ -46,7 +46,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         uint256 stakingAmount,
         uint256 priorityFee
     ) private returns (uint256 amount, uint256 amountPriorityFee) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking() * stakingAmount) + priorityFee
@@ -99,6 +99,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
@@ -112,6 +113,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -145,10 +147,11 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPublicStaking(
                 /* 🢃 Diferent evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
                 address(staking),
                 params.isStaking,
                 params.amountOfStaking,
+                address(0),
                 params.nonce
             )
         );
@@ -171,11 +174,12 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -213,17 +217,19 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             COMMON_USER_NO_STAKER_2,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -261,17 +267,19 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             /* 🢃 Different isStaking 🢃 */
             !params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -309,17 +317,19 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.isStaking,
             /* 🢃 Different amountOfStaking 🢃 */
             params.amountOfStaking + 1,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -356,6 +366,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             /* 🢃 Different nonce 🢃 */
             params.nonce + 1,
             params.priorityFeeEVVM,
@@ -363,11 +374,12 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -385,6 +397,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             USER,
             true,
             10,
+            address(0),
             100001,
             0,
             111,
@@ -415,17 +428,19 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -443,6 +458,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             USER,
             true,
             10,
+            address(0),
             111,
             0,
             1111,
@@ -473,6 +489,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
@@ -484,6 +501,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -501,6 +519,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             USER,
             true,
             10,
+            address(0),
             111,
             0,
             1111,
@@ -513,6 +532,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             USER,
             false,
             10,
+            address(0),
             112,
             0,
             22222,
@@ -543,6 +563,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
@@ -554,6 +575,7 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -586,10 +608,11 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             params.user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPublicStaking(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(staking),
                 params.isStaking,
                 params.amountOfStaking,
+                address(0),
                 params.nonce
             )
         );
@@ -616,11 +639,12 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -651,17 +675,19 @@ contract unitTestRevert_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         staking.publicStaking(
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,

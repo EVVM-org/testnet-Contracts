@@ -269,16 +269,16 @@ export async function writeBaseInputsFile(
   const inputFileContent = `// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
 abstract contract BaseInputs {
     address admin = ${getAddress(addresses.admin!)};
     address goldenFisher = ${getAddress(addresses.goldenFisher!)};
     address activator = ${getAddress(addresses.activator!)};
 
-    EvvmStructs.EvvmMetadata inputMetadata =
-        EvvmStructs.EvvmMetadata({
+    CoreStructs.EvvmMetadata inputMetadata =
+        CoreStructs.EvvmMetadata({
             EvvmName: "${evvmMetadata.EvvmName}",
             // evvmID will be set to 0, and it will be assigned when you register the evvm
             EvvmID: 0,
@@ -315,8 +315,8 @@ export async function writeCrossChainInputsFile(
   const inputFileContent = `// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 import {
     HostChainStationStructs
 } from "@evvm/testnet-contracts/library/structs/HostChainStationStructs.sol";

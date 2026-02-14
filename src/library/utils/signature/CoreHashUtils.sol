@@ -3,16 +3,16 @@
 pragma solidity ^0.8.0;
 
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
 /**
- * @title EvvmHashUtils
+ * @title CoreHashUtils
  * @author Mate labs
- * @notice Hash generation for Evvm.sol payment operations (pay/dispersePay)
+ * @notice Hash generation for Core.sol payment operations (pay/dispersePay)
  * @dev Deterministic keccak256 hashes used with State.validateAndConsumeNonce for EIP-191 signature verification.
  */
-library EvvmHashUtils {
+library CoreHashUtils {
 
     /**
      * @notice Generates hash for single payment operation
@@ -22,7 +22,6 @@ library EvvmHashUtils {
      * @param token Token address
      * @param amount Token amount
      * @param priorityFee Fee for executor
-     * @param executor Authorized executor (address(0) = any)
      * @return Hash for State.sol validation
      */
     function hashDataForPay(
@@ -30,8 +29,7 @@ library EvvmHashUtils {
         string memory to_identity,
         address token,
         uint256 amount,
-        uint256 priorityFee,
-        address executor
+        uint256 priorityFee
     ) public pure returns (bytes32) {
         return
             keccak256(
@@ -41,8 +39,7 @@ library EvvmHashUtils {
                     to_identity,
                     token,
                     amount,
-                    priorityFee,
-                    executor
+                    priorityFee
                 )
             );
     }
@@ -54,15 +51,13 @@ library EvvmHashUtils {
      * @param token Token address
      * @param amount Total amount (must equal sum)
      * @param priorityFee Fee for executor
-     * @param executor Authorized executor (address(0) = any)
      * @return Hash for State.sol validation
      */
     function hashDataForDispersePay(
-        EvvmStructs.DispersePayMetadata[] memory toData,
+        CoreStructs.DispersePayMetadata[] memory toData,
         address token,
         uint256 amount,
-        uint256 priorityFee,
-        address executor
+        uint256 priorityFee
     ) internal pure returns (bytes32) {
         return
             keccak256(
@@ -71,8 +66,7 @@ library EvvmHashUtils {
                     toData,
                     token,
                     amount,
-                    priorityFee,
-                    executor
+                    priorityFee
                 )
             );
     }

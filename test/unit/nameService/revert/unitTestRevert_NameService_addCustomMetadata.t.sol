@@ -32,10 +32,7 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-import {
-    StateError
-} from "@evvm/testnet-contracts/library/errors/StateError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -49,9 +46,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -71,7 +70,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             uint256 totalPriorityFeeAmount
         )
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToAddCustomMetadata() + priorityFeeAmount
@@ -104,10 +103,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
                 address(nameService),
                 USERNAME,
                 customMetadata,
+                address(0),
                 nonce
             )
         );
@@ -127,11 +127,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -152,7 +153,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -180,6 +181,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
                 customMetadata,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -187,11 +189,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -212,7 +215,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -240,6 +243,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 /* 🢃 different identity 🢃 */
                 "differentIdentity",
                 customMetadata,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -247,11 +251,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -272,7 +277,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -300,6 +305,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 USERNAME,
                 /* 🢃 different value 🢃 */
                 string.concat(USERNAME, ">2"),
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -307,11 +313,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -332,7 +339,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -359,6 +366,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 customMetadata,
+                address(0),
                 /* 🢃 different nonce 🢃 */
                 nonce + 1,
                 totalPriorityFeeAmount,
@@ -367,11 +375,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -392,7 +401,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -423,6 +432,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
                 customMetadata,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -436,6 +446,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             USERNAME,
             customMetadata,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -456,7 +467,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -484,6 +495,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 customMetadata,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -496,6 +508,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -516,7 +529,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -544,6 +557,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 customMetadata,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -551,11 +565,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -576,7 +591,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -603,6 +618,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 customMetadata,
+                address(0),
                 nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
@@ -612,11 +628,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -637,7 +654,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -659,6 +676,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 customMetadata,
+                address(0),
                 nonce,
                 0,
                 nonceEVVM
@@ -666,11 +684,12 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         nameService.addCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             customMetadata,
+            address(0),
             nonce,
             signatureNameService,
             0,
@@ -691,7 +710,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         assertEq(nameService.getCustomMetadataMaxSlotsOfIdentity(USERNAME), 0);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),

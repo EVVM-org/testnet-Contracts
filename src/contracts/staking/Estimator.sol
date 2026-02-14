@@ -21,7 +21,6 @@ import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     StakingStructs
 } from "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
 
 contract Estimator {
     /// @dev Struct for managing address change proposals with time delay
@@ -59,7 +58,7 @@ contract Estimator {
     /// @dev Proposal system for activator address changes
     AddressTypeProposal private activator;
     /// @dev Proposal system for EVVM address changes
-    AddressTypeProposal private evvmAddress;
+    AddressTypeProposal private coreAddress;
     /// @dev Proposal system for Staking contract address changes
     AddressTypeProposal private addressStaking;
     /// @dev Proposal system for admin address changes
@@ -97,18 +96,18 @@ contract Estimator {
      * @notice Initializes the Estimator contract
      * @dev Sets up all required addresses for contract operation
      * @param _activator Address authorized to start new epochs
-     * @param _evvmAddress Address of the EVVM core contract
+     * @param _coreAddress Address of the EVVM core contract
      * @param _addressStaking Address of the Staking contract
      * @param _admin Address with administrative privileges
      */
     constructor(
         address _activator,
-        address _evvmAddress,
+        address _coreAddress,
         address _addressStaking,
         address _admin
     ) {
         activator.actual = _activator;
-        evvmAddress.actual = _evvmAddress;
+        coreAddress.actual = _coreAddress;
         addressStaking.actual = _addressStaking;
         admin.actual = _admin;
     }
@@ -251,23 +250,23 @@ contract Estimator {
     /// @notice Proposes a new EVVM address with 1-day time delay
     /// @param _proposal Address of the proposed new EVVM contract
     function setEvvmAddressProposal(address _proposal) external onlyAdmin {
-        evvmAddress.proposal = _proposal;
-        evvmAddress.timeToAccept = block.timestamp + 1 days;
+        coreAddress.proposal = _proposal;
+        coreAddress.timeToAccept = block.timestamp + 1 days;
     }
 
     /// @notice Cancels the pending EVVM address proposal
     function cancelEvvmAddressProposal() external onlyAdmin {
-        evvmAddress.proposal = address(0);
-        evvmAddress.timeToAccept = 0;
+        coreAddress.proposal = address(0);
+        coreAddress.timeToAccept = 0;
     }
 
     /// @notice Accepts the EVVM address proposal after time delay
     function acceptEvvmAddressProposal() external onlyAdmin {
-        if (block.timestamp < evvmAddress.timeToAccept) revert();
+        if (block.timestamp < coreAddress.timeToAccept) revert();
 
-        evvmAddress.actual = evvmAddress.proposal;
-        evvmAddress.proposal = address(0);
-        evvmAddress.timeToAccept = 0;
+        coreAddress.actual = coreAddress.proposal;
+        coreAddress.proposal = address(0);
+        coreAddress.timeToAccept = 0;
     }
 
     /// @notice Proposes a new Staking contract address with 1-day time delay
@@ -348,12 +347,12 @@ contract Estimator {
 
     /// @notice Returns the EVVM address proposal information
     /// @return Complete AddressTypeProposal struct for EVVM
-    function getEvvmAddressMetadata()
+    function getCoreAddressMetadata()
         external
         view
         returns (AddressTypeProposal memory)
     {
-        return evvmAddress;
+        return coreAddress;
     }
 
     /// @notice Returns the Staking contract address proposal information

@@ -45,7 +45,7 @@ import { saveEvvmRegistrationToJson } from "../../utils/outputJson";
  *
  * @param {string[]} _args - Command arguments (unused, reserved for future use)
  * @param {any} options - Command options:
- *   - evvmAddress: Address of deployed EVVM contract
+ *   - coreAddress: Address of deployed EVVM contract
  *   - walletName: Foundry wallet account name (default: "defaultKey")
  *   - useCustomEthRpc: Use custom Ethereum Sepolia RPC instead of public (default: false)
  * @returns {Promise<void>}
@@ -54,7 +54,7 @@ export async function registerSingle(_args: string[], options: any) {
   console.log(`${colors.bright}Starting EVVM registration...${colors.reset}\n`);
 
   // Get values from optional flags
-  let evvmAddress: `0x${string}` | undefined = options.evvmAddress;
+  let coreAddress: `0x${string}` | undefined = options.coreAddress;
   let walletName: string = options.walletName || "defaultKey";
   let useCustomEthRpc: boolean = options.useCustomEthRpc || false;
 
@@ -73,7 +73,7 @@ export async function registerSingle(_args: string[], options: any) {
     : EthSepoliaPublicRpc;
 
   // Validate or prompt for missing values
-  evvmAddress ||= promptAddress(
+  coreAddress ||= promptAddress(
     `${colors.yellow}Enter the EVVM Address:${colors.reset}`
   );
 
@@ -90,13 +90,13 @@ export async function registerSingle(_args: string[], options: any) {
 
   const evvmID: number | undefined = await callRegisterEvvm(
     Number(chainId),
-    evvmAddress,
+    coreAddress,
     walletName,
     ethRPC
   );
 
   if (!evvmID) {
-    criticalError(`Failed to obtain EVVM ID for contract ${evvmAddress}.`);
+    criticalError(`Failed to obtain EVVM ID for contract ${coreAddress}.`);
   }
 
   confirmation(`Generated EVVM ID: ${colors.bright}${evvmID}${colors.reset}`);
@@ -107,11 +107,11 @@ export async function registerSingle(_args: string[], options: any) {
     chainId
   );
 
-  await callSetEvvmID(evvmAddress, evvmID!, rpcUrl, walletName);
+  await callSetEvvmID(coreAddress, evvmID!, rpcUrl, walletName);
 
   await saveEvvmRegistrationToJson(
     Number(evvmID),
-    evvmAddress,
+    coreAddress,
     chainId,
     ChainData[chainId]?.Chain
   );
@@ -123,7 +123,7 @@ export async function registerSingle(_args: string[], options: any) {
     `${colors.green}EVVM ID: ${colors.bright}${evvmID}${colors.reset}`
   );
   console.log(
-    `${colors.green}Contract: ${colors.bright}${evvmAddress}${colors.reset}`
+    `${colors.green}Contract: ${colors.bright}${coreAddress}${colors.reset}`
   );
   console.log(
     `${colors.darkGray}\nYour EVVM instance is now ready to use!${colors.reset}\n`

@@ -51,9 +51,11 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -66,6 +68,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_1,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
@@ -77,6 +80,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_2,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
             ),
@@ -88,6 +92,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_3,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7
             ),
@@ -101,7 +106,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToRemoveCustomMetadata() + priorityFeeAmount
@@ -135,6 +140,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user,
             params1.identity,
             params1.key,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
@@ -146,6 +152,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.key,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -171,7 +178,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -180,7 +187,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 2: fisher balance incorrectly changed after removing custom metadata"
         );
@@ -203,7 +210,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
 
         _addBalance(params1.user, params1.priorityFee);
 
-        uint256 amountReward1 = (5 * evvm.getRewardAmount()) +
+        uint256 amountReward1 = (5 * core.getRewardAmount()) +
             params1.priorityFee;
 
         (
@@ -213,6 +220,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user,
             params1.identity,
             params1.key,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
@@ -224,6 +232,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.key,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -249,7 +258,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -258,7 +267,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
              amountReward1,
             "Error 2: fisher balance incorrectly changed after removing custom metadata"
         );
@@ -291,6 +300,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user,
             params1.identity,
             params1.key,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
@@ -302,6 +312,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.key,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -327,7 +338,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -336,7 +347,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 2: fisher balance incorrectly changed after removing custom metadata"
         );
@@ -361,7 +372,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
 
         _addBalance(params1.user, params1.priorityFee);
 
-        uint256 amountReward1 = (5 * evvm.getRewardAmount()) +
+        uint256 amountReward1 = (5 * core.getRewardAmount()) +
             params1.priorityFee;
 
         (
@@ -371,6 +382,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user,
             params1.identity,
             params1.key,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
@@ -382,6 +394,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.key,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -407,7 +420,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -416,7 +429,7 @@ contract unitTestCorrect_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
              amountReward1,
             "Error 2: fisher balance incorrectly changed after removing custom metadata"
         );

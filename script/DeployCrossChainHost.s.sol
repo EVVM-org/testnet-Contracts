@@ -2,8 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Script, console2} from "forge-std/Script.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     Estimator
@@ -12,8 +11,8 @@ import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 import {
     TreasuryHostChainStation
 } from "@evvm/testnet-contracts/contracts/treasuryTwoChains/TreasuryHostChainStation.sol";
@@ -29,8 +28,8 @@ import {CrossChainInputs} from "../input/CrossChainInputs.sol";
 
 contract DeployCrossChainHostScript is Script, BaseInputs, CrossChainInputs {
     Staking staking;
-    Evvm evvm;
-    State state;
+    Core core;
+    
     Estimator estimator;
     NameService nameService;
     TreasuryHostChainStation treasuryHost;
@@ -42,40 +41,36 @@ contract DeployCrossChainHostScript is Script, BaseInputs, CrossChainInputs {
         vm.startBroadcast();
 
         staking = new Staking(admin, goldenFisher);
-        evvm = new Evvm(admin, address(staking), inputMetadata);
-        state = new State(address(evvm), admin);
+        core = new Core(admin, address(staking), inputMetadata);
+        
         estimator = new Estimator(
             activator,
-            address(evvm),
+            address(core),
             address(staking),
             admin
         );
 
-        nameService = new NameService(address(evvm), address(state), admin);
+        nameService = new NameService(address(core), admin);
 
         staking.initializeSystemContracts(
             address(estimator),
-            address(evvm),
-            address(state)
+            address(core)
         );
 
         treasuryHost = new TreasuryHostChainStation(
-            address(evvm),
-            address(state),
+            address(core),
             admin,
             crosschainConfigHost
         );
 
-        evvm.initializeSystemContracts(
+        core.initializeSystemContracts(
             address(nameService),
-            address(treasuryHost),
-            address(state)
+            address(treasuryHost)
         );
 
         p2pSwap = new P2PSwap(
-            address(evvm),
+            address(core),
             address(staking),
-            address(state),
             admin
         );
 

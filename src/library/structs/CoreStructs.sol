@@ -4,13 +4,13 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title EvvmStructs
+ * @title CoreStructs
  * @author Mate labs
- * @notice Data structures for Evvm.sol (payments, governance, metadata)
- * @dev Payment structures validated via State.sol nonces. CA structures bypass nonces. Used by EvvmStorage then Evvm.sol.
+ * @notice Data structures for Core.sol (payments, governance, metadata)
+ * @dev Payment structures validated via State.sol nonces. CA structures bypass nonces. Used by CoreStorage then Core.sol.
  */
 
-library EvvmStructs {
+library CoreStructs {
     //░▒▓█ Payment Data Structures ██████████████████████████████████████████████████████▓▒░
 
     /**
@@ -22,7 +22,7 @@ library EvvmStructs {
      * @param token Token address (address(0) = ETH)
      * @param amount Token amount
      * @param priorityFee Fee for staker
-     * @param executor Authorized executor (address(0) = any)
+     * @param senderExecutor Authorized senderExecutor (address(0) = any)
      * @param nonce Replay protection nonce
      * @param isAsyncExec Nonce type (false=sync, true=async)
      * @param signature EIP-191 signature
@@ -34,7 +34,7 @@ library EvvmStructs {
         address token;
         uint256 amount;
         uint256 priorityFee;
-        address executor;
+        address senderExecutor;
         uint256 nonce;
         bool isAsyncExec;
         bytes signature;
@@ -48,7 +48,7 @@ library EvvmStructs {
      * @param token Token address (address(0) = ETH)
      * @param totalAmount Total distributed (must equal sum)
      * @param priorityFee Fee for staker
-     * @param executor Authorized executor (address(0) = any)
+     * @param senderExecutor Authorized senderExecutor (address(0) = any)
      * @param nonce Replay protection nonce
      * @param isAsyncExec Nonce type (false=sync, true=async)
      * @param signature EIP-191 signature
@@ -59,7 +59,7 @@ library EvvmStructs {
         address token;
         uint256 totalAmount;
         uint256 priorityFee;
-        address executor;
+        address senderExecutor;
         uint256 nonce;
         bool isAsyncExec;
         bytes signature;

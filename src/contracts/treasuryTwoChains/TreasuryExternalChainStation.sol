@@ -30,7 +30,7 @@ pragma solidity ^0.8.0;
  * @title External Chain Station for Fisher Bridge
  * @author Mate labs
  * @notice Manages deposits from external to host chain
- * @dev Multi-protocol cross-chain bridge (Hyperlane/LZ/Axelar). Deposit tokens external \u2192 host. Fisher bridge sends with ECDSA signatures. Protocols: 0x01 Hyperlane, 0x02 LayerZero V2, 0x03 Axelar. Independent from State.sol/Evvm.sol (external chain). Sequential asyncNonce per user. Time-delayed governance (1d).
+ * @dev Multi-protocol cross-chain bridge (Hyperlane/LZ/Axelar). Deposit tokens external \u2192 host. Fisher bridge sends with ECDSA signatures. Protocols: 0x01 Hyperlane, 0x02 LayerZero V2, 0x03 Axelar. Independent from State.sol/Core.sol (external chain). Sequential asyncNonce per user. Time-delayed governance (1d).
  *
  * @custom:security-contact support@evvm.info
  */
@@ -267,7 +267,7 @@ contract TreasuryExternalChainStation is
      * - Transfer: User → this contract (via approval)
      * - Encode: PayloadUtils.encodePayload(token, to, amt)
      * - Route: Protocol-specific message dispatch
-     * - Receive: Host chain credits Evvm.sol balance
+     * - Receive: Host chain credits Core.sol balance
      *
      * Protocol Routing:
      * - 0x01: Hyperlane (mailbox.dispatch + quote fee)
@@ -281,7 +281,7 @@ contract TreasuryExternalChainStation is
      *
      * Host Chain Integration:
      * - Receives: handle/_lzReceive/_execute
-     * - Credits: Evvm.sol balance for recipient
+     * - Credits: Core.sol balance for recipient
      * - Fisher Bridge: Independent from State.sol nonces
      *
      * Security:
@@ -355,7 +355,7 @@ contract TreasuryExternalChainStation is
      * - Validate: msg.value >= amount + fees
      * - Encode: PayloadUtils.encodePayload(0x0, to, amt)
      * - Route: Protocol-specific message dispatch
-     * - Receive: Host chain credits Evvm.sol balance
+     * - Receive: Host chain credits Core.sol balance
      *
      * Protocol Routing:
      * - 0x01: Hyperlane (dispatch w/ quote + amount)
@@ -370,7 +370,7 @@ contract TreasuryExternalChainStation is
      * Host Chain Integration:
      * - Token Representation: address(0) for native ETH
      * - Payload: Encoded with zero address
-     * - Credits: Evvm.sol balance as native token
+     * - Credits: Core.sol balance as native token
      * - Fisher Bridge: Independent nonce system
      *
      * Security:
@@ -462,7 +462,7 @@ contract TreasuryExternalChainStation is
      *
      * Integration Context:
      * - State.sol: NOT used (independent nonces)
-     * - Evvm.sol: NOT on external chain
+     * - Core.sol: NOT on external chain
      * - SignatureRecover: ECDSA signature validation
      * - Host Chain: Sends tokens via protocol messages
      *
@@ -502,6 +502,7 @@ contract TreasuryExternalChainStation is
                         priorityFee,
                         amount
                     ),
+                    fisherExecutor.current,
                     nonce,
                     true
                 ),
@@ -527,7 +528,7 @@ contract TreasuryExternalChainStation is
      * - Deposit: Tokens held in this contract
      * - Event: FisherBridgeSend logged
      * - Host: Fisher monitors events + credits balance
-     * - Evvm.sol: Host chain credits recipient balance
+     * - Core.sol: Host chain credits recipient balance
      *
      * Signature Validation:
      * - Payload: evvmID + host address + hash + nonce
@@ -544,7 +545,7 @@ contract TreasuryExternalChainStation is
      *
      * Integration Context:
      * - State.sol: NOT used (Fisher independent)
-     * - Evvm.sol: Credits balance on host chain
+     * - Core.sol: Credits balance on host chain
      * - Fisher Executor: Monitors events + processes
      * - Host Station: Receives event + credits user
      *
@@ -584,6 +585,7 @@ contract TreasuryExternalChainStation is
                         priorityFee,
                         amount
                     ),
+                    fisherExecutor.current,
                     nonce,
                     true
                 ),
@@ -620,7 +622,7 @@ contract TreasuryExternalChainStation is
      * - Deposit: msg.value = amount + priorityFee
      * - Event: FisherBridgeSend with address(0)
      * - Host: Fisher monitors + credits Evvm balance
-     * - Evvm.sol: Host chain credits recipient
+     * - Core.sol: Host chain credits recipient
      *
      * Payment Validation:
      * - Exact Match: msg.value == amount + priorityFee
@@ -643,7 +645,7 @@ contract TreasuryExternalChainStation is
      *
      * Integration Context:
      * - State.sol: NOT used (independent system)
-     * - Evvm.sol: Credits native balance on host
+     * - Core.sol: Credits native balance on host
      * - Fisher Executor: Pays ETH + processes
      * - Host Station: Credits recipient balance
      *
@@ -681,6 +683,7 @@ contract TreasuryExternalChainStation is
                         priorityFee,
                         amount
                     ),
+                    fisherExecutor.current,
                     nonce,
                     true
                 ),

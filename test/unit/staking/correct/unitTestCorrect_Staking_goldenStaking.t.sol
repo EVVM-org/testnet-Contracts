@@ -27,7 +27,7 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
     function _addBalance(
         uint256 stakingAmount
     ) private returns (uint256 totalOfMate) {
-        evvm.addBalance(
+        core.addBalance(
             GOLDEN_STAKER.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking() * stakingAmount)
@@ -47,7 +47,7 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
             totalOfMate,
             0,
             address(staking),
-            evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
+            core.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
             false
         );
 
@@ -64,13 +64,13 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
         history = staking.getAddressHistory(GOLDEN_STAKER.Address);
 
         assertTrue(
-            evvm.isAddressStaker(GOLDEN_STAKER.Address),
+            core.isAddressStaker(GOLDEN_STAKER.Address),
             "golden user is not pointer as staker"
         );
 
         assertEq(
-            evvm.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2),
+            core.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2),
             "balance after staking is not correct"
         );
 
@@ -113,13 +113,13 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
         history = staking.getAddressHistory(GOLDEN_STAKER.Address);
 
         assertTrue(
-            evvm.isAddressStaker(GOLDEN_STAKER.Address),
+            core.isAddressStaker(GOLDEN_STAKER.Address),
             "golden user must still be pointer as staker"
         );
 
         assertEq(
-            evvm.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount() * 2) * 2) + (staking.priceOfStaking() * 4),
+            core.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount() * 2) * 2) + (staking.priceOfStaking() * 4),
             "balance after staking is not correct"
         );
 
@@ -164,13 +164,13 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
         history = staking.getAddressHistory(GOLDEN_STAKER.Address);
 
         assertFalse(
-            evvm.isAddressStaker(GOLDEN_STAKER.Address),
+            core.isAddressStaker(GOLDEN_STAKER.Address),
             "golden user must be pointer as not staker anymore"
         );
 
         assertEq(
-            evvm.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount() * 2)) + amountToStake,
+            core.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount() * 2)) + amountToStake,
             "balance after staking is not correct"
         );
 
@@ -223,13 +223,13 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
         history = staking.getAddressHistory(GOLDEN_STAKER.Address);
 
         assertTrue(
-            evvm.isAddressStaker(GOLDEN_STAKER.Address),
+            core.isAddressStaker(GOLDEN_STAKER.Address),
             "golden user must be pointer as staker again"
         );
 
         assertEq(
-            evvm.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2) * 2,
+            core.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2) * 2,
             "balance after staking is not correct"
         );
 

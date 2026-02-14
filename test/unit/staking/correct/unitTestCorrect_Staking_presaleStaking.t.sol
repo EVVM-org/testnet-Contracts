@@ -62,7 +62,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         address user,
         uint256 priorityFee
     ) private returns (uint256 amount, uint256 amountPriorityFee) {
-        evvm.addBalance(
+        core.addBalance(
             user,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking()) + priorityFee
@@ -118,6 +118,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             params1.user,
             params1.isStaking,
+            address(0),
             params1.nonceStake,
             params1.priorityFee,
             params1.nonceEVVM
@@ -127,6 +128,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params1.user.Address,
             params1.isStaking,
+            address(0),
             params1.nonceStake,
             params1.signatureStake,
             params1.priorityFee,
@@ -142,7 +144,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         historySync = staking.getAddressHistory(params1.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params1.user.Address),
+            core.isAddressStaker(params1.user.Address),
             "ERROR [1] : presale user is not pointer as staker"
         );
 
@@ -168,7 +170,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ERROR [1] : balance of fisher after staking is not correct"
         );
@@ -185,6 +187,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             params2.user,
             params2.isStaking,
+            address(0),
             params2.nonceStake,
             params2.priorityFee,
             params2.nonceEVVM
@@ -194,6 +197,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params2.user.Address,
             params2.isStaking,
+            address(0),
             params2.nonceStake,
             params2.signatureStake,
             params2.priorityFee,
@@ -209,7 +213,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         historyAsync = staking.getAddressHistory(params2.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params2.user.Address),
+            core.isAddressStaker(params2.user.Address),
             "ERROR [2] : presale user is not pointer as staker"
         );
 
@@ -235,7 +239,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ERROR [2] : balance of fisher after staking is not correct"
         );
@@ -278,6 +282,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             params1.user,
             params1.isStaking,
+            address(0),
             params1.nonceStake,
             params1.priorityFee,
             params1.nonceEVVM
@@ -287,6 +292,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params1.user.Address,
             params1.isStaking,
+            address(0),
             params1.nonceStake,
             params1.signatureStake,
             params1.priorityFee,
@@ -302,7 +308,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         historySync = staking.getAddressHistory(params1.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params1.user.Address),
+            core.isAddressStaker(params1.user.Address),
             "ERROR [1] : presale user is not pointer as staker"
         );
 
@@ -328,7 +334,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ERROR [1] : balance of fisher after staking is not correct"
         );
@@ -345,6 +351,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             params2.user,
             params2.isStaking,
+            address(0),
             params2.nonceStake,
             params2.priorityFee,
             params2.nonceEVVM
@@ -354,6 +361,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params2.user.Address,
             params2.isStaking,
+            address(0),
             params2.nonceStake,
             params2.signatureStake,
             params2.priorityFee,
@@ -369,7 +377,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         historyAsync = staking.getAddressHistory(params2.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params2.user.Address),
+            core.isAddressStaker(params2.user.Address),
             "ERROR [2] : presale user is not pointer as staker"
         );
 
@@ -395,7 +403,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ERROR [2] : balance of fisher after staking is not correct"
         );
@@ -438,6 +446,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             params1.user,
             params1.isStaking,
+            address(0),
             params1.nonceStake,
             params1.priorityFee,
             params1.nonceEVVM
@@ -447,6 +456,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params1.user.Address,
             params1.isStaking,
+            address(0),
             params1.nonceStake,
             params1.signatureStake,
             params1.priorityFee,
@@ -462,7 +472,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         historySync = staking.getAddressHistory(params1.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params1.user.Address),
+            core.isAddressStaker(params1.user.Address),
             "ERROR [1] : presale user is not pointer as staker"
         );
 
@@ -488,8 +498,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2) + params1.priorityFee,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2) + params1.priorityFee,
             "ERROR [1] : balance of fisher after staking is not correct"
         );
 
@@ -505,6 +515,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             params2.user,
             params2.isStaking,
+            address(0),
             params2.nonceStake,
             params2.priorityFee,
             params2.nonceEVVM
@@ -514,6 +525,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params2.user.Address,
             params2.isStaking,
+            address(0),
             params2.nonceStake,
             params2.signatureStake,
             params2.priorityFee,
@@ -529,7 +541,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         historyAsync = staking.getAddressHistory(params2.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params2.user.Address),
+            core.isAddressStaker(params2.user.Address),
             "ERROR [2] : presale user is not pointer as staker"
         );
 
@@ -555,8 +567,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount() * 2) * 2) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount() * 2) * 2) +
                 params2.priorityFee +
                 params1.priorityFee,
             "ERROR [2] : balance of fisher after staking is not correct"
@@ -600,6 +612,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             params1.user,
             params1.isStaking,
+            address(0),
             params1.nonceStake,
             params1.priorityFee,
             params1.nonceEVVM
@@ -609,6 +622,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params1.user.Address,
             params1.isStaking,
+            address(0),
             params1.nonceStake,
             params1.signatureStake,
             params1.priorityFee,
@@ -624,7 +638,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         historySync = staking.getAddressHistory(params1.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params1.user.Address),
+            core.isAddressStaker(params1.user.Address),
             "ERROR [1] : presale user is not pointer as staker"
         );
 
@@ -650,8 +664,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2) + params1.priorityFee,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2) + params1.priorityFee,
             "ERROR [1] : balance of fisher after staking is not correct"
         );
 
@@ -667,6 +681,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             params2.user,
             params2.isStaking,
+            address(0),
             params2.nonceStake,
             params2.priorityFee,
             params2.nonceEVVM
@@ -676,6 +691,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params2.user.Address,
             params2.isStaking,
+            address(0),
             params2.nonceStake,
             params2.signatureStake,
             params2.priorityFee,
@@ -691,7 +707,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         historyAsync = staking.getAddressHistory(params2.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params2.user.Address),
+            core.isAddressStaker(params2.user.Address),
             "ERROR [2] : presale user is not pointer as staker"
         );
 
@@ -717,8 +733,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount() * 2) * 2) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount() * 2) * 2) +
                 params2.priorityFee +
                 params1.priorityFee,
             "ERROR [2] : balance of fisher after staking is not correct"
@@ -733,6 +749,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             _executeFn_staking_presaleStaking(
                 USER,
                 true,
+                address(0),
                 uint256(
                     0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00
                 ) + i,
@@ -778,6 +795,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             paramsUnstake.user,
             paramsUnstake.isStaking,
+            address(0),
             paramsUnstake.nonceStake,
             paramsUnstake.priorityFee,
             paramsUnstake.nonceEVVM
@@ -787,6 +805,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             paramsUnstake.user.Address,
             paramsUnstake.isStaking,
+            address(0),
             paramsUnstake.nonceStake,
             paramsUnstake.signatureStake,
             paramsUnstake.priorityFee,
@@ -802,7 +821,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         historyUnstake = staking.getAddressHistory(paramsUnstake.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(paramsUnstake.user.Address),
+            core.isAddressStaker(paramsUnstake.user.Address),
             "ERROR [unstake execution] : presale user must still point as staker"
         );
 
@@ -828,7 +847,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ERROR [unstake execution] : balance of fisher after staking is not correct"
         );
@@ -847,6 +866,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             paramsFullUnstake.user,
             paramsFullUnstake.isStaking,
+            address(0),
             paramsFullUnstake.nonceStake,
             paramsFullUnstake.priorityFee,
             paramsFullUnstake.nonceEVVM
@@ -856,6 +876,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             paramsFullUnstake.user.Address,
             paramsFullUnstake.isStaking,
+            address(0),
             paramsFullUnstake.nonceStake,
             paramsFullUnstake.signatureStake,
             paramsFullUnstake.priorityFee,
@@ -873,7 +894,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertFalse(
-            evvm.isAddressStaker(paramsFullUnstake.user.Address),
+            core.isAddressStaker(paramsFullUnstake.user.Address),
             "ERROR [full unstake execution] : presale user must not point as staker anymore"
         );
 
@@ -899,7 +920,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ERROR [full unstake execution]  : balance of fisher after staking is not correct"
         );
@@ -912,6 +933,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         _executeFn_staking_presaleStaking(
             USER,
             true,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -927,6 +949,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         _executeFn_staking_presaleStaking(
             USER,
             false,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
@@ -961,6 +984,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
             params.nonceEVVM
@@ -972,6 +996,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
@@ -987,7 +1012,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         historyFullUnstake = staking.getAddressHistory(params.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "ERROR [stake after full unstake execution] : presale user must be pointer as staker"
         );
 
@@ -1013,7 +1038,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ERROR [stake after full unstake execution]  : balance of fisher after staking is not correct"
         );
@@ -1026,6 +1051,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         _executeFn_staking_presaleStaking(
             USER,
             true,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -1041,6 +1067,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         _executeFn_staking_presaleStaking(
             USER,
             false,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
@@ -1075,6 +1102,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
             params.nonceEVVM
@@ -1086,6 +1114,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
@@ -1101,7 +1130,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         historyFullUnstake = staking.getAddressHistory(params.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "ERROR [stake after full unstake execution] : presale user must be pointer as staker"
         );
 
@@ -1127,8 +1156,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2) + params.priorityFee,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2) + params.priorityFee,
             "ERROR [stake after full unstake execution]  : balance of fisher after staking is not correct"
         );
     }

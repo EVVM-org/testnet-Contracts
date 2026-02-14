@@ -34,7 +34,7 @@ contract fuzzTest_Staking_serviceStaking is Test, Constants {
         address user,
         uint256 stakingAmount
     ) private returns (uint256 totalOfMate) {
-        evvm.addBalance(
+        core.addBalance(
             user,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking() * stakingAmount)
@@ -46,7 +46,7 @@ contract fuzzTest_Staking_serviceStaking is Test, Constants {
     function getAmountOfRewardsPerExecution(
         uint256 numberOfTx
     ) private view returns (uint256) {
-        return (evvm.getRewardAmount() * 2) * numberOfTx;
+        return (core.getRewardAmount() * 2) * numberOfTx;
     }
 
     struct FuzzTestInput {
@@ -67,13 +67,13 @@ contract fuzzTest_Staking_serviceStaking is Test, Constants {
 
             if (input[i].isStaking) {
                 if (
-                    evvm.getBalance(
+                    core.getBalance(
                         address(mockContract),
                         PRINCIPAL_TOKEN_ADDRESS
                     ) < staking.priceOfStaking() * input[i].amount
                 ) {
                     uint256 totalOfStakeNeeded = input[i].amount -
-                        (evvm.getBalance(
+                        (core.getBalance(
                             address(mockContract),
                             PRINCIPAL_TOKEN_ADDRESS
                         ) / staking.priceOfStaking());

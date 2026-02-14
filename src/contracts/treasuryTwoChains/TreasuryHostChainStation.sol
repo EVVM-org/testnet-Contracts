@@ -30,14 +30,13 @@ pragma solidity ^0.8.0;
  * @title Host Chain Station for Fisher Bridge
  * @author Mate labs
  * @notice Manages withdrawals from host to external chains
- * @dev Multi-protocol cross-chain bridge with Evvm integration. Withdraw tokens host \u2192 external. Fisher bridge with State.sol nonces. Protocols: 0x01 Hyperlane, 0x02 LayerZero V2, 0x03 Axelar. State.sol (Fisher nonces ONLY), Evvm.sol (all balance ops). Principal Token withdrawal blocked (MATE locked). Time-delayed governance (1d).
+ * @dev Multi-protocol cross-chain bridge with Evvm integration. Withdraw tokens host \u2192 external. Fisher bridge with State.sol nonces. Protocols: 0x01 Hyperlane, 0x02 LayerZero V2, 0x03 Axelar. State.sol (Fisher nonces ONLY), Core.sol (all balance ops). Principal Token withdrawal blocked (MATE locked). Time-delayed governance (1d).
  *
  * @custom:security-contact support@evvm.info
  */
 
 import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     CrossChainTreasuryError as Error
 } from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
@@ -89,9 +88,9 @@ import {
 contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     /// @notice EVVM core contract for balance operations
     /// @dev Used to integrate with EVVM's balance management and token operations
-    Evvm evvm;
+    Core core;
 
-    State state;
+    
 
     /// @notice Admin address management with time-delayed proposals
     /// @dev Stores current admin, proposed admin, and acceptance timestamp
@@ -166,12 +165,11 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
 
     /// @notice Initializes the Host Chain Station with EVVM integration and cross-chain protocols
     /// @dev Sets up Hyperlane, LayerZero, and Axelar configurations for multi-protocol support
-    /// @param _evvmAddress Address of the EVVM core contract for balance operations
+    /// @param _coreAddress Address of the EVVM core contract for balance operations
     /// @param _admin Initial admin address with full administrative privileges
     /// @param _crosschainConfig Configuration struct containing all cross-chain protocol settings
     constructor(
-        address _evvmAddress,
-        address _stateAddress,
+        address _coreAddress,
         address _admin,
         HostChainStationStructs.CrosschainConfig memory _crosschainConfig
     )
@@ -179,9 +177,9 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
         Ownable(_admin)
         AxelarExecutable(_crosschainConfig.axelar.gatewayAddress)
     {
-        evvm = Evvm(_evvmAddress);
+        core = Core(_coreAddress);
 
-        state = State(_stateAddress);
+        
 
         admin = ProposalStructs.AddressTypeProposal({
             current: _admin,
@@ -254,7 +252,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
      * - 0x03: Axelar (payNativeGas + callContract)
      *
      * Evvm Integration:
-     * - Balance Check: evvm.getBalance(sender, token)
+     * - Balance Check: core.getBalance(sender, token)
      * - Deduction: evvm.removeAmountFromUser
      * - Principal Token: Cannot withdraw (MATE locked)
      * - Other Tokens: Full withdrawal support
@@ -287,13 +285,13 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
         uint256 amount,
         bytes1 protocolToExecute
     ) external payable {
-        if (token == evvm.getEvvmMetadata().principalTokenAddress)
+        if (token == core.getEvvmMetadata().principalTokenAddress)
             revert Error.PrincipalTokenIsNotWithdrawable();
 
-        if (evvm.getBalance(msg.sender, token) < amount)
+        if (core.getBalance(msg.sender, token) < amount)
             revert Error.InsufficientBalance();
 
-        executerEVVM(false, msg.sender, token, amount);
+        executerCore(false, msg.sender, token, amount);
 
         bytes memory payload = PayloadUtils.encodePayload(
             token,
@@ -401,7 +399,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
         uint256 nonce,
         bytes memory signature
     ) external onlyFisherExecutor {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             from,
             Hash.hashDataForFisherBridge(
                 addressToReceive,
@@ -409,15 +407,16 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
                 priorityFee,
                 amount
             ),
+            fisherExecutor.current,
             nonce,
             true,
             signature
         );
 
-        executerEVVM(true, addressToReceive, tokenAddress, amount);
+        executerCore(true, addressToReceive, tokenAddress, amount);
 
         if (priorityFee > 0)
-            executerEVVM(true, msg.sender, tokenAddress, priorityFee);
+            executerCore(true, msg.sender, tokenAddress, priorityFee);
     }
 
     /**
@@ -445,7 +444,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
      * - Signature: ECDSA validation via State.sol
      *
      * Evvm Balance Operations:
-     * - Validate: evvm.getBalance(from, token) >=
+     * - Validate: core.getBalance(from, token) >=
      *   amount
      * - Deduct: evvm.removeAmountFromUser(from, token,
      *   amount+fee)
@@ -483,13 +482,13 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
         uint256 nonce,
         bytes memory signature
     ) external onlyFisherExecutor {
-        if (tokenAddress == evvm.getEvvmMetadata().principalTokenAddress)
+        if (tokenAddress == core.getEvvmMetadata().principalTokenAddress)
             revert Error.PrincipalTokenIsNotWithdrawable();
 
-        if (evvm.getBalance(from, tokenAddress) < amount)
+        if (core.getBalance(from, tokenAddress) < amount)
             revert Error.InsufficientBalance();
 
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             from,
             Hash.hashDataForFisherBridge(
                 addressToReceive,
@@ -497,15 +496,16 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
                 priorityFee,
                 amount
             ),
+            fisherExecutor.current,
             nonce,
             true,
             signature
         );
 
-        executerEVVM(false, from, tokenAddress, amount + priorityFee);
+        executerCore(false, from, tokenAddress, amount + priorityFee);
 
         if (priorityFee > 0)
-            executerEVVM(true, msg.sender, tokenAddress, priorityFee);
+            executerCore(true, msg.sender, tokenAddress, priorityFee);
 
         emit FisherBridgeSend(
             from,
@@ -567,7 +567,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
      * - Extract: token address, recipient, amount
      * - Credit: evvm.addAmountToUser(recipient, token,
      *   amt)
-     * - Balance: Virtual balance in Evvm.sol
+     * - Balance: Virtual balance in Core.sol
      *
      * Security:
      * - Mailbox Only: Reverts if caller not mailbox
@@ -647,7 +647,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
      * - Extract: token address, recipient, amount
      * - Credit: evvm.addAmountToUser(recipient, token,
      *   amt)
-     * - Balance: Virtual balance in Evvm.sol
+     * - Balance: Virtual balance in Core.sol
      *
      * Security:
      * - EID Check: Reverts if wrong source endpoint
@@ -747,7 +747,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
      * - Extract: token address, recipient, amount
      * - Credit: evvm.addAmountToUser(recipient, token,
      *   amt)
-     * - Balance: Virtual balance in Evvm.sol
+     * - Balance: Virtual balance in Core.sol
      *
      * Security:
      * - Chain Check: Reverts if wrong source chain
@@ -938,13 +938,13 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
         address user,
         uint256 nonce
     ) external view returns (bool) {
-        return state.getIfUsedAsyncNonce(user, nonce);
+        return core.getIfUsedAsyncNonce(user, nonce);
     }
 
     /// @notice Returns the EVVM core contract address
     /// @return Address of the EVVM contract used for balance operations
-    function getEvvmAddress() external view returns (address) {
-        return address(evvm);
+    function getCoreAddress() external view returns (address) {
+        return address(core);
     }
 
     /// @notice Returns the complete Hyperlane protocol configuration
@@ -991,7 +991,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     function decodeAndDeposit(bytes memory payload) internal {
         (address token, address from, uint256 amount) = PayloadUtils
             .decodePayload(payload);
-        executerEVVM(true, from, token, amount);
+        executerCore(true, from, token, amount);
     }
 
     /// @notice Executes EVVM balance operations (add or remove)
@@ -1000,7 +1000,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     /// @param userToExecute Address whose balance will be modified
     /// @param token Token contract address for the balance operation
     /// @param amount Amount to add or remove from the user's balance
-    function executerEVVM(
+    function executerCore(
         bool typeOfExecution,
         address userToExecute,
         address token,
@@ -1008,10 +1008,10 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     ) internal {
         if (typeOfExecution) {
             // true = add
-            evvm.addAmountToUser(userToExecute, token, amount);
+            core.addAmountToUser(userToExecute, token, amount);
         } else {
             // false = remove
-            evvm.removeAmountFromUser(userToExecute, token, amount);
+            core.removeAmountFromUser(userToExecute, token, amount);
         }
     }
 

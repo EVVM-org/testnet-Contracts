@@ -36,6 +36,7 @@ interface INameService {
         address user,
         string memory username,
         uint256 offerID,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
@@ -47,6 +48,7 @@ interface INameService {
         address user,
         string memory identity,
         string memory value,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
@@ -60,6 +62,7 @@ interface INameService {
     function flushCustomMetadata(
         address user,
         string memory identity,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
@@ -69,6 +72,7 @@ interface INameService {
     function flushUsername(
         address user,
         string memory username,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
@@ -81,12 +85,12 @@ interface INameService {
         view
         returns (address currentAdmin, address proposalAdmin, uint256 timeToAcceptAdmin);
     function getAmountOfCustomMetadata(string memory _username) external view returns (uint256);
-    function getCustomMetadataMaxSlotsOfIdentity(string memory _username) external view returns (uint256);
-    function getEvvmAddress() external view returns (address);
-    function getEvvmAddressFullDetails()
+    function getCoreAddress() external view returns (address);
+    function getCoreAddressFullDetails()
         external
         view
         returns (address currentEvvmAddress, address proposalEvvmAddress, uint256 timeToAcceptEvvmAddress);
+    function getCustomMetadataMaxSlotsOfIdentity(string memory _username) external view returns (uint256);
     function getEvvmID() external view returns (uint256);
     function getExpireDateOfIdentity(string memory _identity) external view returns (uint256);
     function getFullCustomMetadataOfIdentity(string memory _username) external view returns (string[] memory);
@@ -121,6 +125,7 @@ interface INameService {
         string memory username,
         uint256 amount,
         uint256 expirationDate,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
@@ -130,6 +135,7 @@ interface INameService {
     function preRegistrationUsername(
         address user,
         bytes32 hashPreRegisteredUsername,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
@@ -143,6 +149,7 @@ interface INameService {
         address user,
         string memory username,
         uint256 lockNumber,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
@@ -153,6 +160,7 @@ interface INameService {
         address user,
         string memory identity,
         uint256 key,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
@@ -162,6 +170,7 @@ interface INameService {
     function renewUsername(
         address user,
         string memory username,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,
@@ -176,6 +185,7 @@ interface INameService {
         address user,
         string memory username,
         uint256 offerID,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFeeEvvm,

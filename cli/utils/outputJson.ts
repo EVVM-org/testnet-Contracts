@@ -169,7 +169,7 @@ export async function saveCrossChainDeploymentToJson(
  * and timestamp for record-keeping.
  *
  * @param {number} evvmID - Unique EVVM ID assigned by the registry
- * @param {`0x${string}`} evvmAddress - Address of the registered EVVM contract
+ * @param {`0x${string}`} coreAddress - Address of the registered EVVM contract
  * @param {number} chainId - Chain ID where EVVM is deployed
  * @param {string} [chainName] - Optional human-readable chain name
  * @returns {Promise<void>} Resolves when file is successfully written
@@ -187,7 +187,7 @@ export async function saveCrossChainDeploymentToJson(
  */
 export async function saveEvvmRegistrationToJson(
   evvmID: number,
-  evvmAddress: `0x${string}`,
+  coreAddress: `0x${string}`,
   chainId: number,
   chainName?: string
 ): Promise<void> {
@@ -199,7 +199,7 @@ export async function saveEvvmRegistrationToJson(
     },
     evvm: {
       evvmID,
-      evvmAddress,
+      coreAddress,
     },
   };
 
@@ -218,7 +218,7 @@ export async function saveEvvmRegistrationToJson(
  * Both contracts share the same EVVM ID for cross-chain coordination.
  *
  * @param {number} evvmID - Unique EVVM ID assigned by the registry
- * @param {`0x${string}`} evvmAddress - Address of the EVVM contract on host chain
+ * @param {`0x${string}`} coreAddress - Address of the EVVM contract on host chain
  * @param {number} hostChainId - Host chain ID
  * @param {`0x${string}`} treasuryExternalStationAddress - Address of treasury station on external chain
  * @param {number} externalChainId - External chain ID
@@ -242,7 +242,7 @@ export async function saveEvvmRegistrationToJson(
  */
 export async function saveEvvmCrossChainRegistrationToJson(
   evvmID: number,
-  evvmAddress: `0x${string}`,
+  coreAddress: `0x${string}`,
   hostChainId: number,
   treasuryExternalStationAddress: `0x${string}`,
   externalChainId: number,
@@ -262,7 +262,7 @@ export async function saveEvvmCrossChainRegistrationToJson(
     },
     evvm: {
       evvmID,
-      evvmAddress,
+      coreAddress,
       treasuryExternalStationAddress,
     },
   };

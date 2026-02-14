@@ -55,9 +55,9 @@ interface IStaking {
         returns (StakingStructs.HistoryMetadata memory);
     function getAllowPresaleStaking() external view returns (ProposalStructs.BoolTypeProposal memory);
     function getAllowPublicStaking() external view returns (ProposalStructs.BoolTypeProposal memory);
+    function getCoreAddress() external view returns (address);
     function getEstimatorAddress() external view returns (address);
     function getEstimatorProposal() external view returns (address);
-    function getEvvmAddress() external view returns (address);
     function getEvvmID() external view returns (uint256);
     function getGoldenFisher() external view returns (address);
     function getGoldenFisherProposal() external view returns (address);
@@ -82,7 +82,7 @@ interface IStaking {
             uint256 timestampToBeOverwritten
         );
     function goldenStaking(bool isStaking, uint256 amountOfStaking, bytes memory signatureEvvm) external;
-    function initializeSystemContracts(address _estimator, address _evvm, address _state) external;
+    function initializeSystemContracts(address _estimator, address _core) external;
     function prepareChangeAllowPresaleStaking() external;
     function prepareChangeAllowPublicStaking() external;
     function prepareServiceStaking(uint256 amountOfStaking) external;
@@ -90,6 +90,7 @@ interface IStaking {
     function presaleStaking(
         address user,
         bool isStaking,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFee_EVVM,
@@ -105,6 +106,7 @@ interface IStaking {
         address user,
         bool isStaking,
         uint256 amountOfStaking,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFee_EVVM,

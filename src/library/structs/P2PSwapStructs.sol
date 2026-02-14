@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
  * @title P2P Swap Data Structures
  * @author Mate labs
  * @notice Core data structures for P2PSwap.sol order book (markets, orders, fees, operation metadata)
- * @dev All operations validated via State.sol async nonces. Payments via Evvm.sol.
+ * @dev All operations validated via State.sol async nonces. Payments via Core.sol.
  */
 
 abstract contract P2PSwapStructs {
@@ -80,6 +80,7 @@ abstract contract P2PSwapStructs {
      */
     struct MetadataMakeOrder {
         uint256 nonce;
+        address originExecutor;
         address tokenA;
         address tokenB;
         uint256 amountA;
@@ -97,6 +98,7 @@ abstract contract P2PSwapStructs {
      */
     struct MetadataCancelOrder {
         uint256 nonce;
+        address originExecutor;
         address tokenA;
         address tokenB;
         uint256 orderId;
@@ -115,6 +117,7 @@ abstract contract P2PSwapStructs {
      */
     struct MetadataDispatchOrder {
         uint256 nonce;
+        address originExecutor;
         address tokenA;
         address tokenB;
         uint256 orderId;

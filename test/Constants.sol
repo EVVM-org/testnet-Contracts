@@ -4,10 +4,10 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title EvvmStorage
+ * @title CoreStorage
  * @author jistro.eth
  * @dev Storage layout contract for EVVM proxy pattern implementation.
- *      This contract inherits all structures from EvvmStructs and
+ *      This contract inherits all structures from CoreStructs and
  *      defines the storage layout that will be used by the proxy pattern.
  *
  * @notice This contract should not be deployed directly, it's meant to be
@@ -16,8 +16,7 @@ pragma solidity ^0.8.0;
  */
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     Estimator
@@ -29,20 +28,20 @@ import {
     Treasury
 } from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 import "@solady/tokens/ERC20.sol";
 import "@evvm/testnet-contracts/library/utils/service/StakingServiceUtils.sol";
-import "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
-import "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
+import "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
+import "@evvm/testnet-contracts/contracts/core/lib/CoreStorage.sol";
 
 abstract contract Constants is Test {
     Staking staking;
-    Evvm evvm;
-    State state;
+    Core core;
+
     Estimator estimator;
     NameService nameService;
     Treasury treasury;
@@ -171,10 +170,10 @@ abstract contract Constants is Test {
 
     function setUp() public virtual {
         staking = new Staking(ADMIN.Address, GOLDEN_STAKER.Address);
-        evvm = new Evvm(
+        core = new Core(
             ADMIN.Address,
             address(staking),
-            EvvmStructs.EvvmMetadata({
+            CoreStructs.EvvmMetadata({
                 EvvmName: "EVVM",
                 EvvmID: 777,
                 principalTokenName: "EVVM Staking Token",
@@ -185,45 +184,27 @@ abstract contract Constants is Test {
                 reward: 5000000000000000000
             })
         );
-        state = new State(address(evvm), ADMIN.Address);
 
         estimator = new Estimator(
             ACTIVATOR.Address,
-            address(evvm),
+            address(core),
             address(staking),
             ADMIN.Address
         );
 
-        nameService = new NameService(
-            address(evvm),
-            address(state),
-            ADMIN.Address
-        );
+        nameService = new NameService(address(core), ADMIN.Address);
 
-        staking.initializeSystemContracts(
-            address(estimator),
-            address(evvm),
-            address(state)
-        );
-        treasury = new Treasury(address(evvm));
+        staking.initializeSystemContracts(address(estimator), address(core));
+        treasury = new Treasury(address(core));
 
-        evvm.initializeSystemContracts(
-            address(nameService),
-            address(treasury),
-            address(state)
-        );
+        core.initializeSystemContracts(address(nameService), address(treasury));
 
-        p2pSwap = new P2PSwap(
-            address(evvm),
-            address(staking),
-            address(state),
-            ADMIN.Address
-        );
-        evvm.setPointStaker(address(p2pSwap), 0x01);
+        p2pSwap = new P2PSwap(address(core), address(staking), ADMIN.Address);
+        core.setPointStaker(address(p2pSwap), 0x01);
 
         if (address(p2pSwap) == address(0)) revert();
 
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
 
         executeBeforeSetUp();
     }
@@ -244,8 +225,8 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 toAddress,
                 toIdentity,
                 tokenAddress,
@@ -284,7 +265,7 @@ abstract contract Constants is Test {
         );
 
         vm.startPrank(fisher);
-        evvm.pay(
+        core.pay(
             user.Address,
             toAddress,
             toIdentity,
@@ -301,7 +282,7 @@ abstract contract Constants is Test {
 
     function _executeSig_evvm_dispersePay(
         AccountData memory user,
-        EvvmStructs.DispersePayMetadata[] memory toData,
+        CoreStructs.DispersePayMetadata[] memory toData,
         address tokenAddress,
         uint256 amount,
         uint256 priorityFee,
@@ -312,8 +293,8 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispersePay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 toData,
                 tokenAddress,
                 amount,
@@ -330,6 +311,7 @@ abstract contract Constants is Test {
         AccountData memory user,
         string memory username,
         uint256 lockNumber,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFeeAmount,
         uint256 nonceEvvm
@@ -341,9 +323,10 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPreRegistrationUsername(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(nameService),
                 keccak256(abi.encodePacked(username, lockNumber)),
+                originExecutor,
                 nonce
             )
         );
@@ -368,6 +351,7 @@ abstract contract Constants is Test {
         AccountData memory user,
         string memory username,
         uint256 lockNumber,
+        address originExecutor,
         uint256 nonce
     ) internal virtual {
         (
@@ -377,6 +361,7 @@ abstract contract Constants is Test {
                 user,
                 username,
                 lockNumber,
+                originExecutor,
                 nonce,
                 0,
                 0
@@ -385,6 +370,7 @@ abstract contract Constants is Test {
         nameService.preRegistrationUsername(
             user.Address,
             keccak256(abi.encodePacked(username, uint256(lockNumber))),
+            originExecutor,
             nonce,
             signature,
             0,
@@ -397,6 +383,7 @@ abstract contract Constants is Test {
         AccountData memory user,
         string memory username,
         uint256 lockNumber,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm
@@ -412,10 +399,11 @@ abstract contract Constants is Test {
         (v, r, s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRegistrationUsername(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(nameService),
                 username,
                 lockNumber,
+                originExecutor,
                 nonce
             )
         );
@@ -438,7 +426,9 @@ abstract contract Constants is Test {
         AccountData memory user,
         string memory username,
         uint256 lockNumber,
+        address originExecutorPreRegister,
         uint256 noncePreRegister,
+        address originExecutorRegister,
         uint256 nonceRegister,
         uint256 nonceEvvm
     ) internal virtual {
@@ -446,12 +436,13 @@ abstract contract Constants is Test {
             user,
             username,
             lockNumber,
+            originExecutorPreRegister,
             noncePreRegister
         );
 
         skip(30 minutes);
 
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceOfRegistration(username)
@@ -464,6 +455,7 @@ abstract contract Constants is Test {
                 user,
                 username,
                 lockNumber,
+                originExecutorRegister,
                 nonceRegister,
                 0,
                 nonceEvvm
@@ -473,6 +465,7 @@ abstract contract Constants is Test {
             user.Address,
             username,
             lockNumber,
+            originExecutorRegister,
             nonceRegister,
             signatureNameService,
             0,
@@ -486,6 +479,7 @@ abstract contract Constants is Test {
         string memory usernameToMakeOffer,
         uint256 amountToOffer,
         uint256 expirationDate,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm
@@ -501,11 +495,12 @@ abstract contract Constants is Test {
         (v, r, s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOffer(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(nameService),
                 usernameToMakeOffer,
                 amountToOffer,
                 expirationDate,
+                originExecutor,
                 nonce
             )
         );
@@ -529,12 +524,13 @@ abstract contract Constants is Test {
         string memory usernameToMakeOffer,
         uint256 amountToOffer,
         uint256 expirationDate,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         AccountData memory fisher
     ) internal virtual returns (uint256 offerID) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             amountToOffer + priorityFee
@@ -548,6 +544,7 @@ abstract contract Constants is Test {
                 usernameToMakeOffer,
                 amountToOffer,
                 expirationDate,
+                originExecutor,
                 nonce,
                 priorityFee,
                 nonceEvvm
@@ -559,6 +556,7 @@ abstract contract Constants is Test {
             usernameToMakeOffer,
             amountToOffer,
             expirationDate,
+            originExecutor,
             nonce,
             signatureNameService,
             priorityFee,
@@ -572,6 +570,7 @@ abstract contract Constants is Test {
         AccountData memory user,
         string memory usernameToFindOffer,
         uint256 index,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm
@@ -583,10 +582,11 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(nameService),
                 usernameToFindOffer,
                 index,
+                originExecutor,
                 nonce
             )
         );
@@ -611,6 +611,7 @@ abstract contract Constants is Test {
         AccountData memory user,
         string memory usernameToFindOffer,
         uint256 index,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm
@@ -622,10 +623,11 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForAcceptOffer(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(nameService),
                 usernameToFindOffer,
                 index,
+                originExecutor,
                 nonce
             )
         );
@@ -649,6 +651,7 @@ abstract contract Constants is Test {
     function _executeSig_nameService_renewUsername(
         AccountData memory user,
         string memory usernameToRenew,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm
@@ -660,9 +663,10 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRenewUsername(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(nameService),
                 usernameToRenew,
+                originExecutor,
                 nonce
             )
         );
@@ -684,6 +688,7 @@ abstract contract Constants is Test {
     function _executeFn_nameService_renewUsername(
         AccountData memory user,
         string memory usernameToRenew,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
@@ -695,6 +700,7 @@ abstract contract Constants is Test {
         ) = _executeSig_nameService_renewUsername(
                 user,
                 usernameToRenew,
+                originExecutor,
                 nonce,
                 priorityFee,
                 nonceEvvm
@@ -705,6 +711,7 @@ abstract contract Constants is Test {
         nameService.renewUsername(
             user.Address,
             usernameToRenew,
+            originExecutor,
             nonce,
             signatureNameService,
             priorityFee,
@@ -719,6 +726,7 @@ abstract contract Constants is Test {
         AccountData memory user,
         string memory username,
         string memory customMetadata,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm
@@ -730,10 +738,11 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForAddCustomMetadata(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(nameService),
                 username,
                 customMetadata,
+                originExecutor,
                 nonce
             )
         );
@@ -756,10 +765,11 @@ abstract contract Constants is Test {
         AccountData memory user,
         string memory username,
         string memory customMetadata,
+        address originExecutor,
         uint256 nonce,
         uint256 nonceEvvm
     ) internal virtual {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToAddCustomMetadata()
@@ -772,6 +782,7 @@ abstract contract Constants is Test {
                 user,
                 username,
                 customMetadata,
+                originExecutor,
                 nonce,
                 0,
                 nonceEvvm
@@ -781,6 +792,7 @@ abstract contract Constants is Test {
             user.Address,
             username,
             customMetadata,
+            originExecutor,
             nonce,
             signatureNameService,
             0,
@@ -793,6 +805,7 @@ abstract contract Constants is Test {
         AccountData memory user,
         string memory username,
         uint256 indexCustomMetadata,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm
@@ -804,10 +817,11 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRemoveCustomMetadata(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(nameService),
                 username,
                 indexCustomMetadata,
+                originExecutor,
                 nonce
             )
         );
@@ -830,6 +844,7 @@ abstract contract Constants is Test {
     function _executeSig_nameService_flushCustomMetadata(
         AccountData memory user,
         string memory username,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm
@@ -841,9 +856,10 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForFlushCustomMetadata(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(nameService),
                 username,
+                originExecutor,
                 nonce
             )
         );
@@ -865,6 +881,7 @@ abstract contract Constants is Test {
     function _executeSig_nameService_flushUsername(
         AccountData memory user,
         string memory username,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm
@@ -876,9 +893,10 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForFlushUsername(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(nameService),
                 username,
+                originExecutor,
                 nonce
             )
         );
@@ -910,7 +928,7 @@ abstract contract Constants is Test {
                 (staking.priceOfStaking() * amount),
                 0,
                 address(staking),
-                evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
+                core.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
                 false
             )
             : bytes(hex"");
@@ -934,7 +952,8 @@ abstract contract Constants is Test {
     function _executeSig_staking_presaleStaking(
         AccountData memory user,
         bool isStaking,
-        uint256 nonceStaking,
+        address originExecutor,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm
     )
@@ -945,11 +964,12 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(staking),
                 isStaking,
                 1,
-                nonceStaking
+                originExecutor,
+                nonce
             )
         );
         signatureStaking = Erc191TestBuilder.buildERC191Signature(v, r, s);
@@ -970,7 +990,8 @@ abstract contract Constants is Test {
     function _executeFn_staking_presaleStaking(
         AccountData memory user,
         bool isStaking,
-        uint256 nonceStaking,
+        address originExecutor,
+        uint256 nonce,
         uint256 priorityFee,
         uint256 nonceEvvm,
         AccountData memory fisher
@@ -981,7 +1002,8 @@ abstract contract Constants is Test {
         ) = _executeSig_staking_presaleStaking(
                 user,
                 isStaking,
-                nonceStaking,
+                originExecutor,
+                nonce,
                 priorityFee,
                 nonceEvvm
             );
@@ -991,7 +1013,8 @@ abstract contract Constants is Test {
         staking.presaleStaking(
             user.Address,
             isStaking,
-            nonceStaking,
+            originExecutor,
+            nonce,
             signatureStaking,
             priorityFee,
             nonceEvvm,
@@ -1005,6 +1028,7 @@ abstract contract Constants is Test {
         AccountData memory user,
         bool isStaking,
         uint256 amountOfStaking,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFeeEVVM,
         uint256 nonceEvvm
@@ -1016,10 +1040,11 @@ abstract contract Constants is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPublicStaking(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(staking),
                 isStaking,
                 amountOfStaking,
+                originExecutor,
                 nonce
             )
         );
@@ -1042,6 +1067,7 @@ abstract contract Constants is Test {
         AccountData memory user,
         bool isStaking,
         uint256 amountOfStaking,
+        address originExecutor,
         uint256 nonce,
         uint256 priorityFeeEVVM,
         uint256 nonceEvvm,
@@ -1054,6 +1080,7 @@ abstract contract Constants is Test {
                 user,
                 isStaking,
                 amountOfStaking,
+                originExecutor,
                 nonce,
                 priorityFeeEVVM,
                 nonceEvvm
@@ -1065,6 +1092,7 @@ abstract contract Constants is Test {
             user.Address,
             isStaking,
             amountOfStaking,
+            originExecutor,
             nonce,
             signatureStaking,
             priorityFeeEVVM,
@@ -1082,18 +1110,20 @@ abstract contract Constants is Test {
         uint256 testB,
         address testC,
         bool testD,
+        address originExecutor,
         uint256 nonce,
         bool isAsyncExec
     ) internal virtual returns (bytes memory signatureEVVM) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForStateTest(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 servicePointer,
                 testA,
                 testB,
                 testC,
                 testD,
+                originExecutor,
                 nonce,
                 isAsyncExec
             )
@@ -1108,6 +1138,7 @@ abstract contract Constants is Test {
         uint256 testB,
         address testC,
         bool testD,
+        address originExecutor,
         uint256 nonce,
         bool isAsyncExec
     ) internal virtual {
@@ -1118,13 +1149,15 @@ abstract contract Constants is Test {
             testB,
             testC,
             testD,
+            originExecutor,
             nonce,
             isAsyncExec
         );
 
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user.Address,
             keccak256(abi.encode("StateTest", testA, testB, testC, testD)),
+            originExecutor,
             nonce,
             isAsyncExec,
             signature
@@ -1145,7 +1178,7 @@ contract MockContractToStake is StakingServiceUtils {
 
     function stakeJustInPartTwo(uint256 amountToStake) public {
         staking.prepareServiceStaking(amountToStake);
-        IEvvm(staking.getEvvmAddress()).caPay(
+        Core(staking.getCoreAddress()).caPay(
             address(staking),
             0x0000000000000000000000000000000000000001,
             staking.priceOfStaking() * amountToStake
@@ -1161,7 +1194,7 @@ contract MockContractToStake is StakingServiceUtils {
         address tokenAddress
     ) public {
         staking.prepareServiceStaking(amountToStake);
-        IEvvm(staking.getEvvmAddress()).caPay(
+        Core(staking.getCoreAddress()).caPay(
             address(staking),
             tokenAddress,
             staking.priceOfStaking() * amountToStake
@@ -1174,7 +1207,7 @@ contract MockContractToStake is StakingServiceUtils {
         uint256 amountToStake
     ) public {
         staking.prepareServiceStaking(amountToStake);
-        IEvvm(staking.getEvvmAddress()).caPay(
+        Core(staking.getCoreAddress()).caPay(
             address(staking),
             0x0000000000000000000000000000000000000001,
             staking.priceOfStaking() * amountToStakeDiscrepancy
@@ -1187,10 +1220,10 @@ contract MockContractToStake is StakingServiceUtils {
     }
 
     function getBackMate(address user) public {
-        IEvvm(staking.getEvvmAddress()).caPay(
+        Core(staking.getCoreAddress()).caPay(
             user,
             0x0000000000000000000000000000000000000001,
-            IEvvm(staking.getEvvmAddress()).getBalance(
+            Core(staking.getCoreAddress()).getBalance(
                 address(this),
                 0x0000000000000000000000000000000000000001
             )
@@ -1214,22 +1247,22 @@ contract TestERC20 is ERC20 {
 }
 
 contract HelperCa {
-    Evvm evvm;
+    Core core;
 
     constructor(address _evvm) {
-        evvm = Evvm(_evvm);
+        core = Core(_evvm);
     }
 
     function makeCaPay(address user, address token, uint256 amount) public {
-        evvm.caPay(user, token, amount);
+        core.caPay(user, token, amount);
     }
 
     function makeDisperseCaPay(
-        EvvmStructs.DisperseCaPayMetadata[] memory toData,
+        CoreStructs.DisperseCaPayMetadata[] memory toData,
         address token,
         uint256 totalAmount
     ) public {
-        evvm.disperseCaPay(toData, token, totalAmount);
+        core.disperseCaPay(toData, token, totalAmount);
     }
 }
 
@@ -1237,7 +1270,7 @@ interface ITartarusV1 {
     function burnToken(address user, address token, uint256 amount) external;
 }
 
-contract TartarusV1 is EvvmStorage {
+contract TartarusV1 is CoreStorage {
     function burnToken(address user, address token, uint256 amount) external {
         if (balances[user][token] < amount) {
             revert();
@@ -1253,7 +1286,7 @@ interface ITartarusV2 {
     function fullTransfer(address from, address to, address token) external;
 }
 
-contract TartarusV2 is EvvmStorage {
+contract TartarusV2 is CoreStorage {
     function fullTransfer(address from, address to, address token) external {
         balances[to][token] += balances[from][token];
         balances[from][token] -= balances[from][token];
@@ -1273,7 +1306,7 @@ interface ICounter {
     function getCounter() external view returns (uint256);
 }
 
-contract TartarusV3 is EvvmStorage {
+contract TartarusV3 is CoreStorage {
     address public immutable counterAddress;
 
     constructor(address _counterAddress) {

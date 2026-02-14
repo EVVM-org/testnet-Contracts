@@ -23,7 +23,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
 
         _addBalance(10);
 
@@ -42,7 +42,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
     function _addBalance(
         uint256 stakingAmount
     ) private returns (uint256 totalOfMate) {
-        evvm.addBalance(
+        core.addBalance(
             GOLDEN_STAKER.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking() * stakingAmount)
@@ -54,7 +54,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
     function calculateRewardPerExecution(
         uint256 numberOfTx
     ) private view returns (uint256) {
-        return (evvm.getRewardAmount() * 2) * numberOfTx;
+        return (core.getRewardAmount() * 2) * numberOfTx;
     }
 
     struct GoldenStakingFuzzTestInput {
@@ -78,7 +78,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                 GOLDEN_STAKER.Address
             );
 
-            amountBefore = evvm.getBalance(
+            amountBefore = core.getBalance(
                 GOLDEN_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             );
@@ -97,7 +97,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                 _executeFn_staking_goldenStaking(input[i].isStaking, input[i].amount);
 
                 assertTrue(
-                    evvm.isAddressStaker(GOLDEN_STAKER.Address),
+                    core.isAddressStaker(GOLDEN_STAKER.Address),
                     "Error: golden user is not pointer as staker after staking"
                 );
             } else {
@@ -122,7 +122,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                     );
 
                     assertFalse(
-                        evvm.isAddressStaker(GOLDEN_STAKER.Address),
+                        core.isAddressStaker(GOLDEN_STAKER.Address),
                         "Error: golden user is pointer as staker after full unstaking"
                     );
                 } else {
@@ -137,10 +137,10 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
                 .getAddressHistoryByIndex(GOLDEN_STAKER.Address, i + 1);
 
             assertEq(
-                evvm.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+                core.getBalance(GOLDEN_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
                 amountBefore +
                     calculateRewardPerExecution(
-                        evvm.isAddressStaker(GOLDEN_STAKER.Address) ? 1 : 0
+                        core.isAddressStaker(GOLDEN_STAKER.Address) ? 1 : 0
                     ) +
                     (
                         input[i].isStaking

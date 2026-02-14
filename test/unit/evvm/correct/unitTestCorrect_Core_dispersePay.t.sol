@@ -20,19 +20,21 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
+contract unitTestCorrect_Core_dispersePay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
     function executeBeforeSetUp() internal override {
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             "dummy",
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -48,7 +50,7 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
         uint256 _amount,
         uint256 _priorityFee
     ) private returns (uint256 amount, uint256 priorityFee) {
-        evvm.addBalance(_user.Address, _token, _amount + _priorityFee);
+        core.addBalance(_user.Address, _token, _amount + _priorityFee);
         return (_amount, _priorityFee);
     }
 
@@ -60,16 +62,16 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -87,7 +89,7 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
-        evvm.dispersePay(
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -102,25 +104,25 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             priorityFee,
             "Sender balance must be equal to priority fee because fisher is not staker"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount,
             "Receiver balance must be equal to all amount sent"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_3.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_3.Address, ETHER_ADDRESS),
             0,
             "Fisher balance must be 0 because fisher is not staker"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_3.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -137,16 +139,16 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -164,7 +166,7 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
-        evvm.dispersePay(
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -179,25 +181,25 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             priorityFee,
             "Sender balance must be equal to priority fee because fisher is not staker"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount,
             "Receiver balance must be equal to all amount sent"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_3.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_3.Address, ETHER_ADDRESS),
             0,
             "Fisher balance must be 0 because fisher is not staker"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_3.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -214,16 +216,16 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -241,7 +243,7 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        evvm.dispersePay(
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -256,29 +258,29 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0,
             "Sender balance must be 0 becasue all the amount and priority fee were distributed"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount,
             "Receiver balance must be equal to all amount sent"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee,
             "Fisher must receive the priority fee because fisher is staker"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            evvm.getRewardAmount(),
+            core.getRewardAmount(),
             "Fisher balance must be rewarded because fisher is staker"
         );
     }
@@ -291,16 +293,16 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
             0.01 ether
         );
 
-        EvvmStructs.DispersePayMetadata[]
-            memory toData = new EvvmStructs.DispersePayMetadata[](2);
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
 
-        toData[0] = EvvmStructs.DispersePayMetadata({
+        toData[0] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: COMMON_USER_NO_STAKER_2.Address,
             to_identity: ""
         });
 
-        toData[1] = EvvmStructs.DispersePayMetadata({
+        toData[1] = CoreStructs.DispersePayMetadata({
             amount: amount / 2,
             to_address: address(0),
             to_identity: "dummy"
@@ -318,7 +320,7 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        evvm.dispersePay(
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
             toData,
             ETHER_ADDRESS,
@@ -333,29 +335,29 @@ contract unitTestCorrect_EVVM_dispersePay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0,
             "Sender balance must be 0 becasue all the amount and priority fee were distributed"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount,
             "Receiver balance must be equal to all amount sent"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee,
             "Fisher must receive the priority fee because fisher is staker"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            evvm.getRewardAmount(),
+            core.getRewardAmount(),
             "Fisher balance must be rewarded because fisher is staker"
         );
     }

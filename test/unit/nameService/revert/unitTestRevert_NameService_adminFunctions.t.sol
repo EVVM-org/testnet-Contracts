@@ -32,11 +32,11 @@ import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
 import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+    CoreError
+} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 import {
-    StateError
-} from "@evvm/testnet-contracts/library/errors/StateError.sol";
+    CoreError
+} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_adminFunctions is Test, Constants {
     function test__unit_revert__proposeAdmin__SenderIsNotAdmin() external {
@@ -206,7 +206,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
     function test__unit_revert__proposeWithdrawPrincipalTokens__SenderIsNotAdmin()
         external
     {
-        uint256 balanceBefore = evvm.getBalance(
+        uint256 balanceBefore = core.getBalance(
             address(nameService),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -217,7 +217,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(address(nameService), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(nameService), PRINCIPAL_TOKEN_ADDRESS),
             balanceBefore,
             "Contract principal token balance should remain unchanged"
         );
@@ -242,7 +242,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
     function test__unit_revert__proposeWithdrawPrincipalTokens__InvalidWithdrawAmount_zero()
         external
     {
-        uint256 balanceBefore = evvm.getBalance(
+        uint256 balanceBefore = core.getBalance(
             address(nameService),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -253,7 +253,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(address(nameService), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(nameService), PRINCIPAL_TOKEN_ADDRESS),
             balanceBefore,
             "Contract principal token balance should remain unchanged"
         );
@@ -278,7 +278,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
     function test__unit_revert__proposeWithdrawPrincipalTokens__InvalidWithdrawAmount_full()
         external
     {
-        uint256 balanceBefore = evvm.getBalance(
+        uint256 balanceBefore = core.getBalance(
             address(nameService),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -290,7 +290,7 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(address(nameService), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(nameService), PRINCIPAL_TOKEN_ADDRESS),
             balanceBefore,
             "Contract principal token balance should remain unchanged"
         );
@@ -416,11 +416,11 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
-            .getEvvmAddressFullDetails();
+            .getCoreAddressFullDetails();
 
         assertEq(
             current,
-            address(evvm),
+            address(core),
             "Current EVVM address should remain unchanged"
         );
         assertEq(proposal, address(0), "Proposal should be zero address");
@@ -437,11 +437,11 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
-            .getEvvmAddressFullDetails();
+            .getCoreAddressFullDetails();
 
         assertEq(
             current,
-            address(evvm),
+            address(core),
             "Current EVVM address should remain unchanged"
         );
         assertEq(proposal, address(0), "Proposal should be zero address");
@@ -463,11 +463,11 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
-            .getEvvmAddressFullDetails();
+            .getCoreAddressFullDetails();
 
         assertEq(
             current,
-            address(evvm),
+            address(core),
             "Current EVVM address should remain unchanged"
         );
         assertEq(
@@ -499,11 +499,11 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
-            .getEvvmAddressFullDetails();
+            .getCoreAddressFullDetails();
 
         assertEq(
             current,
-            address(evvm),
+            address(core),
             "Current EVVM address should remain unchanged"
         );
         assertEq(
@@ -534,11 +534,11 @@ contract unitTestRevert_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
-            .getEvvmAddressFullDetails();
+            .getCoreAddressFullDetails();
 
         assertEq(
             current,
-            address(evvm),
+            address(core),
             "Current EVVM address should remain unchanged"
         );
         assertEq(

@@ -31,11 +31,9 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-import {
-    StateError
-} from "@evvm/testnet-contracts/library/errors/StateError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_makeOffer is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -45,9 +43,11 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             COMMON_USER_NO_STAKER_1,
             "test",
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -65,7 +65,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         private
         returns (uint256 totalOfferAmount, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             offerAmount + priorityFeeAmount
@@ -92,11 +92,12 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOffer(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
                 address(nameService),
                 "test",
                 totalOfferAmount,
                 expirationDate,
+                address(0),
                 10001
             )
         );
@@ -117,14 +118,13 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -142,10 +142,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -172,6 +176,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 "test",
                 totalOfferAmount,
                 expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
                 101
@@ -179,14 +184,13 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -204,10 +208,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -234,6 +242,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 "differentusername",
                 totalOfferAmount,
                 expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
                 101
@@ -241,14 +250,13 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -266,10 +274,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -296,6 +308,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 totalOfferAmount,
                 /* 🢃 different dateExpire 🢃 */
                 expirationDate + 1,
+                address(0),
                 10001,
                 priorityFeeAmount,
                 101
@@ -303,14 +316,13 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -328,10 +340,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -358,6 +374,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 /* 🢃 different amount 🢃 */
                 totalOfferAmount + 1,
                 expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
                 101
@@ -365,14 +382,13 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -390,10 +406,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -419,6 +439,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 "test",
                 totalOfferAmount,
                 expirationDate,
+                address(0),
                 /* 🢃 different nameServiceNonce 🢃 */
                 67,
                 priorityFeeAmount,
@@ -427,14 +448,13 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(
-            StateError.InvalidSignature.selector
-        );
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -452,10 +472,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -471,6 +495,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             COMMON_USER_NO_STAKER_3,
             "testrevert",
             67,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffA
             )
@@ -498,6 +523,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 invalidUsername,
                 totalOfferAmount,
                 expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
                 101
@@ -511,6 +537,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             invalidUsername,
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -528,10 +555,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -559,6 +590,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 unregisteredUsername,
                 totalOfferAmount,
                 expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
                 101
@@ -572,6 +604,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             unregisteredUsername,
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -589,10 +622,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -619,6 +656,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 "test",
                 totalOfferAmount,
                 expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
                 101
@@ -632,6 +670,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "test",
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -649,10 +688,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -679,6 +722,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 "test",
                 totalOfferAmount,
                 expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
                 101
@@ -692,6 +736,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "test",
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -709,10 +754,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -735,6 +784,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             COMMON_USER_NO_STAKER_2,
             "testrevert",
             67,
+            address(0),
             nonceToUse
         );
 
@@ -746,6 +796,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 "test",
                 totalOfferAmount,
                 expirationDate,
+                address(0),
                 nonceToUse,
                 priorityFeeAmount,
                 101
@@ -759,6 +810,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "test",
             expirationDate,
             totalOfferAmount,
+            address(0),
             nonceToUse,
             signatureNameService,
             priorityFeeAmount,
@@ -776,10 +828,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -805,6 +861,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 "test",
                 totalOfferAmount,
                 expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
                 /* 🢃 different evvm nonce 🢃 */
@@ -813,12 +870,13 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -836,10 +894,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -869,6 +931,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
                 "test",
                 totalOfferAmount,
                 expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
                 101
@@ -876,12 +939,13 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             totalOfferAmount,
             expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
@@ -899,10 +963,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expirationDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),

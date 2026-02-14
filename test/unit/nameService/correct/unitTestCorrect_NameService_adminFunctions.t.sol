@@ -27,7 +27,7 @@ contract unitTestCorrect_NameService_adminFunctions is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
     }
 
     function test__unit_correct__proposeAdmin() external {
@@ -77,7 +77,7 @@ contract unitTestCorrect_NameService_adminFunctions is Test, Constants {
     }
 
     function test__unit_correct__proposeWithdrawPrincipalTokens() external {
-        uint256 totalInEvvm = evvm.getBalance(
+        uint256 totalInEvvm = core.getBalance(
             address(nameService),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -95,7 +95,7 @@ contract unitTestCorrect_NameService_adminFunctions is Test, Constants {
     }
 
     function test__unit_correct__cancelWithdrawPrincipalTokenss() external {
-        uint256 totalInEvvm = evvm.getBalance(
+        uint256 totalInEvvm = core.getBalance(
             address(nameService),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -114,7 +114,7 @@ contract unitTestCorrect_NameService_adminFunctions is Test, Constants {
     }
 
     function test__unit_correct__claimWithdrawPrincipalTokens() external {
-        uint256 totalInEvvm = evvm.getBalance(
+        uint256 totalInEvvm = core.getBalance(
             address(nameService),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -127,8 +127,8 @@ contract unitTestCorrect_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(address(nameService), PRINCIPAL_TOKEN_ADDRESS),
-            (totalInEvvm - removeAmount) + evvm.getRewardAmount()
+            core.getBalance(address(nameService), PRINCIPAL_TOKEN_ADDRESS),
+            (totalInEvvm - removeAmount) + core.getRewardAmount()
         );
 
         (uint256 amount, uint256 time) = nameService
@@ -144,9 +144,9 @@ contract unitTestCorrect_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
-            .getEvvmAddressFullDetails();
+            .getCoreAddressFullDetails();
 
-        assertEq(current, address(evvm));
+        assertEq(current, address(core));
         assertEq(proposal, WILDCARD_USER.Address);
         assertEq(timeToAccept, block.timestamp + 1 days);
     }
@@ -158,9 +158,9 @@ contract unitTestCorrect_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
-            .getEvvmAddressFullDetails();
+            .getCoreAddressFullDetails();
 
-        assertEq(current, address(evvm));
+        assertEq(current, address(core));
         assertEq(proposal, address(0));
         assertEq(timeToAccept, 0);
     }
@@ -173,7 +173,7 @@ contract unitTestCorrect_NameService_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         (address current, address proposal, uint256 timeToAccept) = nameService
-            .getEvvmAddressFullDetails();
+            .getCoreAddressFullDetails();
 
         assertEq(current, WILDCARD_USER.Address);
         assertEq(proposal, address(0));

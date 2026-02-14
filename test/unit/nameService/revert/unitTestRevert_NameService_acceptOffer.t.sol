@@ -30,11 +30,9 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
-import {
-    StateError
-} from "@evvm/testnet-contracts/library/errors/StateError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_acceptOffer is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -50,9 +48,11 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -66,6 +66,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             USERNAME,
             0.001 ether,
             block.timestamp + EXPIRATION_DATE_OF_OFFER,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
@@ -81,7 +82,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             priorityFeeAmount
@@ -102,10 +103,11 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForAcceptOffer(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
                 address(nameService),
                 USERNAME,
                 offerID,
+                address(0),
                 10000000001
             )
         );
@@ -126,12 +128,13 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             0,
+            address(0),
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -150,7 +153,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -158,7 +161,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -183,6 +186,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
                 offerID,
+                address(0),
                 10000000001,
                 amountPriorityFee,
                 1001
@@ -190,12 +194,13 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             offerID,
+            address(0),
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -214,7 +219,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -222,7 +227,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -247,6 +252,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 /* 🢃 different username 🢃 */
                 "diferent",
                 offerID,
+                address(0),
                 10000000001,
                 amountPriorityFee,
                 1001
@@ -254,12 +260,13 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             offerID,
+            address(0),
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -278,7 +285,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -286,7 +293,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -311,6 +318,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 USERNAME,
                 /* 🢃 different offerId 🢃 */
                 offerID + 1,
+                address(0),
                 10000000001,
                 amountPriorityFee,
                 1001
@@ -318,12 +326,13 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             offerID,
+            address(0),
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -342,7 +351,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -350,7 +359,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -374,6 +383,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 offerID,
+                address(0),
                 /* 🢃 different nameServiceNonce 🢃 */
                 67,
                 amountPriorityFee,
@@ -382,12 +392,13 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             offerID,
+            address(0),
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -406,7 +417,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -414,7 +425,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -438,6 +449,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 diferentOfferID,
+                address(0),
                 10000000001,
                 amountPriorityFee,
                 1001
@@ -451,6 +463,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             diferentOfferID,
+            address(0),
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -469,7 +482,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -477,7 +490,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -504,6 +517,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 offerID,
+                address(0),
                 10000000001,
                 amountPriorityFee,
                 1001
@@ -517,6 +531,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             offerID,
+            address(0),
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -535,7 +550,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -543,7 +558,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -570,6 +585,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 offerID,
+                address(0),
                 nonce,
                 amountPriorityFee,
                 1001
@@ -577,12 +593,13 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             offerID,
+            address(0),
             nonce,
             signatureNameService,
             amountPriorityFee,
@@ -601,7 +618,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -609,7 +626,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -634,6 +651,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
                 offerID,
+                address(0),
                 10000000001,
                 amountPriorityFee,
                 1001
@@ -648,6 +666,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             USERNAME,
             offerID,
+            address(0),
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -666,7 +685,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -690,6 +709,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 offerID,
+                address(0),
                 10000000001,
                 /* 🢃 different totalPriorityFee 🢃 */
                 10 ether,
@@ -699,12 +719,13 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             offerID,
+            address(0),
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -723,7 +744,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -731,7 +752,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -758,6 +779,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 offerID,
+                address(0),
                 10000000001,
                 amountPriorityFee,
                 1001
@@ -765,12 +787,13 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
 
         nameService.acceptOffer(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             offerID,
+            address(0),
             10000000001,
             signatureNameService,
             amountPriorityFee,
@@ -791,7 +814,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -799,7 +822,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             "Balance of offer accepter should not have changed"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),

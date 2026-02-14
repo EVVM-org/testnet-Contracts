@@ -23,12 +23,9 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-import {
-    StateError
-} from "@evvm/testnet-contracts/library/errors/StateError.sol";
-contract unitTestRevert_EVVM_pay is Test, Constants {
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+contract unitTestRevert_Core_pay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     //function executeBeforeSetUp() internal override {}
@@ -39,7 +36,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         uint256 _amount,
         uint256 _priorityFee
     ) private returns (uint256 amount, uint256 priorityFee) {
-        evvm.addBalance(_user.Address, _token, _amount + _priorityFee);
+        core.addBalance(_user.Address, _token, _amount + _priorityFee);
         return (_amount, _priorityFee);
     }
 
@@ -55,8 +52,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 67,
-                address(evvm),
+                core.getEvvmID() + 67,
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -75,8 +72,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -92,13 +89,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -117,7 +114,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             Erc191TestBuilder.buildMessageSignedForPay(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_3.PrivateKey,
-                address(evvm),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -136,8 +133,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -153,13 +150,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -178,8 +175,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 /* 🢃 different receiver address 🢃 */
                 COMMON_USER_NO_STAKER_3.Address,
                 "",
@@ -199,8 +196,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -216,13 +213,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -241,8 +238,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 address(0),
                 /* 🢃 different receiver identity 🢃 */
                 "tofailure",
@@ -262,8 +259,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -279,13 +276,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -302,8 +299,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 /* 🢃 different token address 🢃 */
@@ -323,8 +320,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -340,13 +337,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -363,8 +360,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -384,8 +381,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -401,13 +398,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -424,8 +421,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -445,8 +442,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -462,13 +459,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -485,8 +482,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -506,8 +503,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -523,13 +520,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -546,8 +543,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -567,8 +564,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -584,13 +581,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -607,8 +604,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -628,8 +625,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -645,13 +642,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -668,8 +665,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -689,8 +686,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         /* 🢃 different executor 🢃 */
         vm.startPrank(COMMON_USER_STAKER.Address);
 
-        vm.expectRevert(EvvmError.SenderIsNotTheExecutor.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.SenderIsNotTheSenderExecutor.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -706,19 +703,19 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -758,8 +755,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -779,8 +776,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -797,13 +794,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee + priorityFeeBefore,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amountBefore,
             "Receiver balance must be the same because pay reverted"
         );
@@ -825,7 +822,7 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
             amountBefore,
             priorityFeeBefore,
             address(0),
-            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
             false,
             COMMON_USER_NO_STAKER_3.Address
         );
@@ -840,8 +837,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -861,8 +858,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.SyncNonceMismatch.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.SyncNonceMismatch.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -879,13 +876,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee + priorityFeeBefore,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amountBefore,
             "Receiver balance must be the same because pay reverted"
         );
@@ -902,8 +899,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -923,8 +920,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -941,13 +938,13 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
@@ -966,8 +963,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 COMMON_USER_NO_STAKER_2.Address,
                 "",
                 ETHER_ADDRESS,
@@ -987,8 +984,8 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
 
         vm.startPrank(COMMON_USER_STAKER.Address);
 
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
-        evvm.pay(
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -1005,25 +1002,25 @@ contract unitTestRevert_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount + priorityFee,
             "Sender balance must be the same because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be 0 because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             0,
             "Fisher balance must be 0 because pay reverted"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),

@@ -5,28 +5,31 @@ pragma solidity ^0.8.0;
 /**
  * @title EVVM Payment Integration for Services
  * @author Mate labs
- * @notice Abstract contract providing Evvm.sol payment processing interface
+ * @notice Abstract contract providing Core.sol payment processing interface
  * @dev Four payment types: requestPay (user-to-service with signature), requestDispersePay (batch user-to-service),  makeCaPay (contract-authorized service-to-user), makeDisperseCaPay (batch CA).
  */
 
-import {IEvvm, EvvmStructs} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
-abstract contract EvvmPayments {
+abstract contract CoreExecution {
     /// @notice EVVM core contract reference
     /// @dev Used for all payment operations
-    IEvvm internal evvm;
+    Core internal core;
 
     /**
      * @notice Initializes EVVM payment integration
-     * @param evvmAddress Address of Evvm.sol contract
+     * @param _coreAddress Address of Core.sol contract
      */
-    constructor(address evvmAddress) {
-        evvm = IEvvm(evvmAddress);
+    constructor(address _coreAddress) {
+        core = Core(_coreAddress);
     }
 
     /**
      * @notice Requests payment from user to service via Evvm.pay with signature validation
-     * @dev Calls evvm.pay(from, address(this), "", ...). Signature validated by State.validateAndConsumeNonce.
+     * @dev Calls core.pay(from, address(this), "", ...). Signature validated by State.validateAndConsumeNonce.
      * @param from User paying (signer)
      * @param token Token address
      * @param amount Token amount
@@ -44,7 +47,7 @@ abstract contract EvvmPayments {
         bool isAsyncExec,
         bytes memory signature
     ) internal virtual {
-        evvm.pay(
+        core.pay(
             from,
             address(this),
             "",
@@ -70,7 +73,7 @@ abstract contract EvvmPayments {
      * @param signature User's ECDSA signature
      */
     function requestDispersePay(
-        EvvmStructs.DispersePayMetadata[] memory toData,
+        CoreStructs.DispersePayMetadata[] memory toData,
         address token,
         uint256 amount,
         uint256 priorityFee,
@@ -78,7 +81,7 @@ abstract contract EvvmPayments {
         bool isAsyncExec,
         bytes memory signature
     ) internal virtual {
-        evvm.dispersePay(
+        core.dispersePay(
             address(this),
             toData,
             token,
@@ -93,7 +96,7 @@ abstract contract EvvmPayments {
 
     /**
      * @notice Sends tokens from service to recipient via contract authorization (no signature)
-     * @dev Calls evvm.caPay(to, token, amount). Service must have sufficient Evvm balance.
+     * @dev Calls core.caPay(to, token, amount). Service must have sufficient Evvm balance.
      * @param to Recipient address
      * @param token Token address
      * @param amount Token amount
@@ -103,7 +106,7 @@ abstract contract EvvmPayments {
         address token,
         uint256 amount
     ) internal virtual {
-        evvm.caPay(to, token, amount);
+        core.caPay(to, token, amount);
     }
 
     /**
@@ -114,19 +117,64 @@ abstract contract EvvmPayments {
      * @param amount Total amount (must match sum)
      */
     function makeDisperseCaPay(
-        EvvmStructs.DisperseCaPayMetadata[] memory toData,
+        CoreStructs.DisperseCaPayMetadata[] memory toData,
         address token,
         uint256 amount
     ) internal virtual {
-        evvm.disperseCaPay(toData, token, amount);
+        core.disperseCaPay(toData, token, amount);
     }
 
     /**
-     * @notice Updates Evvm.sol contract address for governance-controlled upgrades
-     * @dev Should be protected with onlyAdmin and time-delay (ProposalStructs pattern recommended).
-     * @param newEvvmAddress New Evvm.sol contract address
+     * @notice Reserves async nonce for user and this service exclusively
+     * @dev Calls core.reserveAsyncNonce(user, nonce, address(this)). Nonce can be revoked before use.
+     * @param nonce Async nonce number to reserve
      */
-    function _changeEvvmAddress(address newEvvmAddress) internal virtual {
-        evvm = IEvvm(newEvvmAddress);
+    function reserveAsyncNonceToService(uint256 nonce) external {
+        core.reserveAsyncNonce(nonce, address(this));
+    }
+
+    /**
+     * @notice Revokes reserved async nonce before use
+     * @dev Calls core.revokeAsyncNonce(user, nonce). Cannot revoke consumed nonces.
+     * @param user User address that reserved nonce
+     * @param nonce Async nonce number to revoke
+     */
+    function revokeAsyncNonceToService(address user, uint256 nonce) external {
+        core.revokeAsyncNonce(user, nonce);
+    }
+
+    /**
+     * @notice Gets next sequential sync nonce for user
+     * @dev View function returning core.getNextCurrentSyncNonce(user). Auto-increments after each use.
+     * @param user User address to query
+     * @return Next sync nonce for user
+     */
+    function getNextCurrentSyncNonce(
+        address user
+    ) external view returns (uint256) {
+        return core.getNextCurrentSyncNonce(user);
+    }
+
+    /**
+     * @notice Checks if async nonce was consumed
+     * @dev View function returning core.getIfUsedAsyncNonce(user, nonce). Reserved nonces return false until consumed.
+     * @param user User address to query
+     * @param nonce Async nonce to check
+     * @return true if consumed, false if available/reserved
+     */
+    function getIfUsedAsyncNonce(
+        address user,
+        uint256 nonce
+    ) external view returns (bool) {
+        return core.getIfUsedAsyncNonce(user, nonce);
+    }
+
+    /**
+     * @notice Updates Core.sol contract address for governance-controlled upgrades
+     * @dev Should be protected with onlyAdmin and time-delay (ProposalStructs pattern recommended).
+     * @param newCoreAddress New Core.sol contract address
+     */
+    function _changeCoreAddress(address newCoreAddress) internal virtual {
+        core = Core(newCoreAddress);
     }
 }

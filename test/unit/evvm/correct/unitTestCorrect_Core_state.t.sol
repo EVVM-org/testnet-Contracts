@@ -20,7 +20,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-contract unitTestCorrect_State_functions is Test, Constants {
+contract unitTestCorrect_Core_state is Test, Constants {
     //function executeBeforeSetUp() internal override {}
 
     /**
@@ -52,11 +52,12 @@ contract unitTestCorrect_State_functions is Test, Constants {
             inputs.testB,
             inputs.testC,
             inputs.testD,
+            address(0),
             67,
             true
         );
 
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(
                 abi.encode(
@@ -67,13 +68,14 @@ contract unitTestCorrect_State_functions is Test, Constants {
                     inputs.testD
                 )
             ),
+            address(0),
             67,
             true,
             signature
         );
 
         assertTrue(
-            state.getIfUsedAsyncNonce(COMMON_USER_NO_STAKER_1.Address, 67),
+            core.getIfUsedAsyncNonce(COMMON_USER_NO_STAKER_1.Address, 67),
             "Async nonce should be marked as used after consumption"
         );
     }
@@ -94,11 +96,12 @@ contract unitTestCorrect_State_functions is Test, Constants {
             inputs.testB,
             inputs.testC,
             inputs.testD,
-            state.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            address(0),
+            core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
             false
         );
 
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             COMMON_USER_NO_STAKER_1.Address,
             keccak256(
                 abi.encode(
@@ -109,13 +112,14 @@ contract unitTestCorrect_State_functions is Test, Constants {
                     inputs.testD
                 )
             ),
-            state.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            address(0),
+            core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
             false,
             signature
         );
 
         assertEq(
-            state.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+            core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
             1,
             "Sync nonce should be incremented after successful consumption"
         );
@@ -123,18 +127,18 @@ contract unitTestCorrect_State_functions is Test, Constants {
 
     function test__unit_correct__reserveAsyncNonce() external {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        state.reserveAsyncNonce(45, address(this));
+        core.reserveAsyncNonce(45, address(this));
         vm.stopPrank();
 
         assertEq(
-            state.getAsyncNonceReservation(COMMON_USER_NO_STAKER_1.Address, 45),
+            core.getAsyncNonceReservation(COMMON_USER_NO_STAKER_1.Address, 45),
             address(this),
             "Async nonce reservation should store the correct service address"
         );
         assertEq(
             uint256(
                 uint8(
-                    state.asyncNonceStatus(COMMON_USER_NO_STAKER_1.Address, 45)
+                    core.asyncNonceStatus(COMMON_USER_NO_STAKER_1.Address, 45)
                 )
             ),
             uint256(0x02),
@@ -144,12 +148,12 @@ contract unitTestCorrect_State_functions is Test, Constants {
 
     function test__unit_correct__revokeAsyncNonce() external {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        state.reserveAsyncNonce(45, address(this));
-        state.revokeAsyncNonce(COMMON_USER_NO_STAKER_1.Address, 45);
+        core.reserveAsyncNonce(45, address(this));
+        core.revokeAsyncNonce(COMMON_USER_NO_STAKER_1.Address, 45);
         vm.stopPrank();
 
         assertEq(
-            state.getAsyncNonceReservation(COMMON_USER_NO_STAKER_1.Address, 45),
+            core.getAsyncNonceReservation(COMMON_USER_NO_STAKER_1.Address, 45),
             address(0),
             "Async nonce reservation should be cleared after revocation"
         );
@@ -157,7 +161,7 @@ contract unitTestCorrect_State_functions is Test, Constants {
         assertEq(
             uint256(
                 uint8(
-                    state.asyncNonceStatus(COMMON_USER_NO_STAKER_1.Address, 45)
+                    core.asyncNonceStatus(COMMON_USER_NO_STAKER_1.Address, 45)
                 )
             ),
             uint256(0x00),

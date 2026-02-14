@@ -23,12 +23,12 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+    CoreError
+} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-contract unitTestRevert_EVVM_disperseCaPay is Test, Constants {
+contract unitTestRevert_Core_disperseCaPay is Test, Constants {
     //function executeBeforeSetUp() internal override {}
 
     function _addBalance(
@@ -36,33 +36,33 @@ contract unitTestRevert_EVVM_disperseCaPay is Test, Constants {
         address _token,
         uint256 _amount
     ) private returns (uint256 amount) {
-        evvm.addBalance(_ca, _token, _amount);
+        core.addBalance(_ca, _token, _amount);
         return (_amount);
     }
 
     function test__unit_revert__disperseCaPay__NotAnCA() external {
         (uint256 amount)  = _addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, 0.1 ether);
 
-        EvvmStructs.DisperseCaPayMetadata[]
-            memory toData = new EvvmStructs.DisperseCaPayMetadata[](1);
+        CoreStructs.DisperseCaPayMetadata[]
+            memory toData = new CoreStructs.DisperseCaPayMetadata[](1);
 
-        toData[0] = EvvmStructs.DisperseCaPayMetadata({
+        toData[0] = CoreStructs.DisperseCaPayMetadata({
             amount: amount,
             toAddress: COMMON_USER_NO_STAKER_2.Address
         });
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
-        vm.expectRevert(EvvmError.NotAnCA.selector);
-        evvm.disperseCaPay(toData, ETHER_ADDRESS, amount);
+        vm.expectRevert(CoreError.NotAnCA.selector);
+        core.disperseCaPay(toData, ETHER_ADDRESS, amount);
         vm.stopPrank();
     
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount,
             "Amount should not be deducted because of revert"
         );
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Recipient balance should not change because of revert"
         );
@@ -71,25 +71,25 @@ contract unitTestRevert_EVVM_disperseCaPay is Test, Constants {
     function test__unit_revert__disperseCaPay__InsufficientBalance() external {
         (uint256 amount)  = _addBalance(address(this), ETHER_ADDRESS, 0.1 ether);
 
-        EvvmStructs.DisperseCaPayMetadata[]
-            memory toData = new EvvmStructs.DisperseCaPayMetadata[](1);
+        CoreStructs.DisperseCaPayMetadata[]
+            memory toData = new CoreStructs.DisperseCaPayMetadata[](1);
 
-        toData[0] = EvvmStructs.DisperseCaPayMetadata({
+        toData[0] = CoreStructs.DisperseCaPayMetadata({
             amount: amount*2,
             toAddress: COMMON_USER_NO_STAKER_2.Address
         });
 
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         // Becase this test script is tecnially a CA, we can call caPay directly
-        evvm.disperseCaPay(toData, ETHER_ADDRESS, amount*2);
+        core.disperseCaPay(toData, ETHER_ADDRESS, amount*2);
     
         assertEq(
-            evvm.getBalance(address(this), ETHER_ADDRESS),
+            core.getBalance(address(this), ETHER_ADDRESS),
             amount,
             "Amount should not be deducted because of revert"
         );
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Recipient balance should not change because of revert"
         );
@@ -98,30 +98,30 @@ contract unitTestRevert_EVVM_disperseCaPay is Test, Constants {
     function test__unit_revert__disperseCaPay__InvalidAmount() external {
         (uint256 amount)  = _addBalance(address(this), ETHER_ADDRESS, 0.1 ether);
 
-        EvvmStructs.DisperseCaPayMetadata[]
-            memory toData = new EvvmStructs.DisperseCaPayMetadata[](2);
+        CoreStructs.DisperseCaPayMetadata[]
+            memory toData = new CoreStructs.DisperseCaPayMetadata[](2);
 
-        toData[0] = EvvmStructs.DisperseCaPayMetadata({
+        toData[0] = CoreStructs.DisperseCaPayMetadata({
             amount: amount/5,
             toAddress: COMMON_USER_NO_STAKER_2.Address
         });
 
-        toData[1] = EvvmStructs.DisperseCaPayMetadata({
+        toData[1] = CoreStructs.DisperseCaPayMetadata({
             amount: amount/5,
             toAddress: COMMON_USER_NO_STAKER_2.Address
         });
 
-        vm.expectRevert(EvvmError.InvalidAmount.selector);
+        vm.expectRevert(CoreError.InvalidAmount.selector);
         // Becase this test script is tecnially a CA, we can call caPay directly
-        evvm.disperseCaPay(toData, ETHER_ADDRESS, amount);
+        core.disperseCaPay(toData, ETHER_ADDRESS, amount);
     
         assertEq(
-            evvm.getBalance(address(this), ETHER_ADDRESS),
+            core.getBalance(address(this), ETHER_ADDRESS),
             amount,
             "Amount should not be deducted because of revert"
         );
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Recipient balance should not change because of revert"
         );

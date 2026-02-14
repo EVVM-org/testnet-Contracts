@@ -25,7 +25,7 @@ import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
-import "@evvm/testnet-contracts/library/errors/StateError.sol";
+import "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_Staking_adminFunctions is Test, Constants {
     function test__unitRevert__addPresaleStaker__SenderIsNotAdmin() external {

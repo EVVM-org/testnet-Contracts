@@ -24,9 +24,9 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
-import "@evvm/testnet-contracts/library/errors/StateError.sol";
+import "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     function executeBeforeSetUp() internal override {
@@ -41,7 +41,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
         address user,
         uint256 stakingAmount
     ) private returns (uint256 amount) {
-        evvm.addBalance(
+        core.addBalance(
             user,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking() * stakingAmount)
@@ -58,15 +58,15 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 address(staking),
                 "",
                 PRINCIPAL_TOKEN_ADDRESS,
                 amount,
                 0,
                 address(staking),
-                evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+                core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
                 false
             )
         );
@@ -149,13 +149,13 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
             /* 🢃 Different priorityFee (pf>0) 🢃 */
             100,
             address(staking),
-            evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
+            core.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
             false
         );
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.goldenStaking(true, 10, signatureEVVM);
 
         vm.stopPrank();

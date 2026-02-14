@@ -50,9 +50,11 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -68,6 +70,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             USERNAME,
             amount,
             EXPIRATION_DATE,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -84,7 +87,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         string memory username,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.seePriceToRenew(username) + priorityFeeAmount
@@ -124,6 +127,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
@@ -134,6 +138,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params1.user.Address,
             params1.username,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -154,7 +159,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -162,7 +167,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             "Error on 1: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error on 1: balance incorrectly changed after renewal"
         );
@@ -180,6 +185,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
+            address(0),
             params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM
@@ -190,6 +196,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params2.user.Address,
             params2.username,
+            address(0),
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
@@ -210,7 +217,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -218,7 +225,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             "Error on 2: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error on 2: balance incorrectly changed after renewal"
         );
@@ -250,7 +257,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params1.user, params1.username, params1.priorityFee);
 
-        uint256 stakerBalance1 = evvm.getRewardAmount() +
+        uint256 stakerBalance1 = core.getRewardAmount() +
             ((nameService.seePriceToRenew(params1.username) * 50) / 100) +
             params1.priorityFee;
 
@@ -260,6 +267,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
@@ -270,6 +278,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params1.user.Address,
             params1.username,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -290,7 +299,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -298,7 +307,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             "Error on 1: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             stakerBalance1,
             "Error on 1: balance incorrectly changed after renewal"
         );
@@ -310,7 +319,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params2.user, params2.username, params2.priorityFee);
 
-        uint256 stakerBalance2 = evvm.getRewardAmount() +
+        uint256 stakerBalance2 = core.getRewardAmount() +
             ((nameService.seePriceToRenew(params2.username) * 50) / 100) +
             params2.priorityFee;
 
@@ -320,6 +329,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
+            address(0),
             params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM
@@ -330,6 +340,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params2.user.Address,
             params2.username,
+            address(0),
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
@@ -350,7 +361,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -358,7 +369,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             "Error on 2: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             stakerBalance1 + stakerBalance2,
             "Error on 2: balance incorrectly changed after renewal"
         );
@@ -396,6 +407,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
@@ -406,6 +418,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params1.user.Address,
             params1.username,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -426,7 +439,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -434,7 +447,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             "Error on 1: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error on 1: balance incorrectly changed after renewal"
         );
@@ -452,6 +465,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
+            address(0),
             params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM
@@ -462,6 +476,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params2.user.Address,
             params2.username,
+            address(0),
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
@@ -482,7 +497,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -490,7 +505,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             "Error on 2: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error on 2: balance incorrectly changed after renewal"
         );
@@ -520,7 +535,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params1.user, params1.username, params1.priorityFee);
 
-        uint256 stakerBalance1 = evvm.getRewardAmount() +
+        uint256 stakerBalance1 = core.getRewardAmount() +
             ((nameService.seePriceToRenew(params1.username) * 50) / 100) +
             params1.priorityFee;
 
@@ -530,6 +545,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
@@ -540,6 +556,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params1.user.Address,
             params1.username,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -560,7 +577,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -568,7 +585,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             "Error on 1: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             stakerBalance1,
             "Error on 1: balance incorrectly changed after renewal"
         );
@@ -580,7 +597,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing  offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params2.user, params2.username, params2.priorityFee);
 
-        uint256 stakerBalance2 = evvm.getRewardAmount() +
+        uint256 stakerBalance2 = core.getRewardAmount() +
             ((nameService.seePriceToRenew(params2.username) * 50) / 100) +
             params2.priorityFee;
 
@@ -590,6 +607,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
+            address(0),
             params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM
@@ -600,6 +618,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params2.user.Address,
             params2.username,
+            address(0),
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
@@ -620,7 +639,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -628,7 +647,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             "Error on 2: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             stakerBalance1 + stakerBalance2,
             "Error on 2: balance incorrectly changed after renewal"
         );

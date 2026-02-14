@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
  * @title Staking Error Library
  * @author Mate Labs
  * @notice Custom errors for Staking.sol
- * @dev Gas-efficient errors for Staking.sol. State.sol validates signatures, Evvm.sol processes payments.
+ * @dev Gas-efficient errors for Staking.sol. State.sol validates signatures, Core.sol processes payments.
  */
 
 library StakingError {
@@ -17,7 +17,7 @@ library StakingError {
     /// @dev Thrown when non-admin calls admin-only function (onlyOwner)
     error SenderIsNotAdmin();
 
-    /// @dev Thrown when non-goldenFisher attempts goldenStaking (sync nonces with Evvm.sol)
+    /// @dev Thrown when non-goldenFisher attempts goldenStaking (sync nonces with Core.sol)
     error SenderIsNotGoldenFisher();
 
     /// @dev Thrown when non-proposed admin attempts acceptNewAdmin (1d delay)

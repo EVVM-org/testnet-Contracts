@@ -54,7 +54,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         private
         returns (uint256 registrationPrice, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceOfRegistration(username) + priorityFee
@@ -74,12 +74,14 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             USER_ONE,
             USERNAME_ONE,
             REGISTRATION_LOCK_NUMBER_ONE,
+            address(0),
             0
         );
         _executeFn_nameService_preRegistrationUsername(
             USER_TWO,
             USERNAME_TWO,
             REGISTRATION_LOCK_NUMBER_TWO,
+            address(0),
             0
         );
 
@@ -121,6 +123,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.user,
             params1.username,
             params1.lockNumber,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
@@ -131,6 +134,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.user.Address,
             params1.username,
             params1.lockNumber,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -150,13 +154,13 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error no staker: balance incorrectly changed after registration"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error no staker: balance incorrectly changed after registration"
         );
@@ -169,6 +173,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.user,
             params2.username,
             params2.lockNumber,
+            address(0),
             params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM
@@ -179,6 +184,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.user.Address,
             params2.username,
             params2.lockNumber,
+            address(0),
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
@@ -197,14 +203,14 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             "Error staker: username not registered correctly"
         );
         assertEq(
-            evvm.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error staker: balance incorrectly changed after registration"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (50 * evvm.getRewardAmount()) + params2.priorityFee,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (50 * core.getRewardAmount()) + params2.priorityFee,
             "Error staker: balance incorrectly changed after registration"
         );
     }
@@ -244,6 +250,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.user,
             params1.username,
             params1.lockNumber,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
@@ -254,6 +261,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.user.Address,
             params1.username,
             params1.lockNumber,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -273,13 +281,13 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error no staker: balance incorrectly changed after registration"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error no staker: balance incorrectly changed after registration"
         );
@@ -292,6 +300,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.user,
             params2.username,
             params2.lockNumber,
+            address(0),
             params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM
@@ -302,6 +311,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.user.Address,
             params2.username,
             params2.lockNumber,
+            address(0),
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
@@ -320,14 +330,14 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             "Error staker: username not registered correctly"
         );
         assertEq(
-            evvm.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error staker: balance incorrectly changed after registration"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (50 * evvm.getRewardAmount()) + params2.priorityFee,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (50 * core.getRewardAmount()) + params2.priorityFee,
             "Error staker: balance incorrectly changed after registration"
         );
     }

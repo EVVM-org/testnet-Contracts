@@ -44,7 +44,7 @@ import { registerSingle } from "../register/registerSingle";
  * 6. Optional registration in EVVM Registry with custom RPC support
  *
  * Deployed contracts:
- * - Evvm.sol (core protocol)
+ * - Core.sol (core protocol)
  * - Staking.sol (validator staking)
  * - Estimator.sol (gas estimation)
  * - NameService.sol (domain name resolution)
@@ -118,7 +118,7 @@ export async function deploySingle(args: string[], options: any) {
 
   confirmation(`EVVM deployed successfully!`);
 
-  const evvmAddress: `0x${string}` | null =
+  const coreAddress: `0x${string}` | null =
     await showDeployContractsAndFindEvvm(chainId);
 
   sectionSubtitle("EVVM Registration");
@@ -128,9 +128,9 @@ ${colors.blue}Your EVVM instance is ready to be registered.${colors.reset}
 ${colors.yellow}Important:${colors.reset}
    To register now, your Admin address must match the ${walletName} wallet.
    ${colors.darkGray}Otherwise, you can register later using:${colors.reset}
-   ${colors.evvmGreen}evvm register --evvmAddress ${evvmAddress} --walletName <walletName>${colors.reset}
+   ${colors.evvmGreen}evvm register --coreAddress ${coreAddress} --walletName <walletName>${colors.reset}
 Or if you want to use your custom Ethereum Sepolia RPC:
-   ${colors.evvmGreen}evvm register --evvmAddress ${evvmAddress} --walletName <walletName> --useCustomEthRpc${colors.reset}
+   ${colors.evvmGreen}evvm register --coreAddress ${coreAddress} --walletName <walletName> --useCustomEthRpc${colors.reset}
 
    ${colors.darkGray}📖 For more details, visit:${colors.reset}
    ${colors.blue}https://www.evvm.info/docs/QuickStart#6-register-in-registry-evvm${colors.reset}
@@ -153,7 +153,7 @@ Or if you want to use your custom Ethereum Sepolia RPC:
   );
 
   await registerSingle([], {
-    evvmAddress: evvmAddress,
+    coreAddress: coreAddress,
     walletName: walletName,
     useCustomEthRpc: ethRPCAns,
   });

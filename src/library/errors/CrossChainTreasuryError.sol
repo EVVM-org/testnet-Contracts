@@ -10,7 +10,7 @@ pragma solidity ^0.8.0;
  * @dev Gas-efficient errors for TreasuryHostChainStation and TreasuryExternalChainStation. Independent from State.sol (own nonces).
  */
 library CrossChainTreasuryError {
-    /// @dev Thrown when Evvm.sol balance < withdrawal amount (host chain only)
+    /// @dev Thrown when Core.sol balance < withdrawal amount (host chain only)
     error InsufficientBalance();
 
     /// @dev Thrown when attempting to withdraw/bridge Principal Token (MATE). Cannot leave host chain.

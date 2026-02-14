@@ -46,9 +46,11 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             uint256(
                 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -62,6 +64,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
                 USER_USERNAME_OWNER,
                 USERNAME,
                 string.concat("test>", AdvancedStrings.uintToString(i)),
+                address(0),
                 uint256(
                     0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
                 ) + i,
@@ -76,7 +79,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToRemoveCustomMetadata() + priorityFeeAmount
@@ -109,10 +112,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
                     0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000
                 )
         );
-        vm.assume(
-            input.nonceAsyncEVVM !=
-                input.nonce 
-        );
+        vm.assume(input.nonceAsyncEVVM != input.nonce);
 
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
@@ -134,6 +134,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             params.user,
             params.identity,
             params.key,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -145,6 +146,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             params.user.Address,
             params.identity,
             params.key,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -173,7 +175,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -182,7 +184,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "fisher balance incorrectly changed after removing custom metadata"
         );
@@ -204,10 +206,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
                     0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000
                 )
         );
-        vm.assume(
-            input.nonceAsyncEVVM !=
-                input.nonce 
-        );
+        vm.assume(input.nonceAsyncEVVM != input.nonce);
 
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
@@ -229,6 +228,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             params.user,
             params.identity,
             params.key,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -240,6 +240,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
             params.user.Address,
             params.identity,
             params.key,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -268,7 +269,7 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -277,8 +278,8 @@ contract fuzzTest_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (5 * evvm.getRewardAmount()) + uint256(params.priorityFee),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (5 * core.getRewardAmount()) + uint256(params.priorityFee),
             "fisher balance incorrectly changed after removing custom metadata"
         );
     }

@@ -17,12 +17,12 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract fuzzTest_EVVM_pay is Test, Constants {
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x00);
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x00);
     }
 
     function _makeRandomUsername(
@@ -59,12 +59,12 @@ contract fuzzTest_EVVM_pay is Test, Constants {
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             username,
+            444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
-            uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
-            ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
@@ -80,7 +80,7 @@ contract fuzzTest_EVVM_pay is Test, Constants {
         uint256 _amount,
         uint256 _priorityFee
     ) private returns (uint256 amount, uint256 priorityFee) {
-        evvm.addBalance(_user.Address, _token, _amount + _priorityFee);
+        core.addBalance(_user.Address, _token, _amount + _priorityFee);
         return (_amount, _priorityFee);
     }
 
@@ -110,7 +110,7 @@ contract fuzzTest_EVVM_pay is Test, Constants {
 
         uint256 nonce = input.isUsingAsyncNonce
             ? input.asyncNonce
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
+            : core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
 
         (uint256 amount, uint256 priorityFee) = _addBalance(
             COMMON_USER_NO_STAKER_1,
@@ -131,12 +131,12 @@ contract fuzzTest_EVVM_pay is Test, Constants {
             input.isUsingAsyncNonce
         );
 
-        evvm.setPointStaker(
+        core.setPointStaker(
             input.executor,
             input.isExecutorStaker ? bytes1(0x01) : bytes1(0x00)
         );
         vm.startPrank(input.executor);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             input.toAddress,
             "",
@@ -151,26 +151,26 @@ contract fuzzTest_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, input.token),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, input.token),
             input.isExecutorStaker ? 0 : priorityFee,
             "Sender balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(input.toAddress, input.token),
+            core.getBalance(input.toAddress, input.token),
             amount,
             "Balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(input.executor, input.token),
+            core.getBalance(input.executor, input.token),
             input.isExecutorStaker ? uint256(priorityFee) : 0,
             "Executor balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(input.executor, PRINCIPAL_TOKEN_ADDRESS),
-            input.isExecutorStaker ? evvm.getRewardAmount() : 0,
+            core.getBalance(input.executor, PRINCIPAL_TOKEN_ADDRESS),
+            input.isExecutorStaker ? core.getRewardAmount() : 0,
             "Executor balance after check if executor should not or should recieve rewards incorrect"
         );
     }
@@ -200,7 +200,7 @@ contract fuzzTest_EVVM_pay is Test, Constants {
 
         uint256 nonce = input.isUsingAsyncNonce
             ? input.asyncNonce
-            : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
+            : core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
 
         (uint256 amount, uint256 priorityFee) = _addBalance(
             COMMON_USER_NO_STAKER_1,
@@ -223,12 +223,12 @@ contract fuzzTest_EVVM_pay is Test, Constants {
             input.isUsingAsyncNonce
         );
 
-        evvm.setPointStaker(
+        core.setPointStaker(
             input.executor,
             input.isExecutorStaker ? bytes1(0x01) : bytes1(0x00)
         );
         vm.startPrank(input.executor);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             username,
@@ -243,26 +243,26 @@ contract fuzzTest_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, input.token),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, input.token),
             input.isExecutorStaker ? 0 : priorityFee,
             "Sender balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, input.token),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, input.token),
             amount,
             "Balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(input.executor, input.token),
+            core.getBalance(input.executor, input.token),
             input.isExecutorStaker ? uint256(priorityFee) : 0,
             "Executor balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(input.executor, PRINCIPAL_TOKEN_ADDRESS),
-            input.isExecutorStaker ? evvm.getRewardAmount() : 0,
+            core.getBalance(input.executor, PRINCIPAL_TOKEN_ADDRESS),
+            input.isExecutorStaker ? core.getRewardAmount() : 0,
             "Executor balance after check if executor should not or should recieve rewards incorrect"
         );
     }

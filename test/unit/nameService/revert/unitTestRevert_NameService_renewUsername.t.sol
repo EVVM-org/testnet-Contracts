@@ -31,13 +31,9 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-import {
-    StateError
-} from "@evvm/testnet-contracts/library/errors/StateError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_renewUsername is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -51,9 +47,11 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -71,7 +69,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         private
         returns (uint256 totalRenewalAmount, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.seePriceToRenew(username) + priorityFeeAmount
@@ -96,9 +94,10 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRenewUsername(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
                 address(nameService),
                 USERNAME,
+                address(0),
                 nonce
             )
         );
@@ -122,10 +121,11 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -145,7 +145,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -172,6 +172,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -182,10 +183,11 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -205,7 +207,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -232,6 +234,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different username 🢃 */
                 "differentUsername",
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -242,10 +245,11 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -265,7 +269,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -291,6 +295,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 /* 🢃 different nonce 🢃 */
                 nonce + 67,
                 totalPriorityFeeAmount,
@@ -302,10 +307,11 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -325,7 +331,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -341,6 +347,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             COMMON_USER_NO_STAKER_1,
             "testrevert",
             67,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffA
             )
@@ -368,6 +375,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 invalidUsername,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -379,6 +387,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             invalidUsername,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -389,7 +398,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -416,6 +425,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
                 /* 🢃 different user 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -431,6 +441,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             /* 🢃 different user 🢃 */
             COMMON_USER_NO_STAKER_2.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -450,7 +461,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -469,7 +480,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000
         );
         for (uint256 i = 0; i < 99; i++) {
-            evvm.addBalance(
+            core.addBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS,
                 nameService.seePriceToRenew(USERNAME)
@@ -478,6 +489,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             _executeFn_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 nonceLoopA + i,
                 0,
                 nonceLoopB + i,
@@ -499,6 +511,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -513,6 +526,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -532,7 +546,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -540,7 +554,6 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             "user balance should not change"
         );
     }
-
 
     function test__unit_revert__renewUsername_NonceAlreadyUsed() external {
         (
@@ -560,6 +573,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 nonce,
                 totalPriorityFeeAmount,
                 nonceEVVM
@@ -570,10 +584,11 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -593,7 +608,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -602,8 +617,9 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
     }
 
-    
-    function test__unit_revert__renewUsername__InvalidSignature_fromEvvm() external {
+    function test__unit_revert__renewUsername__InvalidSignature_fromEvvm()
+        external
+    {
         (
             uint256 totalRenewalAmount,
             uint256 totalPriorityFeeAmount
@@ -618,6 +634,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
@@ -630,10 +647,11 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
@@ -653,7 +671,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -662,8 +680,9 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
     }
 
-    function test__unit_revert__renewUsername__InsufficientBalance_fromEvvm() external {
-
+    function test__unit_revert__renewUsername__InsufficientBalance_fromEvvm()
+        external
+    {
         uint256 nonce = 11111111;
         uint256 nonceEVVM = 22222222;
 
@@ -673,6 +692,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 nonce,
                 0,
                 nonceEVVM
@@ -683,10 +703,11 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
+            address(0),
             nonce,
             signatureNameService,
             0,
@@ -706,7 +727,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -714,5 +735,4 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             "user balance should not change"
         );
     }
-    
 }

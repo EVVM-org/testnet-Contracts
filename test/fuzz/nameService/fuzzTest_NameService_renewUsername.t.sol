@@ -47,9 +47,11 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -65,6 +67,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
             USERNAME,
             amount,
             EXPIRATION_DATE,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -81,7 +84,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
         string memory username,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.seePriceToRenew(username) + priorityFeeAmount
@@ -136,7 +139,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
             params.signatureEVVM
         ) = _executeSig_nameService_renewUsername(
             params.user,
-            params.username,
+            params.username,address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -146,7 +149,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
 
         nameService.renewUsername(
             params.user.Address,
-            params.username,
+            params.username,address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -167,7 +170,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -175,7 +178,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
             "balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "balance incorrectly changed after renewal"
         );
@@ -212,7 +215,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
             nonceEVVM: input.nonceAsyncEVVM,
             signatureEVVM: ""
         });
-        uint256 stakerBalance = evvm.getRewardAmount() +
+        uint256 stakerBalance = core.getRewardAmount() +
             ((nameService.seePriceToRenew(params.username) * 50) / 100) +
             params.priorityFee;
 
@@ -223,7 +226,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
             params.signatureEVVM
         ) = _executeSig_nameService_renewUsername(
             params.user,
-            params.username,
+            params.username,address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -233,7 +236,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
 
         nameService.renewUsername(
             params.user.Address,
-            params.username,
+            params.username,address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -254,7 +257,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -262,7 +265,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
             "balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             stakerBalance,
             "balance incorrectly changed after renewal"
         );

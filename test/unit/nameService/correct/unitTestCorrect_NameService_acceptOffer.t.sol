@@ -52,9 +52,11 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -68,6 +70,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             USERNAME,
             AMOUNT_OFFER,
             EXPIRATION_DATE,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -83,7 +86,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             priorityFeeAmount
@@ -106,7 +109,6 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             signatureEVVM: ""
         });
 
-
         _addBalance(params.user, params.priorityFee);
 
         (
@@ -116,6 +118,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -126,6 +129,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -165,15 +169,13 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error staker: balance incorrectly changed after registration"
         );
     }
 
-    function test__unit_correct__acceptOffer__noStaking_priorityFee()
-        external
-    {
+    function test__unit_correct__acceptOffer__noStaking_priorityFee() external {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
@@ -194,6 +196,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -204,6 +207,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -243,15 +247,13 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error staker: balance incorrectly changed after registration"
         );
     }
 
-    function test__unit_correct__acceptOffer__staking_noPriorityFee()
-        external
-    {
+    function test__unit_correct__acceptOffer__staking_noPriorityFee() external {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
@@ -263,7 +265,6 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             signatureEVVM: ""
         });
 
-
         _addBalance(params.user, params.priorityFee);
 
         (
@@ -273,6 +274,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -283,6 +285,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -322,17 +325,15 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount()) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount()) +
                 (((checkData.amount * 1) / 199) / 4) +
                 params.priorityFee),
             "Error staker: balance incorrectly changed after registration"
         );
     }
 
-    function test__unit_correct__acceptOffer__staking_priorityFee()
-        external
-    {
+    function test__unit_correct__acceptOffer__staking_priorityFee() external {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
@@ -353,6 +354,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -363,6 +365,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -402,8 +405,8 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount()) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount()) +
                 (((checkData.amount * 1) / 199) / 4) +
                 params.priorityFee),
             "Error staker: balance incorrectly changed after registration"

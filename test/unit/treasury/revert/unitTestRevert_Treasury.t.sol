@@ -39,7 +39,7 @@ contract unitTestRevert_Treasury is Test, Constants {
         uint256 amount,
         address token
     ) private returns (uint256) {
-        evvm.addBalance(user, token, amount);
+        core.addBalance(user, token, amount);
 
         return amount;
     }
@@ -70,7 +70,7 @@ contract unitTestRevert_Treasury is Test, Constants {
 
         vm.stopPrank();
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, address(0)),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, address(0)),
             0
         );
         assertEq(COMMON_USER_NO_STAKER_1.Address.balance, 0.01 ether);
@@ -93,7 +93,7 @@ contract unitTestRevert_Treasury is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 address(testToken)
             ),
@@ -121,7 +121,7 @@ contract unitTestRevert_Treasury is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 address(testToken)
             ),
@@ -145,7 +145,7 @@ contract unitTestRevert_Treasury is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 address(testToken)
             ),

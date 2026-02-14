@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
  * @title NameServiceStructs
  * @author Mate labs
  * @notice Data structures for NameService.sol (identity, marketplace, governance)
- * @dev Identity and marketplace structures validated via State.sol nonces. Payment processing via Evvm.sol.
+ * @dev Identity and marketplace structures validated via State.sol nonces. Payment processing via Core.sol.
  */
 library NameServiceStructs {
 

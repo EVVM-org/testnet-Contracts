@@ -19,9 +19,9 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
-contract unitTestCorrect_EVVM_proxy is Test, Constants {
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+contract unitTestCorrect_Core_proxy is Test, Constants {
     /**
      * Naming Convention for Init Test Functions
      * Basic Structure:
@@ -87,7 +87,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         uint256 priorityFee
     ) internal {
         if (giveTokensForPayment) {
-            evvm.addBalance(
+            core.addBalance(
                 userToInteract.Address,
                 tokenAddress,
                 amount + priorityFee
@@ -96,15 +96,15 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             userToInteract.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 addressTo,
                 "",
                 tokenAddress,
                 amount,
                 priorityFee,
                 address(0),
-                evvm.getNextCurrentSyncNonce(userToInteract.Address),
+                core.getNextCurrentSyncNonce(userToInteract.Address),
                 false
             )
         );
@@ -114,7 +114,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
             s
         );
 
-        evvm.pay(
+        core.pay(
             userToInteract.Address,
             addressTo,
             "",
@@ -122,7 +122,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
             amount,
             priorityFee,
             address(0),
-            evvm.getNextCurrentSyncNonce(userToInteract.Address),
+            core.getNextCurrentSyncNonce(userToInteract.Address),
             false,
             signatureEVVM
         );
@@ -130,47 +130,47 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
 
     function updateImplementation(address newImplementation) internal {
         vm.startPrank(ADMIN.Address);
-        evvm.proposeImplementation(newImplementation);
+        core.proposeImplementation(newImplementation);
         skip(30 days);
-        evvm.acceptImplementation();
+        core.acceptImplementation();
         vm.stopPrank();
     }
 
     function test__unit_correct__proposeImplementation() public {
         vm.startPrank(ADMIN.Address);
-        evvm.proposeImplementation(addressV1);
+        core.proposeImplementation(addressV1);
         vm.stopPrank();
 
-        assertEq(evvm.getCurrentImplementation(), address(0));
-        assertEq(evvm.getProposalImplementation(), addressV1);
+        assertEq(core.getCurrentImplementation(), address(0));
+        assertEq(core.getProposalImplementation(), addressV1);
         assertEq(
-            evvm.getTimeToAcceptImplementation(),
+            core.getTimeToAcceptImplementation(),
             block.timestamp + 30 days
         );
     }
 
     function test__unit_correct__acceptImplementation() public {
         vm.startPrank(ADMIN.Address);
-        evvm.proposeImplementation(addressV1);
+        core.proposeImplementation(addressV1);
         skip(30 days);
-        evvm.acceptImplementation();
+        core.acceptImplementation();
         vm.stopPrank();
 
-        assertEq(evvm.getCurrentImplementation(), addressV1);
-        assertEq(evvm.getProposalImplementation(), address(0));
-        assertEq(evvm.getTimeToAcceptImplementation(), 0);
+        assertEq(core.getCurrentImplementation(), addressV1);
+        assertEq(core.getProposalImplementation(), address(0));
+        assertEq(core.getTimeToAcceptImplementation(), 0);
     }
 
     function test__unit_correct__rejectUpgrade() public {
         vm.startPrank(ADMIN.Address);
-        evvm.proposeImplementation(addressV1);
+        core.proposeImplementation(addressV1);
         skip(1 days);
-        evvm.rejectUpgrade();
+        core.rejectUpgrade();
         vm.stopPrank();
 
-        assertEq(evvm.getCurrentImplementation(), address(0));
-        assertEq(evvm.getProposalImplementation(), address(0));
-        assertEq(evvm.getTimeToAcceptImplementation(), 0);
+        assertEq(core.getCurrentImplementation(), address(0));
+        assertEq(core.getProposalImplementation(), address(0));
+        assertEq(core.getTimeToAcceptImplementation(), 0);
     }
 
     /// @notice because we tested in others init thes the pay
@@ -197,7 +197,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         updateImplementation(addressV1);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -205,21 +205,21 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             100
         );
 
-        ITartarusV1(address(evvm)).burnToken(
+        ITartarusV1(address(core)).burnToken(
             COMMON_USER_NO_STAKER_1.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             10
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -227,7 +227,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -253,7 +253,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -261,7 +261,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -291,7 +291,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         updateImplementation(addressV1);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -299,21 +299,21 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             100
         );
 
-        ITartarusV1(address(evvm)).burnToken(
+        ITartarusV1(address(core)).burnToken(
             COMMON_USER_NO_STAKER_1.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             10
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -321,7 +321,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -347,7 +347,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -355,7 +355,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -364,14 +364,14 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
 
         updateImplementation(addressV2);
 
-        ITartarusV2(address(evvm)).fullTransfer(
+        ITartarusV2(address(core)).fullTransfer(
             COMMON_USER_NO_STAKER_2.Address,
             COMMON_USER_NO_STAKER_1.Address,
             PRINCIPAL_TOKEN_ADDRESS
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -379,7 +379,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -405,7 +405,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -413,7 +413,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -443,7 +443,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         updateImplementation(addressV1);
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -451,21 +451,21 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             100
         );
 
-        ITartarusV1(address(evvm)).burnToken(
+        ITartarusV1(address(core)).burnToken(
             COMMON_USER_NO_STAKER_1.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             10
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -473,7 +473,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -499,7 +499,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -507,7 +507,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -516,14 +516,14 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
 
         updateImplementation(addressV2);
 
-        ITartarusV2(address(evvm)).fullTransfer(
+        ITartarusV2(address(core)).fullTransfer(
             COMMON_USER_NO_STAKER_2.Address,
             COMMON_USER_NO_STAKER_1.Address,
             PRINCIPAL_TOKEN_ADDRESS
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -531,7 +531,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -557,7 +557,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -565,7 +565,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -574,14 +574,14 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
 
         updateImplementation(addressV3);
 
-        ITartarusV3(address(evvm)).burnToken(
+        ITartarusV3(address(core)).burnToken(
             COMMON_USER_NO_STAKER_1.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             99900
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -589,14 +589,14 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             100
         );
 
-        assertEq(ITartarusV3(address(evvm)).getCounter(), 1);
+        assertEq(ITartarusV3(address(core)).getCounter(), 1);
 
         makePayment(
             false,
@@ -617,7 +617,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -625,7 +625,7 @@ contract unitTestCorrect_EVVM_proxy is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),

@@ -42,7 +42,7 @@ pragma solidity ^0.8.0;
  *
  */
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     Estimator
 } from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
@@ -52,10 +52,6 @@ import {
 import {
     StakingError as Error
 } from "@evvm/testnet-contracts/library/errors/StakingError.sol";
-import {
-    StateManagment
-} from "@evvm/testnet-contracts/library/utils/service/StateManagment.sol";
-import {State} from "@evvm/testnet-contracts/contracts/state/State.sol";
 import {
     ProposalStructs
 } from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
@@ -103,9 +99,8 @@ contract Staking {
     /// @dev Mapping to store complete staking history for each user
     mapping(address => StakingStructs.HistoryMetadata[]) private userHistory;
 
-    Evvm private evvm;
+    Core private core;
     Estimator private estimator;
-    State private state;
 
     /// @dev Modifier to verify access to admin functions
     modifier onlyOwner() {
@@ -176,8 +171,7 @@ contract Staking {
      * - Sets breaker to 0x00 (prevents re-init)
      *
      * Integration Setup:
-     * - State.sol: Nonce validation for all staking ops
-     * - Evvm.sol: Payment processing for staking tokens
+     * - Core.sol: Payment processing for staking tokens
      * - Estimator.sol: Yield calculation for rewards
      *
      * Security:
@@ -186,22 +180,19 @@ contract Staking {
      * - No access control (assumed deployment context)
      *
      * @param _estimator Address of Estimator contract
-     * @param _evvm Address of Evvm core contract
-     * @param _state Address of State coordinator
+     * @param _core Address of Evvm core contract
      */
     function initializeSystemContracts(
         address _estimator,
-        address _evvm,
-        address _state
+        address _core
     ) external {
         if (breakerSetupEstimatorAndEvvm == 0x00) revert();
 
         estimatorAddress.current = _estimator;
-        EVVM_ADDRESS = _evvm;
+        EVVM_ADDRESS = _core;
 
-        evvm = Evvm(_evvm);
+        core = Core(_core);
         estimator = Estimator(_estimator);
-        state = State(_state);
         breakerSetupEstimatorAndEvvm = 0x00;
     }
 
@@ -217,16 +208,16 @@ contract Staking {
      * - Direct access without signature validation
      *
      * Sync Nonce Usage:
-     * - goldenFisher uses Evvm.sol sync nonces
+     * - goldenFisher uses Core.sol sync nonces
      * - isAsync = false in stakingBaseProcess
-     * - Nonces managed by Evvm.sol, not State.sol
+     * - Nonces managed by Core.sol, not State.sol
      * - Enables tight synchronization with Evvm ops
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Payment via makePay (if isStaking=true)
      * - Cost: PRICE_OF_STAKING * amountOfStaking
      * - Refund via makeCaPay (if isStaking=false)
-     * - signatureEvvm for Evvm.sol payment validation
+     * - signatureEvvm for Core.sol payment validation
      *
      * Staking Flow:
      * - isStaking=true: Purchase staking tokens
@@ -236,7 +227,7 @@ contract Staking {
      *
      * @param isStaking True for staking, false for unstaking
      * @param amountOfStaking Number of staking tokens
-     * @param signatureEvvm Signature for Evvm.sol validation
+     * @param signatureEvvm Signature for Core.sol validation
      */
     function goldenStaking(
         bool isStaking,
@@ -254,7 +245,7 @@ contract Staking {
             isStaking,
             amountOfStaking,
             0,
-            evvm.getNextCurrentSyncNonce(msg.sender),
+            core.getNextCurrentSyncNonce(msg.sender),
             false,
             signatureEvvm
         );
@@ -276,7 +267,7 @@ contract Staking {
      * - Hash generated via StakingHashUtils
      * - Prevents replay attacks
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Payment via stakingBaseProcess -> makePay
      * - Cost: PRICE_OF_STAKING * 1 (fixed 1 token)
      * - Refund via makeCaPay for unstaking
@@ -297,12 +288,13 @@ contract Staking {
      * @param nonce Async nonce for replay protection
      * @param signature Signature for State.sol validation
      * @param priorityFee_EVVM Priority fee for transaction
-     * @param nonceEvvm Nonce for Evvm.sol payment
-     * @param signatureEvvm Signature for Evvm.sol payment
+     * @param nonceEvvm Nonce for Core.sol payment
+     * @param signatureEvvm Signature for Core.sol payment
      */
     function presaleStaking(
         address user,
         bool isStaking,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFee_EVVM,
@@ -312,9 +304,10 @@ contract Staking {
         if (!allowPresaleStaking.flag || allowPublicStaking.flag)
             revert Error.PresaleStakingDisabled();
 
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForPresaleStake(isStaking, 1),
+            originExecutor,
             nonce,
             true,
             signature
@@ -358,7 +351,7 @@ contract Staking {
      * - Hash includes user, isStaking, amountOfStaking
      * - Prevents replay attacks
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Payment via stakingBaseProcess -> makePay
      * - Cost: PRICE_OF_STAKING * amountOfStaking
      * - Refund via makeCaPay for unstaking
@@ -380,13 +373,14 @@ contract Staking {
      * @param nonce Async nonce for replay protection
      * @param signature Signature for State.sol validation
      * @param priorityFee_EVVM Priority fee for transaction
-     * @param nonceEvvm Nonce for Evvm.sol payment
-     * @param signatureEvvm Signature for Evvm.sol payment
+     * @param nonceEvvm Nonce for Core.sol payment
+     * @param signatureEvvm Signature for Core.sol payment
      */
     function publicStaking(
         address user,
         bool isStaking,
         uint256 amountOfStaking,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
         uint256 priorityFee_EVVM,
@@ -395,9 +389,10 @@ contract Staking {
     ) external {
         if (!allowPublicStaking.flag) revert Error.PublicStakingDisabled();
 
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForPublicStake(isStaking, amountOfStaking),
+            originExecutor,
             nonce,
             true,
             signature
@@ -436,11 +431,11 @@ contract Staking {
      * - amountServiceBeforeStaking: Service PT balance
      * - amountStakingBeforeStaking: Staking PT balance
      *
-     * Evvm.sol Payment (Step 2):
+     * Core.sol Payment (Step 2):
      * - Service must call Evvm.caPay after this
      * - Transfer: PRICE_OF_STAKING * amountOfStaking
      * - Recipient: address(this) (Staking contract)
-     * - Token: Principal Token from Evvm.sol
+     * - Token: Principal Token from Core.sol
      *
      * Access Control:
      * - onlyCA modifier: Only contracts allowed
@@ -454,13 +449,13 @@ contract Staking {
             service: msg.sender,
             timestamp: block.timestamp,
             amountOfStaking: amountOfStaking,
-            amountServiceBeforeStaking: evvm.getBalance(
+            amountServiceBeforeStaking: core.getBalance(
                 msg.sender,
-                evvm.getPrincipalTokenAddress()
+                core.getPrincipalTokenAddress()
             ),
-            amountStakingBeforeStaking: evvm.getBalance(
+            amountStakingBeforeStaking: core.getBalance(
                 address(this),
-                evvm.getPrincipalTokenAddress()
+                core.getPrincipalTokenAddress()
             )
         });
     }
@@ -484,10 +479,10 @@ contract Staking {
      *    - totalStakingRequired = PRICE_OF_STAKING *
      *      amountOfStaking
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Validates caPay occurred between steps 1 and 3
      * - Checks balance deltas via Evvm.getBalance
-     * - Token: evvm.getPrincipalTokenAddress()
+     * - Token: core.getPrincipalTokenAddress()
      * - Must be exact amount (no overpayment/underpayment)
      *
      * Completion:
@@ -512,10 +507,10 @@ contract Staking {
         if (
             serviceStakingData.amountServiceBeforeStaking -
                 totalStakingRequired !=
-            evvm.getBalance(msg.sender, evvm.getPrincipalTokenAddress()) &&
+            core.getBalance(msg.sender, core.getPrincipalTokenAddress()) &&
             serviceStakingData.amountStakingBeforeStaking +
                 totalStakingRequired !=
-            evvm.getBalance(address(this), evvm.getPrincipalTokenAddress())
+            core.getBalance(address(this), core.getPrincipalTokenAddress())
         )
             revert Error.ServiceDoesNotFulfillCorrectStakingAmount(
                 totalStakingRequired
@@ -604,7 +599,7 @@ contract Staking {
                     signatureEvvm
                 );
 
-            evvm.pointStaker(account.Address, 0x01);
+            core.pointStaker(account.Address, 0x01);
 
             auxSMsteBalance = userHistory[account.Address].length == 0
                 ? amountOfStaking
@@ -618,7 +613,7 @@ contract Staking {
                     block.timestamp
                 ) revert Error.AddressMustWaitToFullUnstake();
 
-                evvm.pointStaker(account.Address, 0x00);
+                core.pointStaker(account.Address, 0x00);
             }
 
             if (priorityFee_EVVM != 0 && !account.IsAService)
@@ -638,7 +633,7 @@ contract Staking {
                 amountOfStaking;
 
             makeCaPay(
-                evvm.getPrincipalTokenAddress(),
+                core.getPrincipalTokenAddress(),
                 account.Address,
                 (PRICE_OF_STAKING * amountOfStaking)
             );
@@ -655,11 +650,11 @@ contract Staking {
             })
         );
 
-        if (evvm.isAddressStaker(msg.sender) && !account.IsAService) {
+        if (core.isAddressStaker(msg.sender) && !account.IsAService) {
             makeCaPay(
-                evvm.getPrincipalTokenAddress(),
+                core.getPrincipalTokenAddress(),
                 msg.sender,
-                (evvm.getRewardAmount() * 2) + priorityFee_EVVM
+                (core.getRewardAmount() * 2) + priorityFee_EVVM
             );
         }
     }
@@ -705,11 +700,11 @@ contract Staking {
                 userHistory[user][idToOverwriteUserHistory]
                     .timestamp = timestampToBeOverwritten;
 
-                if (evvm.isAddressStaker(msg.sender)) {
+                if (core.isAddressStaker(msg.sender)) {
                     makeCaPay(
-                        evvm.getPrincipalTokenAddress(),
+                        core.getPrincipalTokenAddress(),
                         msg.sender,
-                        (evvm.getRewardAmount() * 1)
+                        (core.getRewardAmount() * 1)
                     );
                 }
             }
@@ -738,11 +733,11 @@ contract Staking {
         uint256 nonce,
         bytes memory signature
     ) internal {
-        evvm.pay(
+        core.pay(
             user,
             address(this),
             "",
-            evvm.getPrincipalTokenAddress(),
+            core.getPrincipalTokenAddress(),
             amount,
             priorityFee,
             address(this),
@@ -764,7 +759,7 @@ contract Staking {
         address user,
         uint256 amount
     ) internal {
-        evvm.caPay(user, tokenAddress, amount);
+        core.caPay(user, tokenAddress, amount);
     }
 
     //▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀
@@ -1261,7 +1256,7 @@ contract Staking {
      * @return Unique EvvmID string
      */
     function getEvvmID() external view returns (uint256) {
-        return evvm.getEvvmID();
+        return core.getEvvmID();
     }
 
     /**
@@ -1269,7 +1264,7 @@ contract Staking {
      * @dev The EVVM contract handles payments and staker registration
      * @return Address of the EVVM core contract
      */
-    function getEvvmAddress() external view returns (address) {
+    function getCoreAddress() external view returns (address) {
         return EVVM_ADDRESS;
     }
 
@@ -1277,7 +1272,7 @@ contract Staking {
         address user,
         uint256 nonce
     ) external view returns (bool) {
-        return state.getIfUsedAsyncNonce(user, nonce);
+        return core.getIfUsedAsyncNonce(user, nonce);
     }
 
     /**
@@ -1286,7 +1281,7 @@ contract Staking {
      * @return Address representing the Principal Token (0x...0001)
      */
     function getMateAddress() external view returns (address) {
-        return evvm.getPrincipalTokenAddress();
+        return core.getPrincipalTokenAddress();
     }
 
     /**

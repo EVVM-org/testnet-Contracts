@@ -26,7 +26,7 @@ contract unitTestCorrect_Treasury is Test, Constants {
     TestERC20 testToken;
 
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
 
         testToken = new TestERC20();
     }
@@ -41,7 +41,7 @@ contract unitTestCorrect_Treasury is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, address(0)),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, address(0)),
             0.01 ether,
             "Error: incorrect balance after deposit"
         );
@@ -69,7 +69,7 @@ contract unitTestCorrect_Treasury is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 address(testToken)
             ),
@@ -100,7 +100,7 @@ contract unitTestCorrect_Treasury is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, address(0)),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, address(0)),
             0 ether,
             "Error: incorrect balance after withdraw"
         );
@@ -128,7 +128,7 @@ contract unitTestCorrect_Treasury is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 address(testToken)
             ),

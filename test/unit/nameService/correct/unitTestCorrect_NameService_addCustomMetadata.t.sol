@@ -50,9 +50,11 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -66,7 +68,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToAddCustomMetadata() + priorityFeeAmount
@@ -108,6 +110,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params1.user,
             params1.identity,
             params1.value,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
@@ -119,6 +122,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.value,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -144,12 +148,12 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 1: user balance incorrectly changed after adding custom metadata"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 1: fisher balance incorrectly changed after adding custom metadata"
         );
@@ -165,6 +169,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params2.user,
             params2.identity,
             params2.value,
+            address(0),
             params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM
@@ -176,6 +181,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params2.user.Address,
             params2.identity,
             params2.value,
+            address(0),
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
@@ -201,12 +207,12 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 2: user balance incorrectly changed after adding custom metadata"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 2: fisher balance incorrectly changed after adding custom metadata"
         );
@@ -246,12 +252,13 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params1.user,
             params1.identity,
             params1.value,
+            address(0),
             params1.nonce,
             params1.priorityFee,
             params1.nonceEVVM
         );
 
-        uint256 amountToReward1 = (5 * evvm.getRewardAmount()) +
+        uint256 amountToReward1 = (5 * core.getRewardAmount()) +
             ((nameService.getPriceToAddCustomMetadata() * 50) / 100) +
             params1.priorityFee;
 
@@ -261,6 +268,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.value,
+            address(0),
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
@@ -286,12 +294,12 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 1: user balance incorrectly changed after adding custom metadata"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             amountToReward1,
             "Error 1: fisher balance incorrectly changed after adding custom metadata"
         );
@@ -307,12 +315,13 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params2.user,
             params2.identity,
             params2.value,
+            address(0),
             params2.nonce,
             params2.priorityFee,
             params2.nonceEVVM
         );
 
-        uint256 amountToReward2 = (5 * evvm.getRewardAmount()) +
+        uint256 amountToReward2 = (5 * core.getRewardAmount()) +
             ((nameService.getPriceToAddCustomMetadata() * 50) / 100) +
             params2.priorityFee;
 
@@ -322,6 +331,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params2.user.Address,
             params2.identity,
             params2.value,
+            address(0),
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
@@ -347,12 +357,12 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 2: user balance incorrectly changed after adding custom metadata"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             amountToReward2 + amountToReward1,
             "Error 2: fisher balance incorrectly changed after adding custom metadata"
         );

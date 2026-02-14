@@ -31,25 +31,27 @@ import {
 import {
     NameServiceError
 } from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-import {
-    StateError
-} from "@evvm/testnet-contracts/library/errors/StateError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     uint256 offerID;
 
+    uint256 totalPriorityFee ;
+
     function executeBeforeSetUp() internal override {
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -63,6 +65,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             "test",
             0.001 ether,
             block.timestamp + 30 days,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
@@ -72,13 +75,18 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             ),
             COMMON_USER_NO_STAKER_3
         );
+
+         totalPriorityFee = _addBalance(
+            COMMON_USER_NO_STAKER_2,
+            0.0001 ether
+        );
     }
 
     function _addBalance(
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             priorityFeeAmount
@@ -90,23 +98,16 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_evvmID()
         external
     {
-        uint256 totalPriorityFee = _addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
-
-        uint256 nonce = 1001;
-        uint256 nonceEVVM = 2002;
-
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForWithdrawOffer(
-                /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                // 🢃 different evvmID 🢃
+                core.getEvvmID() + 1,
                 address(nameService),
                 "test",
                 offerID,
-                nonce
+                address(0),
+                1001
             )
         );
         bytes memory signatureNameService = Erc191TestBuilder
@@ -120,28 +121,29 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             0,
             totalPriorityFee,
             address(nameService),
-            nonceEVVM,
+            2002,
             true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
-            nonce,
+            address(0),
+            1001,
             signatureNameService,
             totalPriorityFee,
-            nonceEVVM,
+            2002,
             signatureEVVM
         );
 
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -155,14 +157,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             "Offer should remain active after withdraw offer reverted"
         );
     }
-
+    
     function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_signer()
         external
     {
-        uint256 totalPriorityFee = _addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
+        
 
         uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
@@ -171,10 +170,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _executeSig_nameService_withdrawOffer(
-                /* 🢃 different signer 🢃 */
+                // 🢃 different signer 🢃
                 COMMON_USER_NO_STAKER_3,
                 "test",
                 offerID,
+                address(0),
                 nonce,
                 totalPriorityFee,
                 nonceEVVM
@@ -182,11 +182,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFee,
@@ -197,7 +198,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -215,10 +216,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_username()
         external
     {
-        uint256 totalPriorityFee = _addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
+        
 
         uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
@@ -228,9 +226,10 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             bytes memory signatureEVVM
         ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
-                /* 🢃 different username 🢃 */
+                // 🢃 different username 🢃
                 "differentTest",
                 offerID,
+                address(0),
                 nonce,
                 totalPriorityFee,
                 nonceEVVM
@@ -238,11 +237,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFee,
@@ -253,7 +253,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -271,10 +271,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_offerId()
         external
     {
-        uint256 totalPriorityFee = _addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
+        
 
         uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
@@ -285,8 +282,9 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
-                /* 🢃 different offerId 🢃 */
+                // 🢃 different offerId 🢃
                 offerID + 1,
+                address(0),
                 nonce,
                 totalPriorityFee,
                 nonceEVVM
@@ -294,11 +292,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFee,
@@ -309,7 +308,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -327,10 +326,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InvalidSignatureOnNameService_nameServiceNonce()
         external
     {
-        uint256 totalPriorityFee = _addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
+        
 
         uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
@@ -342,7 +338,8 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_2,
                 "test",
                 offerID,
-                /* 🢃 different nameServiceNonce 🢃 */
+                address(0),
+                // 🢃 different nameServiceNonce 🢃
                 nonce + 1,
                 totalPriorityFee,
                 nonceEVVM
@@ -350,11 +347,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFee,
@@ -365,7 +363,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -383,10 +381,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__UserIsNotOwnerOfOffer()
         external
     {
-        uint256 totalPriorityFee = _addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
+        
 
         uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
@@ -395,10 +390,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             bytes memory signatureNameService,
             bytes memory signatureEVVM
         ) = _executeSig_nameService_withdrawOffer(
-                /* 🢃 non owner address 🢃 */
+                // 🢃 non owner address 🢃
                 COMMON_USER_NO_STAKER_3,
                 "test",
                 offerID,
+                address(0),
                 nonce,
                 totalPriorityFee,
                 nonceEVVM
@@ -408,10 +404,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.expectRevert(NameServiceError.UserIsNotOwnerOfOffer.selector);
         nameService.withdrawOffer(
-            /* 🢃 non owner address 🢃 */
+            // 🢃 non owner address 🢃
             COMMON_USER_NO_STAKER_3.Address,
             "test",
             offerID,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFee,
@@ -422,7 +419,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -438,12 +435,9 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     }
 
     function test__unit_revert__withdrawOffer_NonceAlreadyUsed() external {
-        uint256 totalPriorityFee = _addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
+        
 
-        /* 🢃 reused nonce 🢃 */
+        // 🢃 reused nonce 🢃
         uint256 nonce = uint256(
             0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
         );
@@ -456,6 +450,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_2,
                 "test",
                 offerID,
+                address(0),
                 nonce,
                 totalPriorityFee,
                 nonceEVVM
@@ -463,11 +458,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(StateError.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFee,
@@ -478,7 +474,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -496,10 +492,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InvalidSignature_fromEvvm()
         external
     {
-        uint256 totalPriorityFee = _addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
+        
 
         uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
@@ -511,20 +504,22 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_2,
                 "test",
                 offerID,
+                address(0),
                 nonce,
-                /* 🢃 different totalPriorityFee 🢃 */
+                // 🢃 different totalPriorityFee 🢃
                 totalPriorityFee + 50,
-                /* 🢃 different nonceEVVM 🢃 */
+                // 🢃 different nonceEVVM 🢃
                 nonceEVVM + 1
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFee,
@@ -535,7 +530,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -553,14 +548,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
     function test__unit_revert__withdrawOffer__InsufficientBalance_fromEvvm()
         external
     {
-        uint256 totalPriorityFee = _addBalance(
-            COMMON_USER_NO_STAKER_2,
-            0.0001 ether
-        );
+        
 
         uint256 nonce = 1001;
         uint256 nonceEVVM = 2002;
-        /* 🢃 insufficient balance 🢃 */
+        // 🢃 insufficient balance 🢃
         totalPriorityFee += 1 ether;
 
         (
@@ -570,6 +562,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 COMMON_USER_NO_STAKER_2,
                 "test",
                 offerID,
+                address(0),
                 nonce,
                 totalPriorityFee,
                 nonceEVVM
@@ -577,11 +570,12 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmError.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         nameService.withdrawOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
             offerID,
+            address(0),
             nonce,
             signatureNameService,
             totalPriorityFee,
@@ -594,7 +588,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         totalPriorityFee -= 1 ether;
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -608,4 +602,5 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             "Offer should remain active after withdraw offer reverted"
         );
     }
+    
 }

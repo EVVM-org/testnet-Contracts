@@ -17,24 +17,26 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
 contract fuzzTest_EVVM_batchPay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             "dummy",
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -50,7 +52,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants {
         uint256 amount,
         uint256 priorityFee
     ) private returns (uint256 totalAmount, uint256 totalPriorityFee) {
-        evvm.addBalance(user.Address, tokenAddress, amount + priorityFee);
+        core.addBalance(user.Address, tokenAddress, amount + priorityFee);
 
         totalAmount = amount;
         totalPriorityFee = priorityFee;
@@ -60,8 +62,8 @@ contract fuzzTest_EVVM_batchPay is Test, Constants {
      * Function to test: payNoStaker_sync
      * PF: Includes priority fee
      * nPF: No priority fee
-     * EX: Includes executor execution
-     * nEX: Does not include executor execution
+     * EX: Includes senderExecutor execution
+     * nEX: Does not include senderExecutor execution
      * ID: Uses a NameService identity
      * AD: Uses an address
      */
@@ -91,7 +93,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants {
                     input.nonce[0] == input.nonce[1])
         );
 
-        EvvmStructs.BatchData[] memory batchData = new EvvmStructs.BatchData[](
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
             2
         );
 
@@ -113,7 +115,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants {
             input.useExecutor[0] ? FISHER.Address : address(0),
             input.isAsyncExec[0]
                 ? input.nonce[0]
-                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+                : core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
             input.isAsyncExec[0]
         );
 
@@ -131,10 +133,10 @@ contract fuzzTest_EVVM_batchPay is Test, Constants {
                 ? input.nonce[1]
                 : (
                     input.isAsyncExec[0] == false
-                        ? evvm.getNextCurrentSyncNonce(
+                        ? core.getNextCurrentSyncNonce(
                             COMMON_USER_NO_STAKER_1.Address
                         ) + 1
-                        : evvm.getNextCurrentSyncNonce(
+                        : core.getNextCurrentSyncNonce(
                             COMMON_USER_NO_STAKER_1.Address
                         )
                 ),
@@ -149,7 +151,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants {
                 input.priorityFee[i]
             );
 
-            batchData[i] = EvvmStructs.BatchData({
+            batchData[i] = CoreStructs.BatchData({
                 from: COMMON_USER_NO_STAKER_1.Address,
                 to_address: input.useToAddress[i]
                     ? COMMON_USER_NO_STAKER_2.Address
@@ -162,21 +164,23 @@ contract fuzzTest_EVVM_batchPay is Test, Constants {
                     ? input.nonce[i]
                     : (
                         input.isAsyncExec[0] == false && i == 1
-                            ? evvm.getNextCurrentSyncNonce(
+                            ? core.getNextCurrentSyncNonce(
                                 COMMON_USER_NO_STAKER_1.Address
                             ) + 1
-                            : evvm.getNextCurrentSyncNonce(
+                            : core.getNextCurrentSyncNonce(
                                 COMMON_USER_NO_STAKER_1.Address
                             )
                     ),
                 isAsyncExec: input.isAsyncExec[i],
-                executor: input.useExecutor[i] ? FISHER.Address : address(0),
+                senderExecutor: input.useExecutor[i]
+                    ? FISHER.Address
+                    : address(0),
                 signature: signature[i]
             });
         }
 
         vm.startPrank(FISHER.Address);
-        (uint256 successfulTransactions, bool[] memory status) = evvm.batchPay(
+        (uint256 successfulTransactions, bool[] memory status) = core.batchPay(
             batchData
         );
         vm.stopPrank();
@@ -187,7 +191,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants {
 
         for (uint256 i = 0; i < 2; i++) {
             assertEq(
-                evvm.getBalance(
+                core.getBalance(
                     COMMON_USER_NO_STAKER_2.Address,
                     input.token[i]
                 ),
@@ -199,21 +203,21 @@ contract fuzzTest_EVVM_batchPay is Test, Constants {
         if (FISHER.Address == COMMON_USER_STAKER.Address) {
             for (uint256 i = 0; i < 2; i++) {
                 assertEq(
-                    evvm.getBalance(COMMON_USER_STAKER.Address, input.token[i]),
+                    core.getBalance(COMMON_USER_STAKER.Address, input.token[i]),
                     input.priorityFee[i],
                     "balance incorrect for staker"
                 );
             }
 
             assertEq(
-                evvm.getBalance(FISHER.Address, PRINCIPAL_TOKEN_ADDRESS),
-                evvm.getRewardAmount() * 2,
-                "executor did not receive correct reward"
+                core.getBalance(FISHER.Address, PRINCIPAL_TOKEN_ADDRESS),
+                core.getRewardAmount() * 2,
+                "senderExecutor did not receive correct reward"
             );
         } else {
             for (uint256 i = 0; i < 2; i++) {
                 assertEq(
-                    evvm.getBalance(
+                    core.getBalance(
                         COMMON_USER_NO_STAKER_1.Address,
                         input.token[i]
                     ),
@@ -222,7 +226,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants {
             }
 
             assertEq(
-                evvm.getBalance(
+                core.getBalance(
                     COMMON_USER_NO_STAKER_3.Address,
                     PRINCIPAL_TOKEN_ADDRESS
                 ),
@@ -232,7 +236,7 @@ contract fuzzTest_EVVM_batchPay is Test, Constants {
 
         for (uint256 i = 0; i < 2; i++) {
             assertEq(
-                evvm.getBalance(
+                core.getBalance(
                     COMMON_USER_NO_STAKER_2.Address,
                     input.token[i]
                 ),

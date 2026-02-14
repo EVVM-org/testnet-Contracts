@@ -17,13 +17,13 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
-    EvvmError
-} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+    CoreError
+} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 contract fuzzTest_EVVM_disperseCaPay is Test, Constants {
     function addBalance(address user, address token, uint256 amount) private {
-        evvm.addBalance(user, token, amount);
+        core.addBalance(user, token, amount);
     }
 
     struct caPayFuzzTestInput {
@@ -38,24 +38,24 @@ contract fuzzTest_EVVM_disperseCaPay is Test, Constants {
         caPayFuzzTestInput memory input
     ) external {
         vm.assume(input.amountA > 0 && input.amountB > 0);
-        HelperCa c = new HelperCa{salt: input.salt}(address(evvm));
+        HelperCa c = new HelperCa{salt: input.salt}(address(core));
         if (input.isCaStaker) {
-            evvm.setPointStaker(address(c), 0x01);
+            core.setPointStaker(address(c), 0x01);
         }
 
         uint256 amountTotal = uint256(input.amountA) + uint256(input.amountB);
 
         addBalance(address(c), input.token, amountTotal);
 
-        EvvmStructs.DisperseCaPayMetadata[]
-            memory toData = new EvvmStructs.DisperseCaPayMetadata[](2);
+        CoreStructs.DisperseCaPayMetadata[]
+            memory toData = new CoreStructs.DisperseCaPayMetadata[](2);
 
-        toData[0] = EvvmStructs.DisperseCaPayMetadata({
+        toData[0] = CoreStructs.DisperseCaPayMetadata({
             amount: input.amountA,
             toAddress: COMMON_USER_NO_STAKER_1.Address
         });
 
-        toData[1] = EvvmStructs.DisperseCaPayMetadata({
+        toData[1] = CoreStructs.DisperseCaPayMetadata({
             amount: input.amountB,
             toAddress: COMMON_USER_NO_STAKER_2.Address
         });
@@ -63,18 +63,18 @@ contract fuzzTest_EVVM_disperseCaPay is Test, Constants {
         c.makeDisperseCaPay(toData, input.token, amountTotal);
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, input.token),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, input.token),
             input.amountA
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, input.token),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, input.token),
             input.amountB
         );
 
         assertEq(
-            evvm.getBalance(address(c), PRINCIPAL_TOKEN_ADDRESS),
-            input.isCaStaker ? evvm.getRewardAmount() : 0
+            core.getBalance(address(c), PRINCIPAL_TOKEN_ADDRESS),
+            input.isCaStaker ? core.getRewardAmount() : 0
         );
     }
 }

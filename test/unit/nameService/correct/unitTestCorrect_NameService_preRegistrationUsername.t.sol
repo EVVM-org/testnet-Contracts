@@ -43,7 +43,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         AccountData memory user,
         uint256 priorityFee
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(user.Address, PRINCIPAL_TOKEN_ADDRESS, priorityFee);
+        core.addBalance(user.Address, PRINCIPAL_TOKEN_ADDRESS, priorityFee);
 
         return priorityFee;
     }
@@ -78,6 +78,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                 params1.user,
                 params1.username,
                 params1.lockNumber,
+                address(0),
                 params1.nonce,
                 params1.priorityFee,
                 params1.nonceEVVM
@@ -90,6 +91,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             keccak256(
                 abi.encodePacked(params1.username, uint256(params1.lockNumber))
             ),
+            address(0),
             params1.nonce,
             signatureNameServiceOne,
             params1.priorityFee,
@@ -120,7 +122,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -128,7 +130,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             "Error NonStaker: balance incorrectly changed after preRegistrationUsername"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error NonStaker: balance incorrectly changed after preRegistrationUsername"
         );
@@ -142,6 +144,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                 params2.user,
                 params2.username,
                 params2.lockNumber,
+                address(0),
                 params2.nonce,
                 params2.priorityFee,
                 params2.nonceEVVM
@@ -153,6 +156,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             keccak256(
                 abi.encodePacked(params2.username, uint256(params2.lockNumber))
             ),
+            address(0),
             params2.nonce,
             signatureNameServiceTwo,
             params2.priorityFee,
@@ -180,7 +184,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             "Error Staker: username not preregistered correctly"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -188,8 +192,8 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             "Error Staker: balance incorrectly changed after preRegistrationUsername"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            evvm.getRewardAmount(),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getRewardAmount(),
             "Error Staker: balance incorrectly changed after preRegistrationUsername"
         );
     }
@@ -227,6 +231,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                 COMMON_USER_NO_STAKER_1,
                 params1.username,
                 params1.lockNumber,
+                address(0),
                 params1.nonce,
                 params1.priorityFee,
                 params1.nonceEVVM
@@ -239,6 +244,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             keccak256(
                 abi.encodePacked(params1.username, uint256(params1.lockNumber))
             ),
+            address(0),
             params1.nonce,
             signatureNameServiceOne,
             params1.priorityFee,
@@ -269,7 +275,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -277,7 +283,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             "Error NonStaker: balance incorrectly changed after preRegistrationUsername"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error NonStaker: balance incorrectly changed after preRegistrationUsername"
         );
@@ -291,6 +297,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                 COMMON_USER_NO_STAKER_2,
                 params2.username,
                 params2.lockNumber,
+                address(0),
                 params2.nonce,
                 params2.priorityFee,
                 params2.nonceEVVM
@@ -302,6 +309,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             keccak256(
                 abi.encodePacked(params2.username, uint256(params2.lockNumber))
             ),
+            address(0),
             params2.nonce,
             signatureNameServiceTwo,
             params2.priorityFee,
@@ -329,7 +337,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             "Error Staker: username not preregistered correctly"
         );
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -337,8 +345,8 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             "Error Staker: balance incorrectly changed after preRegistrationUsername"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            evvm.getRewardAmount() + params2.priorityFee,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getRewardAmount() + params2.priorityFee,
             "Error Staker: balance incorrectly changed after preRegistrationUsername"
         );
     }

@@ -23,7 +23,7 @@ import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     Erc191TestBuilder
 } from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
@@ -31,14 +31,14 @@ import {
     Estimator
 } from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
 import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
+    CoreStorage
+} from "@evvm/testnet-contracts/contracts/core/lib/CoreStorage.sol";
 import {
     AdvancedStrings
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 import {
     Treasury
 } from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
@@ -51,7 +51,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function addBalance(address user, address token, uint256 amount) private {
-        evvm.addBalance(user, token, amount);
+        core.addBalance(user, token, amount);
     }
 
     struct MakeOrderFuzzTestInput {
@@ -86,14 +86,15 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         P2PSwapStructs.MetadataMakeOrder memory metadata = P2PSwapStructs
             .MetadataMakeOrder({
                 nonce: input.nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 amountA: input.amountA,
                 amountB: input.amountB
             });
         uint256 rewardAmountMateToken = priorityFee > 0
-            ? (evvm.getRewardAmount() * 3)
-            : (evvm.getRewardAmount() * 2);
+            ? (core.getRewardAmount() * 3)
+            : (core.getRewardAmount() * 2);
 
         uint256 initialContractBalance = 50000000000000000000;
 
@@ -115,8 +116,9 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
                 address(p2pSwap),
+                address(0),
                 input.nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -134,8 +136,8 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
-                address(evvm),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenA,
@@ -173,31 +175,31 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         assertEq(marketInfo.ordersAvailable, 1);
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA),
             0 ether
         );
         if (tokenA == PRINCIPAL_TOKEN_ADDRESS) {
             assertEq(
-                evvm.getBalance(address(p2pSwap), tokenA),
+                core.getBalance(address(p2pSwap), tokenA),
                 input.amountA + initialContractBalance
             );
         } else {
-            assertEq(evvm.getBalance(address(p2pSwap), tokenA), input.amountA);
+            assertEq(core.getBalance(address(p2pSwap), tokenA), input.amountA);
         }
 
         if (input.hasPriorityFee) {
             if (tokenA == PRINCIPAL_TOKEN_ADDRESS) {
                 assertEq(
-                    evvm.getBalance(COMMON_USER_STAKER.Address, tokenA),
+                    core.getBalance(COMMON_USER_STAKER.Address, tokenA),
                     input.priorityFee + rewardAmountMateToken
                 );
             } else {
                 assertEq(
-                    evvm.getBalance(COMMON_USER_STAKER.Address, tokenA),
+                    core.getBalance(COMMON_USER_STAKER.Address, tokenA),
                     input.priorityFee
                 );
                 assertEq(
-                    evvm.getBalance(COMMON_USER_STAKER.Address, tokenB),
+                    core.getBalance(COMMON_USER_STAKER.Address, tokenB),
                     rewardAmountMateToken
                 );
             }

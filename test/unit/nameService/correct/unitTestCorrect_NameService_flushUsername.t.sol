@@ -50,9 +50,11 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -65,6 +67,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_1,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
@@ -76,6 +79,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_2,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
             ),
@@ -87,6 +91,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_3,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7
             ),
@@ -104,7 +109,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         private
         returns (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToFlushUsername(usernameToFlushCustomMetadata) +
@@ -138,6 +143,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -152,6 +158,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -168,13 +175,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "username owner balance should be zeroed"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((5 * core.getRewardAmount()) * amountOfSlotsBefore) +
                 params.priorityFee,
             "fisher no staker balance should be increased correctly"
         );
@@ -201,6 +208,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -215,6 +223,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -231,13 +240,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "username owner balance should be zeroed"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((5 * core.getRewardAmount()) * amountOfSlotsBefore) +
                 params.priorityFee,
             "fisher no staker balance should be increased correctly"
         );
@@ -264,6 +273,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -278,6 +288,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -294,13 +305,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "username owner balance should be zeroed"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((5 * core.getRewardAmount()) * amountOfSlotsBefore) +
                 params.priorityFee,
             "fisher staker balance should be increased correctly"
         );
@@ -325,6 +336,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -339,6 +351,7 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -355,13 +368,13 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "username owner balance should be zeroed"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((5 * core.getRewardAmount()) * amountOfSlotsBefore) +
                 params.priorityFee,
             "fisher staker balance should be increased correctly"
         );

@@ -18,7 +18,7 @@ pragma solidity ^0.8.0;
  * @title P2P Swap Service
  * @author Mate labs  
  * @notice Peer-to-peer DEX for token trading in EVVM
- * @dev Order book-style trading with dynamic markets. Fee models: Proportional/Fixed/Tolerance. Fee split: 50% seller, 40% service, 10% staker (configurable). State.sol (async nonces), Evvm.sol (payments: lock/fill/settle). Time-delayed governance (1d). EIP-191 signatures.
+ * @dev Order book-style trading with dynamic markets. Fee models: Proportional/Fixed/Tolerance. Fee split: 50% seller, 40% service, 10% staker (configurable). State.sol (async nonces), Core.sol (payments: lock/fill/settle). Time-delayed governance (1d). EIP-191 signatures.
  */
 
 import {
@@ -31,8 +31,8 @@ import {
 import {
     P2PSwapStructs
 } from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
-import {EvvmStructs} from "@evvm/testnet-contracts/interfaces/IEvvm.sol";
 import {EvvmService} from "@evvm/testnet-contracts/library/EvvmService.sol";
+import "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
 contract P2PSwap is EvvmService, P2PSwapStructs {
     address owner;
@@ -71,11 +71,10 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
     mapping(address => uint256) balancesOfContract;
 
     constructor(
-        address _evvmAddress,
+        address _coreAddress,
         address _stakingAddress,
-        address _stateAddress,
         address _owner
-    ) EvvmService(_evvmAddress, _stakingAddress, _stateAddress) {
+    ) EvvmService(_coreAddress, _stakingAddress) {
         owner = _owner;
         maxLimitFillFixedFee = 0.001 ether;
         percentageFee = 500;
@@ -92,7 +91,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
      *
      * Order Creation Flow:
      * 1. Validates signature via State.sol
-     * 2. Locks metadata.amountA of tokenA via Evvm.sol
+     * 2. Locks metadata.amountA of tokenA via Core.sol
      * 3. Finds or creates market for token pair
      * 4. Assigns order slot (reuses empty slots)
      * 5. Stores order in ordersInsideMarket mapping
@@ -104,7 +103,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
      * - Hash includes tokenA, tokenB, amountA, amountB
      * - Prevents replay attacks
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Locks tokenA via requestPay (metadata.amountA)
      * - Priority fee handling (if priorityFeeEvvm > 0)
      * - Staker reward: 2-3x MATE via _rewardExecutor
@@ -132,7 +131,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external returns (uint256 market, uint256 orderId) {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForMakeOrder(
                 metadata.tokenA,
@@ -140,6 +139,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
                 metadata.amountA,
                 metadata.amountB
             ),
+            address(0),
             metadata.nonce,
             true,
             signature
@@ -183,7 +183,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
             metadata.amountB
         );
 
-        if (evvm.isAddressStaker(msg.sender)) {
+        if (core.isAddressStaker(msg.sender)) {
             if (priorityFeeEvvm > 0) {
                 // send the executor the priorityFee
                 makeCaPay(msg.sender, metadata.tokenA, priorityFeeEvvm);
@@ -212,7 +212,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
      * - Hash includes tokenA, tokenB, orderId
      * - Prevents replay attacks and double cancellation
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Refunds tokenA via makeCaPay (order.amountA)
      * - Priority fee via requestPay (if > 0)
      * - Staker reward: 2-3x MATE via _rewardExecutor
@@ -236,13 +236,14 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForCancelOrder(
                 metadata.tokenA,
                 metadata.tokenB,
                 metadata.orderId
             ),
+            metadata.originExecutor,
             metadata.nonce,
             true,
             metadata.signature
@@ -272,7 +273,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
 
         _clearOrderAndUpdateMarket(market, metadata.orderId);
 
-        if (evvm.isAddressStaker(msg.sender) && priorityFeeEvvm > 0) {
+        if (core.isAddressStaker(msg.sender) && priorityFeeEvvm > 0) {
             makeCaPay(msg.sender, MATE_TOKEN_ADDRESS, priorityFeeEvvm);
         }
         _rewardExecutor(msg.sender, priorityFeeEvvm > 0 ? 3 : 2);
@@ -300,7 +301,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
      * - Hash includes tokenA, tokenB, orderId
      * - Prevents double filling
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Collects tokenB via requestPay (amountB + fee)
      * - Distributes via makeDisperseCaPay:
      *   * Seller: amountB + (fee * seller%)
@@ -328,13 +329,14 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForDispatchOrder(
                 metadata.tokenA,
                 metadata.tokenB,
                 metadata.orderId
             ),
+            metadata.originExecutor,
             metadata.nonce,
             true,
             metadata.signature
@@ -411,7 +413,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
      * - Hash includes tokenA, tokenB, orderId
      * - Prevents double filling
      *
-     * Evvm.sol Integration:
+     * Core.sol Integration:
      * - Collects tokenB via requestPay (variable amount)
      * - Distributes via makeDisperseCaPay:
      *   * Seller: amountB + (finalFee * seller%)
@@ -450,13 +452,14 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         bytes memory signatureEvvm,
         uint256 maxFillFixedFee ///@dev for testing purposes
     ) external {
-        state.validateAndConsumeNonce(
+        core.validateAndConsumeNonce(
             user,
             Hash.hashDataForDispatchOrder(
                 metadata.tokenA,
                 metadata.tokenB,
                 metadata.orderId
             ),
+            metadata.originExecutor,
             metadata.nonce,
             true,
             metadata.signature
@@ -608,11 +611,11 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
      * @param multiplier The reward multiplier (2, 3, 4, or 5)
      */
     function _rewardExecutor(address executor, uint256 multiplier) internal {
-        if (evvm.isAddressStaker(executor)) {
+        if (core.isAddressStaker(executor)) {
             makeCaPay(
                 executor,
                 MATE_TOKEN_ADDRESS,
-                evvm.getRewardAmount() * multiplier
+                core.getRewardAmount() * multiplier
             );
         }
     }
@@ -673,11 +676,11 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
         uint256 executorAmount = priorityFee +
             ((fee * rewardPercentage.mateStaker) / 10_000);
 
-        EvvmStructs.DisperseCaPayMetadata[]
-            memory toData = new EvvmStructs.DisperseCaPayMetadata[](2);
+        CoreStructs.DisperseCaPayMetadata[]
+            memory toData = new CoreStructs.DisperseCaPayMetadata[](2);
 
-        toData[0] = EvvmStructs.DisperseCaPayMetadata(sellerAmount, seller);
-        toData[1] = EvvmStructs.DisperseCaPayMetadata(executorAmount, executor);
+        toData[0] = CoreStructs.DisperseCaPayMetadata(sellerAmount, seller);
+        toData[1] = CoreStructs.DisperseCaPayMetadata(executorAmount, executor);
 
         balancesOfContract[token] += (fee * rewardPercentage.service) / 10_000;
 

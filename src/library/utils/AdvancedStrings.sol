@@ -146,7 +146,7 @@ library AdvancedStrings {
         uint256 evvmId,
         address serviceAddress,
         bytes32 hashPayload,
-        // address executor,
+        address executor,
         uint256 nonce,
         bool isAsyncExec
     ) internal pure returns (string memory) {
@@ -158,10 +158,8 @@ library AdvancedStrings {
                 ",",
                 bytes32ToString(hashPayload),
                 ",",
-                /**
                 addressToString(executor),
                 ",",
-                 */
                 uintToString(nonce),
                 ",",
                 boolToString(isAsyncExec)

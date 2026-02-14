@@ -52,9 +52,11 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -68,6 +70,7 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             USERNAME,
             AMOUNT_OFFER,
             EXPIRATION_DATE,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -83,7 +86,7 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             priorityFeeAmount
@@ -103,7 +106,6 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 67,
-            
             signatureEVVM: ""
         });
 
@@ -116,6 +118,7 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             params.user,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -127,6 +130,7 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -157,8 +161,8 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() +
                 ((checkData.amount * 1) / 796) +
                 params.priorityFee),
             "Error: fisher balance not correct"
@@ -176,7 +180,6 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             signatureNameService: "",
             priorityFee: 0.0001 ether,
             nonceEVVM: 67,
-            
             signatureEVVM: ""
         });
 
@@ -189,6 +192,7 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             params.user,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -200,6 +204,7 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -230,8 +235,8 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() +
                 ((checkData.amount * 1) / 796) +
                 params.priorityFee),
             "Error: fisher balance not correct"
@@ -249,7 +254,6 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             signatureNameService: "",
             priorityFee: 0,
             nonceEVVM: 67,
-            
             signatureEVVM: ""
         });
 
@@ -262,6 +266,7 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             params.user,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -273,6 +278,7 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -303,17 +309,15 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() +
                 ((checkData.amount * 1) / 796) +
                 params.priorityFee),
             "Error: fisher balance not correct"
         );
     }
 
-    function test__unit_correct__withdrawOffer__staking_priorityFee()
-        external
-    {
+    function test__unit_correct__withdrawOffer__staking_priorityFee() external {
         Params memory params = Params({
             user: USER,
             username: USERNAME,
@@ -322,7 +326,6 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             signatureNameService: "",
             priorityFee: 0.0001 ether,
             nonceEVVM: 67,
-            
             signatureEVVM: ""
         });
 
@@ -335,6 +338,7 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             params.user,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -346,6 +350,7 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.offerID,
+            address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -376,8 +381,8 @@ contract unitTestCorrect_NameService_withdrawOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() +
                 ((checkData.amount * 1) / 796) +
                 params.priorityFee),
             "Error: fisher balance not correct"

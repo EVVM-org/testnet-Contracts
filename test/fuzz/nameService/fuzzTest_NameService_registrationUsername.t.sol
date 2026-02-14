@@ -45,7 +45,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         private
         returns (uint256 registrationPrice, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceOfRegistration(username) + priorityFee
@@ -131,6 +131,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             USER,
             USERNAME,
             input.lockNumber,
+            address(0),
             0
         );
 
@@ -153,7 +154,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         ) = _executeSig_nameService_registrationUsername(
             params.user,
             USERNAME,
-            params.lockNumber,
+            params.lockNumber,address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -163,7 +164,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params.user.Address,
             USERNAME,
-            params.lockNumber,
+            params.lockNumber,address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -183,13 +184,13 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error no staker: balance incorrectly changed after registration"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error no staker: balance incorrectly changed after registration"
         );
@@ -210,6 +211,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
             USER,
             USERNAME,
             input.lockNumber,
+            address(0),
             0
         );
 
@@ -232,7 +234,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         ) = _executeSig_nameService_registrationUsername(
             params.user,
             USERNAME,
-            params.lockNumber,
+            params.lockNumber,address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -242,7 +244,7 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         nameService.registrationUsername(
             params.user.Address,
             USERNAME,
-            params.lockNumber,
+            params.lockNumber,address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -262,14 +264,14 @@ contract fuzzTest_NameService_registrationUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error no staker: balance incorrectly changed after registration"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (50 * evvm.getRewardAmount()) + params.priorityFee,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (50 * core.getRewardAmount()) + params.priorityFee,
             "Error staker: balance incorrectly changed after registration"
         );
     }

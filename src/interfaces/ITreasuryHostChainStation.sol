@@ -123,7 +123,7 @@ interface ITreasuryHostChainStation {
     function gateway() external view returns (address);
     function getAdmin() external view returns (ProposalStructs.AddressTypeProposal memory);
     function getAxelarConfig() external view returns (HostChainStationStructs.AxelarConfig memory);
-    function getEvvmAddress() external view returns (address);
+    function getCoreAddress() external view returns (address);
     function getFisherExecutor() external view returns (ProposalStructs.AddressTypeProposal memory);
     function getHyperlaneConfig() external view returns (HostChainStationStructs.HyperlaneConfig memory);
     function getIfUsedAsyncNonce(address user, uint256 nonce) external view returns (bool);

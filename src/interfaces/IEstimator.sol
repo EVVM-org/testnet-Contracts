@@ -30,8 +30,8 @@ interface IEstimator {
     function getActualEpochInUint() external view returns (uint256);
     function getAddressStakingMetadata() external view returns (AddressTypeProposal memory);
     function getAdminMetadata() external view returns (AddressTypeProposal memory);
+    function getCoreAddressMetadata() external view returns (AddressTypeProposal memory);
     function getEpochMetadata() external view returns (EpochMetadata memory);
-    function getEvvmAddressMetadata() external view returns (AddressTypeProposal memory);
     function makeEstimation(address _user)
         external
         returns (

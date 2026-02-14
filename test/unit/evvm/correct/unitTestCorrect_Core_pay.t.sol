@@ -20,18 +20,20 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {EvvmError} from "@evvm/testnet-contracts/library/errors/EvvmError.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-contract unitTestCorrect_EVVM_pay is Test, Constants {
+contract unitTestCorrect_Core_pay is Test, Constants {
     function executeBeforeSetUp() internal override {
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             "dummy",
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -39,7 +41,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             )
         );
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
     }
 
     function _addBalance(
@@ -48,15 +50,15 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         uint256 _amount,
         uint256 _priorityFee
     ) private returns (uint256 amount, uint256 priorityFee) {
-        evvm.addBalance(_user.Address, _token, _amount + _priorityFee);
+        core.addBalance(_user.Address, _token, _amount + _priorityFee);
         return (_amount, _priorityFee);
     }
 
     function test__unit_correct__pay__sync_noStaker_noExecutor() external {
-        uint256 syncNonce_1 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_1 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         );
-        uint256 syncNonce_2 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_2 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         ) + 1;
 
@@ -89,7 +91,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -104,19 +106,19 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount_2 + priorityFee_1 + priorityFee_2,
             "User 1 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1,
             "User 2 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -139,7 +141,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -154,19 +156,19 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             priorityFee_1 + priorityFee_2,
             "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1 + amount_2,
             "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -176,10 +178,10 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
     }
 
     function test__unit_correct__pay__sync_noStaker_Executor() external {
-        uint256 syncNonce_1 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_1 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         );
-        uint256 syncNonce_2 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_2 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         ) + 1;
 
@@ -214,7 +216,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -229,19 +231,19 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount_2 + priorityFee_1 + priorityFee_2,
             "User 1 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1,
             "User 2 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -264,7 +266,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -279,19 +281,19 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             priorityFee_1 + priorityFee_2,
             "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1 + amount_2,
             "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -333,7 +335,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -348,19 +350,19 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount_2 + priorityFee_1 + priorityFee_2,
             "User 1 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1,
             "User 2 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -383,7 +385,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -398,19 +400,19 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             priorityFee_1 + priorityFee_2,
             "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1 + amount_2,
             "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -454,7 +456,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -469,19 +471,19 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount_2 + priorityFee_1 + priorityFee_2,
             "User 1 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1,
             "User 2 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -504,7 +506,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -519,19 +521,19 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             priorityFee_1 + priorityFee_2,
             "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1 + amount_2,
             "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -541,10 +543,10 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
     }
 
     function test__unit_correct__pay__sync_staker_noExecutor() external {
-        uint256 syncNonce_1 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_1 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         );
-        uint256 syncNonce_2 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_2 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         ) + 1;
 
@@ -577,7 +579,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -592,29 +594,29 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount_2 + priorityFee_2,
             "User 1 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1,
             "User 2 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1,
             "Staker balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            evvm.getRewardAmount(),
+            core.getRewardAmount(),
             "Staker balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
@@ -633,7 +635,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -648,38 +650,38 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0,
             "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1 + amount_2,
             "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1 + priorityFee_2,
             "Staker balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            (evvm.getRewardAmount() * 2),
+            (core.getRewardAmount() * 2),
             "Staker balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
     }
 
     function test__unit_correct__pay__sync_staker_Executor() external {
-        uint256 syncNonce_1 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_1 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         );
-        uint256 syncNonce_2 = evvm.getNextCurrentSyncNonce(
+        uint256 syncNonce_2 = core.getNextCurrentSyncNonce(
             COMMON_USER_NO_STAKER_1.Address
         ) + 1;
 
@@ -714,7 +716,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -729,29 +731,29 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount_2 + priorityFee_2,
             "User 1 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1,
             "User 2 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1,
             "Staker balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            evvm.getRewardAmount(),
+            core.getRewardAmount(),
             "Staker balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
@@ -770,7 +772,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -785,29 +787,29 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0,
             "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1 + amount_2,
             "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1 + priorityFee_2,
             "Staker balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            (evvm.getRewardAmount() * 2),
+            (core.getRewardAmount() * 2),
             "Staker balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
     }
@@ -845,7 +847,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -860,28 +862,28 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount_2 + priorityFee_2,
             "User 1 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1,
             "User 2 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            evvm.getRewardAmount(),
+            core.getRewardAmount(),
             "Staker balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1,
             "Staker balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
@@ -901,7 +903,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -916,28 +918,28 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0,
             "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1 + amount_2,
             "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            evvm.getRewardAmount() * 2,
+            core.getRewardAmount() * 2,
             "Staker balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1 + priorityFee_2,
             "Staker balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
@@ -978,7 +980,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -993,28 +995,28 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             amount_1 + priorityFee_2,
             "User 1 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1,
             "User 2 balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            evvm.getRewardAmount(),
+            core.getRewardAmount(),
             "Staker balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1,
             "Staker balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
         );
@@ -1034,7 +1036,7 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        evvm.pay(
+        core.pay(
             COMMON_USER_NO_STAKER_1.Address,
             address(0),
             "dummy",
@@ -1049,28 +1051,28 @@ contract unitTestCorrect_EVVM_pay is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0,
             "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             amount_1 + amount_2,
             "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_STAKER.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
-            evvm.getRewardAmount() * 2,
+            core.getRewardAmount() * 2,
             "Staker balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1 + priorityFee_2,
             "Staker balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );

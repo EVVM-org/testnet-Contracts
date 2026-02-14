@@ -4,20 +4,26 @@
 pragma solidity ^0.8.0;
 
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/library/structs/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 import {
     ProposalStructs
 } from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
 
 /**
- * @title EvvmStorage - Storage Layout for EVVM Core
+ * @title CoreStorage - Storage Layout for EVVM Core
  * @author Mate labs
- * @notice Storage layout for Evvm.sol proxy pattern
- * @dev Storage layout for upgradeable Evvm.sol. Constants, external addresses (State, NameService, Treasury, Staking), governance, balance management, configuration. Append-only for upgrade safety.
+ * @notice Storage layout for Core.sol proxy pattern
+ * @dev Storage layout for upgradeable Core.sol. 
+ *      Constants, 
+ *      external addresses (State, NameService, Treasury, Staking), 
+ *      governance, 
+ *      balance management, 
+ *      configuration.
+ *      Append-only for upgrade safety.
  */
 
-abstract contract EvvmStorage {
+abstract contract CoreStorage {
     //░▒▓█ Constants ██████████████████████████████████████████████████████████████████▓▒░
 
     /**
@@ -71,7 +77,6 @@ abstract contract EvvmStorage {
      */
     address treasuryAddress;
 
-    address stateAddress;
 
     //░▒▓█ Token Whitelist Proposal State ██████████████████████████████████████████████▓▒░
 
@@ -147,7 +152,7 @@ abstract contract EvvmStorage {
      * - Part of EIP-191 signature payload in State
      * - Prevents cross-chain replay attacks
      */
-    EvvmStructs.EvvmMetadata evvmMetadata;
+    CoreStructs.EvvmMetadata evvmMetadata;
 
     //░▒▓█ Admin Governance State ██████████████████████████████████████████████████████▓▒░
 
@@ -197,4 +202,35 @@ abstract contract EvvmStorage {
      *      Ensures ordered processing of bridge deposit transactions
      */
     mapping(address user => uint256 nonce) nextFisherDepositNonce;
+
+    //░▒▓█ Nonce State ██████████████████████████████████████████████████████████▓▒░
+
+
+    ProposalStructs.AddressTypeProposal userValidatorAddress;
+
+
+    /**
+     * @notice Flexible nonce tracking for asynchronous transactions
+     * @dev Nonces can be used in any order but only once
+     *      Provides flexibility for parallel transaction submission
+     *      Marked as used (true) after consumption
+     */
+    mapping(address user => mapping(uint256 nonce => bool isUsed)) asyncNonce;
+
+    /**
+     * @notice Service-specific async nonce reservation system
+     * @dev Maps user address to nonce to reserved service address
+     *      Allows services to reserve nonces before execution
+     *      Prevents conflicts between competing services
+     */
+    mapping(address user => mapping(uint256 nonce => address serviceReserved))
+         asyncNonceReservedPointers;
+
+    /**
+     * @notice Sequential nonce tracking for synchronous transactions
+     * @dev Nonces must be used in strict sequential order (0, 1, 2, ...)
+     *      Provides ordered transaction execution and simpler replay protection
+     *      Incremented after each successful sync transaction
+     */
+    mapping(address user => uint256 nonce)  nextSyncNonce;
 }

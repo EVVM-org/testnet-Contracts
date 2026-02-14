@@ -49,7 +49,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
         private
         returns (uint256 totalOfferAmount, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             offerAmount + priorityFeeAmount
@@ -63,9 +63,11 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -127,7 +129,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.user,
             params.username,
             params.amount,
-            params.expiratonDate,
+            params.expiratonDate,address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -138,7 +140,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.amount,
-            params.expiratonDate,
+            params.expiratonDate,address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -168,8 +170,8 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() +
                 ((uint256(params.amount) * 125) / 100_000) +
                 params.priorityFee),
             "Error: fisherr balance not correct"
@@ -218,7 +220,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.user,
             params.username,
             params.amount,
-            params.expiratonDate,
+            params.expiratonDate,address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -229,7 +231,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.user.Address,
             params.username,
             params.amount,
-            params.expiratonDate,
+            params.expiratonDate,address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -259,8 +261,8 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() +
                 ((uint256(params.amount) * 125) / 100_000) +
                 params.priorityFee),
             "Error: fisherr balance not correct"

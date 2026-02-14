@@ -33,7 +33,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         uint256 stakingAmount,
         uint256 priorityFee
     ) private returns (uint256 amount, uint256 amountPriorityFee) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking() * stakingAmount) + priorityFee
@@ -92,6 +92,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsNpf.user,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
+            address(0),
             paramsNpf.nonce,
             paramsNpf.priorityFeeEVVM,
             paramsNpf.nonceEVVM
@@ -102,6 +103,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsNpf.user.Address,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
+            address(0),
             paramsNpf.nonce,
             paramsNpf.signatureStaking,
             paramsNpf.priorityFeeEVVM,
@@ -117,7 +119,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historyNpf = staking.getAddressHistory(paramsNpf.user.Address);
         assertTrue(
-            evvm.isAddressStaker(paramsNpf.user.Address),
+            core.isAddressStaker(paramsNpf.user.Address),
             "Error [execution noPriorityFee]: User should be marked as staker after staking"
         );
 
@@ -143,13 +145,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error [execution noPriorityFee]: Fisher principal token balance should be 0 after staking"
         );
 
         assertEq(
-            evvm.getBalance(paramsNpf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(paramsNpf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error [execution noPriorityFee]: User principal token balance should be 0 after staking"
         );
@@ -169,6 +171,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsPf.user,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
+            address(0),
             paramsPf.nonce,
             paramsPf.priorityFeeEVVM,
             paramsPf.nonceEVVM
@@ -179,6 +182,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsPf.user.Address,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
+            address(0),
             paramsPf.nonce,
             paramsPf.signatureStaking,
             paramsPf.priorityFeeEVVM,
@@ -194,7 +198,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historyPf = staking.getAddressHistory(paramsPf.user.Address);
         assertTrue(
-            evvm.isAddressStaker(paramsPf.user.Address),
+            core.isAddressStaker(paramsPf.user.Address),
             "Error [execution priorityFee]: User should be marked as staker after staking"
         );
 
@@ -220,13 +224,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error [execution priorityFee]: Fisher principal token balance should be 0 after staking"
         );
 
         assertEq(
-            evvm.getBalance(paramsPf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(paramsPf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error [execution priorityFee]: User principal token balance should be 0 after staking"
         );
@@ -272,6 +276,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsNpf.user,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
+            address(0),
             paramsNpf.nonce,
             paramsNpf.priorityFeeEVVM,
             paramsNpf.nonceEVVM
@@ -282,6 +287,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsNpf.user.Address,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
+            address(0),
             paramsNpf.nonce,
             paramsNpf.signatureStaking,
             paramsNpf.priorityFeeEVVM,
@@ -297,7 +303,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historyNpf = staking.getAddressHistory(paramsNpf.user.Address);
         assertTrue(
-            evvm.isAddressStaker(paramsNpf.user.Address),
+            core.isAddressStaker(paramsNpf.user.Address),
             "Error [execution noPriorityFee]: User should be marked as staker after staking"
         );
 
@@ -323,13 +329,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount() * 2) * 1) + paramsNpf.priorityFeeEVVM,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount() * 2) * 1) + paramsNpf.priorityFeeEVVM,
             "Error [execution noPriorityFee]: Fisher principal token balance should be incremented after staking"
         );
 
         assertEq(
-            evvm.getBalance(paramsNpf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(paramsNpf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error [execution noPriorityFee]: User principal token balance should be 0 after staking"
         );
@@ -349,6 +355,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsPf.user,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
+            address(0),
             paramsPf.nonce,
             paramsPf.priorityFeeEVVM,
             paramsPf.nonceEVVM
@@ -359,6 +366,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsPf.user.Address,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
+            address(0),
             paramsPf.nonce,
             paramsPf.signatureStaking,
             paramsPf.priorityFeeEVVM,
@@ -374,7 +382,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historyPf = staking.getAddressHistory(paramsPf.user.Address);
         assertTrue(
-            evvm.isAddressStaker(paramsPf.user.Address),
+            core.isAddressStaker(paramsPf.user.Address),
             "Error [execution priorityFee]: User should be marked as staker after staking"
         );
 
@@ -400,15 +408,15 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount() * 2) * 2) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount() * 2) * 2) +
                 paramsNpf.priorityFeeEVVM +
                 paramsPf.priorityFeeEVVM,
             "Error [execution priorityFee]: Fisher principal token balance should be incremented after staking"
         );
 
         assertEq(
-            evvm.getBalance(paramsPf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(paramsPf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error [execution priorityFee]: User principal token balance should be 0 after staking"
         );
@@ -422,6 +430,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             true,
             30,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -465,6 +474,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsNpf.user,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
+            address(0),
             paramsNpf.nonce,
             paramsNpf.priorityFeeEVVM,
             paramsNpf.nonceEVVM
@@ -475,6 +485,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsNpf.user.Address,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
+            address(0),
             paramsNpf.nonce,
             paramsNpf.signatureStaking,
             paramsNpf.priorityFeeEVVM,
@@ -490,7 +501,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historyNpf = staking.getAddressHistory(paramsNpf.user.Address);
         assertTrue(
-            evvm.isAddressStaker(paramsNpf.user.Address),
+            core.isAddressStaker(paramsNpf.user.Address),
             "Error [execution noPriorityFee]: User should be marked as staker after staking"
         );
 
@@ -516,13 +527,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error [execution noPriorityFee]: Fisher principal token balance should be 0 after staking"
         );
 
         assertEq(
-            evvm.getBalance(paramsNpf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(paramsNpf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             staking.priceOfStaking() * 5,
             "Error [execution noPriorityFee]: User principal token balance should be incremented after unstaking"
         );
@@ -538,6 +549,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsPf.user,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
+            address(0),
             paramsPf.nonce,
             paramsPf.priorityFeeEVVM,
             paramsPf.nonceEVVM
@@ -548,6 +560,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsPf.user.Address,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
+            address(0),
             paramsPf.nonce,
             paramsPf.signatureStaking,
             paramsPf.priorityFeeEVVM,
@@ -563,7 +576,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historyPf = staking.getAddressHistory(paramsPf.user.Address);
         assertTrue(
-            evvm.isAddressStaker(paramsPf.user.Address),
+            core.isAddressStaker(paramsPf.user.Address),
             "Error [execution priorityFee]: User should be marked as staker after staking"
         );
 
@@ -589,13 +602,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error [execution priorityFee]: Fisher principal token balance should be 0 after staking"
         );
 
         assertEq(
-            evvm.getBalance(paramsPf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(paramsPf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             staking.priceOfStaking() * 10,
             "Error [execution priorityFee]: User principal token balance should be incremented after unstaking"
         );
@@ -609,6 +622,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             true,
             30,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -652,6 +666,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsNpf.user,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
+            address(0),
             paramsNpf.nonce,
             paramsNpf.priorityFeeEVVM,
             paramsNpf.nonceEVVM
@@ -662,6 +677,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsNpf.user.Address,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
+            address(0),
             paramsNpf.nonce,
             paramsNpf.signatureStaking,
             paramsNpf.priorityFeeEVVM,
@@ -677,7 +693,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historyNpf = staking.getAddressHistory(paramsNpf.user.Address);
         assertTrue(
-            evvm.isAddressStaker(paramsNpf.user.Address),
+            core.isAddressStaker(paramsNpf.user.Address),
             "Error [execution noPriorityFee]: User should be marked as staker after staking"
         );
 
@@ -703,13 +719,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount() * 2) * 1) + paramsNpf.priorityFeeEVVM,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount() * 2) * 1) + paramsNpf.priorityFeeEVVM,
             "Error [execution noPriorityFee]: Fisher principal token balance should be incremented after unstaking"
         );
 
         assertEq(
-            evvm.getBalance(paramsNpf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(paramsNpf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             staking.priceOfStaking() * 5,
             "Error [execution noPriorityFee]: User principal token balance should be incremented after unstaking"
         );
@@ -725,6 +741,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsPf.user,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
+            address(0),
             paramsPf.nonce,
             paramsPf.priorityFeeEVVM,
             paramsPf.nonceEVVM
@@ -735,6 +752,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             paramsPf.user.Address,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
+            address(0),
             paramsPf.nonce,
             paramsPf.signatureStaking,
             paramsPf.priorityFeeEVVM,
@@ -750,7 +768,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historyPf = staking.getAddressHistory(paramsPf.user.Address);
         assertTrue(
-            evvm.isAddressStaker(paramsPf.user.Address),
+            core.isAddressStaker(paramsPf.user.Address),
             "Error [execution priorityFee]: User should be marked as staker after staking"
         );
 
@@ -776,15 +794,15 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount() * 2) * 2) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount() * 2) * 2) +
                 paramsNpf.priorityFeeEVVM +
                 paramsPf.priorityFeeEVVM,
             "Error [execution priorityFee]: Fisher principal token balance should be incremented after unstaking"
         );
 
         assertEq(
-            evvm.getBalance(paramsPf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(paramsPf.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             staking.priceOfStaking() * 10,
             "Error [execution priorityFee]: User principal token balance should be incremented after unstaking"
         );
@@ -798,6 +816,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             true,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -829,6 +848,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
@@ -839,6 +859,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -854,7 +875,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historySyncNpf = staking.getAddressHistory(params.user.Address);
         assertFalse(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "Error: User should be marked as non-staker after full unstaking"
         );
 
@@ -880,13 +901,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error: Fisher principal token balance should be 0 after full unstaking"
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             staking.priceOfStaking() * 10,
             "Error: User principal token balance should be incremented after full unstaking"
         );
@@ -900,6 +921,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             true,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -931,6 +953,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
@@ -941,6 +964,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -956,7 +980,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historySyncNpf = staking.getAddressHistory(params.user.Address);
         assertFalse(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "Error: User should be marked as non-staker after full unstaking"
         );
 
@@ -982,13 +1006,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error: Fisher principal token balance should be 0 after full unstaking"
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             staking.priceOfStaking() * 10,
             "Error: User principal token balance should be incremented after full unstaking"
         );
@@ -1002,6 +1026,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             true,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -1033,6 +1058,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
@@ -1043,6 +1069,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -1058,7 +1085,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historySyncNpf = staking.getAddressHistory(params.user.Address);
         assertFalse(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "Error: User should be marked as non-staker after full unstaking"
         );
 
@@ -1084,13 +1111,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2) + params.priorityFeeEVVM,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2) + params.priorityFeeEVVM,
             "Error: Staker principal token balance should be incremented after full unstaking"
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             staking.priceOfStaking() * 10,
             "Error: User principal token balance should be incremented after full unstaking"
         );
@@ -1104,6 +1131,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             true,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -1135,6 +1163,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
@@ -1145,6 +1174,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -1160,7 +1190,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historySyncNpf = staking.getAddressHistory(params.user.Address);
         assertFalse(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "Error: User should be marked as non-staker after full unstaking"
         );
 
@@ -1186,13 +1216,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2) + params.priorityFeeEVVM,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2) + params.priorityFeeEVVM,
             "Error: Staker principal token balance should be incremented after full unstaking"
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             staking.priceOfStaking() * 10,
             "Error: User principal token balance should be incremented after full unstaking"
         );
@@ -1206,6 +1236,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             true,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -1222,6 +1253,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             false,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
@@ -1254,6 +1286,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
@@ -1264,6 +1297,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -1279,7 +1313,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historySyncNpf = staking.getAddressHistory(params.user.Address);
         assertTrue(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "Error: User should be marked as staker after staking"
         );
 
@@ -1305,13 +1339,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error: Staker principal token balance should be 0 after unstaking"
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error: User principal token balance should be 0 after unstaking"
         );
@@ -1325,6 +1359,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             true,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -1341,6 +1376,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             false,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
@@ -1373,6 +1409,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
@@ -1383,6 +1420,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -1398,7 +1436,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historySyncNpf = staking.getAddressHistory(params.user.Address);
         assertTrue(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "Error: User should be marked as staker after staking"
         );
 
@@ -1424,13 +1462,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error: Staker principal token balance should be 0 after unstaking"
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error: User principal token balance should be 0 after unstaking"
         );
@@ -1444,6 +1482,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             true,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -1460,6 +1499,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             false,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
@@ -1492,6 +1532,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
@@ -1502,6 +1543,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -1517,7 +1559,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historySyncNpf = staking.getAddressHistory(params.user.Address);
         assertTrue(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "Error: User should be marked as staker after staking"
         );
 
@@ -1543,13 +1585,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2) + params.priorityFeeEVVM,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2) + params.priorityFeeEVVM,
             "Error: Staker principal token balance should be increased after unstaking"
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error: User principal token balance should be 0 after unstaking"
         );
@@ -1563,6 +1605,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             true,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
@@ -1579,6 +1622,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             USER,
             false,
             10,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
@@ -1611,6 +1655,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.priorityFeeEVVM,
             params.nonceEVVM
@@ -1621,6 +1666,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             params.user.Address,
             params.isStaking,
             params.amountOfStaking,
+            address(0),
             params.nonce,
             params.signatureStaking,
             params.priorityFeeEVVM,
@@ -1636,7 +1682,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         historySyncNpf = staking.getAddressHistory(params.user.Address);
         assertTrue(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "Error: User should be marked as staker after staking"
         );
 
@@ -1662,13 +1708,13 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2) + params.priorityFeeEVVM,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2) + params.priorityFeeEVVM,
             "Error: Staker principal token balance should be increased after unstaking"
         );
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error: User principal token balance should be 0 after unstaking"
         );

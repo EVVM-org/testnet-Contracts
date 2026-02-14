@@ -47,9 +47,11 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             USER_USERNAME_OWNER,
             USERNAME,
             444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -63,7 +65,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             priorityFeeAmount
@@ -107,6 +109,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             USERNAME,
             input.amountToOffer,
             block.timestamp + (uint256(input.expirationDateDays) * 1 days),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -136,7 +139,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
-            params.offerID,
+            params.offerID,address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -146,7 +149,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         nameService.acceptOffer(
             params.user.Address,
             params.username,
-            params.offerID,
+            params.offerID,address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -186,7 +189,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error staker: balance incorrectly changed"
         );
@@ -217,6 +220,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             USERNAME,
             input.amountToOffer,
             block.timestamp + (uint256(input.expirationDateDays) * 1 days),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -246,7 +250,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
-            params.offerID,
+            params.offerID,address(0),
             params.nonce,
             params.priorityFee,
             params.nonceEVVM
@@ -257,7 +261,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         nameService.acceptOffer(
             params.user.Address,
             params.username,
-            params.offerID,
+            params.offerID,address(0),
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
@@ -297,8 +301,8 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount()) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount()) +
                 (((uint256(checkData.amount) * 1) / 199) / 4) +
                 uint256(params.priorityFee)),
             "Error staker: balance incorrectly changed"
