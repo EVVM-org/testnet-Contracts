@@ -67,13 +67,13 @@ export async function registerSingle(_args: string[], options: any) {
   // If --useCustomEthRpc is present, look for EVVM_REGISTRATION_RPC_URL in .env or prompt user
   ethRPC = useCustomEthRpc
     ? process.env.EVVM_REGISTRATION_RPC_URL ||
-      promptString(
+      (await promptString(
         `${colors.yellow}Enter the custom Ethereum Sepolia RPC URL:${colors.reset}`
-      )
+      ))
     : EthSepoliaPublicRpc;
 
   // Validate or prompt for missing values
-  coreAddress ||= promptAddress(
+  coreAddress ||= await promptAddress(
     `${colors.yellow}Enter the Core Address:${colors.reset}`
   );
 

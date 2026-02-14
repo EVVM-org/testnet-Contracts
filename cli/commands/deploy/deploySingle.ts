@@ -77,9 +77,9 @@ export async function deploySingle(args: string[], options: any) {
     await configurationBasic();
 
     if (
-      !promptYesNo(
+      !(await promptYesNo(
         `${colors.yellow}Proceed with deployment? (y/n):${colors.reset}`
-      )
+      ))
     )
       customErrorWithExit(
         "Deployment cancelled by user",
@@ -142,9 +142,9 @@ Or if you want to use your custom Ethereum Sepolia RPC:
 `);
 
   if (
-    !promptYesNo(
+    !(await promptYesNo(
       `${colors.yellow}Do you want to register the EVVM instance now? (y/n):${colors.reset}`
-    )
+    ))
   ) {
     customErrorWithExit(
       `Steps skipped by user choice`,
@@ -153,7 +153,7 @@ Or if you want to use your custom Ethereum Sepolia RPC:
   }
 
   // If user decides, add --useCustomEthRpc flag to the registerEvvm call
-  const ethRPCAns = promptYesNo(
+  const ethRPCAns = await promptYesNo(
     `${colors.yellow}Use custom Ethereum Sepolia RPC for registry calls? (y/n):${colors.reset}`
   );
 
