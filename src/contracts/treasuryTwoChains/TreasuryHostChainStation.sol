@@ -27,14 +27,12 @@ pragma solidity ^0.8.0;
  / __  / /_/ (__  / /_   / /__/ / / / /_/ / / / / /
 /_/ /_/\____/____/\__/   \___/_/ /_/\__,_/_/_/ /_/ 
                                                    
- * @title Host Chain Station for Fisher Bridge
+ * @title EVVM Host Chain Station
  * @author Mate labs
- * @notice Manages withdrawals from host to external chains
- * @dev Multi-protocol cross-chain bridge with Evvm integration. Withdraw tokens host \u2192 external. Fisher bridge with State.sol nonces. Protocols: 0x01 Hyperlane, 0x02 LayerZero V2, 0x03 Axelar. State.sol (Fisher nonces ONLY), Core.sol (all balance ops). Principal Token withdrawal blocked (MATE locked). Time-delayed governance (1d).
- *
- * @custom:security-contact support@evvm.info
+ * @notice Manages cross-chain withdrawals from the EVVM host chain to an external chain.
+ * @dev Multi-protocol bridge supporting Hyperlane, LayerZero V2, and Axelar. 
+ *      Integrates with Core.sol for balance updates and uses Fisher-specific nonces.
  */
-
 import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
 import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
@@ -84,6 +82,7 @@ import {
 import {
     ProposalStructs
 } from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+
 
 contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     /// @notice EVVM core contract for balance operations
@@ -340,46 +339,46 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
 
     /**
      * @notice Receives Fisher bridge deposits from external
-     * @dev Validates signature via State.sol, credits Evvm
+     * @dev Validates signature via Core.sol, credits balances
      *
      * Purpose:
      * - Receive: Deposits from external chain
-     * - Validate: ECDSA signature via State.sol
-     * - Credit: Add tokens to Evvm balances
+     * - Validate: ECDSA signature via Core.sol
+     * - Credit: Add tokens to Core balances
      * - Fee: Pay Fisher executor priority fee
      *
      * Fisher Bridge Flow:
      * - External: TreasuryExternalChainStation emits
      * - Monitor: Fisher executor watches events
      * - Call: Executor calls this function
-     * - Validate: State.validateAndConsumeNonce
-     * - Credit: Evvm balances updated
+     * - Validate: core.validateAndConsumeNonce
+     * - Credit: Core balances updated
      *
-     * State.sol Integration:
-     * - Nonce: state.validateAndConsumeNonce
+     * Core Integration:
+     * - Nonce: core.validateAndConsumeNonce
      * - Hash: TreasuryCrossChainHashUtils.hashData...
      * - Async: true (independent nonce system)
      * - Signature: ECDSA via SignatureRecover
      *
-     * Evvm Balance Operations:
-     * - Recipient: evvm.addAmountToUser(to, token,
+     * Core Balance Operations:
+     * - Recipient: core.addAmountToUser(to, token,
      *   amount)
-     * - Fee: evvm.addAmountToUser(executor, token,
+     * - Fee: core.addAmountToUser(executor, token,
      *   priorityFee)
      * - Total: amount + priorityFee credited
-     * - No Transfer: Evvm tracks virtual balances
+     * - No Transfer: Core tracks virtual balances
      *
      * Nonce System:
-     * - State.sol: validateAndConsumeNonce(from, hash,
+     * - Core.sol: validateAndConsumeNonce(from, hash,
      *   nonce...)
      * - Sequential: User manages own nonces
-     * - Replay Prevention: State.sol marks used
+     * - Replay Prevention: Core.sol marks used
      * - Async: true (Fisher bridge nonces)
      *
      * Security:
      * - Executor Only: onlyFisherExecutor modifier
-     * - Signature: State.sol validates ECDSA
-     * - Nonce: State.sol prevents replays
+     * - Signature: Core.sol validates ECDSA
+     * - Nonce: Core.sol prevents replays
      * - Fee Payment: Executor compensated for gas
      *
      * @param from Original sender on external chain

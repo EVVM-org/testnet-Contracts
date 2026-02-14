@@ -4,10 +4,10 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title StateError - Error Definitions for State Contract
+ * @title StateError - Error Definitions for Core Contract
  * @author Mate labs
- * @notice Custom errors for State.sol nonce coordinator
- * @dev Gas-efficient errors for async/sync nonce validation and EIP-191 signature verification.
+ * @notice Custom errors for Core.sol nonce coordinator
+ * @dev Gas-efficient errors for async/sync nonce validation and EIP-191 signature verification. Part of Core.sol unified contract.
  */
 library StateError {
     /// @dev Thrown when async nonce already consumed

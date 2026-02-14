@@ -17,10 +17,12 @@ pragma solidity ^0.8.0;
    ██║   ██╔══╝  ╚════██║   ██║   ██║╚██╗██║██╔══╝     ██║   
    ██║   ███████╗███████║   ██║   ██║ ╚████║███████╗   ██║   
    ╚═╝   ╚══════╝╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚══════╝   ╚═╝   
-                                                             
- * @title EVVM Core Contract
+ * @title EVVM Core
  * @author Mate labs
- * @notice Core payment processing and token management for EVVM ecosystem
+ * @notice Central logic for EVVM payments, token management, and nonce tracking.
+ * @dev Combines payment operations (former Evvm.sol) and nonce management (former State.sol).
+ *      Features multi-token payments with EIP-191 signatures, dual nonce system (sync/async),
+ *      and staker rewards. Governed by a time-delayed admin and implementation upgrade system.
  */
 
 import {
@@ -54,23 +56,7 @@ import {
 
 contract Core is CoreStorage {
     /**
-     * @notice Access control modifier restricting function calls to the current admin
-     * @dev Validates that msg.sender matches the current admin address before function execution
-     *
-     * Access Control:
-     * - Only the current admin can call functions with this modifier
-     * - Uses the admin.current address from the storage structure
-     * - Reverts with no specific error message for unauthorized calls
-     *
-     * Usage:
-     * - Applied to critical administrative functions
-     * - Protects system configuration changes
-     * - Prevents unauthorized upgrades and parameter modifications
-     *
-     * Security:
-     * - Simple but effective access control mechanism
-     * - Used for proxy upgrades, admin transfers, and system configuration
-     * - Part of the time-delayed governance system for critical operations
+     * @notice Restricts access to the system administrator.
      */
     modifier onlyAdmin() {
         if (msg.sender != admin.current) revert Error.SenderIsNotAdmin();
@@ -79,38 +65,10 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Initializes the EVVM contract with essential configuration and token distributions
-     * @dev Sets up the core system parameters, admin roles, and initial Principal Token allocations
-     *
-     * Critical Initial Setup:
-     * - Configures admin address with full administrative privileges
-     * - Sets staking contract address for reward distribution and status management
-     * - Stores EVVM metadata including principal token address and reward parameters
-     * - Distributes initial Principal Tokens to staking contract (2x reward amount)
-     * - Registers staking contract as privileged staker with full benefits
-     * - Activates breaker flag for one-time NameService and Treasury setup
-     *
-     * Token Distribution:
-     * - Staking contract receives 2x current reward amount in Principal Tokens
-     * - Enables immediate reward distribution capabilities
-     * - Provides operational liquidity for staking rewards
-     *
-     * Security Initialization:
-     * - Sets admin.current for immediate administrative access
-     * - Prepares system for NameService and Treasury integration
-     * - Establishes staking privileges for the staking contract
-     *
-     * Post-Deployment Requirements:
-     * - Must call `_setupNameServiceAndTreasuryAddress()` to complete integration
-     * - NameService and Treasury addresses must be configured before full operation
-     * - Implementation contract should be set for proxy functionality
-     *
-     * @param _initialOwner Address that will have administrative privileges over the contract
-     * @param _stakingContractAddress Address of the staking contract for reward distribution and staker management
-     * @param _evvmMetadata Metadata structure containing principal token address, reward amounts, and system parameters
-     *
-     * @custom:deployment Must be followed by NameService and Treasury setup
-     * @custom:security Admin address has full control over system configuration
+     * @notice Initializes the EVVM Core with basic system parameters.
+     * @param _initialOwner Address granted administrative control.
+     * @param _stakingContractAddress Address of the Staking contract.
+     * @param _evvmMetadata Initial configuration (token info, reward amounts, etc.).
      */
     constructor(
         address _initialOwner,
@@ -137,32 +95,10 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice One-time setup function to configure NameService and Treasury contract addresses
-     * @dev Can only be called once due to breaker flag mechanism for security
-     *
-     * Critical Setup Process:
-     * - Validates the breaker flag is active (prevents multiple calls)
-     * - Sets the NameService contract address for identity resolution in payments
-     * - Configures the Treasury contract address for privileged balance operations
-     * - Provides initial Principal Token balance (10,000 tokens) to NameService for operations
-     * - Registers NameService as a privileged staker for enhanced functionality and rewards
-     *
-     * Security Features:
-     * - Single-use function protected by breaker flag
-     * - Prevents unauthorized reconfiguration of critical system addresses
-     * - Must be called during initial system deployment phase
-     *
-     * Initial Token Distribution:
-     * - NameService receives 10,000 Principal Tokens for operational expenses
-     * - NameService gains staker privileges for transaction processing
-     * - Enables identity-based payment resolution throughout the ecosystem
-     *
-     * @param _nameServiceAddress Address of the deployed NameService contract for identity resolution
-     * @param _treasuryAddress Address of the Treasury contract for balance management operations
-     *
-     * @custom:security Single-use function - can only be called once
-     * @custom:access-control No explicit access control - relies on deployment sequence
-     * @custom:integration Critical for NameService and Treasury functionality
+     * @notice Configures NameService and Treasury addresses once.
+     * @dev Uses a breaker flag to prevent re-initialization.
+     * @param _nameServiceAddress Address of the NameService contract.
+     * @param _treasuryAddress Address of the Treasury contract.
      */
     function initializeSystemContracts(
         address _nameServiceAddress,
@@ -184,8 +120,8 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Updates the EVVM ID with a new value, restricted to admin and time-limited
-     * @dev Allows the admin to change the EVVM ID within a 1-day window after deployment
+     * @notice Updates the EVVM ID within a 24-hour window after deployment or change.
+     * @param newEvvmID New unique identifier for EIP-191 signatures.
      */
     function setEvvmID(uint256 newEvvmID) external onlyAdmin {
         if (evvmMetadata.EvvmID != 0) {
@@ -199,37 +135,9 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Fallback function implementing proxy pattern with delegatecall to implementation
-     * @dev Routes all unrecognized function calls to the current implementation contract
-     *
-     * Proxy Mechanism:
-     * - Forwards all calls not handled by this contract to the implementation
-     * - Uses delegatecall to preserve storage context and msg.sender
-     * - Allows for contract upgrades without changing the main contract address
-     * - Maintains all state variables in the proxy contract storage
-     *
-     * Implementation Process:
-     * 1. Validates that an implementation contract is set
-     * 2. Copies all calldata to memory for forwarding
-     * 3. Executes delegatecall to implementation with full gas allowance
-     * 4. Copies the return data back from the implementation
-     * 5. Returns the result or reverts based on implementation response
-     *
-     * Security Features:
-     * - Reverts if no implementation is set (prevents undefined behavior)
-     * - Preserves all gas for the implementation call
-     * - Maintains exact return data and revert behavior from implementation
-     * - Uses storage slot reading for gas efficiency
-     *
-     * Upgrade Compatibility:
-     * - Enables seamless contract upgrades through implementation changes
-     * - Preserves all existing state and user balances
-     * - Allows new functionality addition without user migration
-     * - Supports time-delayed upgrade governance for security
-     *
-     * @custom:security Requires valid implementation address
-     * @custom:proxy Transparent proxy pattern implementation
-     * @custom:upgrade-safe Preserves storage layout between upgrades
+     * @notice Proxy fallback forwarding calls to the active implementation.
+     * @dev Uses delegatecall to execute logic within this contract's storage context.
+     *      Reverts if currentImplementation is address(0).
      */
     fallback() external {
         if (currentImplementation == address(0))
@@ -272,11 +180,10 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Faucet function to add balance to a user's account for testing purposes
-     * @dev This function is intended for testnet use only to provide tokens for testing
-     * @param user The address of the user to receive the balance
-     * @param token The address of the token contract to add balance for
-     * @param quantity The amount of tokens to add to the user's balance
+     * @notice Faucet: Adds balance to a user for testing (Testnet only).
+     * @param user Recipient address.
+     * @param token Token contract address.
+     * @param quantity Amount to add.
      */
     function addBalance(
         address user,
@@ -287,10 +194,9 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Faucet function to set point staker status for testing purposes
-     * @dev This function is intended for testnet use only to configure staker points for testing
-     * @param user The address of the user to set as point staker
-     * @param answer The bytes1 value representing the staker status or answer
+     * @notice Faucet: Sets staker status for testing (Testnet only).
+     * @param user User address.
+     * @param answer Status flag (e.g., FLAG_IS_STAKER).
      */
     function setPointStaker(address user, bytes1 answer) external {
         stakerList[user] = answer;
@@ -299,30 +205,19 @@ contract Core is CoreStorage {
     //░▒▓█ Payment Functions ██████████████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Processes single payments
-     *
-     * Payment Flow:
-     * - Validates signature authorization for the payment
-     *   (if synchronous nonce, uses nextSyncUsedNonce inside
-     *    the signature verification to verify the correct nonce)
-     * - Checks executor permission if specified
-     * - Validates synchronous nonce matches expected value
-     * - Resolves recipient address (identity or direct address)
-     * - If the fisher (msg.sender) is a staker:
-     *  - Transfers priority fee to the fisher
-     *  - Rewards the fisher with Principal tokens
-     * - Updates balances and increments nonce
-     *
-     * @param from Address of the payment sender
-     * @param to_address Direct recipient address (used if to_identity is empty)
-     * @param to_identity Username/identity of recipient (resolved via NameService)
-     * @param token Address of the token contract to transfer
-     * @param amount Amount of tokens to transfer
-     * @param priorityFee Additional fee for transaction priority (not used in non-staker payments)
-     * @param nonce Transaction nonce
-     * @param isAsyncExec Execution type flag (false = sync nonce, true = async nonce)
-     * @param senderExecutor Address authorized to execute this payment (zero address = sender only)
-     * @param signature Cryptographic signature authorizing this payment
+     * @notice Processes a single token payment with signature verification.
+     * @dev Validates nonce (sync/async), resolves identity (if provided), and updates balances.
+     *      Rewarded if the executor is a staker.
+     * @param from Sender address.
+     * @param to_address Recipient address (overridden if to_identity is set).
+     * @param to_identity Recipient username (resolved via NameService).
+     * @param token Token address (address(0) for ETH).
+     * @param amount Tokens to transfer.
+     * @param priorityFee Fee paid to the executor (if staker).
+     * @param senderExecutor Optional authorized executor (address(0) for any).
+     * @param nonce Transaction nonce.
+     * @param isAsyncExec True for parallel nonces, false for sequential.
+     * @param signature EIP-191 authorization signature.
      */
     function pay(
         address from,
@@ -398,29 +293,11 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Processes multiple payments in a single transaction batch
-     * @dev Executes an array of payment operations with individual success/failure tracking
-     *
-     * Batch Processing Features:
-     * - Processes each payment independently (partial success allowed)
-     * - Returns detailed results for each transaction
-     * - Supports both staker and non-staker payment types
-     * - Handles both sync and async nonce types per payment
-     * - Provides comprehensive transaction statistics
-     *
-     * Payment Validation:
-     * - Each payment signature is verified independently
-     * - Nonce management handled per payment type (sync/async)
-     * - Identity resolution performed for each recipient
-     * - Balance updates executed atomically per payment
-     *
-     * Return Values:
-     * - successfulTransactions: Count of completed payments
-     * - results: Boolean array indicating success/failure for each payment
-     *
-     * @param batchData Array of BatchData structures containing payment details
-     * @return successfulTransactions Number of payments that completed successfully
-     * @return results Boolean array with success status for each payment
+     * @notice Processes multiple payments in a single transaction.
+     * @dev Each payment is validated and executed independently.
+     * @param batchData Array of payment details and signatures.
+     * @return successfulTransactions Count of successful payments.
+     * @return results Success status for each payment in the batch.
      */
     function batchPay(
         CoreStructs.BatchData[] memory batchData
@@ -534,35 +411,16 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Distributes tokens from a single sender to multiple recipients
-     * @dev Efficient single-source multi-recipient payment distribution with signature verification
-     *
-     * Distribution Features:
-     * - Single signature authorizes distribution to multiple recipients
-     * - Supports both direct addresses and identity-based recipients
-     * - Proportional amount distribution based on recipient configurations
-     * - Integrated priority fee and staker reward system
-     * - Supports both sync and async nonce management
-     *
-     * Verification Process:
-     * - Validates single signature for entire distribution
-     * - Checks total amount and priority fee against sender balance
-     * - Ensures executor permissions and nonce validity
-     * - Processes each recipient distribution atomically
-     *
-     * Staker Benefits:
-     * - Executor receives priority fee (if staker)
-     * - Principal Token reward based on number of successful distributions
-     *
-     * @param from Address of the payment sender
-     * @param toData Array of recipient data with addresses/identities and amounts
-     * @param token Address of the token contract to distribute
-     * @param amount Total amount to distribute (must match sum of individual amounts)
-     * @param priorityFee Fee amount for the transaction executor
-     * @param nonce Transaction nonce for replay protection
-     * @param isAsyncExec True for async nonce, false for sync nonce
-     * @param senderExecutor Address authorized to execute this distribution
-     * @param signature Cryptographic signature authorizing this distribution
+     * @notice Distributes tokens from one sender to multiple recipients with a single signature.
+     * @param from Sender address.
+     * @param toData Array of recipient addresses/identities and their respective amounts.
+     * @param token Token address.
+     * @param amount Total amount to distribute (sum of toData).
+     * @param priorityFee Fee for the executor (if staker).
+     * @param nonce Transaction nonce.
+     * @param isAsyncExec True for parallel nonces.
+     * @param senderExecutor Optional authorized executor.
+     * @param signature EIP-191 authorization signature.
      */
     function dispersePay(
         address from,
@@ -662,25 +520,12 @@ contract Core is CoreStorage {
      *      signature verification
      *
      * Authorization Model:
-     * - Only smart contracts (non-EOA addresses) can call this function
-     * - Calling contract must have sufficient token balance
-     * - No signature verification required (contract-level authorization)
-     * - Used primarily for automated distributions and rewards
-     *
-     * Use Cases:
-     * - Staking contract reward distributions
-     * - NameService fee distributions
-     * - Automated system payouts
-     * - Cross-contract token transfers
-     *
-     * Security Features:
-     * - Validates caller is a contract (has bytecode)
-     * - Checks sufficient balance before transfer
-     * - Direct balance manipulation for efficiency
-     *
-     * @param to Address of the token recipient
-     * @param token Address of the token contract to transfer
-     * @param amount Amount of tokens to transfer from calling contract
+    /**
+     * @notice Allows a smart contract (CA) to pay a recipient directly.
+     * @dev No signature required as the contract itself is the caller.
+     * @param to Recipient address.
+     * @param token Token address.
+     * @param amount Tokens to transfer.
      */
     function caPay(address to, address token, uint256 amount) external {
         address from = msg.sender;
@@ -693,29 +538,10 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Contract-to-multiple-addresses payment distribution function
-     * @dev Allows authorized contracts to distribute tokens to multiple recipients efficiently
-     *
-     * Batch Distribution Features:
-     * - Single call distributes to multiple recipients
-     * - Supports both direct addresses and identity resolution
-     * - Validates total amount matches sum of individual distributions
-     * - Optimized for contract-based automated distributions
-     *
-     * Authorization Model:
-     * - Only smart contracts can call this function
-     * - No signature verification required (contract authorization)
-     * - Calling contract must have sufficient balance for total distribution
-     *
-     * Use Cases:
-     * - Bulk reward distributions from staking contracts
-     * - Multi-recipient fee distributions
-     * - Batch payroll or dividend distributions
-     * - Cross-contract multi-party settlements
-     *
-     * @param toData Array of recipient data containing addresses/identities and amounts
-     * @param token Address of the token contract to distribute
-     * @param amount Total amount to distribute (must equal sum of individual amounts)
+     * @notice Allows a smart contract (CA) to distribute tokens to multiple recipients.
+     * @param toData Array of recipient addresses/identities and amounts.
+     * @param token Token address.
+     * @param amount Total amount to distribute.
      */
     function disperseCaPay(
         CoreStructs.DisperseCaPayMetadata[] memory toData,
@@ -745,37 +571,14 @@ contract Core is CoreStorage {
     //░▒▓█ Nonce and Signature Functions ██████████████████████████████████████████▓▒░
 
     /**
-     * @notice Validates signature and consumes nonce atomically
-     * @dev Central coordination function for all EVVM transactions
-     *
-     * Validation Workflow:
-     * - Verifies caller is a contract (services only)
-     * - Reconstructs EIP-191 signature payload
-     * - Recovers signer and validates against user address
-     * - Checks user transaction permission via validator
-     * - Validates and consumes nonce based on type
-     *
-     * Nonce Management:
-     * - Async: Checks availability/reservation, marks as used
-     * - Sync: Validates sequential order, increments counter
-     * - Prevents replay attacks through atomic consumption
-     *
-     * Service Integration:
-     * - Called by all EVVM services for transaction validation
-     * - Service address becomes part of signature payload
-     * - Ensures service-specific nonce reservations are honored
-     *
-     * Security Features:
-     * - Atomic signature validation + nonce consumption
-     * - Contract-only caller restriction
-     * - UserValidator integration for transaction filtering
-     * - Service-specific nonce reservation enforcement
-     *
-     * @param user Address that signed the transaction
-     * @param hashPayload Keccak256 hash of transaction parameters
-     * @param nonce Nonce value to validate and consume
-     * @param isAsyncExec True for async nonce, false for sync
-     * @param signature EIP-191 signature from the user
+     * @notice Validates a user signature and consumes a nonce for an EVVM service.
+     * @dev Only callable by smart contracts (EVVM services). Atomic verification/consumption.
+     * @param user Address of the transaction signer.
+     * @param hashPayload Hash of the transaction parameters.
+     * @param originExecutor Optional tx.origin restriction (address(0) for none).
+     * @param nonce Nonce to validate and consume.
+     * @param isAsyncExec True for non-sequential nonces.
+     * @param signature User's authorization signature.
      */
     function validateAndConsumeNonce(
         address user,
@@ -1011,37 +814,11 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Removes tokens from a user's balance in the EVVM system
-     * @dev Restricted function that can only be called by the authorized treasury contract
-     *
-     * Treasury Operations:
-     * - Allows treasury to burn or debit tokens from user accounts
-     * - Used for cross-chain bridging, penalties, or system corrections
-     * - Direct balance manipulation bypasses normal transfer protections
-     * - Can potentially create negative balances if not carefully managed
-     *
-     * Access Control:
-     * - Only the registered treasury contract can call this function
-     * - Reverts with SenderIsNotTreasury error for unauthorized callers
-     * - Provides centralized token withdrawal mechanism
-     *
-     * Use Cases:
-     * - Cross-chain bridge token burning
-     * - Administrative penalty applications
-     * - System-level token reclamations
-     * - Emergency balance corrections
-     *
-     * Security Considerations:
-     * - No underflow protection: treasury must ensure sufficient balance
-     * - Can result in unexpected negative balances if misused
-     * - Treasury contract should implement additional validation
-     *
-     * @param user Address of the user to remove tokens from
-     * @param token Address of the token contract to remove balance for
-     * @param amount Amount of tokens to remove from the user's balance
-     *
-     * @custom:access-control Only treasury contract
-     * @custom:security No underflow protection - treasury responsibility
+     * @notice Deducts tokens from a user's system balance.
+     * @dev Restricted to the authorized Treasury contract.
+     * @param user Account to debit.
+     * @param token Token address.
+     * @param amount Amount to remove.
      */
     function removeAmountFromUser(
         address user,
@@ -1058,16 +835,8 @@ contract Core is CoreStorage {
     //██ Proxy Management █████████████████████████████████████████████
 
     /**
-     * @notice Proposes a new implementation contract for the proxy with time delay
-     * @dev Part of the time-delayed governance system for critical upgrades
-     *
-     * Upgrade Security:
-     * - 30-day time delay for implementation changes
-     * - Only admin can propose upgrades
-     * - Allows time for community review and validation
-     * - Can be rejected before acceptance deadline
-     *
-     * @param _newImpl Address of the new implementation contract
+     * @notice Proposes a new implementation contract for the proxy (30-day delay).
+     * @param _newImpl Address of the new logic contract.
      */
     function proposeImplementation(address _newImpl) external onlyAdmin {
         if (_newImpl == address(0)) revert Error.IncorrectAddressInput();
@@ -1078,8 +847,7 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Cancels a pending implementation upgrade proposal
-     * @dev Allows admin to reject proposed upgrades before the time delay expires
+     * @notice Cancels a pending implementation upgrade proposal.
      */
     function rejectUpgrade() external onlyAdmin {
         proposalImplementation = address(0);
@@ -1087,8 +855,7 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Accepts a pending implementation upgrade after the time delay
-     * @dev Executes the proxy upgrade to the new implementation contract
+     * @notice Finalizes the implementation upgrade after the time delay.
      */
     function acceptImplementation() external onlyAdmin {
         if (block.timestamp < timeToAcceptImplementation)
@@ -1102,9 +869,8 @@ contract Core is CoreStorage {
     //██ Admin Management █████████████████████████████████████████████─
 
     /**
-     * @notice Proposes a new admin address with 1-day time delay
-     * @dev Part of the time-delayed governance system for admin changes
-     * @param _newOwner Address of the proposed new admin
+     * @notice Proposes a new administrator (1-day delay).
+     * @param _newOwner Address of the proposed admin.
      */
     function proposeAdmin(address _newOwner) external onlyAdmin {
         if (_newOwner == address(0) || _newOwner == admin.current)
@@ -1118,8 +884,7 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Cancels a pending admin change proposal
-     * @dev Allows current admin to reject proposed admin changes
+     * @notice Cancels a pending admin change proposal.
      */
     function rejectProposalAdmin() external onlyAdmin {
         admin = ProposalStructs.AddressTypeProposal({
@@ -1130,8 +895,8 @@ contract Core is CoreStorage {
     }
 
     /**
-     * @notice Accepts a pending admin proposal and becomes the new admin
-     * @dev Can only be called by the proposed admin after the time delay
+     * @notice Finalizes the admin change after the time delay.
+     * @dev Must be called by the proposed admin.
      */
     function acceptAdmin() external {
         if (block.timestamp < admin.timeToAccept)

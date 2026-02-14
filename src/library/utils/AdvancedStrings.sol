@@ -133,7 +133,7 @@ library AdvancedStrings {
     }
 
     /**
-     * @notice Builds EIP-191 signature payload for State.sol validation
+     * @notice Builds EIP-191 signature payload for Core.sol validation
      * @dev Format: "{evvmId},{serviceAddress},{hashPayload},{nonce},{isAsyncExec}"
      * @param evvmId Chain-specific EVVM instance identifier
      * @param serviceAddress Service contract requesting validation

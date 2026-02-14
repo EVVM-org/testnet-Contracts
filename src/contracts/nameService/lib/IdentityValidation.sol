@@ -2,12 +2,12 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 pragma solidity ^0.8.0;
-
 /**
- * @title IdentityValidation - Validation Library
+ * @title EVVM Identity Validation
  * @author Mate labs
- * @notice Library for validating usernames and identities
- * @dev Pure validation at byte level (gas efficient). Username: 4+ chars, starts with letter, alphanumeric only. Email: prefix@domain.tld. Phone: numeric with length constraints.
+ * @notice Byte-level validation for usernames, phone numbers, and emails.
+ * @dev Optimized for gas efficiency. Rules: Usernames (4+ chars, start with letter), 
+ *      Phones (digit checks), Emails (structural structure).
  */
 library IdentityValidation{
     /**

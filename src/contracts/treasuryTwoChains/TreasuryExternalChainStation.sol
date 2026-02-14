@@ -27,14 +27,12 @@ pragma solidity ^0.8.0;
  / /____>  </ /_/  __/ /  / / / / /_/ / /  / /__/ / / / /_/ / / / / /
 /_____/_/|_|\__/\___/_/  /_/ /_/\__,_/_/   \___/_/ /_/\__,_/_/_/ /_/ 
                                                                       
- * @title External Chain Station for Fisher Bridge
+ * @title EVVM External Chain Station
  * @author Mate labs
- * @notice Manages deposits from external to host chain
- * @dev Multi-protocol cross-chain bridge (Hyperlane/LZ/Axelar). Deposit tokens external \u2192 host. Fisher bridge sends with ECDSA signatures. Protocols: 0x01 Hyperlane, 0x02 LayerZero V2, 0x03 Axelar. Independent from State.sol/Core.sol (external chain). Sequential asyncNonce per user. Time-delayed governance (1d).
- *
- * @custom:security-contact support@evvm.info
+ * @notice Manages cross-chain deposits from an external chain to the EVVM host chain.
+ * @dev Multi-protocol bridge supporting Hyperlane, LayerZero V2, and Axelar. 
+ *      Facilitates token transfers using a sequential nonce system and ECDSA signatures.
  */
-
 import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
 import {
     CrossChainTreasuryError as Error
@@ -282,7 +280,7 @@ contract TreasuryExternalChainStation is
      * Host Chain Integration:
      * - Receives: handle/_lzReceive/_execute
      * - Credits: Core.sol balance for recipient
-     * - Fisher Bridge: Independent from State.sol nonces
+     * - Fisher Bridge: Independent from Core.sol nonces
      *
      * Security:
      * - Approval: Must approve this contract first
@@ -457,11 +455,11 @@ contract TreasuryExternalChainStation is
      * Nonce System:
      * - Independent: asyncNonce[from][nonce] mapping
      * - Sequential: User manages nonce ordering
-     * - NOT State.sol: Fisher bridge separate system
+     * - NOT Core.sol: Fisher bridge separate system
      * - Prevention: Revert if nonce already used
      *
      * Integration Context:
-     * - State.sol: NOT used (independent nonces)
+     * - Core.sol: NOT used (independent nonces)
      * - Core.sol: NOT on external chain
      * - SignatureRecover: ECDSA signature validation
      * - Host Chain: Sends tokens via protocol messages
@@ -539,12 +537,12 @@ contract TreasuryExternalChainStation is
      *
      * Nonce System:
      * - Independent: asyncNonce[from][nonce]
-     * - NOT State.sol: Separate from EVVM nonces
+     * - NOT Core.sol: Separate from EVVM nonces
      * - Sequential: User manages own nonces
      * - Replay Prevention: Mark used after validation
      *
      * Integration Context:
-     * - State.sol: NOT used (Fisher independent)
+     * - Core.sol: NOT used (Fisher independent)
      * - Core.sol: Credits balance on host chain
      * - Fisher Executor: Monitors events + processes
      * - Host Station: Receives event + credits user
@@ -639,12 +637,12 @@ contract TreasuryExternalChainStation is
      *
      * Nonce System:
      * - Independent: asyncNonce[from][nonce]
-     * - NOT State.sol: Fisher bridge separate
+     * - NOT Core.sol: Fisher bridge separate
      * - Sequential: User-managed ordering
      * - Anti-Replay: Mark used after validation
      *
      * Integration Context:
-     * - State.sol: NOT used (independent system)
+     * - Core.sol: NOT used (independent system)
      * - Core.sol: Credits native balance on host
      * - Fisher Executor: Pays ETH + processes
      * - Host Station: Credits recipient balance

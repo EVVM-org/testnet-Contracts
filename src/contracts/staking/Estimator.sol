@@ -11,16 +11,17 @@ MM  MMMMMMMM       88   88   88 88  88  88 88.  .88   88   88.  .88 88
 MM        .M `88888P'   dP   dP dP  dP  dP `88888P8   dP   `88888P' dP       
 MMMMMMMMMMMM                                                                 
                                                                             
- * @title Staking Estimator Contract
+ * @title EVVM Staking Estimator
  * @author Mate Labs
- * @notice Calculates staking rewards based on time-weighted averages
- * @dev Works with Staking.sol. Tracks epoch metadata (pool, total staked, time). Time-weighted average: Sum[(ti - ti-1) × Si-1] × 10^18 / (tFinal - tStart). Access control: onlyStaking, onlyActivator, onlyAdmin.
+ * @notice Calculates validator rewards using time-weighted averages.
+ * @dev Collaborates with Staking.sol to track epochs, total staked amounts, and distribution pools. 
+ *      Features time-delayed governance for administrative changes.
  */
-
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     StakingStructs
 } from "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+
 
 contract Estimator {
     /// @dev Struct for managing address change proposals with time delay

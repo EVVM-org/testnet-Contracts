@@ -6,23 +6,17 @@ pragma solidity ^0.8.0;
  * @title EVVM Service Base Contract
  * @author Mate Labs
  * @notice Abstract base contract for building EVVM services with payment, staking, and nonce management
- * @dev Inherits StakingServiceUtils, CoreExecution, StateManagment. Signatures validated via State.sol. Community can build custom services.
+ * @dev Inherits StakingServiceUtils, CoreExecution, StateManagment. Signatures validated via Core.sol. Community can build custom services.
  */
 
 import {
-    CoreStructs
-} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
+    CoreExecution
+} from "@evvm/testnet-contracts/library/utils/service/CoreExecution.sol";
 import {
     StakingServiceUtils
 } from "@evvm/testnet-contracts/library/utils/service/StakingServiceUtils.sol";
-import {
-    CoreExecution
-} from "@evvm/testnet-contracts/library/utils/service/CoreExecution.sol";
 
-abstract contract EvvmService is
-    StakingServiceUtils,
-    CoreExecution
-{
+abstract contract EvvmService is CoreExecution, StakingServiceUtils {
     /// @dev Thrown when signature validation fails
     error InvalidServiceSignature();
 
@@ -35,10 +29,7 @@ abstract contract EvvmService is
     constructor(
         address coreAddress,
         address stakingAddress
-    )
-        StakingServiceUtils(stakingAddress)
-        CoreExecution(coreAddress)
-    {}
+    ) StakingServiceUtils(stakingAddress) CoreExecution(coreAddress) {}
 
     /**
      * @notice Gets unique EVVM instance identifier for signature validation

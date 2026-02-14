@@ -25,14 +25,14 @@ pragma solidity ^0.8.0;
    ██║   ██╔══╝  ╚════██║   ██║   ██║╚██╗██║██╔══╝     ██║   
    ██║   ███████╗███████║   ██║   ██║ ╚████║███████╗   ██║   
    ╚═╝   ╚══════╝╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚══════╝   ╚═╝   
- *
- * @title EVVM Name Service Contract
+ * @title EVVM Name Service
  * @author Mate labs
- * @notice Username registration and domain name system for EVVM
- * @dev Username registration with pre-registration (30min anti-frontrun). Custom metadata, marketplace (0.5% fee), dynamic renewal pricing. State.sol (async nonces), Core.sol (payments: 100x reward registration, 10x metadata). Time-delayed governance (1d). EIP-191 signatures.
+ * @notice Identity and username registration system for the EVVM ecosystem.
+ * @dev Manages username registration via a commit-reveal scheme (pre-registration), 
+ *      a secondary marketplace for domain trading, and customizable user metadata. 
+ *      Integrates with Core.sol for payment processing and uses async nonces for high throughput.
  */
-
-import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+ import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     NameServiceStructs
 } from "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
@@ -52,7 +52,7 @@ import {
     IdentityValidation
 } from "@evvm/testnet-contracts/contracts/nameService/lib/IdentityValidation.sol";
 
-contract NameService {
+ contract NameService {
     /// @dev Time delay for accepting proposals (1 day)
     uint256 constant TIME_TO_ACCEPT_PROPOSAL = 1 days;
 
@@ -93,21 +93,9 @@ contract NameService {
     //█ Initialization ████████████████████████████████████████████████████████████████████████
 
     /**
-     * @notice Initializes NameService with integrations
-     * @dev Sets up State.sol and Core.sol integration
-     *
-     * Initial Configuration:
-     * - Connects to EVVM for payment processing
-     * - Connects to State for nonce coordination
-     * - Sets initial admin for governance
-     *
-     * Integration Setup:
-     * - evvm: Handles all payment operations
-     * - state: Validates signatures and consumes nonces
-     * - All nonces in NameService are async (true)
-     *
-     * @param _coreAddress Address of core contract
-     * @param _initialOwner Address with admin privileges
+     * @notice Initializes the NameService with the Core contract and initial administrator.
+     * @param _coreAddress The address of the EVVM Core contract.
+     * @param _initialOwner The address granted administrative privileges.
      */
     constructor(address _coreAddress, address _initialOwner) {
         coreAddress.current = _coreAddress;
@@ -118,33 +106,16 @@ contract NameService {
     //█ Registration Functions ████████████████████████████████████████████████████████████████████████
 
     /**
-     * @notice Pre-registers username hash to prevent front-run
-     * @dev Creates temp reservation via commit-reveal scheme
-     *
-     * Commit-Reveal Process:
-     * - User commits hash(username + random number)
-     * - Prevents others from seeing desired username
-     * - Valid for 30 minutes after commitment
-     * - Must complete with registrationUsername
-     *
-     * State.sol Integration:
-     * - Validates signature with State.validateAndConsumeNonce
-     * - Uses async nonce (isAsyncExec = true)
-     * - Atomically validates + consumes nonce
-     * - Prevents replay attacks
-     *
-     * Core.sol Integration:
-     * - Optional priority fee for faster processing
-     * - Paid through requestPay (if priorityFeeEvvm > 0)
-     * - Staker reward via makeCaPay if caller is staker
-     *
-     * @param user Address making pre-registration
-     * @param hashPreRegisteredUsername Hash of username + random
-     * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
-     * @param priorityFeeEvvm Priority fee for faster processing
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @notice Commits a username hash to prevent front-running before registration.
+     * @dev Part of the commit-reveal scheme. Valid for 30 minutes.
+     * @param user The address of the registrant.
+     * @param hashPreRegisteredUsername The keccak256 hash of (username + secret).
+     * @param originExecutor Optional tx.origin restriction.
+     * @param nonce Async nonce for signature verification.
+     * @param signature Registrant's authorization signature.
+     * @param priorityFeeEvvm Optional priority fee for the executor.
+     * @param nonceEvvm Nonce for the Core payment (if fee is paid).
+     * @param signatureEvvm Signature for the Core payment (if fee is paid).
      */
     function preRegistrationUsername(
         address user,
@@ -186,42 +157,17 @@ contract NameService {
     }
 
     /**
-     * @notice Completes registration using pre-registration
-     * @dev Reveals username from hash, validates, and processes
-     *
-     * Registration Flow:
-     * 1. Validates 30min passed since preRegistrationUsername
-     * 2. Reveals username from hash(username + lockNumber)
-     * 3. Validates username format via IdentityValidation
-     * 4. Checks availability (no duplicates)
-     * 5. Processes payment via Core.sol
-     * 6. Creates 366-day registration
-     *
-     * State.sol Integration:
-     * - Validates signature with State.validateAndConsumeNonce
-     * - Uses async nonce (isAsyncExec = true)
-     * - Hash includes username + lockNumber for reveal
-     * - Prevents replay attacks
-     *
-     * Core.sol Integration:
-     * - Payment: getPriceOfRegistration (100x reward)
-     * - Paid through requestPay (locks tokens)
-     * - Staker reward: 50x reward + priority fee
-     * - makeCaPay distributes rewards to stakers
-     *
-     * Anti-Front-Running:
-     * - Requires valid preRegistrationUsername first
-     * - Hash commitment prevents username visibility
-     * - 30-minute window enforces time-lock
-     *
-     * @param user Address completing registration
-     * @param username Actual username being registered
-     * @param lockNumber Random number from pre-registration
-     * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
-     * @param priorityFeeEvvm Priority fee for faster processing
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @notice Finalizes username registration by revealing the secret associated with a pre-registration.
+     * @dev Validates format, availability, and payment. Grants 1 year of ownership.
+     * @param user The address of the registrant.
+     * @param username The plain-text username being registered.
+     * @param lockNumber The secret used in the pre-registration hash.
+     * @param originExecutor Optional tx.origin restriction.
+     * @param nonce Async nonce for signature verification.
+     * @param signature Registrant's authorization signature.
+     * @param priorityFeeEvvm Optional priority fee for the executor.
+     * @param nonceEvvm Nonce for the Core payment (registration fee + priority fee).
+     * @param signatureEvvm Signature for the Core payment.
      */
     function registrationUsername(
         address user,
@@ -289,45 +235,19 @@ contract NameService {
     //█ Marketplace Functions ████████████████████████████████████████████████████████████████████████
 
     /**
-     * @notice Creates marketplace offer to purchase username
-     * @dev Locks tokens in contract until withdrawn or accepted
-     *
-     * Offer Process:
-     * 1. Validates username exists and is not reserved
-     * 2. Validates expiration is in future
-     * 3. Locks offer amount in contract
-     * 4. Takes 0.5% marketplace fee (5/1000)
-     * 5. Assigns unique offer ID
-     *
-     * State.sol Integration:
-     * - Validates signature with State.validateAndConsumeNonce
-     * - Uses async nonce (isAsyncExec = true)
-     * - Hash includes username, amount, expiration
-     * - Prevents replay attacks
-     *
-     * Core.sol Integration:
-     * - Payment: full offer amount via requestPay
-     * - Fee Breakdown:
-     *   * 99.5% locked for potential sale (995/1000)
-     *   * 0.5% marketplace fee (5/1000)
-     * - Staker reward: 1x reward + 0.125% + priority
-     * - makeCaPay distributes rewards
-     *
-     * Token Locking:
-     * - principalTokenTokenLockedForWithdrawOffers tracks
-     * - Locked amount = offer amount + fee
-     * - Released on withdrawal or acceptance
-     *
-     * @param user Address making offer
-     * @param username Target username for offer
-     * @param amount Offer amount in Principal Tokens
-     * @param expirationDate Timestamp when offer expires
-     * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
-     * @param priorityFeeEvvm Priority fee for faster processing
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
-     * @return offerID Unique identifier for created offer
+     * @notice Places a purchase offer on an existing username.
+     * @dev Tokens are locked in the contract. A 0.5% marketplace fee is applied upon successful sale.
+     * @param user The address of the offerer.
+     * @param username The target username.
+     * @param amount Total amount offered (including fee).
+     * @param expirationDate When the offer expires.
+     * @param originExecutor Optional tx.origin restriction.
+     * @param nonce Async nonce for signature verification.
+     * @param signature Offerer's authorization signature.
+     * @param priorityFeeEvvm Optional priority fee for the executor.
+     * @param nonceEvvm Nonce for the Core payment (locks tokens).
+     * @param signatureEvvm Signature for the Core payment.
+     * @return offerID The unique ID of the created offer.
      */
     function makeOffer(
         address user,

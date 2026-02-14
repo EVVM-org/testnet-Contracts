@@ -15,12 +15,12 @@ pragma solidity ^0.8.0;
                                                           | $$      
                                                           |__/      
 
- * @title P2P Swap Service
+ * @title EVVM P2P Swap
  * @author Mate labs  
- * @notice Peer-to-peer DEX for token trading in EVVM
- * @dev Order book-style trading with dynamic markets. Fee models: Proportional/Fixed/Tolerance. Fee split: 50% seller, 40% service, 10% staker (configurable). State.sol (async nonces), Core.sol (payments: lock/fill/settle). Time-delayed governance (1d). EIP-191 signatures.
+ * @notice Peer-to-peer decentralized exchange for token trading within EVVM.
+ * @dev Supports order book-style trading with customizable fee models. 
+ *      Integrates with Core.sol for asset locking and settlements, and Staking.sol for validator rewards.
  */
-
 import {
     P2PSwapHashUtils as Hash
 } from "@evvm/testnet-contracts/library/utils/signature/P2PSwapHashUtils.sol";
@@ -86,42 +86,17 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
     }
 
     /**
-     * @notice Creates new order in market for token swap
-     * @dev Locks tokenA, creates order, assigns slot in market
-     *
-     * Order Creation Flow:
-     * 1. Validates signature via State.sol
-     * 2. Locks metadata.amountA of tokenA via Core.sol
-     * 3. Finds or creates market for token pair
-     * 4. Assigns order slot (reuses empty slots)
-     * 5. Stores order in ordersInsideMarket mapping
-     * 6. Rewards staker if applicable
-     *
-     * State.sol Integration:
-     * - Validates signature with State.validateAndConsumeNonce
-     * - Uses async nonce (isAsyncExec = true)
-     * - Hash includes tokenA, tokenB, amountA, amountB
-     * - Prevents replay attacks
-     *
-     * Core.sol Integration:
-     * - Locks tokenA via requestPay (metadata.amountA)
-     * - Priority fee handling (if priorityFeeEvvm > 0)
-     * - Staker reward: 2-3x MATE via _rewardExecutor
-     * - makeCaPay distributes priority fee to staker
-     *
-     * Market Management:
-     * - Creates market if token pair doesn't exist
-     * - Reuses deleted order slots (seller == address(0))
-     * - Increments ordersAvailable counter
-     *
-     * @param user Address creating the order
-     * @param metadata Order details (tokens, amounts, nonce)
-     * @param signature State.sol validation signature
-     * @param priorityFeeEvvm Optional priority fee for staker
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
-     * @return market Market ID where order was created
-     * @return orderId Order slot ID within market
+     * @notice Creates a new limit order in a specific trading market.
+     * @dev Locks tokenA in Core.sol and opens an order slot. 
+     *      Markets are automatically created for new token pairs.
+     * @param user Seller address.
+     * @param metadata Order details (tokens, amounts, nonce).
+     * @param signature Seller's authorization signature.
+     * @param priorityFeeEvvm Optional priority fee for the executor.
+     * @param nonceEvvm Nonce for the Core payment (locks tokenA).
+     * @param signatureEvvm Signature for the Core payment.
+     * @return market The ID of the market.
+     * @return orderId The ID of the order within that market.
      */
     function makeOrder(
         address user,

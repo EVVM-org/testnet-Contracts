@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
  * @title Staking Data Structures
  * @author Mate Labs
  * @notice Core data structures for Staking.sol (presale, history, service staking)
- * @dev Operations validated via State.sol. Payments via Core.sol. Cost: PRICE_OF_STAKING (5083 PT) per token.
+ * @dev Operations validated and payments processed via Core.sol. Cost: PRICE_OF_STAKING (5083 PT) per token.
  */
 
 library StakingStructs {

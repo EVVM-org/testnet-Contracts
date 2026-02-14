@@ -20,7 +20,7 @@ pragma solidity ^0.8.0;
  *
  * Integration:
  * - Used exclusively by Core.sol core contract
- * - Complements State.sol error handling
+ * - Includes payment and nonce validation errors
  * - Provides clear failure reasons for users
  *
  * @custom:scope Exclusive to Core.sol contract

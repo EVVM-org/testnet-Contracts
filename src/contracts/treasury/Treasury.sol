@@ -21,18 +21,19 @@ pragma solidity ^0.8.0;
    ██║   ███████╗███████║   ██║   ██║ ╚████║███████╗   ██║   
    ╚═╝   ╚══════╝╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚══════╝   ╚═╝   
             
- * @title Treasury Contract
+ * @title EVVM Treasury
  * @author Mate labs
- * @notice Treasury for managing deposits and withdrawals in EVVM
- * @dev Secure vault for ETH and ERC20 tokens with EVVM integration. Deposit: ETH (token=0x0) or ERC20. Withdraw: Principal Token blocked. Balance sync with Core.sol.
+ * @notice Vault for depositing and withdrawing assets in the EVVM ecosystem.
+ * @dev Handles ETH and ERC20 tokens, syncing balances with Core.sol. 
+ *      Principal Tokens are not withdrawable via this contract.
  */
-
 import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
 import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
 import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     TreasuryError as Error
 } from "@evvm/testnet-contracts/library/errors/TreasuryError.sol";
+
 
 contract Treasury {
     /// @dev Reference to the EVVM core contract for balance management
@@ -47,15 +48,10 @@ contract Treasury {
     }
 
     /**
-     * @notice Deposit ETH or ERC20 tokens into the EVVM ecosystem
-     * @dev For ETH deposits: token must be address(0) and amount must equal msg.value
-     *      For ERC20 deposits: msg.value must be 0 and token must be a valid ERC20 contract
-     *      Deposited funds are credited to the user's EVVM balance and can be used for
-     *      gasless transactions within the ecosystem.
-     * @param token ERC20 token address (use address(0) for ETH deposits)
-     * @param amount Token amount to deposit (must match msg.value for ETH deposits)
-     * @custom:throws DepositAmountMustBeGreaterThanZero If amount/msg.value is zero
-     * @custom:throws InvalidDepositAmount If amount doesn't match msg.value (ETH) or msg.value != 0 (ERC20)
+     * @notice Deposits ETH or ERC20 tokens into EVVM.
+     * @dev Credits the user's balance in Core.sol. ETH uses address(0).
+     * @param token Token address (address(0) for native ETH).
+     * @param amount Amount to deposit (must match msg.value for ETH).
      */
     function deposit(address token, uint256 amount) external payable {
         if (address(0) == token) {
@@ -80,14 +76,10 @@ contract Treasury {
     }
 
     /**
-     * @notice Withdraw ETH or ERC20 tokens from the EVVM ecosystem
-     * @dev Withdraws tokens from the user's EVVM balance back to their wallet.
-     *      Principal Tokens cannot be withdrawn through this function - they can
-     *      only be transferred via EVVM pay operations.
-     * @param token Token address to withdraw (use address(0) for ETH)
-     * @param amount Amount of tokens to withdraw
-     * @custom:throws PrincipalTokenIsNotWithdrawable If attempting to withdraw Principal Tokens
-     * @custom:throws InsufficientBalance If user's EVVM balance is less than withdrawal amount
+     * @notice Withdraws ETH or ERC20 tokens from EVVM.
+     * @dev Deducts from the user's balance in Core.sol. Principal Tokens cannot be withdrawn.
+     * @param token Token address to withdraw (address(0) for native ETH).
+     * @param amount Amount to withdraw.
      */
     function withdraw(address token, uint256 amount) external {
         if (token == core.getPrincipalTokenAddress())

@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
  * @title CoreStructs
  * @author Mate labs
  * @notice Data structures for Core.sol (payments, governance, metadata)
- * @dev Payment structures validated via State.sol nonces. CA structures bypass nonces. Used by CoreStorage then Core.sol.
+ * @dev Payment structures with nonce validation. CA structures bypass nonces. Used by CoreStorage then Core.sol.
  */
 
 library CoreStructs {
@@ -67,7 +67,7 @@ library CoreStructs {
 
     /**
      * @notice Contract-to-address payment data
-     * @dev Used in caPay(). No State.sol validation (contract-authorized).
+     * @dev Used in caPay(). No nonce validation (contract-authorized).
      * @param from Sending contract (must be CA)
      * @param to Recipient address
      * @param token Token address (address(0) = ETH)
@@ -82,7 +82,7 @@ library CoreStructs {
 
     /**
      * @notice Contract-based multi-recipient distribution
-     * @dev Used in disperseCaPay(). No State.sol validation (contract-authorized).
+     * @dev Used in disperseCaPay(). No nonce validation (contract-authorized).
      * @param from Sending contract (must be CA)
      * @param toData Recipients and amounts
      * @param token Token address (address(0) = ETH)
@@ -123,7 +123,7 @@ library CoreStructs {
 
     /**
      * @notice Core metadata configuration for EVVM instance
-     * @dev EvvmID used by State.sol for cross-chain replay protection. Reward halvings occur at eraTokens supply thresholds.
+     * @dev EvvmID used for cross-chain replay protection. Reward halvings occur at eraTokens supply thresholds.
      * @param EvvmName Human-readable instance name
      * @param EvvmID Unique ID for signature verification
      * @param principalTokenName Principal token name

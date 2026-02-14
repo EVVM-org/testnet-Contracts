@@ -9,22 +9,19 @@ pragma solidity ^0.8.0;
  * @dev Four payment types: requestPay (user-to-service with signature), requestDispersePay (batch user-to-service),  makeCaPay (contract-authorized service-to-user), makeDisperseCaPay (batch CA).
  */
 
-import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
-import {
-    CoreStructs
-} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
+import {ICore, CoreStructs} from "@evvm/testnet-contracts/interfaces/ICore.sol";
 
 abstract contract CoreExecution {
     /// @notice EVVM core contract reference
     /// @dev Used for all payment operations
-    Core internal core;
+    ICore internal core;
 
     /**
      * @notice Initializes EVVM payment integration
      * @param _coreAddress Address of Core.sol contract
      */
     constructor(address _coreAddress) {
-        core = Core(_coreAddress);
+        core = ICore(_coreAddress);
     }
 
     /**
@@ -63,7 +60,7 @@ abstract contract CoreExecution {
 
     /**
      * @notice Requests batch payment from user via Evvm.dispersePay
-     * @dev Signature validated by State.sol. Total amount must match sum of toData amounts.
+     * @dev Signature validated by Core.sol. Total amount must match sum of toData amounts.
      * @param toData Array of (recipient, amount) pairs
      * @param token Token address
      * @param amount Total amount (must match sum)
@@ -175,6 +172,6 @@ abstract contract CoreExecution {
      * @param newCoreAddress New Core.sol contract address
      */
     function _changeCoreAddress(address newCoreAddress) internal virtual {
-        core = Core(newCoreAddress);
+        core = ICore(newCoreAddress);
     }
 }

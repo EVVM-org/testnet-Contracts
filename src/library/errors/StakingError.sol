@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
  * @title Staking Error Library
  * @author Mate Labs
  * @notice Custom errors for Staking.sol
- * @dev Gas-efficient errors for Staking.sol. State.sol validates signatures, Core.sol processes payments.
+ * @dev Gas-efficient errors for Staking.sol. Core.sol validates signatures and processes payments.
  */
 
 library StakingError {
@@ -43,7 +43,7 @@ library StakingError {
     /// Public Staking Errors
     ///▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀
 
-    /// @dev Thrown when public staking attempted while disabled (allowPublicStaking.flag == false). Uses State.sol async nonces.
+    /// @dev Thrown when public staking attempted while disabled (allowPublicStaking.flag == false). Uses Core.sol async nonces.
     error PublicStakingDisabled();
 
     ///Service Staking Errors

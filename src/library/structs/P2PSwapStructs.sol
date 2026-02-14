@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
  * @title P2P Swap Data Structures
  * @author Mate labs
  * @notice Core data structures for P2PSwap.sol order book (markets, orders, fees, operation metadata)
- * @dev All operations validated via State.sol async nonces. Payments via Core.sol.
+ * @dev All operations validated via Core.sol async nonces. Payments via Core.sol.
  */
 
 abstract contract P2PSwapStructs {
@@ -71,7 +71,7 @@ abstract contract P2PSwapStructs {
 
     /**
      * @notice Metadata for makeOrder operation signature
-     * @dev Hashed via P2PSwapHashUtils. Validated via State.sol with async nonce.
+     * @dev Hashed via P2PSwapHashUtils. Validated via Core.sol with async nonce.
      * @param nonce Async nonce
      * @param tokenA Token offered
      * @param tokenB Token requested

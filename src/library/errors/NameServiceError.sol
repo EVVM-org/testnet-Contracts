@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
  * @title NameServiceError - Error Definitions for NameService
  * @author Mate labs
  * @notice Custom errors for NameService.sol
- * @dev Gas-efficient errors used exclusively by NameService.sol. Works with State.sol (nonce) and Core.sol (payment).
+ * @dev Gas-efficient errors used exclusively by NameService.sol. Works with Core.sol (nonce validation and payments).
  */
 library NameServiceError {
     //█ Access Control Errors ███████████████████████████████████████████████████

@@ -7,10 +7,10 @@ import {
 } from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
 /**
- * @title CoreHashUtils
+ * @title EVVM Core Hash Utilities
  * @author Mate labs
- * @notice Hash generation for Core.sol payment operations (pay/dispersePay)
- * @dev Deterministic keccak256 hashes used with State.validateAndConsumeNonce for EIP-191 signature verification.
+ * @notice Generates deterministic hashes for Core contract payment operations.
+ * @dev Reconstructs data payloads for EIP-191 signature verification within the EVVM ecosystem.
  */
 library CoreHashUtils {
 

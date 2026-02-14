@@ -23,23 +23,11 @@ pragma solidity ^0.8.0;
    ██║   ██╔══╝  ╚════██║   ██║   ██║╚██╗██║██╔══╝     ██║   
    ██║   ███████╗███████║   ██║   ██║ ╚████║███████╗   ██║   
    ╚═╝   ╚══════╝╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚══════╝   ╚═╝   
- * @title Staking Mate contract
+ * @title EVVM Staking
  * @author Mate labs
- * @notice Staking mechanism for EVVM ecosystem validators
-
- * Security Features:
- * - EIP-191 signature verification via State.sol
- * - Async/sync nonce-based replay protection
- * - Time-locked administrative changes (1 day delay)
- * - Atomic service staking (single tx requirement)
- * - Cooldown periods prevent abuse
- *
- * History Tracking:
- * - Complete transaction history per user
- * - Records staking, unstaking, yield events
- * - Used for cooldown calculations
- * - Enables totalStaked snapshots
- *
+ * @notice Validator staking mechanism for the EVVM ecosystem.
+ * @dev Manages staking, unstaking, and yield distribution via the Estimator contract. 
+ *      Supports presale and public staking phases with time-locked security and nonce-based replay protection.
  */
 
 import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
@@ -125,29 +113,14 @@ contract Staking {
     }
 
     /**
-     * @notice Contract constructor
-     * @dev Initializes the staking contract with admin and golden fisher addresses
-     * @param initialAdmin Address that will have admin privileges
-     * @param initialGoldenFisher Address that will have golden fisher privileges
+     * @notice Initializes the staking contract.
+     * @param initialAdmin System administrator.
+     * @param initialGoldenFisher Authorized Golden Fisher address.
      */
     constructor(address initialAdmin, address initialGoldenFisher) {
         admin.current = initialAdmin;
 
         goldenFisher.current = initialGoldenFisher;
-
-        /**
-         * @dev Because presale staking is disabled by default
-         *      if you want to enable it, you need to do it via
-         *      this admin functions
-         *
-         *      prepareChangeAllowPresaleStaking()
-         *      prepareChangeAllowPublicStaking()
-         *
-         *      wait TIME_TO_ACCEPT_PROPOSAL
-         *
-         *      confirmChangeAllowPresaleStaking()
-         *      confirmChangeAllowPublicStaking()
-         */
 
         allowPublicStaking.flag = true;
         allowPresaleStaking.flag = false;
@@ -160,27 +133,9 @@ contract Staking {
     }
 
     /**
-     * @notice One-time initialization of system contracts
-     * @dev Sets Estimator, Evvm, and State contract addresses
-     *
-     * Setup Process:
-     * - Can only be called once (breaker protection)
-     * - Sets estimatorAddress.current
-     * - Sets EVVM_ADDRESS
-     * - Initializes evvm, estimator, state instances
-     * - Sets breaker to 0x00 (prevents re-init)
-     *
-     * Integration Setup:
-     * - Core.sol: Payment processing for staking tokens
-     * - Estimator.sol: Yield calculation for rewards
-     *
-     * Security:
-     * - One-time initialization via breaker flag
-     * - Must be called before any staking operations
-     * - No access control (assumed deployment context)
-     *
-     * @param _estimator Address of Estimator contract
-     * @param _core Address of Evvm core contract
+     * @notice Configures system contract integrations once.
+     * @param _estimator Estimator contract address (yield calculations).
+     * @param _core EVVM Core contract address (payments).
      */
     function initializeSystemContracts(
         address _estimator,
@@ -197,37 +152,11 @@ contract Staking {
     }
 
     /**
-     * @notice Golden fisher exclusive staking function
-     * @dev Unlimited staking with sync nonces for special
-     * privileges
-     *
-     * Golden Fisher Privileges:
-     * - Unlimited staking capacity (no 2-token limit)
-     * - Uses sync nonces (isAsyncExec = false)
-     * - Bypasses presale/public staking flags
-     * - Direct access without signature validation
-     *
-     * Sync Nonce Usage:
-     * - goldenFisher uses Core.sol sync nonces
-     * - isAsync = false in stakingBaseProcess
-     * - Nonces managed by Core.sol, not State.sol
-     * - Enables tight synchronization with Evvm ops
-     *
-     * Core.sol Integration:
-     * - Payment via makePay (if isStaking=true)
-     * - Cost: PRICE_OF_STAKING * amountOfStaking
-     * - Refund via makeCaPay (if isStaking=false)
-     * - signatureEvvm for Core.sol payment validation
-     *
-     * Staking Flow:
-     * - isStaking=true: Purchase staking tokens
-     * - isStaking=false: Unstake and refund
-     * - No cooldown or time lock restrictions
-     * - History recorded in userHistory
-     *
-     * @param isStaking True for staking, false for unstaking
-     * @param amountOfStaking Number of staking tokens
-     * @param signatureEvvm Signature for Core.sol validation
+     * @notice Unlimited staking/unstaking for the Golden Fisher.
+     * @dev Uses sync nonces for coordination with Core operations.
+     * @param isStaking True to stake, false to unstake.
+     * @param amountOfStaking Number of staking tokens.
+     * @param signatureEvvm Authorization signature for Core payment.
      */
     function goldenStaking(
         bool isStaking,
@@ -252,44 +181,14 @@ contract Staking {
     }
 
     /**
-     * @notice Presale whitelist staking with 2-token limit
-     * @dev Limited staking for registered presale addresses
-     *
-     * Presale Requirements:
-     * - allowPresaleStaking.flag must be true
-     * - allowPublicStaking.flag must be false
-     * - user must be in presale whitelist (isAllow)
-     * - Maximum 2 staking tokens per presale user
-     *
-     * State.sol Integration:
-     * - Validates signature with State.validateAndConsumeNonce
-     * - Uses async nonce (isAsyncExec = true)
-     * - Hash generated via StakingHashUtils
-     * - Prevents replay attacks
-     *
-     * Core.sol Integration:
-     * - Payment via stakingBaseProcess -> makePay
-     * - Cost: PRICE_OF_STAKING * 1 (fixed 1 token)
-     * - Refund via makeCaPay for unstaking
-     * - priorityFee_EVVM for faster processing
-     *
-     * Limit Enforcement:
-     * - isStaking=true: Requires current < 2
-     * - isStaking=false: Requires current > 0
-     * - stakingAmount updated after validation
-     *
-     * Usage:
-     * - Exclusive to presale phase
-     * - Cannot run with public staking
-     * - 800 total presale slots available
-     *
-     * @param user Address performing staking operation
-     * @param isStaking True for staking, false for unstaking
-     * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
-     * @param priorityFee_EVVM Priority fee for transaction
-     * @param nonceEvvm Nonce for Core.sol payment
-     * @param signatureEvvm Signature for Core.sol payment
+     * @notice White-listed presale staking (max 2 tokens per user).
+     * @param user Participant address.
+     * @param isStaking True to stake, false to unstake.
+     * @param nonce Async nonce for signature verification.
+     * @param signature Participant's authorization signature.
+     * @param priorityFee_EVVM Optional priority fee.
+     * @param nonceEvvm Nonce for the Core payment.
+     * @param signatureEvvm Signature for the Core payment.
      */
     function presaleStaking(
         address user,
@@ -337,44 +236,15 @@ contract Staking {
     }
 
     /**
-     * @notice Public staking open to all users
-     * @dev Unlimited staking when public phase enabled
-     *
-     * Public Requirements:
-     * - allowPublicStaking.flag must be true
-     * - No whitelist or user limits
-     * - Available to any address
-     *
-     * State.sol Integration:
-     * - Validates signature with State.validateAndConsumeNonce
-     * - Uses async nonce (isAsyncExec = true)
-     * - Hash includes user, isStaking, amountOfStaking
-     * - Prevents replay attacks
-     *
-     * Core.sol Integration:
-     * - Payment via stakingBaseProcess -> makePay
-     * - Cost: PRICE_OF_STAKING * amountOfStaking
-     * - Refund via makeCaPay for unstaking
-     * - priorityFee_EVVM for faster processing
-     *
-     * Staking Flexibility:
-     * - amountOfStaking: User-specified quantity
-     * - No per-user limits (unlike presale)
-     * - Subject to cooldown and time lock rules
-     *
-     * Time Locks:
-     * - Staking cooldown: secondsToUnlockStaking
-     * - Full unstake lock: secondsToUnllockFullUnstaking
-     * - Enforced in stakingBaseProcess
-     *
-     * @param user Address performing staking operation
-     * @param isStaking True for staking, false for unstaking
-     * @param amountOfStaking Number of staking tokens
-     * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
-     * @param priorityFee_EVVM Priority fee for transaction
-     * @param nonceEvvm Nonce for Core.sol payment
-     * @param signatureEvvm Signature for Core.sol payment
+     * @notice Public staking open to any user when enabled.
+     * @param user Participant address.
+     * @param isStaking True to stake, false to unstake.
+     * @param amountOfStaking Number of tokens.
+     * @param nonce Async nonce for signature verification.
+     * @param signature Participant's authorization signature.
+     * @param priorityFee_EVVM Optional priority fee.
+     * @param nonceEvvm Nonce for the Core payment.
+     * @param signatureEvvm Signature for the Core payment.
      */
     function publicStaking(
         address user,

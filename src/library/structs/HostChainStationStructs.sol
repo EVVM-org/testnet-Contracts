@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
  * @title Host Chain Station Data Structures
  * @author Mate labs
  * @notice Data structures for host to external chain bridge
- * @dev Structures for TreasuryHostChainStation: multi-protocol messaging (Hyperlane, LayerZero, Axelar). Independent from State.sol. Core.sol balance management on host only.
+ * @dev Structures for TreasuryHostChainStation: multi-protocol messaging (Hyperlane, LayerZero, Axelar). Core.sol balance management on host only. Fisher bridge uses Core.sol nonces.
  */
 
 library HostChainStationStructs {
