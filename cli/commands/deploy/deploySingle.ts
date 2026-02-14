@@ -121,6 +121,11 @@ export async function deploySingle(args: string[], options: any) {
   const coreAddress: `0x${string}` | null =
     await showDeployContractsAndFindEvvm(chainId);
 
+  if (!coreAddress)
+    criticalError(
+      `Failed to detect deployed Core contract address. Check ./broadcast/Deploy.s.sol/${chainId}/run-latest.json`
+    );
+
   sectionSubtitle("EVVM Registration");
   console.log(`
 ${colors.blue}Your EVVM instance is ready to be registered.${colors.reset}

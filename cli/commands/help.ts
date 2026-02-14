@@ -71,7 +71,7 @@ ${colors.bright}DEPLOY OPTIONS:${colors.reset}
 
 ${colors.bright}REGISTER OPTIONS:${colors.reset}
   ${colors.yellow}--coreAddress${colors.reset} ${colors.darkGray}<address>${colors.reset}
-                          Address of deployed EVVM contract to register
+                          Address of deployed Core contract to register
 
   ${colors.yellow}--treasuryExternalStationAddress${colors.reset} ${colors.darkGray}<address>${colors.reset}
                           External chain station address (cross-chain only)

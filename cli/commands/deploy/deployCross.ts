@@ -190,6 +190,16 @@ export async function deployCross(args: string[], options: any) {
     treasuryExternalChainStationAddress,
   } = await showAllCrossChainDeployedContracts(hostChainId!, externalChainId!);
 
+  if (!coreAddress)
+    criticalError(
+      `Failed to detect deployed Core contract address. Check ./broadcast/DeployCrossChainHost.s.sol/${hostChainId}/run-latest.json`
+    );
+
+  if (!treasuryHostChainStationAddress || !treasuryExternalChainStationAddress)
+    criticalError(
+      `Failed to detect treasury station addresses. Check host/external broadcast files.`
+    );
+
   sectionSubtitle("Cross-chain communication setup and EVVM registration");
   console.log(`
 ${colors.yellow}⚠ Important:${colors.reset} Admin addresses on both chains must match each wallet used during deployment
