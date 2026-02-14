@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**                                                                                                        
-██  ██ ▄▄  ▄▄ ▄▄ ▄▄▄▄▄▄   ▄▄▄▄▄▄ ▄▄▄▄▄  ▄▄▄▄ ▄▄▄▄▄▄ 
-██  ██ ███▄██ ██   ██       ██   ██▄▄  ███▄▄   ██   
-▀████▀ ██ ▀██ ██   ██       ██   ██▄▄▄ ▄▄██▀   ██   
-                                                    
-                                                    
-                                                    
- ▄▄▄▄  ▄▄▄  ▄▄▄▄  ▄▄▄▄  ▄▄▄▄▄  ▄▄▄▄ ▄▄▄▄▄▄          
-██▀▀▀ ██▀██ ██▄█▄ ██▄█▄ ██▄▄  ██▀▀▀   ██            
-▀████ ▀███▀ ██ ██ ██ ██ ██▄▄▄ ▀████   ██                                                    
+/** 
+ _______ __   __ _______ _______   _______ _______ _______ _______ 
+|       |  | |  |       |       | |       |       |       |       |
+|    ___|  | |  |____   |____   | |_     _|    ___|  _____|_     _|
+|   |___|  |_|  |____|  |____|  |   |   | |   |___| |_____  |   |  
+|    ___|       | ______| ______|   |   | |    ___|_____  | |   |  
+|   |   |       | |_____| |_____    |   | |   |___ _____| | |   |  
+|___|   |_______|_______|_______|   |___| |_______|_______| |___|  
  */
 
 pragma solidity ^0.8.0;
@@ -21,7 +19,10 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 contract fuzzTest_Core_state is Test, Constants {
-    //function executeBeforeSetUp() internal override {}
+    HelperStateTest helper;
+    function executeBeforeSetUp() internal override {
+        helper = new HelperStateTest(address(core));
+    }
 
     /**
      *  @dev because this script behaves like a smart contract we dont
@@ -43,40 +44,36 @@ contract fuzzTest_Core_state is Test, Constants {
     ) external {
         bytes memory signature = _executeSig_state_test(
             COMMON_USER_NO_STAKER_1,
-            address(this),
+            address(helper),
             inputs.testA,
             inputs.testB,
             inputs.testC,
             inputs.testD,
-            address(0),
+            inputs.callFromEOA ? COMMON_USER_NO_STAKER_2.Address : address(0),
             inputs.isAsyncExec
                 ? inputs.nonceAsync
-                : core.getNextCurrentSyncNonce(
-                    COMMON_USER_NO_STAKER_1.Address
-                ),
+                : core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
             inputs.isAsyncExec
         );
 
-        core.validateAndConsumeNonce(
+        vm.startPrank(
+            COMMON_USER_NO_STAKER_2.Address,
+            COMMON_USER_NO_STAKER_2.Address
+        );
+        helper.StateTest(
             COMMON_USER_NO_STAKER_1.Address,
-            keccak256(
-                abi.encode(
-                    "StateTest",
-                    inputs.testA,
-                    inputs.testB,
-                    inputs.testC,
-                    inputs.testD
-                )
-            ),
-            address(0),
+            inputs.testA,
+            inputs.testB,
+            inputs.testC,
+            inputs.testD,
+            inputs.callFromEOA ? COMMON_USER_NO_STAKER_2.Address : address(0),
             inputs.isAsyncExec
                 ? inputs.nonceAsync
-                : core.getNextCurrentSyncNonce(
-                    COMMON_USER_NO_STAKER_1.Address
-                ),
+                : core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
             inputs.isAsyncExec,
             signature
         );
+        vm.stopPrank();
 
         if (inputs.isAsyncExec) {
             assertTrue(

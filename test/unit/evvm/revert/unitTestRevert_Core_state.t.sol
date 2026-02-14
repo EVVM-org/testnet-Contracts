@@ -25,9 +25,11 @@ import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_Core_state is Test, Constants {
+    HelperStateTest helper;
     UserValidator private userValidatorMock;
     function executeBeforeSetUp() internal override {
         userValidatorMock = new UserValidator();
+        helper = new HelperStateTest(address(core));
     }
 
     /**
@@ -337,6 +339,45 @@ contract unitTestRevert_Core_state is Test, Constants {
             false,
             signature
         );
+    }
+
+    function test__unit_correct__validateAndConsumeNonce_OriginIsNotTheOriginExecutor()
+        external
+    {
+        InputsValidateAndConsumeNonce
+            memory inputs = InputsValidateAndConsumeNonce({
+                user: COMMON_USER_NO_STAKER_1,
+                testA: "textTest",
+                testB: 123,
+                testC: address(321),
+                testD: false
+            });
+        bytes memory signature = _executeSig_state_test(
+            COMMON_USER_NO_STAKER_1,
+            address(helper),
+            inputs.testA,
+            inputs.testB,
+            inputs.testC,
+            inputs.testD,
+            COMMON_USER_NO_STAKER_2.Address,
+            67,
+            true
+        );
+
+        vm.startPrank(WILDCARD_USER.Address, WILDCARD_USER.Address);
+        vm.expectRevert(CoreError.OriginIsNotTheOriginExecutor.selector);
+        helper.StateTest(
+            COMMON_USER_NO_STAKER_1.Address,
+            inputs.testA,
+            inputs.testB,
+            inputs.testC,
+            inputs.testD,
+            COMMON_USER_NO_STAKER_2.Address,
+            67,
+            true,
+            signature
+        );
+        vm.stopPrank();
     }
 
     function test__unit_revert__reserveAsyncNonce__InvalidServiceAddress()
