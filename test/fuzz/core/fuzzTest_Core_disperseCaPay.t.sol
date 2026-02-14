@@ -21,7 +21,7 @@ import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     CoreError
 } from "@evvm/testnet-contracts/library/errors/CoreError.sol";
-contract fuzzTest_EVVM_disperseCaPay is Test, Constants {
+contract fuzzTest_Core_disperseCaPay is Test, Constants {
     function addBalance(address user, address token, uint256 amount) private {
         core.addBalance(user, token, amount);
     }

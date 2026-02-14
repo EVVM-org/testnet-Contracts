@@ -20,7 +20,7 @@ import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-contract fuzzTest_EVVM_caPay is Test, Constants {
+contract fuzzTest_Core_caPay is Test, Constants {
     function executeBeforeSetUp() internal override {
         core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
     }

@@ -20,7 +20,7 @@ import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
-contract fuzzTest_EVVM_pay is Test, Constants {
+contract fuzzTest_Core_dispersePay is Test, Constants {
     function executeBeforeSetUp() internal override {
         core.setPointStaker(COMMON_USER_STAKER.Address, 0x00);
     }
@@ -84,137 +84,63 @@ contract fuzzTest_EVVM_pay is Test, Constants {
         return (_amount, _priorityFee);
     }
 
-    struct PayInputsToAddress {
+    struct PayInputs {
         bool usingExecutor;
         bool isUsingAsyncNonce;
         bool isExecutorStaker;
-        address toAddress;
+        address toAddressA;
         address token;
-        uint16 amount;
-        uint16 priorityFee;
-        address executor;
-        uint136 asyncNonce;
-    }
-
-    function test__fuzz__pay__toAddress(
-        PayInputsToAddress memory input
-    ) external {
-        vm.assume(
-            input.amount > 0 &&
-                input.token != PRINCIPAL_TOKEN_ADDRESS &&
-                input.executor != input.toAddress &&
-                input.executor != COMMON_USER_NO_STAKER_1.Address &&
-                input.toAddress != COMMON_USER_NO_STAKER_1.Address &&
-                input.executor != address(staking)
-        );
-
-        uint256 nonce = input.isUsingAsyncNonce
-            ? input.asyncNonce
-            : core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
-
-        (uint256 amount, uint256 priorityFee) = _addBalance(
-            COMMON_USER_NO_STAKER_1,
-            input.token,
-            input.amount,
-            input.priorityFee
-        );
-
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
-            COMMON_USER_NO_STAKER_1,
-            input.toAddress,
-            "",
-            input.token,
-            amount,
-            priorityFee,
-            input.usingExecutor ? input.executor : address(0),
-            nonce,
-            input.isUsingAsyncNonce
-        );
-
-        core.setPointStaker(
-            input.executor,
-            input.isExecutorStaker ? bytes1(0x01) : bytes1(0x00)
-        );
-        vm.startPrank(input.executor);
-        core.pay(
-            COMMON_USER_NO_STAKER_1.Address,
-            input.toAddress,
-            "",
-            input.token,
-            amount,
-            priorityFee,
-            input.usingExecutor ? input.executor : address(0),
-            nonce,
-            input.isUsingAsyncNonce,
-            signatureEVVM
-        );
-        vm.stopPrank();
-
-        assertEq(
-            core.getBalance(COMMON_USER_NO_STAKER_1.Address, input.token),
-            input.isExecutorStaker ? 0 : priorityFee,
-            "Sender balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
-        );
-
-        assertEq(
-            core.getBalance(input.toAddress, input.token),
-            amount,
-            "Balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
-        );
-
-        assertEq(
-            core.getBalance(input.executor, input.token),
-            input.isExecutorStaker ? uint256(priorityFee) : 0,
-            "Executor balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
-        );
-
-        assertEq(
-            core.getBalance(input.executor, PRINCIPAL_TOKEN_ADDRESS),
-            input.isExecutorStaker ? core.getRewardAmount() : 0,
-            "Executor balance after check if executor should not or should recieve rewards incorrect"
-        );
-    }
-
-    struct PayInputsToIdentity {
-        bool usingExecutor;
-        bool isUsingAsyncNonce;
-        bool isExecutorStaker;
-        address token;
-        uint16 amount;
+        uint16 amountA;
+        uint16 amountB;
         uint16 priorityFee;
         address executor;
         uint136 asyncNonce;
         uint16 seedUsername;
     }
 
-    function test__fuzz__pay__toIdentity(
-        PayInputsToIdentity memory input
-    ) external {
+    function test__fuzz__dispersePay(PayInputs memory input) external {
         vm.assume(
-            input.amount > 0 &&
+            input.amountA > 0 &&
+                input.amountB > 0 &&
                 input.token != PRINCIPAL_TOKEN_ADDRESS &&
-                input.executor != COMMON_USER_NO_STAKER_1.Address &&
+                input.executor != input.toAddressA &&
                 input.executor != COMMON_USER_NO_STAKER_2.Address &&
-                input.executor != address(staking)
+                input.executor != COMMON_USER_NO_STAKER_1.Address &&
+                input.toAddressA != COMMON_USER_NO_STAKER_1.Address &&
+                input.toAddressA != COMMON_USER_NO_STAKER_2.Address
         );
+
+        string memory username = _makeRandomUsername(input.seedUsername);
+
+        (uint256 amount, uint256 priorityFee) = _addBalance(
+            COMMON_USER_NO_STAKER_1,
+            input.token,
+            uint256(input.amountA) + uint256(input.amountB),
+            input.priorityFee
+        );
+
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
+
+        toData[0] = CoreStructs.DispersePayMetadata({
+            amount: input.amountA,
+            to_address: input.toAddressA,
+            to_identity: ""
+        });
+
+        toData[1] = CoreStructs.DispersePayMetadata({
+            amount: input.amountB,
+            to_address: address(0),
+            to_identity: username
+        });
 
         uint256 nonce = input.isUsingAsyncNonce
             ? input.asyncNonce
             : core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
 
-        (uint256 amount, uint256 priorityFee) = _addBalance(
+        bytes memory signatureEVVM = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
-            input.token,
-            input.amount,
-            input.priorityFee
-        );
-
-        string memory username = _makeRandomUsername(input.seedUsername);
-
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
-            COMMON_USER_NO_STAKER_1,
-            address(0),
-            username,
+            toData,
             input.token,
             amount,
             priorityFee,
@@ -228,10 +154,9 @@ contract fuzzTest_EVVM_pay is Test, Constants {
             input.isExecutorStaker ? bytes1(0x01) : bytes1(0x00)
         );
         vm.startPrank(input.executor);
-        core.pay(
+        core.dispersePay(
             COMMON_USER_NO_STAKER_1.Address,
-            address(0),
-            username,
+            toData,
             input.token,
             amount,
             priorityFee,
@@ -249,9 +174,15 @@ contract fuzzTest_EVVM_pay is Test, Constants {
         );
 
         assertEq(
-            core.getBalance(COMMON_USER_NO_STAKER_2.Address, input.token),
-            amount,
+            core.getBalance(input.toAddressA, input.token),
+            input.amountA,
             "Balance after pay with toAddress is incorrect check if staker validation or _updateBalance is correct"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, input.token),
+            input.amountB,
+            "Balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(

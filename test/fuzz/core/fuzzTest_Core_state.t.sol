@@ -20,7 +20,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
-contract fuzzTest_State_functions is Test, Constants {
+contract fuzzTest_Core_state is Test, Constants {
     //function executeBeforeSetUp() internal override {}
 
     /**

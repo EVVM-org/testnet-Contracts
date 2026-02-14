@@ -23,7 +23,7 @@ import {
     CoreStructs
 } from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
-contract fuzzTest_EVVM_batchPay is Test, Constants {
+contract fuzzTest_Core_batchPay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
