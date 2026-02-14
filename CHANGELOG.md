@@ -66,6 +66,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented `Core.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
   - Updated `ExternalChainStationStructs` and `HostChainStationStructs` to be a library instead of an abstract contract for better modularity and reuse across services
 - **NatSpec documentation**: Updated and added NatSpec documentation across all contracts for improved clarity and maintainability
+- **Testing**: Refactored and added tests to cover new `Core.sol` functionality and its integration with services, including payment handling, signature verification, and nonce management scenarios
+- **Github templates**: Updated `bug_report.md` and `feature_request.md` templates to include `Core.sol` as an option
 
 ### Removed
 
@@ -74,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Service SignatureUtils**: Removed service-specific signature utilities because signature generation and verification is now centralized in `Core.sol` using `AdvancedStrings.sol` for payload construction
 - **Redundant Structs**: Removed all governance-related structs from individual service struct libraries, as they are now centralized in `GovernanceUtils.sol` for better organization and reuse
 - **Service nonce libraries**: Removed all service-specific nonce libraries, as nonce management is now handled by `Core.sol`
+- **Github templates**: Removed references to `Evvm.sol` in `bug_report.md` and `feature_request.md` templates
 
 ### Fixed
 

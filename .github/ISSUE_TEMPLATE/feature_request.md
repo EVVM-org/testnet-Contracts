@@ -20,8 +20,7 @@ A clear and concise description of what you want to happen.
 
 ## Target Component
 <!-- Which part of the EVVM ecosystem would this affect? -->
-- [ ] EVVM Core (`evvm/`)
-- [ ] State (`state/`)
+- [ ] Core (`core/`)
 - [ ] Name Service (`nameService/`)
 - [ ] Staking (`staking/`)
 - [ ] Treasury (`treasury/`)
