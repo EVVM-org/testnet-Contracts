@@ -2,6 +2,12 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 pragma solidity ^0.8.0;
+
+import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
+import {
+    StakingStructs
+} from "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+
 /**
 MM""""""""`M            dP   oo                       dP                     
 MM  mmmmmmmM            88                            88                     
@@ -17,10 +23,7 @@ MMMMMMMMMMMM
  * @dev Collaborates with Staking.sol to track epochs, total staked amounts, and distribution pools. 
  *      Features time-delayed governance for administrative changes.
  */
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    StakingStructs
-} from "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+
 
 
 contract Estimator {

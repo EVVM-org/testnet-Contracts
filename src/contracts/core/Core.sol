@@ -2,6 +2,39 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 pragma solidity ^0.8.0;
+
+import {
+    CoreStorage as Storage
+} from "@evvm/testnet-contracts/contracts/core/lib/CoreStorage.sol";
+import {
+    CoreError as Error
+} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+import {
+    CoreHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/CoreHashUtils.sol";
+import {
+    CoreStructs as Structs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
+import {
+    IUserValidator as UserValidator
+} from "@evvm/testnet-contracts/interfaces/IUserValidator.sol";
+
+import {
+    NameService
+} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
+
+import {
+    AdvancedStrings
+} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    SignatureRecover
+} from "@evvm/testnet-contracts/library/primitives/SignatureRecover.sol";
+import {CAUtils} from "@evvm/testnet-contracts/library/utils/CAUtils.sol";
+import {
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+
+
 /**
  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓████████▓▒░ 
 ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        
@@ -24,37 +57,8 @@ pragma solidity ^0.8.0;
  *      Features multi-token payments with EIP-191 signatures, dual nonce system (sync/async),
  *      and staker rewards. Governed by a time-delayed admin and implementation upgrade system.
  */
-
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {
-    CoreStorage
-} from "@evvm/testnet-contracts/contracts/core/lib/CoreStorage.sol";
-import {
-    CoreError as Error
-} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
-import {
-    CoreHashUtils as Hash
-} from "@evvm/testnet-contracts/library/utils/signature/CoreHashUtils.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    CoreStructs
-} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
-import {
-    ProposalStructs
-} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
-import {CAUtils} from "@evvm/testnet-contracts/library/utils/CAUtils.sol";
-import {
-    IUserValidator
-} from "@evvm/testnet-contracts/interfaces/IUserValidator.sol";
-import {
-    SignatureRecover
-} from "@evvm/testnet-contracts/library/primitives/SignatureRecover.sol";
-
-contract Core is CoreStorage {
+ 
+contract Core is Storage {
     /**
      * @notice Restricts access to the system administrator.
      */
@@ -73,7 +77,7 @@ contract Core is CoreStorage {
     constructor(
         address _initialOwner,
         address _stakingContractAddress,
-        CoreStructs.EvvmMetadata memory _evvmMetadata
+        Structs.EvvmMetadata memory _evvmMetadata
     ) {
         if (
             _initialOwner == address(0) || _stakingContractAddress == address(0)
@@ -300,11 +304,11 @@ contract Core is CoreStorage {
      * @return results Success status for each payment in the batch.
      */
     function batchPay(
-        CoreStructs.BatchData[] memory batchData
+        Structs.BatchData[] memory batchData
     ) external returns (uint256 successfulTransactions, bool[] memory results) {
         bool isSenderStaker = isAddressStaker(msg.sender);
         address to_aux;
-        CoreStructs.BatchData memory payment;
+        Structs.BatchData memory payment;
         results = new bool[](batchData.length);
 
         for (uint256 iteration = 0; iteration < batchData.length; iteration++) {
@@ -424,7 +428,7 @@ contract Core is CoreStorage {
      */
     function dispersePay(
         address from,
-        CoreStructs.DispersePayMetadata[] memory toData,
+        Structs.DispersePayMetadata[] memory toData,
         address token,
         uint256 amount,
         uint256 priorityFee,
@@ -544,7 +548,7 @@ contract Core is CoreStorage {
      * @param amount Total amount to distribute.
      */
     function disperseCaPay(
-        CoreStructs.DisperseCaPayMetadata[] memory toData,
+        Structs.DisperseCaPayMetadata[] memory toData,
         address token,
         uint256 amount
     ) external {
@@ -1013,7 +1017,7 @@ contract Core is CoreStorage {
     function getEvvmMetadata()
         external
         view
-        returns (CoreStructs.EvvmMetadata memory)
+        returns (Structs.EvvmMetadata memory)
     {
         return evvmMetadata;
     }
@@ -1391,6 +1395,6 @@ contract Core is CoreStorage {
         address user
     ) internal view returns (bool) {
         if (userValidatorAddress.current == address(0)) return true;
-        return IUserValidator(userValidatorAddress.current).canExecute(user);
+        return UserValidator(userValidatorAddress.current).canExecute(user);
     }
 }

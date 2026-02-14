@@ -2,6 +2,22 @@
 // Full license terms available at: https://www.evvm.org/docs/EVVMNoncommercialLicense
 
 pragma solidity ^0.8.0;
+
+import {
+    P2PSwapHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/P2PSwapHashUtils.sol";
+import {
+    P2PSwapStructs as Structs
+} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
+
+import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
+import {EvvmService} from "@evvm/testnet-contracts/library/EvvmService.sol";
+import {CoreStructs} from "@evvm/testnet-contracts/interfaces/ICore.sol";
+
+import {
+    AdvancedStrings
+} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+
 /**
  /$$$$$$$  /$$$$$$ /$$$$$$$  /$$$$$$                                
 | $$__  $$/$$__  $| $$__  $$/$$__  $$                               
@@ -21,20 +37,8 @@ pragma solidity ^0.8.0;
  * @dev Supports order book-style trading with customizable fee models. 
  *      Integrates with Core.sol for asset locking and settlements, and Staking.sol for validator rewards.
  */
-import {
-    P2PSwapHashUtils as Hash
-} from "@evvm/testnet-contracts/library/utils/signature/P2PSwapHashUtils.sol";
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    P2PSwapStructs
-} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
-import {EvvmService} from "@evvm/testnet-contracts/library/EvvmService.sol";
-import "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
-contract P2PSwap is EvvmService, P2PSwapStructs {
+contract P2PSwap is EvvmService, Structs {
     address owner;
     address owner_proposal;
     uint256 owner_timeToAccept;
@@ -87,7 +91,7 @@ contract P2PSwap is EvvmService, P2PSwapStructs {
 
     /**
      * @notice Creates a new limit order in a specific trading market.
-     * @dev Locks tokenA in Core.sol and opens an order slot. 
+     * @dev Locks tokenA in Core.sol and opens an order slot.
      *      Markets are automatically created for new token pairs.
      * @param user Seller address.
      * @param metadata Order details (tokens, amounts, nonce).

@@ -2,6 +2,29 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 pragma solidity ^0.8.0;
+
+import {
+    NameServiceError as Error
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
+import {
+    NameServiceHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/NameServiceHashUtils.sol";
+import {
+    NameServiceStructs as Structs
+} from "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
+import {
+    IdentityValidation
+} from "@evvm/testnet-contracts/contracts/nameService/lib/IdentityValidation.sol";
+
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+
+import {
+    AdvancedStrings
+} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+
 /**
  _   _                            
 | \ | |                           
@@ -32,27 +55,8 @@ pragma solidity ^0.8.0;
  *      a secondary marketplace for domain trading, and customizable user metadata. 
  *      Integrates with Core.sol for payment processing and uses async nonces for high throughput.
  */
- import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
-import {
-    NameServiceStructs
-} from "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
-import {
-    ProposalStructs
-} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    NameServiceError as Error
-} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
-import {
-    NameServiceHashUtils as Hash
-} from "@evvm/testnet-contracts/library/utils/signature/NameServiceHashUtils.sol";
-import {
-    IdentityValidation
-} from "@evvm/testnet-contracts/contracts/nameService/lib/IdentityValidation.sol";
 
- contract NameService {
+contract NameService {
     /// @dev Time delay for accepting proposals (1 day)
     uint256 constant TIME_TO_ACCEPT_PROPOSAL = 1 days;
 
@@ -60,7 +64,7 @@ import {
     uint256 private principalTokenTokenLockedForWithdrawOffers;
 
     /// @dev Nested mapping: username => offer ID => offer
-    mapping(string username => mapping(uint256 id => NameServiceStructs.OfferMetadata))
+    mapping(string username => mapping(uint256 id => Structs.OfferMetadata))
         private usernameOffers;
 
     /// @dev Nested mapping: username => key => custom value
@@ -77,7 +81,7 @@ import {
     ProposalStructs.AddressTypeProposal admin;
 
     /// @dev Mapping from username to core metadata
-    mapping(string username => NameServiceStructs.IdentityBaseMetadata basicMetadata)
+    mapping(string username => Structs.IdentityBaseMetadata basicMetadata)
         private identityDetails;
 
     /// @dev EVVM contract for payment processing
@@ -144,7 +148,7 @@ import {
                 "@",
                 AdvancedStrings.bytes32ToString(hashPreRegisteredUsername)
             )
-        ] = NameServiceStructs.IdentityBaseMetadata({
+        ] = Structs.IdentityBaseMetadata({
             owner: user,
             expirationDate: block.timestamp + 30 minutes,
             customMetadataMaxSlots: 0,
@@ -215,7 +219,7 @@ import {
             identityDetails[_key].expirationDate > block.timestamp
         ) revert Error.PreRegistrationNotValid();
 
-        identityDetails[username] = NameServiceStructs.IdentityBaseMetadata({
+        identityDetails[username] = Structs.IdentityBaseMetadata({
             owner: user,
             expirationDate: block.timestamp + 366 days,
             customMetadataMaxSlots: 0,
@@ -287,7 +291,7 @@ import {
 
         uint256 amountToOffer = ((amount * 995) / 1000);
 
-        usernameOffers[username][offerID] = NameServiceStructs.OfferMetadata({
+        usernameOffers[username][offerID] = Structs.OfferMetadata({
             offerer: user,
             expirationDate: expirationDate,
             amount: amountToOffer
@@ -952,7 +956,7 @@ import {
                 priorityFeeEvvm
         );
 
-        identityDetails[username] = NameServiceStructs.IdentityBaseMetadata({
+        identityDetails[username] = Structs.IdentityBaseMetadata({
             owner: address(0),
             expirationDate: 0,
             customMetadataMaxSlots: 0,
@@ -1433,8 +1437,8 @@ import {
      */
     function getOffersOfUsername(
         string memory _username
-    ) public view returns (NameServiceStructs.OfferMetadata[] memory offers) {
-        offers = new NameServiceStructs.OfferMetadata[](
+    ) public view returns (Structs.OfferMetadata[] memory offers) {
+        offers = new Structs.OfferMetadata[](
             identityDetails[_username].offerMaxSlots
         );
 
@@ -1453,7 +1457,7 @@ import {
     function getSingleOfferOfUsername(
         string memory _username,
         uint256 _offerID
-    ) public view returns (NameServiceStructs.OfferMetadata memory offer) {
+    ) public view returns (Structs.OfferMetadata memory offer) {
         return usernameOffers[_username][_offerID];
     }
 

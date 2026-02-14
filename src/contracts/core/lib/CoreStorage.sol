@@ -4,8 +4,9 @@
 pragma solidity ^0.8.0;
 
 import {
-    CoreStructs
+    CoreStructs as Structs
 } from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
+
 import {
     ProposalStructs
 } from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
@@ -14,7 +15,7 @@ import {
  * @title CoreStorage
  * @author Mate labs
  * @notice Centralized storage layout for the EVVM Core contract.
- * @dev Designed for use with proxy patterns. This contract must remain append-only 
+ * @dev Designed for use with proxy patterns. This contract must remain append-only
  *      to maintain storage slots across upgrades.
  */
 abstract contract CoreStorage {
@@ -59,7 +60,6 @@ abstract contract CoreStorage {
      * @dev Authorized for privileged balance operations (add/remove tokens).
      */
     address treasuryAddress;
-
 
     //░▒▓█ Token Whitelist Proposal State ██████████████████████████████████████████████▓▒░
 
@@ -107,7 +107,7 @@ abstract contract CoreStorage {
      * @notice Metadata configuration for this EVVM instance (ID, token info, rewards).
      * @dev Crucial for EIP-191 signature verification to prevent replay attacks.
      */
-    CoreStructs.EvvmMetadata evvmMetadata;
+    Structs.EvvmMetadata evvmMetadata;
 
     //░▒▓█ Admin Governance State ██████████████████████████████████████████████████████▓▒░
 
@@ -152,7 +152,6 @@ abstract contract CoreStorage {
      */
     ProposalStructs.AddressTypeProposal userValidatorAddress;
 
-
     /**
      * @notice tracks if a specific async nonce has already been consumed.
      * @dev Async nonces allow parallel execution as they can be used in any order.
@@ -163,12 +162,10 @@ abstract contract CoreStorage {
      * @notice Reserves an async nonce for a specific service address.
      * @dev Prevents different services from attempting to use the same user nonce simultaneously.
      */
-    mapping(address user => mapping(uint256 nonce => address serviceReserved))
-         asyncNonceReservedPointers;
+    mapping(address user => mapping(uint256 nonce => address serviceReserved)) asyncNonceReservedPointers;
 
     /**
      * @notice tracks the next expected nonce for sequential (synchronous) transactions.
      */
-    mapping(address user => uint256 nonce)  nextSyncNonce;
+    mapping(address user => uint256 nonce) nextSyncNonce;
 }
-

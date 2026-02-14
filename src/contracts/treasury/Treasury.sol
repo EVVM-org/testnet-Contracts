@@ -3,6 +3,15 @@
 
 pragma solidity ^0.8.0;
 
+import {
+    TreasuryError as Error
+} from "@evvm/testnet-contracts/library/errors/TreasuryError.sol";
+
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+
+import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
+import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
+
 /**
 ░██████████                                                     
     ░██                                                         
@@ -27,13 +36,6 @@ pragma solidity ^0.8.0;
  * @dev Handles ETH and ERC20 tokens, syncing balances with Core.sol. 
  *      Principal Tokens are not withdrawable via this contract.
  */
-import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
-import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
-import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
-import {
-    TreasuryError as Error
-} from "@evvm/testnet-contracts/library/errors/TreasuryError.sol";
-
 
 contract Treasury {
     /// @dev Reference to the EVVM core contract for balance management
@@ -67,8 +69,7 @@ contract Treasury {
 
             if (msg.value != 0) revert Error.DepositCoinWithToken();
 
-            if (amount == 0)
-                revert Error.DepositAmountMustBeGreaterThanZero();
+            if (amount == 0) revert Error.DepositAmountMustBeGreaterThanZero();
 
             IERC20(token).transferFrom(msg.sender, address(this), amount);
             core.addAmountToUser(msg.sender, token, amount);

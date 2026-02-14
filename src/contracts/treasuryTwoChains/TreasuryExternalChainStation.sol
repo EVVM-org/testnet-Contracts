@@ -3,6 +3,61 @@
 
 pragma solidity ^0.8.0;
 
+import {
+    CrossChainTreasuryError as Error
+} from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
+import {
+    TreasuryCrossChainHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/TreasuryCrossChainHashUtils.sol";
+import {
+    ExternalChainStationStructs as Structs
+} from "@evvm/testnet-contracts/library/structs/ExternalChainStationStructs.sol";
+import {
+    PayloadUtils
+} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/PayloadUtils.sol";
+
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+
+import {
+    SignatureRecover
+} from "@evvm/testnet-contracts/library/primitives/SignatureRecover.sol";
+import {
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+import {
+    AdvancedStrings
+} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+
+import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
+import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
+import {
+    MessagingParams,
+    MessagingReceipt
+} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
+import {
+    OApp,
+    Origin,
+    MessagingFee
+} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
+import {
+    OAppOptionsType3
+} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OAppOptionsType3.sol";
+import {
+    OptionsBuilder
+} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
+import {
+    AxelarExecutable
+} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
+import {
+    IAxelarGasService
+} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol";
+import {
+    IInterchainGasEstimation
+} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IInterchainGasEstimation.sol";
+
+
 /**
  _____                                                       
 /__   \_ __ ___  __ _ ___ _   _ _ __ _   _                   
@@ -33,62 +88,6 @@ pragma solidity ^0.8.0;
  * @dev Multi-protocol bridge supporting Hyperlane, LayerZero V2, and Axelar. 
  *      Facilitates token transfers using a sequential nonce system and ECDSA signatures.
  */
-import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
-import {
-    CrossChainTreasuryError as Error
-} from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
-import {
-    StateError
-} from "@evvm/testnet-contracts/library/errors/StateError.sol";
-import {
-    SignatureRecover
-} from "@evvm/testnet-contracts/library/primitives/SignatureRecover.sol";
-import {
-    TreasuryCrossChainHashUtils as Hash
-} from "@evvm/testnet-contracts/library/utils/signature/TreasuryCrossChainHashUtils.sol";
-import {
-    ExternalChainStationStructs
-} from "@evvm/testnet-contracts/library/structs/ExternalChainStationStructs.sol";
-
-import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
-import {
-    ProposalStructs
-} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
-import {
-    PayloadUtils
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/PayloadUtils.sol";
-
-import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
-
-import {
-    MessagingParams,
-    MessagingReceipt
-} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
-import {
-    OApp,
-    Origin,
-    MessagingFee
-} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
-import {
-    OAppOptionsType3
-} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OAppOptionsType3.sol";
-import {
-    OptionsBuilder
-} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
-import {
-    AxelarExecutable
-} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
-import {
-    IAxelarGasService
-} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol";
-import {
-    IInterchainGasEstimation
-} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IInterchainGasEstimation.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 contract TreasuryExternalChainStation is
     OApp,
@@ -105,19 +104,19 @@ contract TreasuryExternalChainStation is
 
     /// @notice Hyperlane protocol configuration for cross-chain messaging
     /// @dev Contains domain ID, host chain address, and mailbox contract address
-    ExternalChainStationStructs.HyperlaneConfig hyperlane;
+    Structs.HyperlaneConfig hyperlane;
 
     /// @notice LayerZero protocol configuration for omnichain messaging
     /// @dev Contains endpoint ID, host chain address, and endpoint contract address
-    ExternalChainStationStructs.LayerZeroConfig layerZero;
+    Structs.LayerZeroConfig layerZero;
 
     /// @notice Axelar protocol configuration for cross-chain communication
     /// @dev Contains chain name, host chain address, gas service, and gateway addresses
-    ExternalChainStationStructs.AxelarConfig axelar;
+    Structs.AxelarConfig axelar;
 
     /// @notice Pending proposal for changing host chain addresses across all protocols
     /// @dev Used for coordinated updates to host chain addresses with time delay
-    ExternalChainStationStructs.ChangeHostChainAddressParams hostChainAddress;
+    Structs.ChangeHostChainAddressParams hostChainAddress;
 
     /// @notice Unique identifier for the EVVM instance this station belongs to
     /// @dev Immutable value set at deployment for signature verification
@@ -180,7 +179,7 @@ contract TreasuryExternalChainStation is
     /// @param _crosschainConfig Configuration struct containing all cross-chain protocol settings
     constructor(
         address _admin,
-        ExternalChainStationStructs.CrosschainConfig memory _crosschainConfig
+        Structs.CrosschainConfig memory _crosschainConfig
     )
         OApp(_crosschainConfig.layerZero.endpointAddress, _admin)
         Ownable(_admin)
@@ -191,21 +190,21 @@ contract TreasuryExternalChainStation is
             proposal: address(0),
             timeToAccept: 0
         });
-        hyperlane = ExternalChainStationStructs.HyperlaneConfig({
+        hyperlane = Structs.HyperlaneConfig({
             hostChainStationDomainId: _crosschainConfig
                 .hyperlane
                 .hostChainStationDomainId,
             hostChainStationAddress: "",
             mailboxAddress: _crosschainConfig.hyperlane.mailboxAddress
         });
-        layerZero = ExternalChainStationStructs.LayerZeroConfig({
+        layerZero = Structs.LayerZeroConfig({
             hostChainStationEid: _crosschainConfig
                 .layerZero
                 .hostChainStationEid,
             hostChainStationAddress: "",
             endpointAddress: _crosschainConfig.layerZero.endpointAddress
         });
-        axelar = ExternalChainStationStructs.AxelarConfig({
+        axelar = Structs.AxelarConfig({
             hostChainStationChainName: _crosschainConfig
                 .axelar
                 .hostChainStationChainName,
@@ -487,7 +486,7 @@ contract TreasuryExternalChainStation is
         uint256 nonce,
         bytes memory signature
     ) external onlyFisherExecutor {
-        if (asyncNonce[from][nonce]) revert StateError.AsyncNonceAlreadyUsed();
+        if (asyncNonce[from][nonce]) revert CoreError.AsyncNonceAlreadyUsed();
 
         if (
             SignatureRecover.recoverSigner(
@@ -506,7 +505,7 @@ contract TreasuryExternalChainStation is
                 ),
                 signature
             ) != from
-        ) revert StateError.InvalidSignature();
+        ) revert CoreError.InvalidSignature();
 
         asyncNonce[from][nonce] = true;
     }
@@ -570,7 +569,7 @@ contract TreasuryExternalChainStation is
         uint256 nonce,
         bytes memory signature
     ) external onlyFisherExecutor {
-        if (asyncNonce[from][nonce]) revert StateError.AsyncNonceAlreadyUsed();
+        if (asyncNonce[from][nonce]) revert CoreError.AsyncNonceAlreadyUsed();
 
         if (
             SignatureRecover.recoverSigner(
@@ -589,7 +588,7 @@ contract TreasuryExternalChainStation is
                 ),
                 signature
             ) != from
-        ) revert StateError.InvalidSignature();
+        ) revert CoreError.InvalidSignature();
 
         verifyAndDepositERC20(tokenAddress, amount);
 
@@ -668,7 +667,7 @@ contract TreasuryExternalChainStation is
         uint256 nonce,
         bytes memory signature
     ) external payable onlyFisherExecutor {
-        if (asyncNonce[from][nonce]) revert StateError.AsyncNonceAlreadyUsed();
+        if (asyncNonce[from][nonce]) revert CoreError.AsyncNonceAlreadyUsed();
 
         if (
             SignatureRecover.recoverSigner(
@@ -687,7 +686,7 @@ contract TreasuryExternalChainStation is
                 ),
                 signature
             ) != from
-        ) revert StateError.InvalidSignature();
+        ) revert CoreError.InvalidSignature();
 
         if (msg.value != amount + priorityFee)
             revert Error.InsufficientBalance();
@@ -1094,25 +1093,23 @@ contract TreasuryExternalChainStation is
     ) external onlyAdmin {
         if (fuseSetHostChainAddress == 0x01) revert();
 
-        hostChainAddress = ExternalChainStationStructs
-            .ChangeHostChainAddressParams({
-                porposeAddress_AddressType: hostChainStationAddress,
-                porposeAddress_StringType: hostChainStationAddressString,
-                currentAddress: hostChainAddress.currentAddress,
-                timeToAccept: block.timestamp + 1 minutes
-            });
+        hostChainAddress = Structs.ChangeHostChainAddressParams({
+            porposeAddress_AddressType: hostChainStationAddress,
+            porposeAddress_StringType: hostChainStationAddressString,
+            currentAddress: hostChainAddress.currentAddress,
+            timeToAccept: block.timestamp + 1 minutes
+        });
     }
 
     /// @notice Cancels a pending host chain address change proposal
     /// @dev Resets the host chain address proposal to default state
     function rejectProposalHostChainAddress() external onlyAdmin {
-        hostChainAddress = ExternalChainStationStructs
-            .ChangeHostChainAddressParams({
-                porposeAddress_AddressType: address(0),
-                porposeAddress_StringType: "",
-                currentAddress: hostChainAddress.currentAddress,
-                timeToAccept: 0
-            });
+        hostChainAddress = Structs.ChangeHostChainAddressParams({
+            porposeAddress_AddressType: address(0),
+            porposeAddress_StringType: "",
+            currentAddress: hostChainAddress.currentAddress,
+            timeToAccept: 0
+        });
     }
 
     /// @notice Accepts pending host chain address changes across all protocols
@@ -1134,13 +1131,12 @@ contract TreasuryExternalChainStation is
             layerZero.hostChainStationAddress
         );
 
-        hostChainAddress = ExternalChainStationStructs
-            .ChangeHostChainAddressParams({
-                porposeAddress_AddressType: address(0),
-                porposeAddress_StringType: "",
-                currentAddress: hostChainAddress.porposeAddress_AddressType,
-                timeToAccept: 0
-            });
+        hostChainAddress = Structs.ChangeHostChainAddressParams({
+            porposeAddress_AddressType: address(0),
+            porposeAddress_StringType: "",
+            currentAddress: hostChainAddress.porposeAddress_AddressType,
+            timeToAccept: 0
+        });
     }
 
     // Getter functions //
@@ -1177,7 +1173,7 @@ contract TreasuryExternalChainStation is
     function getHyperlaneConfig()
         external
         view
-        returns (ExternalChainStationStructs.HyperlaneConfig memory)
+        returns (Structs.HyperlaneConfig memory)
     {
         return hyperlane;
     }
@@ -1187,7 +1183,7 @@ contract TreasuryExternalChainStation is
     function getLayerZeroConfig()
         external
         view
-        returns (ExternalChainStationStructs.LayerZeroConfig memory)
+        returns (Structs.LayerZeroConfig memory)
     {
         return layerZero;
     }
@@ -1197,7 +1193,7 @@ contract TreasuryExternalChainStation is
     function getAxelarConfig()
         external
         view
-        returns (ExternalChainStationStructs.AxelarConfig memory)
+        returns (Structs.AxelarConfig memory)
     {
         return axelar;
     }

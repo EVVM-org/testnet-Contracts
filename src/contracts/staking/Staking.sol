@@ -2,6 +2,26 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 pragma solidity ^0.8.0;
+
+import {
+    StakingError as Error
+} from "@evvm/testnet-contracts/library/errors/StakingError.sol";
+import {
+    StakingHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/StakingHashUtils.sol";
+import {
+    StakingStructs as Structs
+} from "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+import {
+    Estimator
+} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
+
+import {
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+
 /**
 
 
@@ -29,23 +49,6 @@ pragma solidity ^0.8.0;
  * @dev Manages staking, unstaking, and yield distribution via the Estimator contract. 
  *      Supports presale and public staking phases with time-locked security and nonce-based replay protection.
  */
-
-import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    StakingStructs
-} from "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
-import {
-    StakingError as Error
-} from "@evvm/testnet-contracts/library/errors/StakingError.sol";
-import {
-    ProposalStructs
-} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
-import {
-    StakingHashUtils as Hash
-} from "@evvm/testnet-contracts/library/utils/signature/StakingHashUtils.sol";
 
 contract Staking {
     uint256 constant TIME_TO_ACCEPT_PROPOSAL = 1 days;
@@ -75,17 +78,16 @@ contract Staking {
     /// @dev Flag to enable/disable public staking
     ProposalStructs.BoolTypeProposal private allowPublicStaking;
     /// @dev Variable to store service staking metadata
-    StakingStructs.ServiceStakingMetadata private serviceStakingData;
+    Structs.ServiceStakingMetadata private serviceStakingData;
 
     /// @dev One-time setup breaker for estimator and EVVM addresses
     bytes1 private breakerSetupEstimatorAndEvvm;
 
     /// @dev Mapping to store presale staker metadata
-    mapping(address => StakingStructs.PresaleStakerMetadata)
-        private userPresaleStaker;
+    mapping(address => Structs.PresaleStakerMetadata) private userPresaleStaker;
 
     /// @dev Mapping to store complete staking history for each user
-    mapping(address => StakingStructs.HistoryMetadata[]) private userHistory;
+    mapping(address => Structs.HistoryMetadata[]) private userHistory;
 
     Core private core;
     Estimator private estimator;
@@ -167,7 +169,7 @@ contract Staking {
             revert Error.SenderIsNotGoldenFisher();
 
         stakingBaseProcess(
-            StakingStructs.AccountMetadata({
+            Structs.AccountMetadata({
                 Address: goldenFisher.current,
                 IsAService: false
             }),
@@ -225,7 +227,7 @@ contract Staking {
             : current - 1;
 
         stakingBaseProcess(
-            StakingStructs.AccountMetadata({Address: user, IsAService: false}),
+            Structs.AccountMetadata({Address: user, IsAService: false}),
             isStaking,
             1,
             priorityFee_EVVM,
@@ -269,7 +271,7 @@ contract Staking {
         );
 
         stakingBaseProcess(
-            StakingStructs.AccountMetadata({Address: user, IsAService: false}),
+            Structs.AccountMetadata({Address: user, IsAService: false}),
             isStaking,
             amountOfStaking,
             priorityFee_EVVM,
@@ -315,7 +317,7 @@ contract Staking {
      * @param amountOfStaking Number of staking tokens to acquire
      */
     function prepareServiceStaking(uint256 amountOfStaking) external onlyCA {
-        serviceStakingData = StakingStructs.ServiceStakingMetadata({
+        serviceStakingData = Structs.ServiceStakingMetadata({
             service: msg.sender,
             timestamp: block.timestamp,
             amountOfStaking: amountOfStaking,
@@ -393,10 +395,7 @@ contract Staking {
             revert Error.AddressMismatch();
 
         stakingBaseProcess(
-            StakingStructs.AccountMetadata({
-                Address: msg.sender,
-                IsAService: true
-            }),
+            Structs.AccountMetadata({Address: msg.sender, IsAService: true}),
             true,
             serviceStakingData.amountOfStaking,
             0,
@@ -417,10 +416,7 @@ contract Staking {
      */
     function serviceUnstaking(uint256 amountOfStaking) external onlyCA {
         stakingBaseProcess(
-            StakingStructs.AccountMetadata({
-                Address: msg.sender,
-                IsAService: true
-            }),
+            Structs.AccountMetadata({Address: msg.sender, IsAService: true}),
             false,
             amountOfStaking,
             0,
@@ -443,7 +439,7 @@ contract Staking {
      * @param signatureEvvm Signature for EVVM contract transaction
      */
     function stakingBaseProcess(
-        StakingStructs.AccountMetadata memory account,
+        Structs.AccountMetadata memory account,
         bool isStaking,
         uint256 amountOfStaking,
         uint256 priorityFee_EVVM,
@@ -510,7 +506,7 @@ contract Staking {
         }
 
         userHistory[account.Address].push(
-            StakingStructs.HistoryMetadata({
+            Structs.HistoryMetadata({
                 transactionType: isStaking
                     ? bytes32(uint256(1))
                     : bytes32(uint256(2)),
@@ -909,11 +905,11 @@ contract Staking {
      * @notice Returns the complete staking history for an address
      * @dev Returns an array of all staking transactions and rewards for the user
      * @param _account Address to query the history for
-     * @return Array of StakingStructs.HistoryMetadata containing all transactions
+     * @return Array of Structs.HistoryMetadata containing all transactions
      */
     function getAddressHistory(
         address _account
-    ) public view returns (StakingStructs.HistoryMetadata[] memory) {
+    ) public view returns (Structs.HistoryMetadata[] memory) {
         return userHistory[_account];
     }
 
@@ -934,12 +930,12 @@ contract Staking {
      * @dev Allows accessing individual transactions by index
      * @param _account Address to query the history for
      * @param _index Index of the transaction to retrieve (0-based)
-     * @return StakingStructs.HistoryMetadata of the transaction at the specified index
+     * @return Structs.HistoryMetadata of the transaction at the specified index
      */
     function getAddressHistoryByIndex(
         address _account,
         uint256 _index
-    ) public view returns (StakingStructs.HistoryMetadata memory) {
+    ) public view returns (Structs.HistoryMetadata memory) {
         return userHistory[_account][_index];
     }
 

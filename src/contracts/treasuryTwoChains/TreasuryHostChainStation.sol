@@ -3,6 +3,56 @@
 
 pragma solidity ^0.8.0;
 
+import {
+    CrossChainTreasuryError as Error
+} from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
+import {
+    TreasuryCrossChainHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/TreasuryCrossChainHashUtils.sol";
+import {
+    HostChainStationStructs as Structs
+} from "@evvm/testnet-contracts/library/structs/HostChainStationStructs.sol";
+import {
+    PayloadUtils
+} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/PayloadUtils.sol";
+
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+
+import {
+    AdvancedStrings
+} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
+import {
+    MessagingParams,
+    MessagingReceipt
+} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
+import {
+    OApp,
+    Origin,
+    MessagingFee
+} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
+import {
+    OAppOptionsType3
+} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OAppOptionsType3.sol";
+import {
+    OptionsBuilder
+} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
+import {
+    AxelarExecutable
+} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
+import {
+    IAxelarGasService
+} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol";
+import {
+    IInterchainGasEstimation
+} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IInterchainGasEstimation.sol";
+
+
 /**
  _____                                                       
 /__   \_ __ ___  __ _ ___ _   _ _ __ _   _                   
@@ -33,63 +83,11 @@ pragma solidity ^0.8.0;
  * @dev Multi-protocol bridge supporting Hyperlane, LayerZero V2, and Axelar. 
  *      Integrates with Core.sol for balance updates and uses Fisher-specific nonces.
  */
-import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
-import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
-import {
-    CrossChainTreasuryError as Error
-} from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
-import {
-    HostChainStationStructs
-} from "@evvm/testnet-contracts/library/structs/HostChainStationStructs.sol";
-import {
-    TreasuryCrossChainHashUtils as Hash
-} from "@evvm/testnet-contracts/library/utils/signature/TreasuryCrossChainHashUtils.sol";
-import {
-    PayloadUtils
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/PayloadUtils.sol";
-
-import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
-
-import {
-    MessagingParams,
-    MessagingReceipt
-} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
-import {
-    OApp,
-    Origin,
-    MessagingFee
-} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
-import {
-    OAppOptionsType3
-} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OAppOptionsType3.sol";
-import {
-    OptionsBuilder
-} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
-import {
-    AxelarExecutable
-} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
-import {
-    IAxelarGasService
-} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol";
-import {
-    IInterchainGasEstimation
-} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IInterchainGasEstimation.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    ProposalStructs
-} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
-
 
 contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     /// @notice EVVM core contract for balance operations
     /// @dev Used to integrate with EVVM's balance management and token operations
     Core core;
-
-    
 
     /// @notice Admin address management with time-delayed proposals
     /// @dev Stores current admin, proposed admin, and acceptance timestamp
@@ -101,19 +99,19 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
 
     /// @notice Hyperlane protocol configuration for cross-chain messaging
     /// @dev Contains domain ID, external chain address, and mailbox contract address
-    HostChainStationStructs.HyperlaneConfig hyperlane;
+    Structs.HyperlaneConfig hyperlane;
 
     /// @notice LayerZero protocol configuration for omnichain messaging
     /// @dev Contains endpoint ID, external chain address, and endpoint contract address
-    HostChainStationStructs.LayerZeroConfig layerZero;
+    Structs.LayerZeroConfig layerZero;
 
     /// @notice Axelar protocol configuration for cross-chain communication
     /// @dev Contains chain name, external chain address, gas service, and gateway addresses
-    HostChainStationStructs.AxelarConfig axelar;
+    Structs.AxelarConfig axelar;
 
     /// @notice Pending proposal for changing external chain addresses across all protocols
     /// @dev Used for coordinated updates to external chain addresses with time delay
-    HostChainStationStructs.ChangeExternalChainAddressParams externalChainAddressChangeProposal;
+    Structs.ChangeExternalChainAddressParams externalChainAddressChangeProposal;
 
     /// @notice LayerZero execution options with gas limit configuration
     /// @dev Pre-built options for LayerZero message execution (200k gas limit)
@@ -170,7 +168,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     constructor(
         address _coreAddress,
         address _admin,
-        HostChainStationStructs.CrosschainConfig memory _crosschainConfig
+        Structs.CrosschainConfig memory _crosschainConfig
     )
         OApp(_crosschainConfig.layerZero.endpointAddress, _admin)
         Ownable(_admin)
@@ -178,28 +176,26 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     {
         core = Core(_coreAddress);
 
-        
-
         admin = ProposalStructs.AddressTypeProposal({
             current: _admin,
             proposal: address(0),
             timeToAccept: 0
         });
-        hyperlane = HostChainStationStructs.HyperlaneConfig({
+        hyperlane = Structs.HyperlaneConfig({
             externalChainStationDomainId: _crosschainConfig
                 .hyperlane
                 .externalChainStationDomainId,
             externalChainStationAddress: "",
             mailboxAddress: _crosschainConfig.hyperlane.mailboxAddress
         });
-        layerZero = HostChainStationStructs.LayerZeroConfig({
+        layerZero = Structs.LayerZeroConfig({
             externalChainStationEid: _crosschainConfig
                 .layerZero
                 .externalChainStationEid,
             externalChainStationAddress: "",
             endpointAddress: _crosschainConfig.layerZero.endpointAddress
         });
-        axelar = HostChainStationStructs.AxelarConfig({
+        axelar = Structs.AxelarConfig({
             externalChainStationChainName: _crosschainConfig
                 .axelar
                 .externalChainStationChainName,
@@ -858,7 +854,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     ) external onlyAdmin {
         if (fuseSetExternalChainAddress == 0x01) revert();
 
-        externalChainAddressChangeProposal = HostChainStationStructs
+        externalChainAddressChangeProposal = Structs
             .ChangeExternalChainAddressParams({
                 porposeAddress_AddressType: externalChainStationAddress,
                 porposeAddress_StringType: externalChainStationAddressString,
@@ -869,7 +865,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     /// @notice Cancels a pending external chain address change proposal
     /// @dev Resets the external chain address proposal to default state
     function rejectProposalExternalChainAddress() external onlyAdmin {
-        externalChainAddressChangeProposal = HostChainStationStructs
+        externalChainAddressChangeProposal = Structs
             .ChangeExternalChainAddressParams({
                 porposeAddress_AddressType: address(0),
                 porposeAddress_StringType: "",
@@ -951,7 +947,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     function getHyperlaneConfig()
         external
         view
-        returns (HostChainStationStructs.HyperlaneConfig memory)
+        returns (Structs.HyperlaneConfig memory)
     {
         return hyperlane;
     }
@@ -961,7 +957,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     function getLayerZeroConfig()
         external
         view
-        returns (HostChainStationStructs.LayerZeroConfig memory)
+        returns (Structs.LayerZeroConfig memory)
     {
         return layerZero;
     }
@@ -971,7 +967,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     function getAxelarConfig()
         external
         view
-        returns (HostChainStationStructs.AxelarConfig memory)
+        returns (Structs.AxelarConfig memory)
     {
         return axelar;
     }
