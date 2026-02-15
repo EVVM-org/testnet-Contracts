@@ -158,12 +158,12 @@ contract Staking {
      * @dev Uses sync nonces for coordination with Core operations.
      * @param isStaking True to stake, false to unstake.
      * @param amountOfStaking Number of staking tokens.
-     * @param signatureEvvm Authorization signature for Core payment.
+     * @param signaturePay Authorization signature for Core payment.
      */
     function goldenStaking(
         bool isStaking,
         uint256 amountOfStaking,
-        bytes memory signatureEvvm
+        bytes memory signaturePay
     ) external {
         if (msg.sender != goldenFisher.current)
             revert Error.SenderIsNotGoldenFisher();
@@ -178,7 +178,7 @@ contract Staking {
             0,
             core.getNextCurrentSyncNonce(msg.sender),
             false,
-            signatureEvvm
+            signaturePay
         );
     }
 
@@ -188,9 +188,9 @@ contract Staking {
      * @param isStaking True to stake, false to unstake.
      * @param nonce Async nonce for signature verification.
      * @param signature Participant's authorization signature.
-     * @param priorityFeeEvvm Optional priority fee.
-     * @param nonceEvvm Nonce for the Core payment.
-     * @param signatureEvvm Signature for the Core payment.
+     * @param priorityFeePay Optional priority fee.
+     * @param noncePay Nonce for the Core payment.
+     * @param signaturePay Signature for the Core payment.
      */
     function presaleStaking(
         address user,
@@ -198,9 +198,9 @@ contract Staking {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         if (!allowPresaleStaking.flag || allowPublicStaking.flag)
             revert Error.PresaleStakingDisabled();
@@ -230,10 +230,10 @@ contract Staking {
             Structs.AccountMetadata({Address: user, IsAService: false}),
             isStaking,
             1,
-            priorityFeeEvvm,
-            nonceEvvm,
+            priorityFeePay,
+            noncePay,
             true,
-            signatureEvvm
+            signaturePay
         );
     }
 
@@ -244,9 +244,9 @@ contract Staking {
      * @param amountOfStaking Number of tokens.
      * @param nonce Async nonce for signature verification.
      * @param signature Participant's authorization signature.
-     * @param priorityFeeEvvm Optional priority fee.
-     * @param nonceEvvm Nonce for the Core payment.
-     * @param signatureEvvm Signature for the Core payment.
+     * @param priorityFeePay Optional priority fee.
+     * @param noncePay Nonce for the Core payment.
+     * @param signaturePay Signature for the Core payment.
      */
     function publicStaking(
         address user,
@@ -255,9 +255,9 @@ contract Staking {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         if (!allowPublicStaking.flag) revert Error.PublicStakingDisabled();
 
@@ -274,10 +274,10 @@ contract Staking {
             Structs.AccountMetadata({Address: user, IsAService: false}),
             isStaking,
             amountOfStaking,
-            priorityFeeEvvm,
-            nonceEvvm,
+            priorityFeePay,
+            noncePay,
             true,
-            signatureEvvm
+            signaturePay
         );
     }
 
@@ -434,18 +434,18 @@ contract Staking {
      *                  - IsAService: Boolean indicating if the account is a smart contract (service) account
      * @param isStaking True for staking (requires payment), false for unstaking (provides refund)
      * @param amountOfStaking Amount of staking tokens to stake/unstake
-     * @param priorityFeeEvvm Priority fee for EVVM transaction
-     * @param nonceEvvm Nonce for EVVM contract transaction
-     * @param signatureEvvm Signature for EVVM contract transaction
+     * @param priorityFeePay Priority fee for EVVM transaction
+     * @param noncePay Nonce for EVVM contract transaction
+     * @param signaturePay Signature for EVVM contract transaction
      */
     function stakingBaseProcess(
         Structs.AccountMetadata memory account,
         bool isStaking,
         uint256 amountOfStaking,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
+        uint256 priorityFeePay,
+        uint256 noncePay,
         bool isAsyncExecEvvm,
-        bytes memory signatureEvvm
+        bytes memory signaturePay
     ) internal {
         uint256 auxSMsteBalance;
 
@@ -459,10 +459,10 @@ contract Staking {
                 makePay(
                     account.Address,
                     (PRICE_OF_STAKING * amountOfStaking),
-                    priorityFeeEvvm,
+                    priorityFeePay,
                     isAsyncExecEvvm,
-                    nonceEvvm,
-                    signatureEvvm
+                    noncePay,
+                    signaturePay
                 );
 
             core.pointStaker(account.Address, 0x01);
@@ -482,14 +482,14 @@ contract Staking {
                 core.pointStaker(account.Address, 0x00);
             }
 
-            if (priorityFeeEvvm != 0 && !account.IsAService)
+            if (priorityFeePay != 0 && !account.IsAService)
                 makePay(
                     account.Address,
                     0,
-                    priorityFeeEvvm,
+                    priorityFeePay,
                     isAsyncExecEvvm,
-                    nonceEvvm,
-                    signatureEvvm
+                    noncePay,
+                    signaturePay
                 );
 
             auxSMsteBalance =
@@ -520,7 +520,7 @@ contract Staking {
             makeCaPay(
                 core.getPrincipalTokenAddress(),
                 msg.sender,
-                (core.getRewardAmount() * 2) + priorityFeeEvvm
+                (core.getRewardAmount() * 2) + priorityFeePay
             );
         }
     }

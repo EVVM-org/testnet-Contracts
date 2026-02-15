@@ -37,8 +37,8 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
         uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function _addBalance(
@@ -116,15 +116,15 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             nonce: input.nonce,
             signatureNameService: "",
             priorityFee: uint256(input.priorityFee),
-            nonceEVVM: input.nonceAsyncEVVM,
-            signatureEVVM: ""
+            noncePay: input.nonceAsyncEVVM,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.amount, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
@@ -132,7 +132,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.expiratonDate,address(0),
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -144,8 +144,8 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -207,15 +207,15 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             nonce: input.nonce,
             signatureNameService: "",
             priorityFee: uint256(input.priorityFee),
-            nonceEVVM: input.nonceAsyncEVVM,
-            signatureEVVM: ""
+            noncePay: input.nonceAsyncEVVM,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.amount, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
@@ -223,7 +223,7 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.expiratonDate,address(0),
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -235,8 +235,8 @@ contract fuzzTest_NameService_makeOffer is Test, Constants {
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 

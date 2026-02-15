@@ -81,7 +81,7 @@ interface IStaking {
             uint256 idToOverwriteUserHistory,
             uint256 timestampToBeOverwritten
         );
-    function goldenStaking(bool isStaking, uint256 amountOfStaking, bytes memory signatureEvvm) external;
+    function goldenStaking(bool isStaking, uint256 amountOfStaking, bytes memory signaturePay) external;
     function initializeSystemContracts(address _estimator, address _core) external;
     function prepareChangeAllowPresaleStaking() external;
     function prepareChangeAllowPublicStaking() external;
@@ -93,9 +93,9 @@ interface IStaking {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function priceOfStaking() external pure returns (uint256);
     function proposeAdmin(address _newAdmin) external;
@@ -109,9 +109,9 @@ interface IStaking {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function rejectProposalAdmin() external;
     function rejectProposalEstimator() external;

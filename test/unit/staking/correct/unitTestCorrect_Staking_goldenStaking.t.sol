@@ -39,7 +39,7 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
     function test__unit_correct__goldenStaking__staking() external {
         uint256 totalOfMate = _addBalance(10);
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             GOLDEN_STAKER,
             address(staking),
             "",
@@ -53,7 +53,7 @@ contract unitTestCorrect_Staking_goldenStaking is Test, Constants {
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
-        staking.goldenStaking(true, 10, signatureEVVM);
+        staking.goldenStaking(true, 10, signaturePay);
 
         vm.stopPrank();
 

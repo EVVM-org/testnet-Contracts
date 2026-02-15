@@ -138,7 +138,7 @@ contract fuzzTest_Core_dispersePay is Test, Constants {
             ? input.asyncNonce
             : core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address);
 
-        bytes memory signatureEVVM = _executeSig_evvm_dispersePay(
+        bytes memory signaturePay = _executeSig_evvm_dispersePay(
             COMMON_USER_NO_STAKER_1,
             toData,
             input.token,
@@ -163,7 +163,7 @@ contract fuzzTest_Core_dispersePay is Test, Constants {
             input.usingExecutor ? input.executor : address(0),
             nonce,
             input.isUsingAsyncNonce,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 

@@ -69,7 +69,7 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM
+        uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -112,11 +112,11 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
                 amountA,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -128,8 +128,8 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
             orderData,
             signatureP2P,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 

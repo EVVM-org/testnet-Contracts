@@ -108,7 +108,7 @@ contract unitTestCorrect_Core_proxy is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -124,7 +124,7 @@ contract unitTestCorrect_Core_proxy is Test, Constants {
             address(0),
             core.getNextCurrentSyncNonce(userToInteract.Address),
             false,
-            signatureEVVM
+            signaturePay
         );
     }
 

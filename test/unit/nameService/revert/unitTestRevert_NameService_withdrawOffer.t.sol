@@ -113,7 +113,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         bytes memory signatureNameService = Erc191TestBuilder
             .buildERC191Signature(v, r, s);
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_2,
             address(nameService),
             "",
@@ -137,7 +137,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             signatureNameService,
             totalPriorityFee,
             2002,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -164,11 +164,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         
 
         uint256 nonce = 1001;
-        uint256 nonceEVVM = 2002;
+        uint256 noncePay = 2002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_withdrawOffer(
                 // 🢃 different signer 🢃
                 COMMON_USER_NO_STAKER_3,
@@ -177,7 +177,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFee,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -191,8 +191,8 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -219,11 +219,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         
 
         uint256 nonce = 1001;
-        uint256 nonceEVVM = 2002;
+        uint256 noncePay = 2002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 // 🢃 different username 🢃
@@ -232,7 +232,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFee,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -246,8 +246,8 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -274,11 +274,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         
 
         uint256 nonce = 1001;
-        uint256 nonceEVVM = 2002;
+        uint256 noncePay = 2002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -287,7 +287,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFee,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -301,8 +301,8 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -329,11 +329,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         
 
         uint256 nonce = 1001;
-        uint256 nonceEVVM = 2002;
+        uint256 noncePay = 2002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -342,7 +342,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 // 🢃 different nameServiceNonce 🢃
                 nonce + 1,
                 totalPriorityFee,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -356,8 +356,8 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -384,11 +384,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         
 
         uint256 nonce = 1001;
-        uint256 nonceEVVM = 2002;
+        uint256 noncePay = 2002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_withdrawOffer(
                 // 🢃 non owner address 🢃
                 COMMON_USER_NO_STAKER_3,
@@ -397,7 +397,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFee,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -412,8 +412,8 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -441,11 +441,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         uint256 nonce = uint256(
             0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
         );
-        uint256 nonceEVVM = 2002;
+        uint256 noncePay = 2002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -453,7 +453,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFee,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -467,8 +467,8 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -495,11 +495,11 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         
 
         uint256 nonce = 1001;
-        uint256 nonceEVVM = 2002;
+        uint256 noncePay = 2002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -508,8 +508,8 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 nonce,
                 // 🢃 different totalPriorityFee 🢃
                 totalPriorityFee + 50,
-                // 🢃 different nonceEVVM 🢃
-                nonceEVVM + 1
+                // 🢃 different noncePay 🢃
+                noncePay + 1
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -523,8 +523,8 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -551,13 +551,13 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
         
 
         uint256 nonce = 1001;
-        uint256 nonceEVVM = 2002;
+        uint256 noncePay = 2002;
         // 🢃 insufficient balance 🢃
         totalPriorityFee += 1 ether;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_withdrawOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -565,7 +565,7 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFee,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -579,8 +579,8 @@ contract unitTestRevert_NameService_withdrawOffer is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();

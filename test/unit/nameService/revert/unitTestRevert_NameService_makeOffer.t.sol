@@ -104,7 +104,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         bytes memory signatureNameService = Erc191TestBuilder
             .buildERC191Signature(v, r, s);
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_2,
             address(nameService),
             "",
@@ -129,7 +129,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -169,7 +169,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_3,
@@ -195,7 +195,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -235,7 +235,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 /* 🢃 different username 🢃 */
@@ -261,7 +261,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -301,7 +301,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -327,7 +327,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -367,7 +367,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -393,7 +393,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -433,7 +433,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -459,7 +459,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -517,7 +517,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 invalidUsername,
@@ -542,7 +542,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -584,7 +584,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         string memory unregisteredUsername = "testrevert";
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 unregisteredUsername,
@@ -609,7 +609,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -650,7 +650,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp - 1;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -675,7 +675,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -716,7 +716,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -741,7 +741,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -790,7 +790,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -815,7 +815,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -855,7 +855,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -881,7 +881,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -925,7 +925,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
@@ -950,7 +950,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             signatureNameService,
             priorityFeeAmount,
             101,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 

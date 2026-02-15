@@ -59,7 +59,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         uint16 amountA;
         uint16 amountB;
         uint16 priorityFee;
-        uint16 nonceEVVM;
+        uint16 noncePay;
         uint16 nonceP2PSwap;
         bool tokenScenario;
     }
@@ -70,7 +70,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         // assumptions
         vm.assume(input.priorityFee > 0);
         vm.assume(input.amountA > 0 && input.amountB > 0);
-        vm.assume(input.nonceEVVM != input.nonceP2PSwap);
+        vm.assume(input.noncePay != input.nonceP2PSwap);
 
         // Form inputs
         // alternate tokens
@@ -82,7 +82,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
-        uint256 nonceEVVM = input.nonceEVVM ;
+        uint256 noncePay = input.noncePay ;
         P2PSwapStructs.MetadataMakeOrder memory metadata = P2PSwapStructs
             .MetadataMakeOrder({
                 nonce: input.nonceP2PSwap,
@@ -144,11 +144,11 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
                 input.amountA,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -161,8 +161,8 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
             metadata,
             signatureP2P,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 

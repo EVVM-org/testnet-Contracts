@@ -91,13 +91,13 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         string memory customMetadata = string.concat(USERNAME, ">1");
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         uint8 v;
         bytes32 r;
         bytes32 s;
         bytes memory signatureNameService;
-        bytes memory signatureEVVM;
+        bytes memory signaturePay;
 
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
@@ -113,7 +113,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
@@ -121,7 +121,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             nameService.getPriceToAddCustomMetadata(),
             totalPriorityFeeAmount,
             address(nameService),
-            nonceEVVM,
+            noncePay,
             true
         );
 
@@ -136,8 +136,8 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -171,11 +171,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         string memory customMetadata = string.concat(USERNAME, ">1");
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
@@ -184,7 +184,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -198,8 +198,8 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -233,11 +233,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         string memory customMetadata = string.concat(USERNAME, ">1");
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different identity 🢃 */
@@ -246,7 +246,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -260,8 +260,8 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -295,11 +295,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         string memory customMetadata = string.concat(USERNAME, ">1");
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -308,7 +308,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -322,8 +322,8 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -357,11 +357,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         string memory customMetadata = string.concat(USERNAME, ">1");
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -370,7 +370,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 /* 🢃 different nonce 🢃 */
                 nonce + 1,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -384,8 +384,8 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -422,11 +422,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         string memory customMetadata = string.concat(USERNAME, ">1");
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
                 /* 🢃 different user (not owner) 🢃 */
                 COMMON_USER_NO_STAKER_2,
@@ -435,7 +435,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -450,8 +450,8 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -486,11 +486,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         /* 🢃 empty custom metadata 🢃 */
         string memory customMetadata = "";
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -498,7 +498,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -512,8 +512,8 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -548,11 +548,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
         uint256 nonce = uint256(
             0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
         );
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -560,7 +560,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -574,8 +574,8 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -609,11 +609,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
 
         string memory customMetadata = string.concat(USERNAME, ">1");
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -622,8 +622,8 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
-                /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1
+                /* 🢃 different noncePay 🢃 */
+                noncePay + 1
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -637,8 +637,8 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -667,11 +667,11 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
     {
         string memory customMetadata = string.concat(USERNAME, ">1");
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -679,7 +679,7 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 0,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -693,8 +693,8 @@ contract unitTestRevert_NameService_addCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             0,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();

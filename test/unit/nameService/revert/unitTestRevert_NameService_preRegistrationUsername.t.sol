@@ -311,7 +311,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         uint256 nonce = 1001;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEvvm
+            bytes memory signaturePay
         ) = _executeSig_nameService_preRegistrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 username,
@@ -334,7 +334,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             /* 🢃 different priority fee 🢃 */
             1 ether,
             6767,
-            signatureEvvm
+            signaturePay
         );
 
         vm.stopPrank();
@@ -359,7 +359,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
         uint256 nonce = 1001;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEvvm
+            bytes memory signaturePay
         ) = _executeSig_nameService_preRegistrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 username,
@@ -382,7 +382,7 @@ contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
             signatureNameService,
             0.1 ether,
             676767,
-            signatureEvvm
+            signaturePay
         );
 
         vm.stopPrank();

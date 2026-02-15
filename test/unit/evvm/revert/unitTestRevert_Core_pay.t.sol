@@ -64,7 +64,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -83,7 +83,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -125,7 +125,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -144,7 +144,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -188,7 +188,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -207,7 +207,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -251,7 +251,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -270,7 +270,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -312,7 +312,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -331,7 +331,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -373,7 +373,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -392,7 +392,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -434,7 +434,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -453,7 +453,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -495,7 +495,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -514,7 +514,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -556,7 +556,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -575,7 +575,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -617,7 +617,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -636,7 +636,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -677,7 +677,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -697,7 +697,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             COMMON_USER_NO_STAKER_3.Address,
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -768,7 +768,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -788,7 +788,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             /* 🢃 async nonce already used 🢃 */
             67,
             true,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -850,7 +850,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -870,7 +870,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -912,7 +912,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -932,7 +932,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -976,7 +976,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -996,7 +996,7 @@ contract unitTestRevert_Core_pay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();

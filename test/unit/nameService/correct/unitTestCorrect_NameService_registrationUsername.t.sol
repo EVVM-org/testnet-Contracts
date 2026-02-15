@@ -42,8 +42,8 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function _addBalance(
@@ -98,8 +98,8 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             nonce: 68,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 420,
-            signatureEVVM: ""
+            noncePay: 420,
+            signaturePay: ""
         });
         Params memory params2 = Params({
             user: USER_TWO,
@@ -108,8 +108,8 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             nonce: 777,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 89,
-            signatureEVVM: ""
+            noncePay: 89,
+            signaturePay: ""
         });
 
         _addBalance(params1.user, params1.username, params1.priorityFee);
@@ -118,7 +118,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher noStaker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (
             params1.signatureNameService,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_nameService_registrationUsername(
             params1.user,
             params1.username,
@@ -126,7 +126,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             address(0),
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -138,8 +138,8 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
         vm.stopPrank();
 
@@ -168,7 +168,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher staker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (
             params2.signatureNameService,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_nameService_registrationUsername(
             params2.user,
             params2.username,
@@ -176,7 +176,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             address(0),
             params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -188,8 +188,8 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
         vm.stopPrank();
 
@@ -225,8 +225,8 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             nonce: 67,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
-            nonceEVVM: 420,
-            signatureEVVM: ""
+            noncePay: 420,
+            signaturePay: ""
         });
         Params memory params2 = Params({
             user: USER_TWO,
@@ -235,8 +235,8 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             nonce: 777,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
-            nonceEVVM: 89,
-            signatureEVVM: ""
+            noncePay: 89,
+            signaturePay: ""
         });
 
         _addBalance(params1.user, params1.username, params1.priorityFee);
@@ -245,7 +245,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher noStaker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (
             params1.signatureNameService,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_nameService_registrationUsername(
             params1.user,
             params1.username,
@@ -253,7 +253,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             address(0),
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -265,8 +265,8 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
         vm.stopPrank();
 
@@ -295,7 +295,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher staker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         (
             params2.signatureNameService,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_nameService_registrationUsername(
             params2.user,
             params2.username,
@@ -303,7 +303,7 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             address(0),
             params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -315,8 +315,8 @@ contract unitTestCorrect_NameService_registrationUsername is Test, Constants {
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
         vm.stopPrank();
 

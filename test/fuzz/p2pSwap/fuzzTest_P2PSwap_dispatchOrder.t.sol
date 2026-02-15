@@ -64,7 +64,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM
+        uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -107,11 +107,11 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -123,8 +123,8 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             orderData,
             signatureP2P,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
@@ -136,7 +136,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         uint16 amountA;
         uint16 amountB;
         uint16 priorityFee;
-        uint16 nonceEVVM;
+        uint16 noncePay;
         uint16 nonceP2PSwap;
         bool tokenScenario;
     }
@@ -146,7 +146,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
     ) external {
         vm.assume(input.priorityFee > 0);
         vm.assume(input.amountA > 0 && input.amountB > 0);
-        vm.assume(input.nonceEVVM != input.nonceP2PSwap);
+        vm.assume(input.noncePay != input.nonceP2PSwap);
 
         // 1. define params
         address tokenA = input.tokenScenario
@@ -157,7 +157,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
-        uint256 nonceEVVM = 99999;
+        uint256 noncePay = 99999;
 
         uint256 fee = (uint256(input.amountB) * 500) / 10_000;
 
@@ -183,10 +183,10 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             input.amountA,
             input.amountB,
             0, // priorityFee is 0 for createOrder
-            nonceEVVM
+            noncePay
         );
         input.nonceP2PSwap = 43242;
-        nonceEVVM = 99999;
+        noncePay = 99999;
 
         assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
@@ -234,12 +234,12 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -255,8 +255,8 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
@@ -306,7 +306,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
     ) external {
         vm.assume(input.priorityFee > 0);
         vm.assume(input.amountA > 0 && input.amountB > 0);
-        vm.assume(input.nonceEVVM != input.nonceP2PSwap);
+        vm.assume(input.noncePay != input.nonceP2PSwap);
 
         // 1. define params
         address tokenA = input.tokenScenario
@@ -317,7 +317,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
-        uint256 nonceEVVM = input.nonceEVVM;
+        uint256 noncePay = input.noncePay;
 
         uint256 proportionalFee = (uint256(input.amountB) * 500) / 10_000;
         uint256 _amountOut = 0.001 ether; // greater than proportionalFee
@@ -354,10 +354,10 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             input.amountA,
             input.amountB,
             0, // priorityFee is 0 for createOrder
-            nonceEVVM
+            noncePay
         );
         input.nonceP2PSwap = 43242;
-        nonceEVVM = 99999;
+        noncePay = 99999;
 
         assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
@@ -405,12 +405,12 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -426,8 +426,8 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM,
+            noncePay,
+            signaturePay,
             _amountOut
         );
         vm.stopPrank();

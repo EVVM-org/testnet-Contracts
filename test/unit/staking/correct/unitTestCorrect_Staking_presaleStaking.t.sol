@@ -77,8 +77,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         uint256 _amountInPrincipal;
         bytes signatureStake;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function test__unit_correct__presaleStaking__staking_noFisherStake_noPriorityfee()
@@ -90,8 +90,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 420,
-            signatureEVVM: "",
+            noncePay: 420,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -101,8 +101,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 2000002000002,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -114,14 +114,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params1.signatureStake,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_staking_presaleStaking(
             params1.user,
             params1.isStaking,
             address(0),
             params1.nonceStake,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -132,8 +132,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             params1.nonceStake,
             params1.signatureStake,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
         vm.stopPrank();
 
@@ -183,14 +183,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params2.signatureStake,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_staking_presaleStaking(
             params2.user,
             params2.isStaking,
             address(0),
             params2.nonceStake,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -201,8 +201,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             params2.nonceStake,
             params2.signatureStake,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
         vm.stopPrank();
 
@@ -254,8 +254,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0.01 ether,
-            nonceEVVM: 420,
-            signatureEVVM: "",
+            noncePay: 420,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -265,8 +265,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 2000002000002,
             signatureStake: "",
             priorityFee: 0.01 ether,
-            nonceEVVM: 67,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -278,14 +278,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params1.signatureStake,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_staking_presaleStaking(
             params1.user,
             params1.isStaking,
             address(0),
             params1.nonceStake,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -296,8 +296,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             params1.nonceStake,
             params1.signatureStake,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
         vm.stopPrank();
 
@@ -347,14 +347,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params2.signatureStake,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_staking_presaleStaking(
             params2.user,
             params2.isStaking,
             address(0),
             params2.nonceStake,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -365,8 +365,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             params2.nonceStake,
             params2.signatureStake,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
         vm.stopPrank();
 
@@ -418,8 +418,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 420,
-            signatureEVVM: "",
+            noncePay: 420,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -429,8 +429,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 2000002000002,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -442,14 +442,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params1.signatureStake,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_staking_presaleStaking(
             params1.user,
             params1.isStaking,
             address(0),
             params1.nonceStake,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -460,8 +460,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             params1.nonceStake,
             params1.signatureStake,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
         vm.stopPrank();
 
@@ -511,14 +511,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params2.signatureStake,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_staking_presaleStaking(
             params2.user,
             params2.isStaking,
             address(0),
             params2.nonceStake,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -529,8 +529,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             params2.nonceStake,
             params2.signatureStake,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
         vm.stopPrank();
 
@@ -584,8 +584,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0.01 ether,
-            nonceEVVM: 420,
-            signatureEVVM: "",
+            noncePay: 420,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -595,8 +595,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 2000002000002,
             signatureStake: "",
             priorityFee: 0.01 ether,
-            nonceEVVM: 67,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -608,14 +608,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params1.signatureStake,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_staking_presaleStaking(
             params1.user,
             params1.isStaking,
             address(0),
             params1.nonceStake,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -626,8 +626,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             params1.nonceStake,
             params1.signatureStake,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
         vm.stopPrank();
 
@@ -677,14 +677,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params2.signatureStake,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_staking_presaleStaking(
             params2.user,
             params2.isStaking,
             address(0),
             params2.nonceStake,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -695,8 +695,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             params2.nonceStake,
             params2.signatureStake,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
         vm.stopPrank();
 
@@ -767,8 +767,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 420,
-            signatureEVVM: "",
+            noncePay: 420,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -778,8 +778,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 2000002000002,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -791,14 +791,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             paramsUnstake.signatureStake,
-            paramsUnstake.signatureEVVM
+            paramsUnstake.signaturePay
         ) = _executeSig_staking_presaleStaking(
             paramsUnstake.user,
             paramsUnstake.isStaking,
             address(0),
             paramsUnstake.nonceStake,
             paramsUnstake.priorityFee,
-            paramsUnstake.nonceEVVM
+            paramsUnstake.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -809,8 +809,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             paramsUnstake.nonceStake,
             paramsUnstake.signatureStake,
             paramsUnstake.priorityFee,
-            paramsUnstake.nonceEVVM,
-            paramsUnstake.signatureEVVM
+            paramsUnstake.noncePay,
+            paramsUnstake.signaturePay
         );
         vm.stopPrank();
 
@@ -862,14 +862,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             paramsFullUnstake.signatureStake,
-            paramsFullUnstake.signatureEVVM
+            paramsFullUnstake.signaturePay
         ) = _executeSig_staking_presaleStaking(
             paramsFullUnstake.user,
             paramsFullUnstake.isStaking,
             address(0),
             paramsFullUnstake.nonceStake,
             paramsFullUnstake.priorityFee,
-            paramsFullUnstake.nonceEVVM
+            paramsFullUnstake.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -880,8 +880,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             paramsFullUnstake.nonceStake,
             paramsFullUnstake.signatureStake,
             paramsFullUnstake.priorityFee,
-            paramsFullUnstake.nonceEVVM,
-            paramsFullUnstake.signatureEVVM
+            paramsFullUnstake.noncePay,
+            paramsFullUnstake.signaturePay
         );
         vm.stopPrank();
 
@@ -966,8 +966,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -980,14 +980,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         skip(staking.getSecondsToUnlockStaking());
@@ -1000,8 +1000,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -1084,8 +1084,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -1098,14 +1098,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
             address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         skip(staking.getSecondsToUnlockStaking());
@@ -1118,8 +1118,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 

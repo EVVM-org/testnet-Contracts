@@ -27,14 +27,14 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
 
         _addBalance(10);
 
-        bytes memory signatureEVVM = _executeSig_staking_goldenStaking(
+        bytes memory signaturePay = _executeSig_staking_goldenStaking(
             true,
             10
         );
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
-        staking.goldenStaking(true, 10, signatureEVVM);
+        staking.goldenStaking(true, 10, signaturePay);
 
         vm.stopPrank();
     }

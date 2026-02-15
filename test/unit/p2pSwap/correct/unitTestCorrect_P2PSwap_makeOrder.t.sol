@@ -70,7 +70,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
-        uint256 nonceEVVM = 432423;
+        uint256 noncePay = 432423;
 
         // Fund user1 with amountA + priorityFee
         addBalance(
@@ -128,11 +128,11 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -145,8 +145,8 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             orderData,
             signatureP2P,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
@@ -173,7 +173,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
-        uint256 nonceEVVM = 45546564;
+        uint256 noncePay = 45546564;
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
@@ -219,11 +219,11 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -235,8 +235,8 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             orderData,
             signatureP2P,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 

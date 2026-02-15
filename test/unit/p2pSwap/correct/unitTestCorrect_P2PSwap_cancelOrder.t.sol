@@ -64,7 +64,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM
+        uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -107,11 +107,11 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -123,8 +123,8 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             orderData,
             signatureP2P,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
@@ -139,7 +139,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
-        uint256 nonceEVVM = 4242;
+        uint256 noncePay = 4242;
 
         addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
         addBalance(
@@ -158,10 +158,10 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM
+            noncePay
         );
         nonceP2PSwap = 56565;
-        nonceEVVM = 6565;
+        noncePay = 6565;
 
         assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
@@ -197,12 +197,12 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
                 amountA,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -228,8 +228,8 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
@@ -251,7 +251,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
-        uint256 nonceEVVM = 78798;
+        uint256 noncePay = 78798;
 
         addBalance(
             COMMON_USER_NO_STAKER_1.Address,
@@ -279,10 +279,10 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM
+            noncePay
         );
         nonceP2PSwap = 56565;
-        nonceEVVM = 78987;
+        noncePay = 78987;
 
         assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
         assertEq(
@@ -323,12 +323,12 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
                 0,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -354,8 +354,8 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 

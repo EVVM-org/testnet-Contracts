@@ -106,10 +106,10 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         uint256 nonce = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 noncePay = 20002;
 
         bytes memory signatureNameService;
-        bytes memory signatureEVVM;
+        bytes memory signaturePay;
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
@@ -126,7 +126,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
 
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
@@ -134,7 +134,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             nameService.getPriceToRemoveCustomMetadata(),
             totalPriorityFeeAmount,
             address(nameService),
-            nonceEVVM,
+            noncePay,
             true
         );
 
@@ -149,8 +149,8 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -189,11 +189,11 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         uint256 nonce = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_removeCustomMetadata(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
@@ -202,7 +202,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -216,8 +216,8 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -256,11 +256,11 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         uint256 nonce = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different username 🢃 */
@@ -269,7 +269,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -283,8 +283,8 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -323,11 +323,11 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         uint256 nonce = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -336,7 +336,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -350,8 +350,8 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -390,11 +390,11 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         uint256 nonce = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -403,7 +403,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 /* 🢃 different nonce 🢃 */
                 nonce + 1,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -417,8 +417,8 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -460,11 +460,11 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             );
 
         uint256 nonce = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_removeCustomMetadata(
                 /* 🢃 different user 🢃 */
                 COMMON_USER_NO_STAKER_2,
@@ -473,7 +473,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -488,8 +488,8 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -531,11 +531,11 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         uint256 nonce = uint256(
             0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
         );
-        uint256 nonceEVVM = 20002;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -543,7 +543,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -557,8 +557,8 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -595,11 +595,11 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         uint256 nonce = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -608,7 +608,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -623,8 +623,8 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -654,11 +654,11 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         uint256 nonce = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -667,8 +667,8 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
-                /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1
+                /* 🢃 different noncePay 🢃 */
+                noncePay + 1
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -682,8 +682,8 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -717,11 +717,11 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         external
     {
         uint256 nonce = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -729,7 +729,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 1 ether,
-                nonceEVVM
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
@@ -743,8 +743,8 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             1 ether,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();

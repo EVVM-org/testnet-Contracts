@@ -110,7 +110,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
                 true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -127,7 +127,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             222,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -168,7 +168,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_registrationUsername(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
@@ -191,7 +191,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -232,7 +232,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different username 🢃 */
@@ -255,7 +255,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -296,7 +296,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
@@ -319,7 +319,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -360,7 +360,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
@@ -383,7 +383,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -425,7 +425,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "@test",
@@ -447,7 +447,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -505,7 +505,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
@@ -527,7 +527,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -569,7 +569,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
@@ -593,7 +593,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -634,7 +634,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
@@ -657,7 +657,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -702,7 +702,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
@@ -724,7 +724,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 

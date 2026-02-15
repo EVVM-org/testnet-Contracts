@@ -96,9 +96,9 @@ contract P2PSwap is EvvmService, Structs {
      * @param user Seller address.
      * @param metadata Order details (tokens, amounts, nonce).
      * @param signature Seller's authorization signature.
-     * @param priorityFeeEvvm Optional priority fee for the executor.
-     * @param nonceEvvm Nonce for the Core payment (locks tokenA).
-     * @param signatureEvvm Signature for the Core payment.
+     * @param priorityFeePay Optional priority fee for the executor.
+     * @param noncePay Nonce for the Core payment (locks tokenA).
+     * @param signaturePay Signature for the Core payment.
      * @return market The ID of the market.
      * @return orderId The ID of the order within that market.
      */
@@ -106,9 +106,9 @@ contract P2PSwap is EvvmService, Structs {
         address user,
         MetadataMakeOrder memory metadata,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external returns (uint256 market, uint256 orderId) {
         core.validateAndConsumeNonce(
             user,
@@ -128,10 +128,10 @@ contract P2PSwap is EvvmService, Structs {
             user,
             metadata.tokenA,
             metadata.amountA,
-            priorityFeeEvvm,
-            nonceEvvm,
+            priorityFeePay,
+            noncePay,
             true,
-            signatureEvvm
+            signaturePay
         );
 
         market = findMarket(metadata.tokenA, metadata.tokenB);
@@ -163,14 +163,14 @@ contract P2PSwap is EvvmService, Structs {
         );
 
         if (core.isAddressStaker(msg.sender)) {
-            if (priorityFeeEvvm > 0) {
+            if (priorityFeePay > 0) {
                 // send the executor the priorityFee
-                makeCaPay(msg.sender, metadata.tokenA, priorityFeeEvvm);
+                makeCaPay(msg.sender, metadata.tokenA, priorityFeePay);
             }
         }
 
         // send some mate token reward to the executor (independent of the priorityFee the user attached)
-        _rewardExecutor(msg.sender, priorityFeeEvvm > 0 ? 3 : 2);
+        _rewardExecutor(msg.sender, priorityFeePay > 0 ? 3 : 2);
     }
 
     /**
@@ -204,16 +204,16 @@ contract P2PSwap is EvvmService, Structs {
      *
      * @param user Address that owns the order
      * @param metadata Cancel details (tokens, orderId, nonce)
-     * @param priorityFeeEvvm Optional priority fee for staker
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @param priorityFeePay Optional priority fee for staker
+     * @param noncePay Nonce for EVVM payment transaction
+     * @param signaturePay Signature for EVVM payment
      */
     function cancelOrder(
         address user,
         MetadataCancelOrder memory metadata,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
@@ -232,15 +232,15 @@ contract P2PSwap is EvvmService, Structs {
 
         _validateOrderOwnership(market, metadata.orderId, user);
 
-        if (priorityFeeEvvm > 0) {
+        if (priorityFeePay > 0) {
             requestPay(
                 user,
                 MATE_TOKEN_ADDRESS,
                 0,
-                priorityFeeEvvm,
-                nonceEvvm,
+                priorityFeePay,
+                noncePay,
                 true,
-                signatureEvvm
+                signaturePay
             );
         }
 
@@ -252,10 +252,10 @@ contract P2PSwap is EvvmService, Structs {
 
         _clearOrderAndUpdateMarket(market, metadata.orderId);
 
-        if (core.isAddressStaker(msg.sender) && priorityFeeEvvm > 0) {
-            makeCaPay(msg.sender, MATE_TOKEN_ADDRESS, priorityFeeEvvm);
+        if (core.isAddressStaker(msg.sender) && priorityFeePay > 0) {
+            makeCaPay(msg.sender, MATE_TOKEN_ADDRESS, priorityFeePay);
         }
-        _rewardExecutor(msg.sender, priorityFeeEvvm > 0 ? 3 : 2);
+        _rewardExecutor(msg.sender, priorityFeePay > 0 ? 3 : 2);
     }
 
     /**
@@ -297,16 +297,16 @@ contract P2PSwap is EvvmService, Structs {
      *
      * @param user Address filling the order (buyer)
      * @param metadata Dispatch details (tokens, orderId, amount)
-     * @param priorityFeeEvvm Optional priority fee for staker
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @param priorityFeePay Optional priority fee for staker
+     * @param noncePay Nonce for EVVM payment transaction
+     * @param signaturePay Signature for EVVM payment
      */
     function dispatchOrder_fillPropotionalFee(
         address user,
         MetadataDispatchOrder memory metadata,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
@@ -336,10 +336,10 @@ contract P2PSwap is EvvmService, Structs {
             user,
             metadata.tokenB,
             metadata.amountOfTokenBToFill,
-            priorityFeeEvvm,
-            nonceEvvm,
+            priorityFeePay,
+            noncePay,
             true,
-            signatureEvvm
+            signaturePay
         );
 
         // si es mas del fee + el monto de la orden hacemos caPay al usuario del sobranate
@@ -357,7 +357,7 @@ contract P2PSwap is EvvmService, Structs {
             fee,
             order.seller,
             msg.sender,
-            priorityFeeEvvm
+            priorityFeePay
         );
 
         // pay user with token A
@@ -418,17 +418,17 @@ contract P2PSwap is EvvmService, Structs {
      *
      * @param user Address filling the order (buyer)
      * @param metadata Dispatch details (tokens, orderId, amount)
-     * @param priorityFeeEvvm Optional priority fee for staker
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @param priorityFeePay Optional priority fee for staker
+     * @param noncePay Nonce for EVVM payment transaction
+     * @param signaturePay Signature for EVVM payment
      * @param maxFillFixedFee Max fee cap (for testing)
      */
     function dispatchOrder_fillFixedFee(
         address user,
         MetadataDispatchOrder memory metadata,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm,
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay,
         uint256 maxFillFixedFee ///@dev for testing purposes
     ) external {
         core.validateAndConsumeNonce(
@@ -464,10 +464,10 @@ contract P2PSwap is EvvmService, Structs {
             user,
             metadata.tokenB,
             metadata.amountOfTokenBToFill,
-            priorityFeeEvvm,
-            nonceEvvm,
+            priorityFeePay,
+            noncePay,
             true,
-            signatureEvvm
+            signaturePay
         );
 
         uint256 finalFee = _calculateFinalFee(
@@ -492,7 +492,7 @@ contract P2PSwap is EvvmService, Structs {
             finalFee,
             order.seller,
             msg.sender,
-            priorityFeeEvvm
+            priorityFeePay
         );
 
         makeCaPay(user, metadata.tokenA, order.amountA);

@@ -67,7 +67,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM
+        uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -110,11 +110,11 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
                 amountA,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -126,8 +126,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
             orderData,
             signatureP2P,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
@@ -144,7 +144,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
-        uint256 nonceEVVM = 1233;
+        uint256 noncePay = 1233;
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -166,7 +166,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM
+            noncePay
         );
 
         assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
@@ -215,12 +215,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -236,8 +236,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
             COMMON_USER_NO_STAKER_2.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
@@ -295,7 +295,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
-        uint256 nonceEVVM = 949234;
+        uint256 noncePay = 949234;
 
         uint256 fee = (amountB * 500) / 10_000;
 
@@ -321,7 +321,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
             amountA,
             amountB,
             0, // priorityFee is 0 for createOrder
-            nonceEVVM
+            noncePay
         );
 
         assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
@@ -370,12 +370,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -391,8 +391,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
             COMMON_USER_NO_STAKER_2.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 

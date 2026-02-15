@@ -47,9 +47,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         uint256 amountOfStaking;
         uint256 nonce;
         bytes signatureStaking;
-        uint256 priorityFeeEVVM;
-        uint256 nonceEVVM;
-        bytes signatureEVVM;
+        uint256 priorityFeePay;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function test__unit_correct__publicStaking__fisherNoStaking_staking()
@@ -61,9 +61,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 200002,
             signatureStaking: "",
-            priorityFeeEVVM: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0,
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory paramsPf = Params({
@@ -72,9 +72,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 400004,
             signatureStaking: "",
-            priorityFeeEVVM: 0.001 ether,
-            nonceEVVM: 89,
-            signatureEVVM: ""
+            priorityFeePay: 0.001 ether,
+            noncePay: 89,
+            signaturePay: ""
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async noPriorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
@@ -82,20 +82,20 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         _addBalance(
             paramsNpf.user,
             paramsNpf.amountOfStaking,
-            paramsNpf.priorityFeeEVVM
+            paramsNpf.priorityFeePay
         );
 
         (
             paramsNpf.signatureStaking,
-            paramsNpf.signatureEVVM
+            paramsNpf.signaturePay
         ) = _executeSig_staking_publicStaking(
             paramsNpf.user,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
             address(0),
             paramsNpf.nonce,
-            paramsNpf.priorityFeeEVVM,
-            paramsNpf.nonceEVVM
+            paramsNpf.priorityFeePay,
+            paramsNpf.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -106,9 +106,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             paramsNpf.nonce,
             paramsNpf.signatureStaking,
-            paramsNpf.priorityFeeEVVM,
-            paramsNpf.nonceEVVM,
-            paramsNpf.signatureEVVM
+            paramsNpf.priorityFeePay,
+            paramsNpf.noncePay,
+            paramsNpf.signaturePay
         );
         vm.stopPrank();
 
@@ -161,20 +161,20 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         _addBalance(
             paramsPf.user,
             paramsPf.amountOfStaking,
-            paramsPf.priorityFeeEVVM
+            paramsPf.priorityFeePay
         );
 
         (
             paramsPf.signatureStaking,
-            paramsPf.signatureEVVM
+            paramsPf.signaturePay
         ) = _executeSig_staking_publicStaking(
             paramsPf.user,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
             address(0),
             paramsPf.nonce,
-            paramsPf.priorityFeeEVVM,
-            paramsPf.nonceEVVM
+            paramsPf.priorityFeePay,
+            paramsPf.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -185,9 +185,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             paramsPf.nonce,
             paramsPf.signatureStaking,
-            paramsPf.priorityFeeEVVM,
-            paramsPf.nonceEVVM,
-            paramsPf.signatureEVVM
+            paramsPf.priorityFeePay,
+            paramsPf.noncePay,
+            paramsPf.signaturePay
         );
         vm.stopPrank();
 
@@ -245,9 +245,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 200002,
             signatureStaking: "",
-            priorityFeeEVVM: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0,
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory paramsPf = Params({
@@ -256,9 +256,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 400004,
             signatureStaking: "",
-            priorityFeeEVVM: 0.001 ether,
-            nonceEVVM: 89,
-            signatureEVVM: ""
+            priorityFeePay: 0.001 ether,
+            noncePay: 89,
+            signaturePay: ""
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async noPriorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
@@ -266,20 +266,20 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         _addBalance(
             paramsNpf.user,
             paramsNpf.amountOfStaking,
-            paramsNpf.priorityFeeEVVM
+            paramsNpf.priorityFeePay
         );
 
         (
             paramsNpf.signatureStaking,
-            paramsNpf.signatureEVVM
+            paramsNpf.signaturePay
         ) = _executeSig_staking_publicStaking(
             paramsNpf.user,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
             address(0),
             paramsNpf.nonce,
-            paramsNpf.priorityFeeEVVM,
-            paramsNpf.nonceEVVM
+            paramsNpf.priorityFeePay,
+            paramsNpf.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -290,9 +290,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             paramsNpf.nonce,
             paramsNpf.signatureStaking,
-            paramsNpf.priorityFeeEVVM,
-            paramsNpf.nonceEVVM,
-            paramsNpf.signatureEVVM
+            paramsNpf.priorityFeePay,
+            paramsNpf.noncePay,
+            paramsNpf.signaturePay
         );
         vm.stopPrank();
 
@@ -330,7 +330,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         assertEq(
             core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((core.getRewardAmount() * 2) * 1) + paramsNpf.priorityFeeEVVM,
+            ((core.getRewardAmount() * 2) * 1) + paramsNpf.priorityFeePay,
             "Error [execution noPriorityFee]: Fisher principal token balance should be incremented after staking"
         );
 
@@ -345,20 +345,20 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         _addBalance(
             paramsPf.user,
             paramsPf.amountOfStaking,
-            paramsPf.priorityFeeEVVM
+            paramsPf.priorityFeePay
         );
 
         (
             paramsPf.signatureStaking,
-            paramsPf.signatureEVVM
+            paramsPf.signaturePay
         ) = _executeSig_staking_publicStaking(
             paramsPf.user,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
             address(0),
             paramsPf.nonce,
-            paramsPf.priorityFeeEVVM,
-            paramsPf.nonceEVVM
+            paramsPf.priorityFeePay,
+            paramsPf.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -369,9 +369,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             paramsPf.nonce,
             paramsPf.signatureStaking,
-            paramsPf.priorityFeeEVVM,
-            paramsPf.nonceEVVM,
-            paramsPf.signatureEVVM
+            paramsPf.priorityFeePay,
+            paramsPf.noncePay,
+            paramsPf.signaturePay
         );
         vm.stopPrank();
 
@@ -410,8 +410,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         assertEq(
             core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             ((core.getRewardAmount() * 2) * 2) +
-                paramsNpf.priorityFeeEVVM +
-                paramsPf.priorityFeeEVVM,
+                paramsNpf.priorityFeePay +
+                paramsPf.priorityFeePay,
             "Error [execution priorityFee]: Fisher principal token balance should be incremented after staking"
         );
 
@@ -447,9 +447,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 5,
             nonce: 200002,
             signatureStaking: "",
-            priorityFeeEVVM: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0,
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory paramsPf = Params({
@@ -458,26 +458,26 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 5,
             nonce: 400004,
             signatureStaking: "",
-            priorityFeeEVVM: 0.001 ether,
-            nonceEVVM: 89,
-            signatureEVVM: ""
+            priorityFeePay: 0.001 ether,
+            noncePay: 89,
+            signaturePay: ""
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async noPriorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        _addBalance(paramsNpf.user, 0, paramsNpf.priorityFeeEVVM);
+        _addBalance(paramsNpf.user, 0, paramsNpf.priorityFeePay);
 
         (
             paramsNpf.signatureStaking,
-            paramsNpf.signatureEVVM
+            paramsNpf.signaturePay
         ) = _executeSig_staking_publicStaking(
             paramsNpf.user,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
             address(0),
             paramsNpf.nonce,
-            paramsNpf.priorityFeeEVVM,
-            paramsNpf.nonceEVVM
+            paramsNpf.priorityFeePay,
+            paramsNpf.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -488,9 +488,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             paramsNpf.nonce,
             paramsNpf.signatureStaking,
-            paramsNpf.priorityFeeEVVM,
-            paramsNpf.nonceEVVM,
-            paramsNpf.signatureEVVM
+            paramsNpf.priorityFeePay,
+            paramsNpf.noncePay,
+            paramsNpf.signaturePay
         );
         vm.stopPrank();
 
@@ -540,19 +540,19 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        _addBalance(paramsPf.user, 0, paramsPf.priorityFeeEVVM);
+        _addBalance(paramsPf.user, 0, paramsPf.priorityFeePay);
 
         (
             paramsPf.signatureStaking,
-            paramsPf.signatureEVVM
+            paramsPf.signaturePay
         ) = _executeSig_staking_publicStaking(
             paramsPf.user,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
             address(0),
             paramsPf.nonce,
-            paramsPf.priorityFeeEVVM,
-            paramsPf.nonceEVVM
+            paramsPf.priorityFeePay,
+            paramsPf.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -563,9 +563,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             paramsPf.nonce,
             paramsPf.signatureStaking,
-            paramsPf.priorityFeeEVVM,
-            paramsPf.nonceEVVM,
-            paramsPf.signatureEVVM
+            paramsPf.priorityFeePay,
+            paramsPf.noncePay,
+            paramsPf.signaturePay
         );
         vm.stopPrank();
 
@@ -639,9 +639,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 5,
             nonce: 200002,
             signatureStaking: "",
-            priorityFeeEVVM: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0,
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory paramsPf = Params({
@@ -650,26 +650,26 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 5,
             nonce: 400004,
             signatureStaking: "",
-            priorityFeeEVVM: 0.001 ether,
-            nonceEVVM: 89,
-            signatureEVVM: ""
+            priorityFeePay: 0.001 ether,
+            noncePay: 89,
+            signaturePay: ""
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async noPriorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        _addBalance(paramsNpf.user, 0, paramsNpf.priorityFeeEVVM);
+        _addBalance(paramsNpf.user, 0, paramsNpf.priorityFeePay);
 
         (
             paramsNpf.signatureStaking,
-            paramsNpf.signatureEVVM
+            paramsNpf.signaturePay
         ) = _executeSig_staking_publicStaking(
             paramsNpf.user,
             paramsNpf.isStaking,
             paramsNpf.amountOfStaking,
             address(0),
             paramsNpf.nonce,
-            paramsNpf.priorityFeeEVVM,
-            paramsNpf.nonceEVVM
+            paramsNpf.priorityFeePay,
+            paramsNpf.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -680,9 +680,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             paramsNpf.nonce,
             paramsNpf.signatureStaking,
-            paramsNpf.priorityFeeEVVM,
-            paramsNpf.nonceEVVM,
-            paramsNpf.signatureEVVM
+            paramsNpf.priorityFeePay,
+            paramsNpf.noncePay,
+            paramsNpf.signaturePay
         );
         vm.stopPrank();
 
@@ -720,7 +720,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         assertEq(
             core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((core.getRewardAmount() * 2) * 1) + paramsNpf.priorityFeeEVVM,
+            ((core.getRewardAmount() * 2) * 1) + paramsNpf.priorityFeePay,
             "Error [execution noPriorityFee]: Fisher principal token balance should be incremented after unstaking"
         );
 
@@ -732,19 +732,19 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        _addBalance(paramsPf.user, 0, paramsPf.priorityFeeEVVM);
+        _addBalance(paramsPf.user, 0, paramsPf.priorityFeePay);
 
         (
             paramsPf.signatureStaking,
-            paramsPf.signatureEVVM
+            paramsPf.signaturePay
         ) = _executeSig_staking_publicStaking(
             paramsPf.user,
             paramsPf.isStaking,
             paramsPf.amountOfStaking,
             address(0),
             paramsPf.nonce,
-            paramsPf.priorityFeeEVVM,
-            paramsPf.nonceEVVM
+            paramsPf.priorityFeePay,
+            paramsPf.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -755,9 +755,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             paramsPf.nonce,
             paramsPf.signatureStaking,
-            paramsPf.priorityFeeEVVM,
-            paramsPf.nonceEVVM,
-            paramsPf.signatureEVVM
+            paramsPf.priorityFeePay,
+            paramsPf.noncePay,
+            paramsPf.signaturePay
         );
         vm.stopPrank();
 
@@ -796,8 +796,8 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
         assertEq(
             core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             ((core.getRewardAmount() * 2) * 2) +
-                paramsNpf.priorityFeeEVVM +
-                paramsPf.priorityFeeEVVM,
+                paramsNpf.priorityFeePay +
+                paramsPf.priorityFeePay,
             "Error [execution priorityFee]: Fisher principal token balance should be incremented after unstaking"
         );
 
@@ -832,26 +832,26 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 100001,
             signatureStaking: "",
-            priorityFeeEVVM: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0,
+            noncePay: 67,
+            signaturePay: ""
         });
 
-        _addBalance(params.user, 0, params.priorityFeeEVVM);
+        _addBalance(params.user, 0, params.priorityFeePay);
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
         (
             params.signatureStaking,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
             address(0),
             params.nonce,
-            params.priorityFeeEVVM,
-            params.nonceEVVM
+            params.priorityFeePay,
+            params.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -862,9 +862,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             params.nonce,
             params.signatureStaking,
-            params.priorityFeeEVVM,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.priorityFeePay,
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -937,26 +937,26 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 100001,
             signatureStaking: "",
-            priorityFeeEVVM: 0.0001 ether,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0.0001 ether,
+            noncePay: 67,
+            signaturePay: ""
         });
 
-        _addBalance(params.user, 0, params.priorityFeeEVVM);
+        _addBalance(params.user, 0, params.priorityFeePay);
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
         (
             params.signatureStaking,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
             address(0),
             params.nonce,
-            params.priorityFeeEVVM,
-            params.nonceEVVM
+            params.priorityFeePay,
+            params.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -967,9 +967,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             params.nonce,
             params.signatureStaking,
-            params.priorityFeeEVVM,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.priorityFeePay,
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -1042,26 +1042,26 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 100001,
             signatureStaking: "",
-            priorityFeeEVVM: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0,
+            noncePay: 67,
+            signaturePay: ""
         });
 
-        _addBalance(params.user, 0, params.priorityFeeEVVM);
+        _addBalance(params.user, 0, params.priorityFeePay);
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
         (
             params.signatureStaking,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
             address(0),
             params.nonce,
-            params.priorityFeeEVVM,
-            params.nonceEVVM
+            params.priorityFeePay,
+            params.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -1072,9 +1072,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             params.nonce,
             params.signatureStaking,
-            params.priorityFeeEVVM,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.priorityFeePay,
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -1112,7 +1112,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         assertEq(
             core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (core.getRewardAmount() * 2) + params.priorityFeeEVVM,
+            (core.getRewardAmount() * 2) + params.priorityFeePay,
             "Error: Staker principal token balance should be incremented after full unstaking"
         );
 
@@ -1147,26 +1147,26 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 100001,
             signatureStaking: "",
-            priorityFeeEVVM: 0.0001 ether,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0.0001 ether,
+            noncePay: 67,
+            signaturePay: ""
         });
 
-        _addBalance(params.user, 0, params.priorityFeeEVVM);
+        _addBalance(params.user, 0, params.priorityFeePay);
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
         (
             params.signatureStaking,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
             address(0),
             params.nonce,
-            params.priorityFeeEVVM,
-            params.nonceEVVM
+            params.priorityFeePay,
+            params.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -1177,9 +1177,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             params.nonce,
             params.signatureStaking,
-            params.priorityFeeEVVM,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.priorityFeePay,
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -1217,7 +1217,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         assertEq(
             core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (core.getRewardAmount() * 2) + params.priorityFeeEVVM,
+            (core.getRewardAmount() * 2) + params.priorityFeePay,
             "Error: Staker principal token balance should be incremented after full unstaking"
         );
 
@@ -1270,26 +1270,26 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 100001,
             signatureStaking: "",
-            priorityFeeEVVM: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0,
+            noncePay: 67,
+            signaturePay: ""
         });
 
-        _addBalance(params.user, 0, params.priorityFeeEVVM);
+        _addBalance(params.user, 0, params.priorityFeePay);
 
         skip(staking.getSecondsToUnlockStaking());
 
         (
             params.signatureStaking,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
             address(0),
             params.nonce,
-            params.priorityFeeEVVM,
-            params.nonceEVVM
+            params.priorityFeePay,
+            params.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -1300,9 +1300,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             params.nonce,
             params.signatureStaking,
-            params.priorityFeeEVVM,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.priorityFeePay,
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -1393,26 +1393,26 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 100001,
             signatureStaking: "",
-            priorityFeeEVVM: 0.001 ether,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0.001 ether,
+            noncePay: 67,
+            signaturePay: ""
         });
 
-        _addBalance(params.user, 0, params.priorityFeeEVVM);
+        _addBalance(params.user, 0, params.priorityFeePay);
 
         skip(staking.getSecondsToUnlockStaking());
 
         (
             params.signatureStaking,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
             address(0),
             params.nonce,
-            params.priorityFeeEVVM,
-            params.nonceEVVM
+            params.priorityFeePay,
+            params.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -1423,9 +1423,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             params.nonce,
             params.signatureStaking,
-            params.priorityFeeEVVM,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.priorityFeePay,
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -1516,26 +1516,26 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 100001,
             signatureStaking: "",
-            priorityFeeEVVM: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0,
+            noncePay: 67,
+            signaturePay: ""
         });
 
-        _addBalance(params.user, 0, params.priorityFeeEVVM);
+        _addBalance(params.user, 0, params.priorityFeePay);
 
         skip(staking.getSecondsToUnlockStaking());
 
         (
             params.signatureStaking,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
             address(0),
             params.nonce,
-            params.priorityFeeEVVM,
-            params.nonceEVVM
+            params.priorityFeePay,
+            params.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -1546,9 +1546,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             params.nonce,
             params.signatureStaking,
-            params.priorityFeeEVVM,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.priorityFeePay,
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -1586,7 +1586,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         assertEq(
             core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (core.getRewardAmount() * 2) + params.priorityFeeEVVM,
+            (core.getRewardAmount() * 2) + params.priorityFeePay,
             "Error: Staker principal token balance should be increased after unstaking"
         );
 
@@ -1639,26 +1639,26 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             amountOfStaking: 10,
             nonce: 100001,
             signatureStaking: "",
-            priorityFeeEVVM: 0.001 ether,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            priorityFeePay: 0.001 ether,
+            noncePay: 67,
+            signaturePay: ""
         });
 
-        _addBalance(params.user, 0, params.priorityFeeEVVM);
+        _addBalance(params.user, 0, params.priorityFeePay);
 
         skip(staking.getSecondsToUnlockStaking());
 
         (
             params.signatureStaking,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_staking_publicStaking(
             params.user,
             params.isStaking,
             params.amountOfStaking,
             address(0),
             params.nonce,
-            params.priorityFeeEVVM,
-            params.nonceEVVM
+            params.priorityFeePay,
+            params.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -1669,9 +1669,9 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
             address(0),
             params.nonce,
             params.signatureStaking,
-            params.priorityFeeEVVM,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.priorityFeePay,
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -1709,7 +1709,7 @@ contract unitTestCorrect_Staking_publicStaking is Test, Constants {
 
         assertEq(
             core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (core.getRewardAmount() * 2) + params.priorityFeeEVVM,
+            (core.getRewardAmount() * 2) + params.priorityFeePay,
             "Error: Staker principal token balance should be increased after unstaking"
         );
 

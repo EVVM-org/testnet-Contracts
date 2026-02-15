@@ -117,9 +117,9 @@ contract NameService {
      * @param originExecutor Optional tx.origin restriction.
      * @param nonce Async nonce for signature verification.
      * @param signature Registrant's authorization signature.
-     * @param priorityFeeEvvm Optional priority fee for the executor.
-     * @param nonceEvvm Nonce for the Core payment (if fee is paid).
-     * @param signatureEvvm Signature for the Core payment (if fee is paid).
+     * @param priorityFeePay Optional priority fee for the executor.
+     * @param noncePay Nonce for the Core payment (if fee is paid).
+     * @param signaturePay Signature for the Core payment (if fee is paid).
      */
     function preRegistrationUsername(
         address user,
@@ -127,9 +127,9 @@ contract NameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
@@ -140,8 +140,8 @@ contract NameService {
             signature
         );
 
-        if (priorityFeeEvvm > 0)
-            requestPay(user, 0, priorityFeeEvvm, nonceEvvm, signatureEvvm);
+        if (priorityFeePay > 0)
+            requestPay(user, 0, priorityFeePay, noncePay, signaturePay);
 
         identityDetails[
             string.concat(
@@ -157,7 +157,7 @@ contract NameService {
         });
 
         if (core.isAddressStaker(msg.sender))
-            makeCaPay(msg.sender, core.getRewardAmount() + priorityFeeEvvm);
+            makeCaPay(msg.sender, core.getRewardAmount() + priorityFeePay);
     }
 
     /**
@@ -169,9 +169,9 @@ contract NameService {
      * @param originExecutor Optional tx.origin restriction.
      * @param nonce Async nonce for signature verification.
      * @param signature Registrant's authorization signature.
-     * @param priorityFeeEvvm Optional priority fee for the executor.
-     * @param nonceEvvm Nonce for the Core payment (registration fee + priority fee).
-     * @param signatureEvvm Signature for the Core payment.
+     * @param priorityFeePay Optional priority fee for the executor.
+     * @param noncePay Nonce for the Core payment (registration fee + priority fee).
+     * @param signaturePay Signature for the Core payment.
      */
     function registrationUsername(
         address user,
@@ -180,9 +180,9 @@ contract NameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
@@ -204,9 +204,9 @@ contract NameService {
         requestPay(
             user,
             getPriceOfRegistration(username),
-            priorityFeeEvvm,
-            nonceEvvm,
-            signatureEvvm
+            priorityFeePay,
+            noncePay,
+            signaturePay
         );
 
         string memory _key = string.concat(
@@ -230,7 +230,7 @@ contract NameService {
         if (core.isAddressStaker(msg.sender))
             makeCaPay(
                 msg.sender,
-                (50 * core.getRewardAmount()) + priorityFeeEvvm
+                (50 * core.getRewardAmount()) + priorityFeePay
             );
 
         delete identityDetails[_key];
@@ -248,9 +248,9 @@ contract NameService {
      * @param originExecutor Optional tx.origin restriction.
      * @param nonce Async nonce for signature verification.
      * @param signature Offerer's authorization signature.
-     * @param priorityFeeEvvm Optional priority fee for the executor.
-     * @param nonceEvvm Nonce for the Core payment (locks tokens).
-     * @param signatureEvvm Signature for the Core payment.
+     * @param priorityFeePay Optional priority fee for the executor.
+     * @param noncePay Nonce for the Core payment (locks tokens).
+     * @param signaturePay Signature for the Core payment.
      * @return offerID The unique ID of the created offer.
      */
     function makeOffer(
@@ -261,9 +261,9 @@ contract NameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external returns (uint256 offerID) {
         core.validateAndConsumeNonce(
             user,
@@ -284,7 +284,7 @@ contract NameService {
 
         if (amount == 0) revert Error.AmountMustBeGreaterThanZero();
 
-        requestPay(user, amount, priorityFeeEvvm, nonceEvvm, signatureEvvm);
+        requestPay(user, amount, priorityFeePay, noncePay, signaturePay);
 
         while (usernameOffers[username][offerID].offerer != address(0))
             offerID++;
@@ -301,7 +301,7 @@ contract NameService {
             msg.sender,
             core.getRewardAmount() +
                 ((amount * 125) / 100_000) +
-                priorityFeeEvvm
+                priorityFeePay
         );
 
         principalTokenTokenLockedForWithdrawOffers +=
@@ -348,9 +348,9 @@ contract NameService {
      * @param offerID Unique identifier of offer to withdraw
      * @param nonce Async nonce for replay protection
      * @param signature Signature for State.sol validation
-     * @param priorityFeeEvvm Priority fee for faster processing
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @param priorityFeePay Priority fee for faster processing
+     * @param noncePay Nonce for EVVM payment transaction
+     * @param signaturePay Signature for EVVM payment
      */
     function withdrawOffer(
         address user,
@@ -359,9 +359,9 @@ contract NameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
@@ -375,8 +375,8 @@ contract NameService {
         if (usernameOffers[username][offerID].offerer != user)
             revert Error.UserIsNotOwnerOfOffer();
 
-        if (priorityFeeEvvm > 0)
-            requestPay(user, 0, priorityFeeEvvm, nonceEvvm, signatureEvvm);
+        if (priorityFeePay > 0)
+            requestPay(user, 0, priorityFeePay, noncePay, signaturePay);
 
         makeCaPay(user, usernameOffers[username][offerID].amount);
 
@@ -386,7 +386,7 @@ contract NameService {
             msg.sender,
             core.getRewardAmount() +
                 ((usernameOffers[username][offerID].amount * 1) / 796) +
-                priorityFeeEvvm
+                priorityFeePay
         );
 
         principalTokenTokenLockedForWithdrawOffers -=
@@ -435,9 +435,9 @@ contract NameService {
      * @param offerID Unique identifier of offer to accept
      * @param nonce Async nonce for replay protection
      * @param signature Signature for State.sol validation
-     * @param priorityFeeEvvm Priority fee for faster processing
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @param priorityFeePay Priority fee for faster processing
+     * @param noncePay Nonce for EVVM payment transaction
+     * @param signaturePay Signature for EVVM payment
      */
     function acceptOffer(
         address user,
@@ -446,9 +446,9 @@ contract NameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
@@ -467,8 +467,8 @@ contract NameService {
             usernameOffers[username][offerID].expirationDate < block.timestamp
         ) revert Error.OfferInactive();
 
-        if (priorityFeeEvvm > 0) {
-            requestPay(user, 0, priorityFeeEvvm, nonceEvvm, signatureEvvm);
+        if (priorityFeePay > 0) {
+            requestPay(user, 0, priorityFeePay, noncePay, signaturePay);
         }
 
         makeCaPay(user, usernameOffers[username][offerID].amount);
@@ -484,7 +484,7 @@ contract NameService {
                 (core.getRewardAmount()) +
                     (((usernameOffers[username][offerID].amount * 1) / 199) /
                         4) +
-                    priorityFeeEvvm
+                    priorityFeePay
             );
         }
 
@@ -524,9 +524,9 @@ contract NameService {
      * @param username Username to renew
      * @param nonce Async nonce for replay protection
      * @param signature Signature for State.sol validation
-     * @param priorityFeeEvvm Priority fee for faster processing
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @param priorityFeePay Priority fee for faster processing
+     * @param noncePay Nonce for EVVM payment transaction
+     * @param signaturePay Signature for EVVM payment
      */
     function renewUsername(
         address user,
@@ -534,9 +534,9 @@ contract NameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
@@ -563,9 +563,9 @@ contract NameService {
         requestPay(
             user,
             priceOfRenew,
-            priorityFeeEvvm,
-            nonceEvvm,
-            signatureEvvm
+            priorityFeePay,
+            noncePay,
+            signaturePay
         );
 
         if (core.isAddressStaker(msg.sender)) {
@@ -573,7 +573,7 @@ contract NameService {
                 msg.sender,
                 core.getRewardAmount() +
                     ((priceOfRenew * 50) / 100) +
-                    priorityFeeEvvm
+                    priorityFeePay
             );
         }
 
@@ -621,9 +621,9 @@ contract NameService {
      * @param value Metadata string following format
      * @param nonce Async nonce for replay protection
      * @param signature Signature for State.sol validation
-     * @param priorityFeeEvvm Priority fee for faster processing
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @param priorityFeePay Priority fee for faster processing
+     * @param noncePay Nonce for EVVM payment transaction
+     * @param signaturePay Signature for EVVM payment
      */
     function addCustomMetadata(
         address user,
@@ -632,9 +632,9 @@ contract NameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
@@ -653,9 +653,9 @@ contract NameService {
         requestPay(
             user,
             getPriceToAddCustomMetadata(),
-            priorityFeeEvvm,
-            nonceEvvm,
-            signatureEvvm
+            priorityFeePay,
+            noncePay,
+            signaturePay
         );
 
         if (core.isAddressStaker(msg.sender)) {
@@ -663,7 +663,7 @@ contract NameService {
                 msg.sender,
                 (5 * core.getRewardAmount()) +
                     ((getPriceToAddCustomMetadata() * 50) / 100) +
-                    priorityFeeEvvm
+                    priorityFeePay
             );
         }
 
@@ -707,9 +707,9 @@ contract NameService {
      * @param key Index of metadata entry to remove
      * @param nonce Async nonce for replay protection
      * @param signature Signature for State.sol validation
-     * @param priorityFeeEvvm Priority fee for faster processing
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @param priorityFeePay Priority fee for faster processing
+     * @param noncePay Nonce for EVVM payment transaction
+     * @param signaturePay Signature for EVVM payment
      */
     function removeCustomMetadata(
         address user,
@@ -718,9 +718,9 @@ contract NameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
@@ -740,9 +740,9 @@ contract NameService {
         requestPay(
             user,
             getPriceToRemoveCustomMetadata(),
-            priorityFeeEvvm,
-            nonceEvvm,
-            signatureEvvm
+            priorityFeePay,
+            noncePay,
+            signaturePay
         );
 
         if (identityDetails[identity].customMetadataMaxSlots == key) {
@@ -767,7 +767,7 @@ contract NameService {
         if (core.isAddressStaker(msg.sender))
             makeCaPay(
                 msg.sender,
-                (5 * core.getRewardAmount()) + priorityFeeEvvm
+                (5 * core.getRewardAmount()) + priorityFeePay
             );
     }
 
@@ -804,9 +804,9 @@ contract NameService {
      * @param identity Username to flush all metadata from
      * @param nonce Async nonce for replay protection
      * @param signature Signature for State.sol validation
-     * @param priorityFeeEvvm Priority fee for faster processing
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @param priorityFeePay Priority fee for faster processing
+     * @param noncePay Nonce for EVVM payment transaction
+     * @param signaturePay Signature for EVVM payment
      */
     function flushCustomMetadata(
         address user,
@@ -814,9 +814,9 @@ contract NameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
@@ -836,9 +836,9 @@ contract NameService {
         requestPay(
             user,
             getPriceToFlushCustomMetadata(identity),
-            priorityFeeEvvm,
-            nonceEvvm,
-            signatureEvvm
+            priorityFeePay,
+            noncePay,
+            signaturePay
         );
 
         for (
@@ -854,7 +854,7 @@ contract NameService {
                 msg.sender,
                 ((5 * core.getRewardAmount()) *
                     identityDetails[identity].customMetadataMaxSlots) +
-                    priorityFeeEvvm
+                    priorityFeePay
             );
         }
 
@@ -901,9 +901,9 @@ contract NameService {
      * @param username Username to completely remove
      * @param nonce Async nonce for replay protection
      * @param signature Signature for State.sol validation
-     * @param priorityFeeEvvm Priority fee for faster processing
-     * @param nonceEvvm Nonce for EVVM payment transaction
-     * @param signatureEvvm Signature for EVVM payment
+     * @param priorityFeePay Priority fee for faster processing
+     * @param noncePay Nonce for EVVM payment transaction
+     * @param signaturePay Signature for EVVM payment
      */
     function flushUsername(
         address user,
@@ -911,9 +911,9 @@ contract NameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
@@ -936,9 +936,9 @@ contract NameService {
         requestPay(
             user,
             getPriceToFlushUsername(username),
-            priorityFeeEvvm,
-            nonceEvvm,
-            signatureEvvm
+            priorityFeePay,
+            noncePay,
+            signaturePay
         );
 
         for (
@@ -953,7 +953,7 @@ contract NameService {
             msg.sender,
             ((5 * core.getRewardAmount()) *
                 identityDetails[username].customMetadataMaxSlots) +
-                priorityFeeEvvm
+                priorityFeePay
         );
 
         identityDetails[username] = Structs.IdentityBaseMetadata({

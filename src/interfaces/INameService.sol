@@ -39,9 +39,9 @@ interface INameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function acceptProposeAdmin() external;
     function addCustomMetadata(
@@ -51,9 +51,9 @@ interface INameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function cancelChangeEvvmAddress() external;
     function cancelProposeAdmin() external;
@@ -65,9 +65,9 @@ interface INameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function flushUsername(
         address user,
@@ -75,9 +75,9 @@ interface INameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function getAdmin() external view returns (address);
     function getAdminFullDetails()
@@ -128,9 +128,9 @@ interface INameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external returns (uint256 offerID);
     function preRegistrationUsername(
         address user,
@@ -138,9 +138,9 @@ interface INameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function proposeAdmin(address _adminToPropose) external;
     function proposeChangeEvvmAddress(address _newEvvmAddress) external;
@@ -152,9 +152,9 @@ interface INameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function removeCustomMetadata(
         address user,
@@ -163,9 +163,9 @@ interface INameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function renewUsername(
         address user,
@@ -173,9 +173,9 @@ interface INameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function seePriceToRenew(string memory _identity) external view returns (uint256 price);
     function strictVerifyIfIdentityExist(string memory _username) external view returns (bool);
@@ -188,8 +188,8 @@ interface INameService {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFeeEvvm,
-        uint256 nonceEvvm,
-        bytes memory signatureEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
 }

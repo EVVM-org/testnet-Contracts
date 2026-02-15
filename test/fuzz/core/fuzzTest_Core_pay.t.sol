@@ -119,7 +119,7 @@ contract fuzzTest_Core_pay is Test, Constants {
             input.priorityFee
         );
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             input.toAddress,
             "",
@@ -146,7 +146,7 @@ contract fuzzTest_Core_pay is Test, Constants {
             input.usingExecutor ? input.executor : address(0),
             nonce,
             input.isUsingAsyncNonce,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -211,7 +211,7 @@ contract fuzzTest_Core_pay is Test, Constants {
 
         string memory username = _makeRandomUsername(input.seedUsername);
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             username,
@@ -238,7 +238,7 @@ contract fuzzTest_Core_pay is Test, Constants {
             input.usingExecutor ? input.executor : address(0),
             nonce,
             input.isUsingAsyncNonce,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 

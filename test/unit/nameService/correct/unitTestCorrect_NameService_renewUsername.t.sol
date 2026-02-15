@@ -41,8 +41,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function executeBeforeSetUp() internal override {
@@ -104,8 +104,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             nonce: 2002,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
@@ -114,8 +114,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             nonce: 4004,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 89,
-            signatureEVVM: ""
+            noncePay: 89,
+            signaturePay: ""
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
@@ -123,14 +123,14 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
             address(0),
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -142,8 +142,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
@@ -181,14 +181,14 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
             address(0),
             params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -200,8 +200,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();
@@ -240,8 +240,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             nonce: 2002,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
@@ -250,8 +250,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             nonce: 4004,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 89,
-            signatureEVVM: ""
+            noncePay: 89,
+            signaturePay: ""
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
@@ -263,14 +263,14 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
             address(0),
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -282,8 +282,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
@@ -325,14 +325,14 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
             address(0),
             params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -344,8 +344,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();
@@ -384,8 +384,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             nonce: 2002,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
@@ -394,8 +394,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             nonce: 4004,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: 89,
-            signatureEVVM: ""
+            noncePay: 89,
+            signaturePay: ""
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
@@ -403,14 +403,14 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
             address(0),
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -422,8 +422,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
@@ -461,14 +461,14 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
             address(0),
             params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -480,8 +480,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();
@@ -518,8 +518,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             nonce: 2002,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
@@ -528,8 +528,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             nonce: 4004,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: 89,
-            signatureEVVM: ""
+            noncePay: 89,
+            signaturePay: ""
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
@@ -541,14 +541,14 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
             address(0),
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -560,8 +560,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
@@ -603,14 +603,14 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
             address(0),
             params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -622,8 +622,8 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();

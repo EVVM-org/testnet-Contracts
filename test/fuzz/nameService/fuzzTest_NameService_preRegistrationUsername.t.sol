@@ -30,7 +30,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         uint256 lockNumber;
         uint256 nonce;
         uint256 priorityFee;
-        uint256 nonceEVVM;
+        uint256 noncePay;
     }
 
     function _addBalance(
@@ -61,14 +61,14 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             lockNumber: input.lockNumber,
             nonce: input.nonce,
             priorityFee: input.priorityFee,
-            nonceEVVM: input.nonceAsyncEVVM
+            noncePay: input.nonceAsyncEVVM
         });
 
         _addBalance(params.user, params.priorityFee);
 
         (
             bytes memory signatureNameServiceOne,
-            bytes memory signatureEvvmOne
+            bytes memory signaturePayOne
         ) = _executeSig_nameService_preRegistrationUsername(
                 params.user,
                 params.username,
@@ -76,7 +76,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                 address(0),
                 params.nonce,
                 params.priorityFee,
-                params.nonceEVVM
+                params.noncePay
             );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -90,8 +90,8 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             params.nonce,
             signatureNameServiceOne,
             params.priorityFee,
-            params.nonceEVVM,
-            signatureEvvmOne
+            params.noncePay,
+            signaturePayOne
         );
 
         vm.stopPrank();
@@ -141,14 +141,14 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             lockNumber: input.lockNumber,
             nonce: input.nonce,
             priorityFee: input.priorityFee,
-            nonceEVVM: input.nonceAsyncEVVM
+            noncePay: input.nonceAsyncEVVM
         });
 
         _addBalance(params.user, params.priorityFee);
 
         (
             bytes memory signatureNameServiceOne,
-            bytes memory signatureEvvmOne
+            bytes memory signaturePayOne
         ) = _executeSig_nameService_preRegistrationUsername(
                 params.user,
                 params.username,
@@ -156,7 +156,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                 address(0),
                 params.nonce,
                 params.priorityFee,
-                params.nonceEVVM
+                params.noncePay
             );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -170,8 +170,8 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             params.nonce,
             signatureNameServiceOne,
             params.priorityFee,
-            params.nonceEVVM,
-            signatureEvvmOne
+            params.noncePay,
+            signaturePayOne
         );
 
         vm.stopPrank();

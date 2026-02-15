@@ -114,7 +114,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
         bytes memory signatureNameService = Erc191TestBuilder
             .buildERC191Signature(v, r, s);
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
@@ -139,7 +139,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -180,7 +180,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_acceptOffer(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
@@ -205,7 +205,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -246,7 +246,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different username 🢃 */
@@ -271,7 +271,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -312,7 +312,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -337,7 +337,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -378,7 +378,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -403,7 +403,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -444,7 +444,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -468,7 +468,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -512,7 +512,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -536,7 +536,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -580,7 +580,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -604,7 +604,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -645,7 +645,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_acceptOffer(
                 /* 🢃 not the owner address 🢃 */
                 COMMON_USER_NO_STAKER_2,
@@ -671,7 +671,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -704,7 +704,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -713,7 +713,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
                 10000000001,
                 /* 🢃 different totalPriorityFee 🢃 */
                 10 ether,
-                /* 🢃 different nonceEVVM 🢃 */
+                /* 🢃 different noncePay 🢃 */
                 6767676767
             );
 
@@ -730,7 +730,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();
@@ -774,7 +774,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_acceptOffer(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -798,7 +798,7 @@ contract unitTestRevert_NameService_acceptOffer is Test, Constants {
             signatureNameService,
             amountPriorityFee,
             1001,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();

@@ -134,7 +134,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
@@ -150,7 +150,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         bytes memory signatureNameService = Erc191TestBuilder
             .buildERC191Signature(v, r, s);
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
@@ -158,7 +158,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             nameService.getPriceToFlushUsername(USERNAME),
             totalPriorityFeeAmount,
             address(nameService),
-            nonceEVVM,
+            noncePay,
             true
         );
 
@@ -175,8 +175,8 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -214,11 +214,11 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushUsername(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
@@ -226,7 +226,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -242,8 +242,8 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -281,11 +281,11 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different username 🢃 */
@@ -293,7 +293,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -309,8 +309,8 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -348,11 +348,11 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -360,7 +360,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 /* 🢃 different nonce 🢃 */
                 nonce + 1,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -376,8 +376,8 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -419,11 +419,11 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             );
 
         uint256 nonce = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushUsername(
                 /* 🢃 non owner address 🢃 */
                 COMMON_USER_NO_STAKER_2,
@@ -431,7 +431,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -448,8 +448,8 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -487,18 +487,18 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -514,8 +514,8 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -571,18 +571,18 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, invalidUsername, 0.0001 ether);
 
         uint256 nonce = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 invalidUsername,
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -598,8 +598,8 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -638,18 +638,18 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         uint256 nonce = uint256(
             0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
         );
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -665,8 +665,8 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -704,11 +704,11 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -716,8 +716,8 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
                 nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
-                /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1
+                /* 🢃 different noncePay 🢃 */
+                noncePay + 1
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -733,8 +733,8 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -767,18 +767,18 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         external
     {
         uint256 nonce = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 address(0),
                 nonce,
                 0,
-                nonceEVVM
+                noncePay
             );
 
         (address userBefore, uint256 expirationDateBefore) = nameService
@@ -794,8 +794,8 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             nonce,
             signatureNameService,
             0,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();

@@ -43,8 +43,8 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
         uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function executeBeforeSetUp() internal override {
@@ -105,15 +105,15 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
@@ -121,7 +121,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             address(0),
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         vm.prank(FISHER_NO_STAKER.Address);
@@ -133,8 +133,8 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -183,15 +183,15 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             nonce: 123,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
@@ -199,7 +199,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             address(0),
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         vm.prank(FISHER_NO_STAKER.Address);
@@ -211,8 +211,8 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -261,15 +261,15 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
@@ -277,7 +277,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             address(0),
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         vm.prank(FISHER_STAKER.Address);
@@ -289,8 +289,8 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
@@ -341,15 +341,15 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             nonce: 123,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: 67,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
@@ -357,7 +357,7 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             address(0),
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         vm.prank(FISHER_STAKER.Address);
@@ -369,8 +369,8 @@ contract unitTestCorrect_NameService_acceptOffer is Test, Constants {
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 

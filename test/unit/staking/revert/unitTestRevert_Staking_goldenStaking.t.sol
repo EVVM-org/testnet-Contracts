@@ -70,7 +70,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -79,7 +79,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
         vm.expectRevert(StakingError.SenderIsNotGoldenFisher.selector);
-        staking.goldenStaking(true, 1, signatureEVVM);
+        staking.goldenStaking(true, 1, signaturePay);
 
         vm.stopPrank();
     }
@@ -89,14 +89,14 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     {
         _addBalance(GOLDEN_STAKER.Address, 10);
 
-        bytes memory signatureEVVMstake = _executeSig_staking_goldenStaking(
+        bytes memory signaturePaystake = _executeSig_staking_goldenStaking(
             true,
             10
         );
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
-        staking.goldenStaking(true, 10, signatureEVVMstake);
+        staking.goldenStaking(true, 10, signaturePaystake);
 
         vm.expectRevert(StakingError.AddressMustWaitToFullUnstake.selector);
 
@@ -110,19 +110,19 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     {
         _addBalance(GOLDEN_STAKER.Address, 10);
 
-        bytes memory signatureEVVM1 = _executeSig_staking_goldenStaking(
+        bytes memory signaturePay1 = _executeSig_staking_goldenStaking(
             true,
             10
         );
 
-        bytes memory signatureEVVM2 = _executeSig_staking_goldenStaking(
+        bytes memory signaturePay2 = _executeSig_staking_goldenStaking(
             true,
             10
         );
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
-        staking.goldenStaking(true, 10, signatureEVVM1);
+        staking.goldenStaking(true, 10, signaturePay1);
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
@@ -130,7 +130,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
 
         vm.expectRevert(StakingError.AddressMustWaitToStakeAgain.selector);
 
-        staking.goldenStaking(true, 10, signatureEVVM2);
+        staking.goldenStaking(true, 10, signaturePay2);
 
         vm.stopPrank();
     }
@@ -138,7 +138,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     function test__unitRevert__goldenStaking__InvalidSignature_evvm() external {
         _addBalance(GOLDEN_STAKER.Address, 10);
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             GOLDEN_STAKER,
             address(staking),
             "",
@@ -156,7 +156,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
         vm.startPrank(GOLDEN_STAKER.Address);
 
         vm.expectRevert(CoreError.InvalidSignature.selector);
-        staking.goldenStaking(true, 10, signatureEVVM);
+        staking.goldenStaking(true, 10, signaturePay);
 
         vm.stopPrank();
     }

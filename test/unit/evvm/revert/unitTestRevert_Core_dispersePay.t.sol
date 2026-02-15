@@ -111,7 +111,7 @@ contract unitTestRevert_Core_dispersePay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -129,7 +129,7 @@ contract unitTestRevert_Core_dispersePay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.stopPrank();

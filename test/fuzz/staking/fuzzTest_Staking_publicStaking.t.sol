@@ -65,7 +65,7 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
         bool usingStaker;
         uint8 stakingAmount;
         uint144 nonceStaking;
-        uint144 nonceEVVM;
+        uint144 noncePay;
         uint16 priorityFeeAmountEVVM;
     }
 
@@ -94,14 +94,14 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
             if (
                 core.getIfUsedAsyncNonce(
                     COMMON_USER_NO_STAKER_1.Address,
-                    input[i].nonceEVVM
+                    input[i].noncePay
                 )
             ) {
                 incorrectTxCount++;
                 continue;
             }
 
-            if (input[i].nonceStaking == input[i].nonceEVVM) {
+            if (input[i].nonceStaking == input[i].noncePay) {
                 incorrectTxCount++;
                 continue;
             }
@@ -151,7 +151,7 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
                     address(0),
                     input[i].nonceStaking,
                     input[i].priorityFeeAmountEVVM,
-                    input[i].nonceEVVM,
+                    input[i].noncePay,
                     FISHER
                 );
             } else {
@@ -183,7 +183,7 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
                         address(0),
                         input[i].nonceStaking,
                         input[i].priorityFeeAmountEVVM,
-                        input[i].nonceEVVM,
+                        input[i].noncePay,
                         FISHER
                     );
                 } else {
@@ -200,7 +200,7 @@ contract fuzzTest_Staking_publicStaking is Test, Constants {
                         address(0),
                         input[i].nonceStaking,
                         input[i].priorityFeeAmountEVVM,
-                        input[i].nonceEVVM,
+                        input[i].noncePay,
                         FISHER
                     );
                 }

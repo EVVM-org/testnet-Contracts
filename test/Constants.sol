@@ -221,7 +221,7 @@ abstract contract Constants is Test {
         address executor,
         uint256 nonce,
         bool isAsyncExec
-    ) internal virtual returns (bytes memory signatureEVVM) {
+    ) internal virtual returns (bytes memory signaturePay) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
@@ -237,7 +237,7 @@ abstract contract Constants is Test {
                 isAsyncExec
             )
         );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
+        signaturePay = Erc191TestBuilder.buildERC191Signature(v, r, s);
     }
 
     function _executeFn_evvm_pay(
@@ -289,7 +289,7 @@ abstract contract Constants is Test {
         address executor,
         uint256 nonce,
         bool isAsyncExec
-    ) internal virtual returns (bytes memory signatureEVVM) {
+    ) internal virtual returns (bytes memory signaturePay) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispersePay(
@@ -304,7 +304,7 @@ abstract contract Constants is Test {
                 isAsyncExec
             )
         );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
+        signaturePay = Erc191TestBuilder.buildERC191Signature(v, r, s);
     }
 
     function _executeSig_nameService_preRegistrationUsername(
@@ -314,11 +314,11 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFeeAmount,
-        uint256 nonceEvvm
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+        returns (bytes memory signatureNameService, bytes memory signaturePay)
     {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
@@ -332,7 +332,7 @@ abstract contract Constants is Test {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = priorityFeeAmount > 0
+        signaturePay = priorityFeeAmount > 0
             ? _executeSig_evvm_pay(
                 user,
                 address(nameService),
@@ -341,7 +341,7 @@ abstract contract Constants is Test {
                 0,
                 priorityFeeAmount,
                 address(nameService),
-                nonceEvvm,
+                noncePay,
                 true
             )
             : bytes(hex"");
@@ -386,11 +386,11 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+        returns (bytes memory signatureNameService, bytes memory signaturePay)
     {
         uint8 v;
         bytes32 r;
@@ -409,7 +409,7 @@ abstract contract Constants is Test {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             user,
             address(nameService),
             "",
@@ -417,7 +417,7 @@ abstract contract Constants is Test {
             nameService.getPriceOfRegistration(username),
             priorityFee,
             address(nameService),
-            nonceEvvm,
+            noncePay,
             true
         );
     }
@@ -430,7 +430,7 @@ abstract contract Constants is Test {
         uint256 noncePreRegister,
         address originExecutorRegister,
         uint256 nonceRegister,
-        uint256 nonceEvvm
+        uint256 noncePay
     ) internal virtual {
         _executeFn_nameService_preRegistrationUsername(
             user,
@@ -450,7 +450,7 @@ abstract contract Constants is Test {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_registrationUsername(
                 user,
                 username,
@@ -458,7 +458,7 @@ abstract contract Constants is Test {
                 originExecutorRegister,
                 nonceRegister,
                 0,
-                nonceEvvm
+                noncePay
             );
 
         nameService.registrationUsername(
@@ -469,8 +469,8 @@ abstract contract Constants is Test {
             nonceRegister,
             signatureNameService,
             0,
-            nonceEvvm,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
     }
 
@@ -482,11 +482,11 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+        returns (bytes memory signatureNameService, bytes memory signaturePay)
     {
         uint8 v;
         bytes32 r;
@@ -506,7 +506,7 @@ abstract contract Constants is Test {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             user,
             address(nameService),
             "",
@@ -514,7 +514,7 @@ abstract contract Constants is Test {
             amountToOffer,
             priorityFee,
             address(nameService),
-            nonceEvvm,
+            noncePay,
             true
         );
     }
@@ -527,7 +527,7 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm,
+        uint256 noncePay,
         AccountData memory fisher
     ) internal virtual returns (uint256 offerID) {
         core.addBalance(
@@ -538,7 +538,7 @@ abstract contract Constants is Test {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_makeOffer(
                 user,
                 usernameToMakeOffer,
@@ -547,7 +547,7 @@ abstract contract Constants is Test {
                 originExecutor,
                 nonce,
                 priorityFee,
-                nonceEvvm
+                noncePay
             );
 
         vm.startPrank(fisher.Address);
@@ -560,8 +560,8 @@ abstract contract Constants is Test {
             nonce,
             signatureNameService,
             priorityFee,
-            nonceEvvm,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
     }
@@ -573,11 +573,11 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+        returns (bytes memory signatureNameService, bytes memory signaturePay)
     {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
@@ -592,7 +592,7 @@ abstract contract Constants is Test {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = priorityFee > 0
+        signaturePay = priorityFee > 0
             ? _executeSig_evvm_pay(
                 user,
                 address(nameService),
@@ -601,7 +601,7 @@ abstract contract Constants is Test {
                 0,
                 priorityFee,
                 address(nameService),
-                nonceEvvm,
+                noncePay,
                 true
             )
             : bytes(hex"");
@@ -614,11 +614,11 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+        returns (bytes memory signatureNameService, bytes memory signaturePay)
     {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
@@ -633,7 +633,7 @@ abstract contract Constants is Test {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = priorityFee > 0
+        signaturePay = priorityFee > 0
             ? _executeSig_evvm_pay(
                 user,
                 address(nameService),
@@ -642,7 +642,7 @@ abstract contract Constants is Test {
                 0,
                 priorityFee,
                 address(nameService),
-                nonceEvvm,
+                noncePay,
                 true
             )
             : bytes(hex"");
@@ -654,11 +654,11 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+        returns (bytes memory signatureNameService, bytes memory signaturePay)
     {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
@@ -672,7 +672,7 @@ abstract contract Constants is Test {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             user,
             address(nameService),
             "",
@@ -680,7 +680,7 @@ abstract contract Constants is Test {
             nameService.seePriceToRenew(usernameToRenew),
             priorityFee,
             address(nameService),
-            nonceEvvm,
+            noncePay,
             true
         );
     }
@@ -691,19 +691,19 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm,
+        uint256 noncePay,
         AccountData memory fisher
     ) internal virtual {
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_renewUsername(
                 user,
                 usernameToRenew,
                 originExecutor,
                 nonce,
                 priorityFee,
-                nonceEvvm
+                noncePay
             );
 
         vm.startPrank(fisher.Address);
@@ -715,8 +715,8 @@ abstract contract Constants is Test {
             nonce,
             signatureNameService,
             priorityFee,
-            nonceEvvm,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -729,11 +729,11 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+        returns (bytes memory signatureNameService, bytes memory signaturePay)
     {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
@@ -748,7 +748,7 @@ abstract contract Constants is Test {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             user,
             address(nameService),
             "",
@@ -756,7 +756,7 @@ abstract contract Constants is Test {
             nameService.getPriceToAddCustomMetadata(),
             priorityFee,
             address(nameService),
-            nonceEvvm,
+            noncePay,
             true
         );
     }
@@ -767,7 +767,7 @@ abstract contract Constants is Test {
         string memory customMetadata,
         address originExecutor,
         uint256 nonce,
-        uint256 nonceEvvm
+        uint256 noncePay
     ) internal virtual {
         core.addBalance(
             user.Address,
@@ -777,7 +777,7 @@ abstract contract Constants is Test {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
                 user,
                 username,
@@ -785,7 +785,7 @@ abstract contract Constants is Test {
                 originExecutor,
                 nonce,
                 0,
-                nonceEvvm
+                noncePay
             );
 
         nameService.addCustomMetadata(
@@ -796,8 +796,8 @@ abstract contract Constants is Test {
             nonce,
             signatureNameService,
             0,
-            nonceEvvm,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
     }
 
@@ -808,11 +808,11 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+        returns (bytes memory signatureNameService, bytes memory signaturePay)
     {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
@@ -828,7 +828,7 @@ abstract contract Constants is Test {
 
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             user,
             address(nameService),
             "",
@@ -836,7 +836,7 @@ abstract contract Constants is Test {
             nameService.getPriceToRemoveCustomMetadata(),
             priorityFee,
             address(nameService),
-            nonceEvvm,
+            noncePay,
             true
         );
     }
@@ -847,11 +847,11 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+        returns (bytes memory signatureNameService, bytes memory signaturePay)
     {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
@@ -865,7 +865,7 @@ abstract contract Constants is Test {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             user,
             address(nameService),
             "",
@@ -873,7 +873,7 @@ abstract contract Constants is Test {
             nameService.getPriceToFlushCustomMetadata(username),
             priorityFee,
             address(nameService),
-            nonceEvvm,
+            noncePay,
             true
         );
     }
@@ -884,11 +884,11 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureNameService, bytes memory signatureEVVM)
+        returns (bytes memory signatureNameService, bytes memory signaturePay)
     {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
@@ -902,7 +902,7 @@ abstract contract Constants is Test {
         );
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             user,
             address(nameService),
             "",
@@ -910,7 +910,7 @@ abstract contract Constants is Test {
             nameService.getPriceToFlushUsername(username),
             priorityFee,
             address(nameService),
-            nonceEvvm,
+            noncePay,
             true
         );
     }
@@ -918,8 +918,8 @@ abstract contract Constants is Test {
     function _executeSig_staking_goldenStaking(
         bool isStaking,
         uint256 amount
-    ) internal virtual returns (bytes memory signatureEVVM) {
-        signatureEVVM = isStaking
+    ) internal virtual returns (bytes memory signaturePay) {
+        signaturePay = isStaking
             ? _executeSig_evvm_pay(
                 GOLDEN_STAKER,
                 address(staking),
@@ -955,11 +955,11 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureStaking, bytes memory signatureEVVM)
+        returns (bytes memory signatureStaking, bytes memory signaturePay)
     {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
@@ -974,7 +974,7 @@ abstract contract Constants is Test {
         );
         signatureStaking = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             user,
             address(staking),
             "",
@@ -982,7 +982,7 @@ abstract contract Constants is Test {
             isStaking ? staking.priceOfStaking() : 0,
             priorityFee,
             address(staking),
-            nonceEvvm,
+            noncePay,
             true
         );
     }
@@ -993,19 +993,19 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         uint256 priorityFee,
-        uint256 nonceEvvm,
+        uint256 noncePay,
         AccountData memory fisher
     ) internal virtual {
         (
             bytes memory signatureStaking,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_staking_presaleStaking(
                 user,
                 isStaking,
                 originExecutor,
                 nonce,
                 priorityFee,
-                nonceEvvm
+                noncePay
             );
 
         vm.startPrank(fisher.Address);
@@ -1017,8 +1017,8 @@ abstract contract Constants is Test {
             nonce,
             signatureStaking,
             priorityFee,
-            nonceEvvm,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -1030,12 +1030,12 @@ abstract contract Constants is Test {
         uint256 amountOfStaking,
         address originExecutor,
         uint256 nonce,
-        uint256 priorityFeeEVVM,
-        uint256 nonceEvvm
+        uint256 priorityFeePay,
+        uint256 noncePay
     )
         internal
         virtual
-        returns (bytes memory signatureStaking, bytes memory signatureEVVM)
+        returns (bytes memory signatureStaking, bytes memory signaturePay)
     {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
@@ -1050,15 +1050,15 @@ abstract contract Constants is Test {
         );
         signatureStaking = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             user,
             address(staking),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             isStaking ? staking.priceOfStaking() * amountOfStaking : 0,
-            priorityFeeEVVM,
+            priorityFeePay,
             address(staking),
-            nonceEvvm,
+            noncePay,
             true
         );
     }
@@ -1069,21 +1069,21 @@ abstract contract Constants is Test {
         uint256 amountOfStaking,
         address originExecutor,
         uint256 nonce,
-        uint256 priorityFeeEVVM,
-        uint256 nonceEvvm,
+        uint256 priorityFeePay,
+        uint256 noncePay,
         AccountData memory fisher
     ) internal virtual {
         (
             bytes memory signatureStaking,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_staking_publicStaking(
                 user,
                 isStaking,
                 amountOfStaking,
                 originExecutor,
                 nonce,
-                priorityFeeEVVM,
-                nonceEvvm
+                priorityFeePay,
+                noncePay
             );
 
         vm.startPrank(fisher.Address);
@@ -1095,9 +1095,9 @@ abstract contract Constants is Test {
             originExecutor,
             nonce,
             signatureStaking,
-            priorityFeeEVVM,
-            nonceEvvm,
-            signatureEVVM
+            priorityFeePay,
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -1113,7 +1113,7 @@ abstract contract Constants is Test {
         address originExecutor,
         uint256 nonce,
         bool isAsyncExec
-    ) internal virtual returns (bytes memory signatureEVVM) {
+    ) internal virtual returns (bytes memory signaturePay) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForStateTest(
@@ -1128,7 +1128,7 @@ abstract contract Constants is Test {
                 isAsyncExec
             )
         );
-        signatureEVVM = Erc191TestBuilder.buildERC191Signature(v, r, s);
+        signaturePay = Erc191TestBuilder.buildERC191Signature(v, r, s);
     }
 
     function _executeFn_state_test(

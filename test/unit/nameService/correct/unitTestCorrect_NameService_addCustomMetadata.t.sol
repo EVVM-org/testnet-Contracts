@@ -41,8 +41,8 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function executeBeforeSetUp() internal override {
@@ -84,8 +84,8 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             nonce: 20002,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 22,
-            signatureEVVM: ""
+            noncePay: 22,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
@@ -95,8 +95,8 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             nonce: 40004,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
-            nonceEVVM: 44,
-            signatureEVVM: ""
+            noncePay: 44,
+            signaturePay: ""
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
@@ -105,7 +105,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
             params1.user,
             params1.identity,
@@ -113,7 +113,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             address(0),
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -126,8 +126,8 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
@@ -164,7 +164,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
             params2.user,
             params2.identity,
@@ -172,7 +172,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             address(0),
             params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -185,8 +185,8 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();
@@ -226,8 +226,8 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             nonce: 20002,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 22,
-            signatureEVVM: ""
+            noncePay: 22,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
@@ -237,8 +237,8 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             nonce: 40004,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
-            nonceEVVM: 44,
-            signatureEVVM: ""
+            noncePay: 44,
+            signaturePay: ""
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async no priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
@@ -247,7 +247,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
+            params1.signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
             params1.user,
             params1.identity,
@@ -255,7 +255,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             address(0),
             params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM
+            params1.noncePay
         );
 
         uint256 amountToReward1 = (5 * core.getRewardAmount()) +
@@ -272,8 +272,8 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
@@ -310,7 +310,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
+            params2.signaturePay
         ) = _executeSig_nameService_addCustomMetadata(
             params2.user,
             params2.identity,
@@ -318,7 +318,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             address(0),
             params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM
+            params2.noncePay
         );
 
         uint256 amountToReward2 = (5 * core.getRewardAmount()) +
@@ -335,8 +335,8 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();

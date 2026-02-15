@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Codename: "Ichiban"
 
-Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from [Yakuza: Like a Dragon](https://en.wikipedia.org/wiki/Yakuza:_Like_a_Dragon), embodies the spirit of rebuilding from the ground up. Just as Ichiban rebuilt his life and united scattered allies into a cohesive team, this release fundamentally restructures EVVM by centralizing previously fragmented functionalities into a unified Core. The name reflects both its literal meaning ("number one") and the protagonist's journey of transforming chaos into order mirroring how this version consolidates from disparate services into a single, robust foundation for the entire EVVM ecosystem.
+Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from [Yakuza: Like a Dragon](https://en.wikipedia.org/wiki/Yakuza:_Like_a_Dragon), this release embodies the spirit of rebuilding from the ground up. Just as Ichiban rebuilt his life and united scattered allies into a cohesive team, this release fundamentally restructures EVVM by centralizing previously fragmented functionalities into a unified Core. The name reflects both its literal meaning ("number one") and the protagonist's journey of transforming chaos into order, mirroring how this version consolidates from disparate services into a single, robust foundation for the entire EVVM ecosystem.
 
 
 ### Added
+
 
 - **Changelog**: Added codenames to releases for a more engaging and memorable version history
 - **Core.sol**: 
@@ -20,7 +21,7 @@ Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from 
       - Manage treasury deposits and withdrawals
       - Handle payments
       - Handle signature verification for all EVVM transactions
-      - Centralized nonce for async and sync nonce validation across EVVM services preventing replay attacks in multi-service transactions
+      - A centralized nonce for async and sync nonce validation across EVVM services preventing replay attacks in multi-service transactions
 - **ICore**: Interface for cross-contract interaction with Core.sol
 - **Core tests**: Added comprehensive tests for Core.sol covering payment handling, signature verification, and nonce management
 
@@ -37,6 +38,7 @@ Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from 
 
 ### Changed
 
+- **Payment service handling inputs**: Change `<variableName>Evvm` or `<variableName>_EVVM` naming convention for all payment handling related variables across services to `<variableName>Pay` to clearly indicate their purpose in payment handling logic
 - **Cli**: 
   - Changed CLI deployment script to deploy `Core.sol`
   - Updated CLI test script to reflect changes in CLI deployment and interaction with `Core.sol`
@@ -56,15 +58,15 @@ Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from 
   - Updated variable name `clowNumber` to `lockNumber` and `expireDate` to `expirationDate` for better clarity
   - Updated `NameServiceStructs` to be a library instead of an abstract contract for better modularity and reuse across services
   - Implemented `Core.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
-  - Now both `nonce` and `nonceEvvm` are async nonces managed by `Core.sol` to prevent replay attacks in multi-service transactions, replacing the previous service-specific nonce management
+  - Now both `nonce` and `noncePay` are async nonces managed by `Core.sol` to prevent replay attacks in multi-service transactions, replacing the previous service-specific nonce management
 - **P2PSwap**:
   - Implemented `Core.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
-  - Now both `nonce` and `nonceEvvm` are async nonces managed by `Core.sol` to prevent replay attacks in multi-service transactions, replacing the previous service-specific nonce management
+  - Now both `nonce` and `noncePay` are async nonces managed by `Core.sol` to prevent replay attacks in multi-service transactions, replacing the previous service-specific nonce management
 - **Staking**:
   - Implemented `Core.sol` for nonce validation and signature verification replacing previous service-specific nonce management
   - Updated `StakingStructs` to be a library instead of an abstract contract for better modularity and reuse across services
   - Changed `_setupEstimatorAndEvvm` to `initializeSystemContracts` to generalize the function for setting up all critical system contracts (Evvm, Estimator, Core) in one call during deployment
-  - Implemented `nonce` and `nonceEvvm` as async nonces for public and presale staking via `Core.sol` to prevent multi-service replay attacks
+  - Implemented `nonce` and `noncePay` as async nonces for public and presale staking via `Core.sol` to prevent multi-service replay attacks
 - **Cross Chain Treasury**:
   - Implemented `Core.sol` for nonce validation and signature verification replacing previous service-specific nonce management and signature utilities
   - Updated `ExternalChainStationStructs` and `HostChainStationStructs` to be a library instead of an abstract contract for better modularity and reuse across services
@@ -85,7 +87,7 @@ Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from 
 
 - **CLI**: 
   - Default values for Hyperlane, LayerZero, and Axelar data when user opts not to add on cli deployment script are now properly set to empty values instead of undefined
-  - Update CLI prompts to support async input handling and cursor navigation
+  - Updated CLI prompts to support async input handling and cursor navigation
 
 ## [2.3.0] - 2026-01-26
 

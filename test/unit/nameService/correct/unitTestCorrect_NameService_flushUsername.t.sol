@@ -41,8 +41,8 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
         uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function executeBeforeSetUp() internal override {
@@ -131,22 +131,22 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 1001,
-            signatureEVVM: ""
+            noncePay: 1001,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.username, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
             address(0),
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -162,8 +162,8 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
 
         vm.stopPrank();
@@ -196,22 +196,22 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: 1001,
-            signatureEVVM: ""
+            noncePay: 1001,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.username, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
             address(0),
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -227,8 +227,8 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
 
         vm.stopPrank();
@@ -261,22 +261,22 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 1001,
-            signatureEVVM: ""
+            noncePay: 1001,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.username, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
             address(0),
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -292,8 +292,8 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
 
         vm.stopPrank();
@@ -324,22 +324,22 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             nonce: 110010011,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: 1001,
-            signatureEVVM: ""
+            noncePay: 1001,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.username, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
+            params.signaturePay
         ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
             address(0),
             params.nonce,
             params.priorityFee,
-            params.nonceEVVM
+            params.noncePay
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -355,8 +355,8 @@ contract unitTestCorrect_NameService_flushUsername is Test, Constants {
             params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
 
         vm.stopPrank();

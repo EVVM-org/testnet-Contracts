@@ -36,7 +36,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
         uint256 lockNumber;
         uint256 nonce;
         uint256 priorityFee;
-        uint256 nonceEVVM;
+        uint256 noncePay;
     }
 
     function _addBalance(
@@ -57,7 +57,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             lockNumber: 1001,
             nonce: 10101,
             priorityFee: 0,
-            nonceEVVM: 67
+            noncePay: 67
         });
 
         Params memory params2 = Params({
@@ -66,14 +66,14 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             lockNumber: 2002,
             nonce: 20202,
             priorityFee: 0,
-            nonceEVVM: 420
+            noncePay: 420
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing fisher noStaker ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         (
             bytes memory signatureNameServiceOne,
-            bytes memory signatureEvvmOne
+            bytes memory signaturePayOne
         ) = _executeSig_nameService_preRegistrationUsername(
                 params1.user,
                 params1.username,
@@ -81,7 +81,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                 address(0),
                 params1.nonce,
                 params1.priorityFee,
-                params1.nonceEVVM
+                params1.noncePay
             );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -95,8 +95,8 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             params1.nonce,
             signatureNameServiceOne,
             params1.priorityFee,
-            params1.nonceEVVM,
-            signatureEvvmOne
+            params1.noncePay,
+            signaturePayOne
         );
 
         vm.stopPrank();
@@ -139,7 +139,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
 
         (
             bytes memory signatureNameServiceTwo,
-            bytes memory signatureEvvmTwo
+            bytes memory signaturePayTwo
         ) = _executeSig_nameService_preRegistrationUsername(
                 params2.user,
                 params2.username,
@@ -147,7 +147,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                 address(0),
                 params2.nonce,
                 params2.priorityFee,
-                params2.nonceEVVM
+                params2.noncePay
             );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -160,8 +160,8 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             params2.nonce,
             signatureNameServiceTwo,
             params2.priorityFee,
-            params2.nonceEVVM,
-            signatureEvvmTwo
+            params2.noncePay,
+            signaturePayTwo
         );
         vm.stopPrank();
         (user, ) = nameService.getIdentityBasicMetadata(
@@ -207,7 +207,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             lockNumber: 1001,
             nonce: 10101,
             priorityFee: 0.001 ether,
-            nonceEVVM: 420
+            noncePay: 420
         });
 
         Params memory params2 = Params({
@@ -216,7 +216,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             lockNumber: 2002,
             nonce: 20202,
             priorityFee: 0.001 ether,
-            nonceEVVM: 67
+            noncePay: 67
         });
 
         _addBalance(params1.user, params1.priorityFee);
@@ -226,7 +226,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
 
         (
             bytes memory signatureNameServiceOne,
-            bytes memory signatureEvvmOne
+            bytes memory signaturePayOne
         ) = _executeSig_nameService_preRegistrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 params1.username,
@@ -234,7 +234,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                 address(0),
                 params1.nonce,
                 params1.priorityFee,
-                params1.nonceEVVM
+                params1.noncePay
             );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -248,8 +248,8 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             params1.nonce,
             signatureNameServiceOne,
             params1.priorityFee,
-            params1.nonceEVVM,
-            signatureEvvmOne
+            params1.noncePay,
+            signaturePayOne
         );
 
         vm.stopPrank();
@@ -292,7 +292,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
 
         (
             bytes memory signatureNameServiceTwo,
-            bytes memory signatureEvvmTwo
+            bytes memory signaturePayTwo
         ) = _executeSig_nameService_preRegistrationUsername(
                 COMMON_USER_NO_STAKER_2,
                 params2.username,
@@ -300,7 +300,7 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
                 address(0),
                 params2.nonce,
                 params2.priorityFee,
-                params2.nonceEVVM
+                params2.noncePay
             );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -313,8 +313,8 @@ contract unitTestCorrect_NameService_preRegistrationUsername is
             params2.nonce,
             signatureNameServiceTwo,
             params2.priorityFee,
-            params2.nonceEVVM,
-            signatureEvvmTwo
+            params2.noncePay,
+            signaturePayTwo
         );
         vm.stopPrank();
         (user, ) = nameService.getIdentityBasicMetadata(

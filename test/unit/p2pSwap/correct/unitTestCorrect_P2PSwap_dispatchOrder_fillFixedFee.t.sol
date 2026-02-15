@@ -61,7 +61,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM
+        uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
@@ -104,11 +104,11 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 amountA,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -120,8 +120,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             orderData,
             signatureP2P,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
@@ -138,7 +138,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
-        uint256 nonceEVVM = 43231;
+        uint256 noncePay = 43231;
 
         uint256 proportionalFee = (amountB * 500) / 10_000;
         uint256 _amountOut = 0.001 ether; // greater than proportionalFee
@@ -171,7 +171,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM
+            noncePay
         );
 
         assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
@@ -218,12 +218,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -234,8 +234,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM,
+            noncePay,
+            signaturePay,
             _amountOut
         );
         vm.stopPrank();
@@ -262,7 +262,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
-        uint256 nonceEVVM = 5689589;
+        uint256 noncePay = 5689589;
 
         uint256 proportionalFee = (amountB * 500) / 10_000;
         uint256 _amountOut = 0.001 ether; // greater than proportionalFee
@@ -303,7 +303,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM
+            noncePay
         );
 
         assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
@@ -350,12 +350,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -366,8 +366,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM,
+            noncePay,
+            signaturePay,
             _amountOut
         );
         vm.stopPrank();
@@ -394,7 +394,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
-        uint256 nonceEVVM = 4121;
+        uint256 noncePay = 4121;
 
         uint256 proportionalFee = (amountB * 500) / 10_000;
         uint256 _amountOut = 0.0004 ether; // smaller than proportionalFee
@@ -427,7 +427,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM
+            noncePay
         );
 
         assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
@@ -474,12 +474,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -490,8 +490,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM,
+            noncePay,
+            signaturePay,
             _amountOut
         );
         vm.stopPrank();
@@ -518,7 +518,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
-        uint256 nonceEVVM = 54423;
+        uint256 noncePay = 54423;
 
         uint256 proportionalFee = (amountB * 500) / 10_000;
         uint256 _amountOut = 0.0004 ether; // smaller than proportionalFee
@@ -559,7 +559,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM
+            noncePay
         );
 
         assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
@@ -606,12 +606,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 metadata.amountOfTokenBToFill,
                 priorityFee,
                 address(p2pSwap),
-                nonceEVVM,
+                noncePay,
                 true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -622,8 +622,8 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            signatureEVVM,
+            noncePay,
+            signaturePay,
             _amountOut
         );
         vm.stopPrank();

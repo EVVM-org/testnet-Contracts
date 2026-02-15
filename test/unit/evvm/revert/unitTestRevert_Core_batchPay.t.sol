@@ -86,7 +86,7 @@ contract unitTestRevert_Core_batchPay is Test, Constants {
                 false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -102,7 +102,7 @@ contract unitTestRevert_Core_batchPay is Test, Constants {
             address(0),
             0,
             false,
-            signatureEVVM
+            signaturePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);

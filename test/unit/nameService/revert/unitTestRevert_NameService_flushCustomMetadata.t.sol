@@ -134,7 +134,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1000001;
+        uint256 noncePay = 1000001;
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
@@ -150,7 +150,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         bytes memory signatureNameService = Erc191TestBuilder
             .buildERC191Signature(v, r, s);
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
@@ -158,7 +158,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             nameService.getPriceToFlushCustomMetadata(USERNAME),
             totalPriorityFeeAmount,
             address(nameService),
-            nonceEVVM,
+            noncePay,
             true
         );
 
@@ -176,8 +176,8 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -207,11 +207,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1000001;
+        uint256 noncePay = 1000001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushCustomMetadata(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
@@ -219,7 +219,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -236,8 +236,8 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -267,11 +267,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1000001;
+        uint256 noncePay = 1000001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different identity 🢃 */
@@ -279,7 +279,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -296,8 +296,8 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -327,11 +327,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1000001;
+        uint256 noncePay = 1000001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -339,7 +339,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 /* 🢃 different nonce 🢃 */
                 nonce + 1,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -356,8 +356,8 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -392,11 +392,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             );
 
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1000001;
+        uint256 noncePay = 1000001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushCustomMetadata(
                 /* 🢃 different user 🢃 */
                 COMMON_USER_NO_STAKER_2,
@@ -404,7 +404,7 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -422,8 +422,8 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -471,18 +471,18 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, "testing", 0.0001 ether);
 
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1000001;
+        uint256 noncePay = 1000001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 "testing",
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -498,8 +498,8 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -532,18 +532,18 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         uint256 nonce = uint256(
             0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7
         );
-        uint256 nonceEVVM = 1000001;
+        uint256 noncePay = 1000001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 address(0),
                 nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM
+                noncePay
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -560,8 +560,8 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -591,11 +591,11 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1000001;
+        uint256 noncePay = 1000001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
@@ -603,8 +603,8 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
                 nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
-                /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1
+                /* 🢃 different noncePay 🢃 */
+                noncePay + 1
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -621,8 +621,8 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -647,18 +647,18 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
         external
     {
         uint256 nonce = 100010001;
-        uint256 nonceEVVM = 1000001;
+        uint256 noncePay = 1000001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
+            bytes memory signaturePay
         ) = _executeSig_nameService_flushCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 address(0),
                 nonce,
                 0,
-                nonceEVVM
+                noncePay
             );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -675,8 +675,8 @@ contract unitTestRevert_NameService_flushCustomMetadata is Test, Constants {
             nonce,
             signatureNameService,
             0,
-            nonceEVVM,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();

@@ -78,7 +78,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -101,7 +101,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             address(0),
             syncNonce_1,
             false,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -128,7 +128,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
@@ -151,7 +151,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             address(0),
             syncNonce_2,
             false,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -203,7 +203,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -226,7 +226,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             executorAddress,
             syncNonce_1,
             false,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -253,7 +253,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
@@ -276,7 +276,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             executorAddress,
             syncNonce_2,
             false,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -322,7 +322,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -345,7 +345,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             address(0),
             syncNonce_1,
             true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -372,7 +372,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
@@ -395,7 +395,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             address(0),
             syncNonce_2,
             true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -443,7 +443,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -466,7 +466,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             executorAddress,
             syncNonce_1,
             true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -493,7 +493,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
@@ -516,7 +516,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             executorAddress,
             syncNonce_2,
             true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -566,7 +566,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -589,7 +589,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             address(0),
             syncNonce_1,
             false,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -622,7 +622,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
@@ -645,7 +645,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             address(0),
             syncNonce_2,
             false,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -703,7 +703,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -726,7 +726,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             executorAddress,
             syncNonce_1,
             false,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -759,7 +759,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
@@ -782,7 +782,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             executorAddress,
             syncNonce_2,
             false,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -834,7 +834,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -857,7 +857,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             address(0),
             syncNonce_1,
             true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -890,7 +890,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
@@ -913,7 +913,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             address(0),
             syncNonce_2,
             true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -967,7 +967,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toAddress ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        bytes memory signatureEVVM = _executeSig_evvm_pay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             COMMON_USER_NO_STAKER_2.Address,
             "",
@@ -990,7 +990,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             executorAddress,
             syncNonce_1,
             true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
@@ -1023,7 +1023,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing toIdentity ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        signatureEVVM = _executeSig_evvm_pay(
+        signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(0),
             "dummy",
@@ -1046,7 +1046,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             executorAddress,
             syncNonce_2,
             true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
