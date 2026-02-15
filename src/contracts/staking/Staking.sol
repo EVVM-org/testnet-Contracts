@@ -188,7 +188,7 @@ contract Staking {
      * @param isStaking True to stake, false to unstake.
      * @param nonce Async nonce for signature verification.
      * @param signature Participant's authorization signature.
-     * @param priorityFee_EVVM Optional priority fee.
+     * @param priorityFeeEvvm Optional priority fee.
      * @param nonceEvvm Nonce for the Core payment.
      * @param signatureEvvm Signature for the Core payment.
      */
@@ -198,7 +198,7 @@ contract Staking {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFee_EVVM,
+        uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
@@ -230,7 +230,7 @@ contract Staking {
             Structs.AccountMetadata({Address: user, IsAService: false}),
             isStaking,
             1,
-            priorityFee_EVVM,
+            priorityFeeEvvm,
             nonceEvvm,
             true,
             signatureEvvm
@@ -244,7 +244,7 @@ contract Staking {
      * @param amountOfStaking Number of tokens.
      * @param nonce Async nonce for signature verification.
      * @param signature Participant's authorization signature.
-     * @param priorityFee_EVVM Optional priority fee.
+     * @param priorityFeeEvvm Optional priority fee.
      * @param nonceEvvm Nonce for the Core payment.
      * @param signatureEvvm Signature for the Core payment.
      */
@@ -255,7 +255,7 @@ contract Staking {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFee_EVVM,
+        uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external {
@@ -274,7 +274,7 @@ contract Staking {
             Structs.AccountMetadata({Address: user, IsAService: false}),
             isStaking,
             amountOfStaking,
-            priorityFee_EVVM,
+            priorityFeeEvvm,
             nonceEvvm,
             true,
             signatureEvvm
@@ -434,7 +434,7 @@ contract Staking {
      *                  - IsAService: Boolean indicating if the account is a smart contract (service) account
      * @param isStaking True for staking (requires payment), false for unstaking (provides refund)
      * @param amountOfStaking Amount of staking tokens to stake/unstake
-     * @param priorityFee_EVVM Priority fee for EVVM transaction
+     * @param priorityFeeEvvm Priority fee for EVVM transaction
      * @param nonceEvvm Nonce for EVVM contract transaction
      * @param signatureEvvm Signature for EVVM contract transaction
      */
@@ -442,7 +442,7 @@ contract Staking {
         Structs.AccountMetadata memory account,
         bool isStaking,
         uint256 amountOfStaking,
-        uint256 priorityFee_EVVM,
+        uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bool isAsyncExecEvvm,
         bytes memory signatureEvvm
@@ -459,7 +459,7 @@ contract Staking {
                 makePay(
                     account.Address,
                     (PRICE_OF_STAKING * amountOfStaking),
-                    priorityFee_EVVM,
+                    priorityFeeEvvm,
                     isAsyncExecEvvm,
                     nonceEvvm,
                     signatureEvvm
@@ -482,11 +482,11 @@ contract Staking {
                 core.pointStaker(account.Address, 0x00);
             }
 
-            if (priorityFee_EVVM != 0 && !account.IsAService)
+            if (priorityFeeEvvm != 0 && !account.IsAService)
                 makePay(
                     account.Address,
                     0,
-                    priorityFee_EVVM,
+                    priorityFeeEvvm,
                     isAsyncExecEvvm,
                     nonceEvvm,
                     signatureEvvm
@@ -520,7 +520,7 @@ contract Staking {
             makeCaPay(
                 core.getPrincipalTokenAddress(),
                 msg.sender,
-                (core.getRewardAmount() * 2) + priorityFee_EVVM
+                (core.getRewardAmount() * 2) + priorityFeeEvvm
             );
         }
     }

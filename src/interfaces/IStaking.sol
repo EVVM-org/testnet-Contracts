@@ -93,7 +93,7 @@ interface IStaking {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFee_EVVM,
+        uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external;
@@ -109,7 +109,7 @@ interface IStaking {
         address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFee_EVVM,
+        uint256 priorityFeeEvvm,
         uint256 nonceEvvm,
         bytes memory signatureEvvm
     ) external;
