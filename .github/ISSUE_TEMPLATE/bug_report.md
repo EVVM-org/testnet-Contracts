@@ -14,8 +14,10 @@ A clear and concise description of what the bug is.
 <!-- Select the component(s) affected -->
 - [ ] Core (`core/`)
 - [ ] Name Service (`nameService/`)
+- [ ] P2P Swap (`p2pSwap/`)
 - [ ] Staking (`staking/`)
 - [ ] Treasury (`treasury/`)
+- [ ] Cross-Chain Treasury (`treasuryTwoChains/`)
 - [ ] Library (`library/`)
 - [ ] CLI Tools (`cli/`)
 - [ ] Tests

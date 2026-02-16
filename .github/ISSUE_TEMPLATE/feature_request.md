@@ -22,8 +22,10 @@ A clear and concise description of what you want to happen.
 <!-- Which part of the EVVM ecosystem would this affect? -->
 - [ ] Core (`core/`)
 - [ ] Name Service (`nameService/`)
+- [ ] P2P Swap (`p2pSwap/`)
 - [ ] Staking (`staking/`)
 - [ ] Treasury (`treasury/`)
+- [ ] Cross-Chain Treasury (`treasuryTwoChains/`)
 - [ ] Library (`library/`)
 - [ ] CLI Tools (`cli/`)
 - [ ] Documentation

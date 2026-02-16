@@ -224,8 +224,10 @@ When submitting issues or pull requests:
 │   ├── contracts/          # Main contracts
 │   │   ├── core/           # EVVM core
 │   │   ├── nameService/    # Name service
+│   │   ├── p2pSwap/        # P2P swap
 │   │   ├── staking/        # Staking contracts
-│   │   └── treasury*/      # Treasury contracts
+│   │   ├── treasury/       # Treasury contracts
+│   │   └── treasuryTwoChains/ # Cross-chain treasury
 │   ├── interfaces/         # Contract interfaces
 │   └── library/            # Shared libraries
 ├── test/

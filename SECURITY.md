@@ -32,11 +32,12 @@ Please include the following information in your report:
 
 - **Description**: A clear description of the vulnerability
 - **Affected Component(s)**:
-  - [ ] EVVM Core (`evvm/`)
+  - [ ] Core (`core/`)
   - [ ] Name Service (`nameService/`)
+  - [ ] P2P Swap (`p2pSwap/`)
   - [ ] Staking (`staking/`)
   - [ ] Treasury (`treasury/`)
-  - [ ] State (`state/`)
+  - [ ] Cross-Chain Treasury (`treasuryTwoChains/`)
   - [ ] Library (`library/`)
   - [ ] CLI Tools (`cli/`)
   - [ ] Other: _______________
