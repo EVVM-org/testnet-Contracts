@@ -402,8 +402,19 @@ export async function forgeScript(
     await $`${command}`;
 
     confirmation("Deployment script executed successfully.");
-  } catch (error) {
-    criticalError(`Deployment failed.`);
+  } catch (error: any) {
+    const errorOutput = error?.stderr?.toString() || error?.message || "";
+    
+    // Check if the error is only about verification failure (deployment succeeded)
+    if (errorOutput.includes("Not all") && errorOutput.includes("contracts were verified")) {
+      warning(
+        "Some contracts were not verified",
+        "The deployment was successful, but not all contracts could be verified on the block explorer.\nYou can manually verify them later."
+      );
+      confirmation("Deployment script executed successfully.");
+    } else {
+      criticalError(`Deployment failed.`);
+    }
   }
 }
 
