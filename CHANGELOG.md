@@ -31,7 +31,7 @@ Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from 
 - **Deployment script**: Updated to deploy Core.sol and set its address in the services during deployment
 - **IUserValidator**: Interface for user validation logic in Core.sol, allowing for flexible access control in evvm transactions
 - **CA Verification Library**: Added `CAUtils.sol` for verifying if a certain address is a CA, which can be used in user validation logic in Core.sol
-- **CoreExecution Library**: Added `CoreExecutionUtils.sol` for handling core execution logic on services.
+- **CoreExecution Library**: Added `CoreExecution.sol` for handling core execution logic on services.
 - **Github templates**:
   - Added `CONTRIBUTING.md` with contribution guidelines for the community
   - Added `PULL_REQUEST_TEMPLATE.md` to standardize pull request submissions and ensure necessary information is provided for reviews
@@ -80,7 +80,7 @@ Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from 
 - **Evvm.sol**: Renamed to `Core.sol` and refactored to centralize core EVVM functionalities such as payment handling, signature verification, and nonce management
 - **Service-specific nonce management**: All nonce management is now centralized in `Core.sol` for improved security and consistency across services
 - **Service SignatureUtils**: Removed service-specific signature utilities because signature generation and verification is now centralized in `Core.sol` using `AdvancedStrings.sol` for payload construction
-- **Redundant Structs**: Removed all governance-related structs from individual service struct libraries, as they are now centralized in `GovernanceUtils.sol` for better organization and reuse
+- **Redundant Structs**: Removed all governance-related structs from individual service struct libraries, as they are now centralized in `ProposalStructs.sol` for better organization and reuse
 - **Service nonce libraries**: Removed all service-specific nonce libraries, as nonce management is now handled by `Core.sol`
 - **Github templates**: Removed references to `Evvm.sol` in `bug_report.md` and `feature_request.md` templates
 
