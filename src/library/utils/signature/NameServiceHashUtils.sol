@@ -13,14 +13,14 @@ import {
  * @title NameServiceHashUtils
  * @author Mate labs
  * @notice Hash generation for NameService.sol operations (registration, marketplace, metadata)
- * @dev Deterministic keccak256 hashes for 10 NameService operations. Used with State.validateAndConsumeNonce.
+ * @dev Deterministic keccak256 hashes for 10 NameService operations. Used with Core.validateAndConsumeNonce.
  */
 library NameServiceHashUtils {
     /**
      * @notice Generates hash for username pre-registration (commit phase)
      * @dev Hash: keccak256("preRegistrationUsername", hashUsername). Prevents front-running, valid 30 minutes.
      * @param hashUsername Keccak256 of (username + lockNumber)
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForPreRegistrationUsername(
         bytes32 hashUsername
@@ -33,7 +33,7 @@ library NameServiceHashUtils {
      * @dev Hash: keccak256("registrationUsername", username, lockNumber). Must match pre-reg within 30 minutes. Cost: 100x EVVM reward.
      * @param username Username being registered
      * @param lockNumber Random number from pre-registration
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForRegistrationUsername(
         string memory username,
@@ -49,7 +49,7 @@ library NameServiceHashUtils {
      * @param username Target username
      * @param amount Principal Tokens offered (pre-fee)
      * @param expirationDate Offer expiration timestamp
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForMakeOffer(
         string memory username,
@@ -67,7 +67,7 @@ library NameServiceHashUtils {
      * @dev Hash: keccak256("withdrawOffer", username, offerId). Only offer creator can withdraw.
      * @param username Username with the offer
      * @param offerId Offer ID to withdraw
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForWithdrawOffer(
         string memory username,
@@ -81,7 +81,7 @@ library NameServiceHashUtils {
      * @dev Hash: keccak256("acceptOffer", username, offerId). Transfers ownership to offerer.
      * @param username Username being sold
      * @param offerId Offer ID to accept
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForAcceptOffer(
         string memory username,
@@ -94,7 +94,7 @@ library NameServiceHashUtils {
      * @notice Generates hash for renewing username
      * @dev Hash: keccak256("renewUsername", username). Can renew up to 100 years in advance.
      * @param username Username to renew
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForRenewUsername(
         string memory username
@@ -107,7 +107,7 @@ library NameServiceHashUtils {
      * @dev Hash: keccak256("addCustomMetadata", identity, value). Cost: 10x EVVM reward.
      * @param identity Username or identity
      * @param value Metadata value to store
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForAddCustomMetadata(
         string memory identity,
@@ -121,7 +121,7 @@ library NameServiceHashUtils {
      * @dev Hash: keccak256("removeCustomMetadata", identity, key). Cost: 10x EVVM reward.
      * @param identity Username or identity
      * @param key Metadata entry key to remove
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForRemoveCustomMetadata(
         string memory identity,
@@ -134,7 +134,7 @@ library NameServiceHashUtils {
      * @notice Generates hash for flushing all metadata
      * @dev Hash: keccak256("flushCustomMetadata", identity). Removes ALL custom metadata entries.
      * @param identity Username or identity to flush
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForFlushCustomMetadata(
         string memory identity
@@ -146,7 +146,7 @@ library NameServiceHashUtils {
      * @notice Generates hash for flushing username (complete deletion)
      * @dev Hash: keccak256("flushUsername", username). Irreversible. Deletes all data and makes username available.
      * @param username Username to delete
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForFlushUsername(
         string memory username

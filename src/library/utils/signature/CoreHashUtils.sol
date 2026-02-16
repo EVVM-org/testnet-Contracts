@@ -22,7 +22,7 @@ library CoreHashUtils {
      * @param token Token address
      * @param amount Token amount
      * @param priorityFee Fee for executor
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForPay(
         address to_address,
@@ -51,7 +51,7 @@ library CoreHashUtils {
      * @param token Token address
      * @param amount Total amount (must equal sum)
      * @param priorityFee Fee for executor
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForDispersePay(
         CoreStructs.DispersePayMetadata[] memory toData,

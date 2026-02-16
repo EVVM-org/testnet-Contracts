@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
  * @title P2P Swap Hash Utilities Library
  * @author Mate labs
  * @notice Hash generation for P2PSwap.sol operations (makeOrder, cancelOrder, dispatchOrder)
- * @dev All hashes validated via State.sol with async nonces. Three operation types supported.
+ * @dev All hashes validated via Core.sol with async nonces. Three operation types supported.
  */
 library P2PSwapHashUtils {
     /**
@@ -16,7 +16,7 @@ library P2PSwapHashUtils {
      * @param tokenB Token requested by seller
      * @param amountA Amount of tokenA offered
      * @param amountB Amount of tokenB requested
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForMakeOrder(
         address tokenA,
@@ -36,7 +36,7 @@ library P2PSwapHashUtils {
      * @param tokenA Token A in market pair
      * @param tokenB Token B in market pair
      * @param orderId Order ID to cancel
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForCancelOrder(
         address tokenA,
@@ -52,7 +52,7 @@ library P2PSwapHashUtils {
      * @param tokenA Token A in market pair
      * @param tokenB Token B in market pair
      * @param orderId Order ID to dispatch
-     * @return Hash for State.sol validation
+     * @return Hash for Core.sol validation
      */
     function hashDataForDispatchOrder(
         address tokenA,
