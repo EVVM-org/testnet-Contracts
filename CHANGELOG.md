@@ -14,8 +14,10 @@ Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from 
 
 ### Added
 
-
 - **Changelog**: Added codenames to releases for a more engaging and memorable version history
+- **Signature standardization**: Implemented a standardized signature payload construction method in `AdvancedStrings.sol` to ensure consistent signature generation and verification across all EVVM services, improving security and interoperability
+  - This standard consists of concatenating the following parameters in order: 
+    `"<evvmID>,<serviceAddress>,<hashInput>,<executor>,<nonce>,<isAsyncExec>"` where `hashInput` is a service-specific hash of the relevant transaction data using `keccak256(abi.encode("functionName", param1, param2, ...))` and `executor` represents the address executing the transaction (origin executor service transactions and sender for payment transactions on `Core.sol`). This standardization allows for a single signature verification method in `Core.sol` that can be used across all services, eliminating inconsistencies and potential security vulnerabilities from service-specific signature implementations.
 - **Core.sol**: 
   - A new core contract to:
       - Manage treasury deposits and withdrawals
@@ -24,7 +26,6 @@ Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from 
       - A centralized nonce for async and sync nonce validation across EVVM services preventing replay attacks in multi-service transactions
 - **ICore**: Interface for cross-contract interaction with Core.sol
 - **Core tests**: Added comprehensive tests for Core.sol covering payment handling, signature verification, and nonce management
-
 - **AdvancedStrings.sol**: `buildSignaturePayload` function for standardized signature generation and verification
 - **Hashing utilities**: Added service-specific hashing functions in `/library/utils/signature/` for consistent payload construction across services
 - **Deployment script**: Updated to deploy Core.sol and set its address in the services during deployment
