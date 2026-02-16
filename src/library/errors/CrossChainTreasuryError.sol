@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
  * @title Cross-Chain Treasury Error Library
  * @author Mate labs
  * @notice Custom errors for cross-chain treasury operations
- * @dev Gas-efficient errors for TreasuryHostChainStation and TreasuryExternalChainStation. Independent from State.sol (own nonces).
+ * @dev Gas-efficient errors for TreasuryHostChainStation and TreasuryExternalChainStation. Independent from Core.sol (own nonces).
  */
 library CrossChainTreasuryError {
     /// @dev Thrown when Core.sol balance < withdrawal amount (host chain only)

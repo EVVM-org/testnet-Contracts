@@ -420,7 +420,7 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
      *
      * Purpose:
      * - Withdraw: Deduct Evvm balance for bridging
-     * - Validate: ECDSA signature via State.sol
+     * - Validate: ECDSA signature via Core.sol
      * - Fee: Pay Fisher executor from sender balance
      * - Emit: Log for Fisher to process on external
      *
@@ -432,11 +432,11 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
      * - Emit: FisherBridgeSend event
      * - External: Fisher processes + sends tokens
      *
-     * State.sol Integration:
+     * Core.sol Integration:
      * - Nonce: state.validateAndConsumeNonce
      * - Hash: TreasuryCrossChainHashUtils.hashData...
      * - Async: true (Fisher bridge nonces)
-     * - Signature: ECDSA validation via State.sol
+     * - Signature: ECDSA validation via Core.sol
      *
      * Evvm Balance Operations:
      * - Validate: core.getBalance(from, token) >=
@@ -456,8 +456,8 @@ contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
      * Security:
      * - MATE Block: Principal token cannot withdraw
      * - Balance Check: Revert if insufficient Evvm
-     * - Signature: State.sol validates ECDSA
-     * - Nonce: State.sol prevents replays
+     * - Signature: Core.sol validates ECDSA
+     * - Nonce: Core.sol prevents replays
      * - Executor Only: onlyFisherExecutor modifier
      *
      * @param from Sender (signer) on host chain

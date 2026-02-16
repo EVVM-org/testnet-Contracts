@@ -326,7 +326,7 @@ contract NameService {
      * 4. Processes optional priority fee
      * 5. Deletes offer and updates slot count
      *
-     * State.sol Integration:
+     * Core.sol Integration:
      * - Validates signature with State.validateAndConsumeNonce
      * - Uses async nonce (isAsyncExec = true)
      * - Hash includes username + offer ID
@@ -347,7 +347,7 @@ contract NameService {
      * @param username Username offer was made for
      * @param offerID Unique identifier of offer to withdraw
      * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
+     * @param signature Signature for Core.sol validation
      * @param priorityFeePay Priority fee for faster processing
      * @param noncePay Nonce for EVVM payment transaction
      * @param signaturePay Signature for EVVM payment
@@ -406,7 +406,7 @@ contract NameService {
      * 5. Processes optional priority fee
      * 6. Deletes offer and unlocks tokens
      *
-     * State.sol Integration:
+     * Core.sol Integration:
      * - Validates signature with State.validateAndConsumeNonce
      * - Uses async nonce (isAsyncExec = true)
      * - Hash includes username + offer ID
@@ -434,7 +434,7 @@ contract NameService {
      * @param username Username being sold
      * @param offerID Unique identifier of offer to accept
      * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
+     * @param signature Signature for Core.sol validation
      * @param priorityFeePay Priority fee for faster processing
      * @param noncePay Nonce for EVVM payment transaction
      * @param signaturePay Signature for EVVM payment
@@ -503,7 +503,7 @@ contract NameService {
      * - Fixed: 500,000 PT if renewed >1 year early
      * - Can renew up to 100 years in advance
      *
-     * State.sol Integration:
+     * Core.sol Integration:
      * - Validates signature with State.validateAndConsumeNonce
      * - Uses async nonce (isAsyncExec = true)
      * - Hash includes username only
@@ -523,7 +523,7 @@ contract NameService {
      * @param user Address of username owner
      * @param username Username to renew
      * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
+     * @param signature Signature for Core.sol validation
      * @param priorityFeePay Priority fee for faster processing
      * @param noncePay Nonce for EVVM payment transaction
      * @param signaturePay Signature for EVVM payment
@@ -599,7 +599,7 @@ contract NameService {
      * - Pad spaces if schema/subschema < 5 chars
      * - Use "socialMedia" for social networks
      *
-     * State.sol Integration:
+     * Core.sol Integration:
      * - Validates signature with State.validateAndConsumeNonce
      * - Uses async nonce (isAsyncExec = true)
      * - Hash includes identity + value
@@ -620,7 +620,7 @@ contract NameService {
      * @param identity Username to add metadata to
      * @param value Metadata string following format
      * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
+     * @param signature Signature for Core.sol validation
      * @param priorityFeePay Priority fee for faster processing
      * @param noncePay Nonce for EVVM payment transaction
      * @param signaturePay Signature for EVVM payment
@@ -685,7 +685,7 @@ contract NameService {
      * 4. Shifts all entries after key down by 1
      * 5. Decrements customMetadataMaxSlots
      *
-     * State.sol Integration:
+     * Core.sol Integration:
      * - Validates signature with State.validateAndConsumeNonce
      * - Uses async nonce (isAsyncExec = true)
      * - Hash includes identity + key
@@ -706,7 +706,7 @@ contract NameService {
      * @param identity Username to remove metadata from
      * @param key Index of metadata entry to remove
      * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
+     * @param signature Signature for Core.sol validation
      * @param priorityFeePay Priority fee for faster processing
      * @param noncePay Nonce for EVVM payment transaction
      * @param signaturePay Signature for EVVM payment
@@ -782,7 +782,7 @@ contract NameService {
      * 4. Deletes all metadata entries in loop
      * 5. Resets customMetadataMaxSlots to 0
      *
-     * State.sol Integration:
+     * Core.sol Integration:
      * - Validates signature with State.validateAndConsumeNonce
      * - Uses async nonce (isAsyncExec = true)
      * - Hash includes identity only
@@ -803,7 +803,7 @@ contract NameService {
      * @param user Address of username owner
      * @param identity Username to flush all metadata from
      * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
+     * @param signature Signature for Core.sol validation
      * @param priorityFeePay Priority fee for faster processing
      * @param noncePay Nonce for EVVM payment transaction
      * @param signaturePay Signature for EVVM payment
@@ -875,7 +875,7 @@ contract NameService {
      * 6. Resets username to default state
      * 7. Preserves offerMaxSlots history
      *
-     * State.sol Integration:
+     * Core.sol Integration:
      * - Validates signature with State.validateAndConsumeNonce
      * - Uses async nonce (isAsyncExec = true)
      * - Hash includes username only
@@ -900,7 +900,7 @@ contract NameService {
      * @param user Address of username owner
      * @param username Username to completely remove
      * @param nonce Async nonce for replay protection
-     * @param signature Signature for State.sol validation
+     * @param signature Signature for Core.sol validation
      * @param priorityFeePay Priority fee for faster processing
      * @param noncePay Nonce for EVVM payment transaction
      * @param signaturePay Signature for EVVM payment

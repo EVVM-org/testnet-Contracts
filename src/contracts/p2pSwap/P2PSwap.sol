@@ -178,14 +178,14 @@ contract P2PSwap is EvvmService, Structs {
      * @dev Validates ownership, refunds tokenA, deletes order
      *
      * Cancellation Flow:
-     * 1. Validates signature via State.sol
+     * 1. Validates signature via Core.sol
      * 2. Validates user is order owner
      * 3. Processes optional priority fee
      * 4. Refunds locked tokenA to user
      * 5. Deletes order (sets seller to address(0))
      * 6. Rewards staker if applicable
      *
-     * State.sol Integration:
+     * Core.sol Integration:
      * - Validates signature with State.validateAndConsumeNonce
      * - Uses async nonce (isAsyncExec = true)
      * - Hash includes tokenA, tokenB, orderId
@@ -263,7 +263,7 @@ contract P2PSwap is EvvmService, Structs {
      * @dev Fee = amountB * percentageFee / 10,000
      *
      * Proportional Fee Execution Flow:
-     * 1. Validates signature via State.sol
+     * 1. Validates signature via Core.sol
      * 2. Validates market and order exist
      * 3. Calculates fee: (amountB * percentageFee) / 10,000
      * 4. Validates amountOfTokenBToFill >= amountB + fee
@@ -274,7 +274,7 @@ contract P2PSwap is EvvmService, Structs {
      * 9. Rewards staker (4-5x MATE)
      * 10. Deletes order
      *
-     * State.sol Integration:
+     * Core.sol Integration:
      * - Validates signature with State.validateAndConsumeNonce
      * - Uses async nonce (isAsyncExec = true)
      * - Hash includes tokenA, tokenB, orderId
@@ -374,7 +374,7 @@ contract P2PSwap is EvvmService, Structs {
      * with -10% tolerance
      *
      * Fixed Fee Execution Flow:
-     * 1. Validates signature via State.sol
+     * 1. Validates signature via Core.sol
      * 2. Validates market and order exist
      * 3. Calculates capped fee and 10% tolerance
      * 4. Validates amountOfTokenBToFill >= amountB + fee - 10%
@@ -386,7 +386,7 @@ contract P2PSwap is EvvmService, Structs {
      * 10. Rewards staker (4-5x MATE)
      * 11. Deletes order
      *
-     * State.sol Integration:
+     * Core.sol Integration:
      * - Validates signature with State.validateAndConsumeNonce
      * - Uses async nonce (isAsyncExec = true)
      * - Hash includes tokenA, tokenB, orderId

@@ -52,7 +52,7 @@ import {
  * @title EVVM Core
  * @author Mate labs
  * @notice Central logic for EVVM payments, token management, and nonce tracking.
- * @dev Combines payment operations (former Evvm.sol) and nonce management (former State.sol).
+ * @dev Combines payment operations and nonce management.
  *      Features multi-token payments with EIP-191 signatures, dual nonce system (sync/async),
  *      and staker rewards. Governed by a time-delayed admin and implementation upgrade system.
  */
