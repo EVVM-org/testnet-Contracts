@@ -34,7 +34,6 @@ import {
     ProposalStructs
 } from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
 
-
 /**
  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓████████▓▒░ 
 ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        
@@ -57,7 +56,7 @@ import {
  *      Features multi-token payments with EIP-191 signatures, dual nonce system (sync/async),
  *      and staker rewards. Governed by a time-delayed admin and implementation upgrade system.
  */
- 
+
 contract Core is Storage {
     /**
      * @notice Restricts access to the system administrator.
@@ -331,13 +330,10 @@ contract Core is Storage {
                         payment.isAsyncExec
                     ),
                     payment.signature
-                ) != payment.from
+                ) !=
+                payment.from ||
+                !canExecuteUserTransaction(payment.from)
             ) {
-                results[iteration] = false;
-                continue;
-            }
-
-            if (!canExecuteUserTransaction(payment.from)) {
                 results[iteration] = false;
                 continue;
             }
@@ -347,15 +343,13 @@ contract Core is Storage {
                     payment.from,
                     payment.nonce
                 );
-                if (asyncNonceStatus(payment.from, payment.nonce) == 0x01) {
-                    results[iteration] = false;
-                    continue;
-                }
-
                 if (
-                    statusNonce == 0x02 &&
-                    asyncNonceReservedPointers[payment.from][payment.nonce] !=
-                    address(this)
+                    statusNonce == 0x01 ||
+                    (statusNonce == 0x02 &&
+                        asyncNonceReservedPointers[payment.from][
+                            payment.nonce
+                        ] !=
+                        address(this))
                 ) {
                     results[iteration] = false;
                     continue;
