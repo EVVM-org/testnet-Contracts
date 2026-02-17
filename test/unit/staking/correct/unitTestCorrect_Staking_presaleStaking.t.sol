@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 
 contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
     AccountData FISHER_STAKER = COMMON_USER_STAKER;
@@ -61,7 +62,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         address user,
         uint256 priorityFee
     ) private returns (uint256 amount, uint256 amountPriorityFee) {
-        evvm.addBalance(
+        core.addBalance(
             user,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking()) + priorityFee
@@ -76,676 +77,667 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         uint256 _amountInPrincipal;
         bytes signatureStake;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bool priorityFlagEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function test__unit_correct__presaleStaking__staking_noFisherStake_noPriorityfee()
         external
     {
-        Params memory paramsSync = Params({
+        Params memory params1 = Params({
             user: USER,
             isStaking: true,
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 420,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
-        Params memory paramsAsync = Params({
+        Params memory params2 = Params({
             user: USER,
             isStaking: true,
             nonceStake: 2000002000002,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            priorityFlagEVVM: true,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (paramsSync._amountInPrincipal, ) = _addBalance(
-            paramsSync.user.Address,
-            paramsSync.priorityFee
+        (params1._amountInPrincipal, ) = _addBalance(
+            params1.user.Address,
+            params1.priorityFee
         );
 
         (
-            paramsSync.signatureStake,
-            paramsSync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
-            paramsSync.user,
-            paramsSync.isStaking,
-            paramsSync.nonceStake,
-            paramsSync.priorityFee,
-            paramsSync.nonceEVVM,
-            paramsSync.priorityFlagEVVM
+            params1.signatureStake,
+            params1.signaturePay
+        ) = _executeSig_staking_presaleStaking(
+            params1.user,
+            params1.isStaking,
+            address(0),
+            params1.nonceStake,
+            params1.priorityFee,
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         staking.presaleStaking(
-            paramsSync.user.Address,
-            paramsSync.isStaking,
-            paramsSync.nonceStake,
-            paramsSync.signatureStake,
-            paramsSync.priorityFee,
-            paramsSync.nonceEVVM,
-            paramsSync.priorityFlagEVVM,
-            paramsSync.signatureEVVM
+            params1.user.Address,
+            params1.isStaking,
+            address(0),
+            params1.nonceStake,
+            params1.signatureStake,
+            params1.priorityFee,
+            params1.noncePay,
+            params1.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySync = new Staking.HistoryMetadata[](
-                staking.getSizeOfAddressHistory(paramsSync.user.Address)
+        StakingStructs.HistoryMetadata[]
+            memory historySync = new StakingStructs.HistoryMetadata[](
+                staking.getSizeOfAddressHistory(params1.user.Address)
             );
-        historySync = staking.getAddressHistory(paramsSync.user.Address);
+        historySync = staking.getAddressHistory(params1.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(paramsSync.user.Address),
-            "ERROR [payment sync execution] : presale user is not pointer as staker"
+            core.isAddressStaker(params1.user.Address),
+            "ERROR [1] : presale user is not pointer as staker"
         );
 
         assertEq(
             historySync[0].timestamp,
             block.timestamp,
-            "ERROR [payment sync execution] : timestamp in history [0] is not correct"
+            "ERROR [1] : timestamp in history [0] is not correct"
         );
         assertEq(
             historySync[0].transactionType,
             DEPOSIT_HISTORY_SMATE_IDENTIFIER,
-            "ERROR [payment sync execution] : transactionType in history [0] is not correct"
+            "ERROR [1] : transactionType in history [0] is not correct"
         );
         assertEq(
             historySync[0].amount,
             1,
-            "ERROR [payment sync execution] : amount in history [0] is not correct"
+            "ERROR [1] : amount in history [0] is not correct"
         );
         assertEq(
             historySync[0].totalStaked,
             1,
-            "ERROR [payment sync execution] : totalStaked in history [0] is not correct"
+            "ERROR [1] : totalStaked in history [0] is not correct"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
-            "ERROR [payment sync execution] : balance of fisher after staking is not correct"
+            "ERROR [1] : balance of fisher after staking is not correct"
         );
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (paramsAsync._amountInPrincipal, ) = _addBalance(
-            paramsAsync.user.Address,
-            paramsAsync.priorityFee
+        (params2._amountInPrincipal, ) = _addBalance(
+            params2.user.Address,
+            params2.priorityFee
         );
 
         (
-            paramsAsync.signatureStake,
-            paramsAsync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
-            paramsAsync.user,
-            paramsAsync.isStaking,
-            paramsAsync.nonceStake,
-            paramsAsync.priorityFee,
-            paramsAsync.nonceEVVM,
-            paramsAsync.priorityFlagEVVM
+            params2.signatureStake,
+            params2.signaturePay
+        ) = _executeSig_staking_presaleStaking(
+            params2.user,
+            params2.isStaking,
+            address(0),
+            params2.nonceStake,
+            params2.priorityFee,
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         staking.presaleStaking(
-            paramsAsync.user.Address,
-            paramsAsync.isStaking,
-            paramsAsync.nonceStake,
-            paramsAsync.signatureStake,
-            paramsAsync.priorityFee,
-            paramsAsync.nonceEVVM,
-            paramsAsync.priorityFlagEVVM,
-            paramsAsync.signatureEVVM
+            params2.user.Address,
+            params2.isStaking,
+            address(0),
+            params2.nonceStake,
+            params2.signatureStake,
+            params2.priorityFee,
+            params2.noncePay,
+            params2.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsync = new Staking.HistoryMetadata[](
-                staking.getSizeOfAddressHistory(paramsAsync.user.Address)
+        StakingStructs.HistoryMetadata[]
+            memory historyAsync = new StakingStructs.HistoryMetadata[](
+                staking.getSizeOfAddressHistory(params2.user.Address)
             );
-        historyAsync = staking.getAddressHistory(paramsAsync.user.Address);
+        historyAsync = staking.getAddressHistory(params2.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(paramsAsync.user.Address),
-            "ERROR [payment async execution] : presale user is not pointer as staker"
+            core.isAddressStaker(params2.user.Address),
+            "ERROR [2] : presale user is not pointer as staker"
         );
 
         assertEq(
             historyAsync[0].timestamp,
             block.timestamp,
-            "ERROR [payment async execution] : timestamp in history [0] is not correct"
+            "ERROR [2] : timestamp in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].transactionType,
             DEPOSIT_HISTORY_SMATE_IDENTIFIER,
-            "ERROR [payment async execution] : transactionType in history [0] is not correct"
+            "ERROR [2] : transactionType in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].amount,
             1,
-            "ERROR [payment async execution] : amount in history [0] is not correct"
+            "ERROR [2] : amount in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].totalStaked,
             1,
-            "ERROR [payment async execution] : totalStaked in history [0] is not correct"
+            "ERROR [2] : totalStaked in history [0] is not correct"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
-            "ERROR [payment async execution] : balance of fisher after staking is not correct"
+            "ERROR [2] : balance of fisher after staking is not correct"
         );
     }
 
     function test__unit_correct__presaleStaking__staking_noFisherStake_priorityfee()
         external
     {
-        Params memory paramsSync = Params({
+        Params memory params1 = Params({
             user: USER,
             isStaking: true,
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0.01 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 420,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
-        Params memory paramsAsync = Params({
+        Params memory params2 = Params({
             user: USER,
             isStaking: true,
             nonceStake: 2000002000002,
             signatureStake: "",
             priorityFee: 0.01 ether,
-            nonceEVVM: 67,
-            priorityFlagEVVM: true,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (paramsSync._amountInPrincipal, ) = _addBalance(
-            paramsSync.user.Address,
-            paramsSync.priorityFee
+        (params1._amountInPrincipal, ) = _addBalance(
+            params1.user.Address,
+            params1.priorityFee
         );
 
         (
-            paramsSync.signatureStake,
-            paramsSync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
-            paramsSync.user,
-            paramsSync.isStaking,
-            paramsSync.nonceStake,
-            paramsSync.priorityFee,
-            paramsSync.nonceEVVM,
-            paramsSync.priorityFlagEVVM
+            params1.signatureStake,
+            params1.signaturePay
+        ) = _executeSig_staking_presaleStaking(
+            params1.user,
+            params1.isStaking,
+            address(0),
+            params1.nonceStake,
+            params1.priorityFee,
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         staking.presaleStaking(
-            paramsSync.user.Address,
-            paramsSync.isStaking,
-            paramsSync.nonceStake,
-            paramsSync.signatureStake,
-            paramsSync.priorityFee,
-            paramsSync.nonceEVVM,
-            paramsSync.priorityFlagEVVM,
-            paramsSync.signatureEVVM
+            params1.user.Address,
+            params1.isStaking,
+            address(0),
+            params1.nonceStake,
+            params1.signatureStake,
+            params1.priorityFee,
+            params1.noncePay,
+            params1.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySync = new Staking.HistoryMetadata[](
-                staking.getSizeOfAddressHistory(paramsSync.user.Address)
+        StakingStructs.HistoryMetadata[]
+            memory historySync = new StakingStructs.HistoryMetadata[](
+                staking.getSizeOfAddressHistory(params1.user.Address)
             );
-        historySync = staking.getAddressHistory(paramsSync.user.Address);
+        historySync = staking.getAddressHistory(params1.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(paramsSync.user.Address),
-            "ERROR [payment sync execution] : presale user is not pointer as staker"
+            core.isAddressStaker(params1.user.Address),
+            "ERROR [1] : presale user is not pointer as staker"
         );
 
         assertEq(
             historySync[0].timestamp,
             block.timestamp,
-            "ERROR [payment sync execution] : timestamp in history [0] is not correct"
+            "ERROR [1] : timestamp in history [0] is not correct"
         );
         assertEq(
             historySync[0].transactionType,
             DEPOSIT_HISTORY_SMATE_IDENTIFIER,
-            "ERROR [payment sync execution] : transactionType in history [0] is not correct"
+            "ERROR [1] : transactionType in history [0] is not correct"
         );
         assertEq(
             historySync[0].amount,
             1,
-            "ERROR [payment sync execution] : amount in history [0] is not correct"
+            "ERROR [1] : amount in history [0] is not correct"
         );
         assertEq(
             historySync[0].totalStaked,
             1,
-            "ERROR [payment sync execution] : totalStaked in history [0] is not correct"
+            "ERROR [1] : totalStaked in history [0] is not correct"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
-            "ERROR [payment sync execution] : balance of fisher after staking is not correct"
+            "ERROR [1] : balance of fisher after staking is not correct"
         );
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (paramsAsync._amountInPrincipal, ) = _addBalance(
-            paramsAsync.user.Address,
-            paramsAsync.priorityFee
+        (params2._amountInPrincipal, ) = _addBalance(
+            params2.user.Address,
+            params2.priorityFee
         );
 
         (
-            paramsAsync.signatureStake,
-            paramsAsync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
-            paramsAsync.user,
-            paramsAsync.isStaking,
-            paramsAsync.nonceStake,
-            paramsAsync.priorityFee,
-            paramsAsync.nonceEVVM,
-            paramsAsync.priorityFlagEVVM
+            params2.signatureStake,
+            params2.signaturePay
+        ) = _executeSig_staking_presaleStaking(
+            params2.user,
+            params2.isStaking,
+            address(0),
+            params2.nonceStake,
+            params2.priorityFee,
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         staking.presaleStaking(
-            paramsAsync.user.Address,
-            paramsAsync.isStaking,
-            paramsAsync.nonceStake,
-            paramsAsync.signatureStake,
-            paramsAsync.priorityFee,
-            paramsAsync.nonceEVVM,
-            paramsAsync.priorityFlagEVVM,
-            paramsAsync.signatureEVVM
+            params2.user.Address,
+            params2.isStaking,
+            address(0),
+            params2.nonceStake,
+            params2.signatureStake,
+            params2.priorityFee,
+            params2.noncePay,
+            params2.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsync = new Staking.HistoryMetadata[](
-                staking.getSizeOfAddressHistory(paramsAsync.user.Address)
+        StakingStructs.HistoryMetadata[]
+            memory historyAsync = new StakingStructs.HistoryMetadata[](
+                staking.getSizeOfAddressHistory(params2.user.Address)
             );
-        historyAsync = staking.getAddressHistory(paramsAsync.user.Address);
+        historyAsync = staking.getAddressHistory(params2.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(paramsAsync.user.Address),
-            "ERROR [payment async execution] : presale user is not pointer as staker"
+            core.isAddressStaker(params2.user.Address),
+            "ERROR [2] : presale user is not pointer as staker"
         );
 
         assertEq(
             historyAsync[0].timestamp,
             block.timestamp,
-            "ERROR [payment async execution] : timestamp in history [0] is not correct"
+            "ERROR [2] : timestamp in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].transactionType,
             DEPOSIT_HISTORY_SMATE_IDENTIFIER,
-            "ERROR [payment async execution] : transactionType in history [0] is not correct"
+            "ERROR [2] : transactionType in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].amount,
             1,
-            "ERROR [payment async execution] : amount in history [0] is not correct"
+            "ERROR [2] : amount in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].totalStaked,
             1,
-            "ERROR [payment async execution] : totalStaked in history [0] is not correct"
+            "ERROR [2] : totalStaked in history [0] is not correct"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
-            "ERROR [payment async execution] : balance of fisher after staking is not correct"
+            "ERROR [2] : balance of fisher after staking is not correct"
         );
     }
 
     function test__unit_correct__presaleStaking__staking_fisherStake_noPriorityfee()
         external
     {
-        Params memory paramsSync = Params({
+        Params memory params1 = Params({
             user: USER,
             isStaking: true,
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 420,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
-        Params memory paramsAsync = Params({
+        Params memory params2 = Params({
             user: USER,
             isStaking: true,
             nonceStake: 2000002000002,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            priorityFlagEVVM: true,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (paramsSync._amountInPrincipal, ) = _addBalance(
-            paramsSync.user.Address,
-            paramsSync.priorityFee
+        (params1._amountInPrincipal, ) = _addBalance(
+            params1.user.Address,
+            params1.priorityFee
         );
 
         (
-            paramsSync.signatureStake,
-            paramsSync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
-            paramsSync.user,
-            paramsSync.isStaking,
-            paramsSync.nonceStake,
-            paramsSync.priorityFee,
-            paramsSync.nonceEVVM,
-            paramsSync.priorityFlagEVVM
+            params1.signatureStake,
+            params1.signaturePay
+        ) = _executeSig_staking_presaleStaking(
+            params1.user,
+            params1.isStaking,
+            address(0),
+            params1.nonceStake,
+            params1.priorityFee,
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
         staking.presaleStaking(
-            paramsSync.user.Address,
-            paramsSync.isStaking,
-            paramsSync.nonceStake,
-            paramsSync.signatureStake,
-            paramsSync.priorityFee,
-            paramsSync.nonceEVVM,
-            paramsSync.priorityFlagEVVM,
-            paramsSync.signatureEVVM
+            params1.user.Address,
+            params1.isStaking,
+            address(0),
+            params1.nonceStake,
+            params1.signatureStake,
+            params1.priorityFee,
+            params1.noncePay,
+            params1.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySync = new Staking.HistoryMetadata[](
-                staking.getSizeOfAddressHistory(paramsSync.user.Address)
+        StakingStructs.HistoryMetadata[]
+            memory historySync = new StakingStructs.HistoryMetadata[](
+                staking.getSizeOfAddressHistory(params1.user.Address)
             );
-        historySync = staking.getAddressHistory(paramsSync.user.Address);
+        historySync = staking.getAddressHistory(params1.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(paramsSync.user.Address),
-            "ERROR [payment sync execution] : presale user is not pointer as staker"
+            core.isAddressStaker(params1.user.Address),
+            "ERROR [1] : presale user is not pointer as staker"
         );
 
         assertEq(
             historySync[0].timestamp,
             block.timestamp,
-            "ERROR [payment sync execution] : timestamp in history [0] is not correct"
+            "ERROR [1] : timestamp in history [0] is not correct"
         );
         assertEq(
             historySync[0].transactionType,
             DEPOSIT_HISTORY_SMATE_IDENTIFIER,
-            "ERROR [payment sync execution] : transactionType in history [0] is not correct"
+            "ERROR [1] : transactionType in history [0] is not correct"
         );
         assertEq(
             historySync[0].amount,
             1,
-            "ERROR [payment sync execution] : amount in history [0] is not correct"
+            "ERROR [1] : amount in history [0] is not correct"
         );
         assertEq(
             historySync[0].totalStaked,
             1,
-            "ERROR [payment sync execution] : totalStaked in history [0] is not correct"
+            "ERROR [1] : totalStaked in history [0] is not correct"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2) + paramsSync.priorityFee,
-            "ERROR [payment sync execution] : balance of fisher after staking is not correct"
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2) + params1.priorityFee,
+            "ERROR [1] : balance of fisher after staking is not correct"
         );
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (paramsAsync._amountInPrincipal, ) = _addBalance(
-            paramsAsync.user.Address,
-            paramsAsync.priorityFee
+        (params2._amountInPrincipal, ) = _addBalance(
+            params2.user.Address,
+            params2.priorityFee
         );
 
         (
-            paramsAsync.signatureStake,
-            paramsAsync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
-            paramsAsync.user,
-            paramsAsync.isStaking,
-            paramsAsync.nonceStake,
-            paramsAsync.priorityFee,
-            paramsAsync.nonceEVVM,
-            paramsAsync.priorityFlagEVVM
+            params2.signatureStake,
+            params2.signaturePay
+        ) = _executeSig_staking_presaleStaking(
+            params2.user,
+            params2.isStaking,
+            address(0),
+            params2.nonceStake,
+            params2.priorityFee,
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
         staking.presaleStaking(
-            paramsAsync.user.Address,
-            paramsAsync.isStaking,
-            paramsAsync.nonceStake,
-            paramsAsync.signatureStake,
-            paramsAsync.priorityFee,
-            paramsAsync.nonceEVVM,
-            paramsAsync.priorityFlagEVVM,
-            paramsAsync.signatureEVVM
+            params2.user.Address,
+            params2.isStaking,
+            address(0),
+            params2.nonceStake,
+            params2.signatureStake,
+            params2.priorityFee,
+            params2.noncePay,
+            params2.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsync = new Staking.HistoryMetadata[](
-                staking.getSizeOfAddressHistory(paramsAsync.user.Address)
+        StakingStructs.HistoryMetadata[]
+            memory historyAsync = new StakingStructs.HistoryMetadata[](
+                staking.getSizeOfAddressHistory(params2.user.Address)
             );
-        historyAsync = staking.getAddressHistory(paramsAsync.user.Address);
+        historyAsync = staking.getAddressHistory(params2.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(paramsAsync.user.Address),
-            "ERROR [payment async execution] : presale user is not pointer as staker"
+            core.isAddressStaker(params2.user.Address),
+            "ERROR [2] : presale user is not pointer as staker"
         );
 
         assertEq(
             historyAsync[0].timestamp,
             block.timestamp,
-            "ERROR [payment async execution] : timestamp in history [0] is not correct"
+            "ERROR [2] : timestamp in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].transactionType,
             DEPOSIT_HISTORY_SMATE_IDENTIFIER,
-            "ERROR [payment async execution] : transactionType in history [0] is not correct"
+            "ERROR [2] : transactionType in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].amount,
             1,
-            "ERROR [payment async execution] : amount in history [0] is not correct"
+            "ERROR [2] : amount in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].totalStaked,
             1,
-            "ERROR [payment async execution] : totalStaked in history [0] is not correct"
+            "ERROR [2] : totalStaked in history [0] is not correct"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount() * 2) * 2) +
-                paramsAsync.priorityFee +
-                paramsSync.priorityFee,
-            "ERROR [payment async execution] : balance of fisher after staking is not correct"
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount() * 2) * 2) +
+                params2.priorityFee +
+                params1.priorityFee,
+            "ERROR [2] : balance of fisher after staking is not correct"
         );
     }
 
     function test__unit_correct__presaleStaking__staking_fisherStake_priorityfee()
         external
     {
-        Params memory paramsSync = Params({
+        Params memory params1 = Params({
             user: USER,
             isStaking: true,
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0.01 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 420,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
-        Params memory paramsAsync = Params({
+        Params memory params2 = Params({
             user: USER,
             isStaking: true,
             nonceStake: 2000002000002,
             signatureStake: "",
             priorityFee: 0.01 ether,
-            nonceEVVM: 67,
-            priorityFlagEVVM: true,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (paramsSync._amountInPrincipal, ) = _addBalance(
-            paramsSync.user.Address,
-            paramsSync.priorityFee
+        (params1._amountInPrincipal, ) = _addBalance(
+            params1.user.Address,
+            params1.priorityFee
         );
 
         (
-            paramsSync.signatureStake,
-            paramsSync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
-            paramsSync.user,
-            paramsSync.isStaking,
-            paramsSync.nonceStake,
-            paramsSync.priorityFee,
-            paramsSync.nonceEVVM,
-            paramsSync.priorityFlagEVVM
+            params1.signatureStake,
+            params1.signaturePay
+        ) = _executeSig_staking_presaleStaking(
+            params1.user,
+            params1.isStaking,
+            address(0),
+            params1.nonceStake,
+            params1.priorityFee,
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
         staking.presaleStaking(
-            paramsSync.user.Address,
-            paramsSync.isStaking,
-            paramsSync.nonceStake,
-            paramsSync.signatureStake,
-            paramsSync.priorityFee,
-            paramsSync.nonceEVVM,
-            paramsSync.priorityFlagEVVM,
-            paramsSync.signatureEVVM
+            params1.user.Address,
+            params1.isStaking,
+            address(0),
+            params1.nonceStake,
+            params1.signatureStake,
+            params1.priorityFee,
+            params1.noncePay,
+            params1.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historySync = new Staking.HistoryMetadata[](
-                staking.getSizeOfAddressHistory(paramsSync.user.Address)
+        StakingStructs.HistoryMetadata[]
+            memory historySync = new StakingStructs.HistoryMetadata[](
+                staking.getSizeOfAddressHistory(params1.user.Address)
             );
-        historySync = staking.getAddressHistory(paramsSync.user.Address);
+        historySync = staking.getAddressHistory(params1.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(paramsSync.user.Address),
-            "ERROR [payment sync execution] : presale user is not pointer as staker"
+            core.isAddressStaker(params1.user.Address),
+            "ERROR [1] : presale user is not pointer as staker"
         );
 
         assertEq(
             historySync[0].timestamp,
             block.timestamp,
-            "ERROR [payment sync execution] : timestamp in history [0] is not correct"
+            "ERROR [1] : timestamp in history [0] is not correct"
         );
         assertEq(
             historySync[0].transactionType,
             DEPOSIT_HISTORY_SMATE_IDENTIFIER,
-            "ERROR [payment sync execution] : transactionType in history [0] is not correct"
+            "ERROR [1] : transactionType in history [0] is not correct"
         );
         assertEq(
             historySync[0].amount,
             1,
-            "ERROR [payment sync execution] : amount in history [0] is not correct"
+            "ERROR [1] : amount in history [0] is not correct"
         );
         assertEq(
             historySync[0].totalStaked,
             1,
-            "ERROR [payment sync execution] : totalStaked in history [0] is not correct"
+            "ERROR [1] : totalStaked in history [0] is not correct"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2) + paramsSync.priorityFee,
-            "ERROR [payment sync execution] : balance of fisher after staking is not correct"
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2) + params1.priorityFee,
+            "ERROR [1] : balance of fisher after staking is not correct"
         );
 
         /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        (paramsAsync._amountInPrincipal, ) = _addBalance(
-            paramsAsync.user.Address,
-            paramsAsync.priorityFee
+        (params2._amountInPrincipal, ) = _addBalance(
+            params2.user.Address,
+            params2.priorityFee
         );
 
         (
-            paramsAsync.signatureStake,
-            paramsAsync.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
-            paramsAsync.user,
-            paramsAsync.isStaking,
-            paramsAsync.nonceStake,
-            paramsAsync.priorityFee,
-            paramsAsync.nonceEVVM,
-            paramsAsync.priorityFlagEVVM
+            params2.signatureStake,
+            params2.signaturePay
+        ) = _executeSig_staking_presaleStaking(
+            params2.user,
+            params2.isStaking,
+            address(0),
+            params2.nonceStake,
+            params2.priorityFee,
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
         staking.presaleStaking(
-            paramsAsync.user.Address,
-            paramsAsync.isStaking,
-            paramsAsync.nonceStake,
-            paramsAsync.signatureStake,
-            paramsAsync.priorityFee,
-            paramsAsync.nonceEVVM,
-            paramsAsync.priorityFlagEVVM,
-            paramsAsync.signatureEVVM
+            params2.user.Address,
+            params2.isStaking,
+            address(0),
+            params2.nonceStake,
+            params2.signatureStake,
+            params2.priorityFee,
+            params2.noncePay,
+            params2.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyAsync = new Staking.HistoryMetadata[](
-                staking.getSizeOfAddressHistory(paramsAsync.user.Address)
+        StakingStructs.HistoryMetadata[]
+            memory historyAsync = new StakingStructs.HistoryMetadata[](
+                staking.getSizeOfAddressHistory(params2.user.Address)
             );
-        historyAsync = staking.getAddressHistory(paramsAsync.user.Address);
+        historyAsync = staking.getAddressHistory(params2.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(paramsAsync.user.Address),
-            "ERROR [payment async execution] : presale user is not pointer as staker"
+            core.isAddressStaker(params2.user.Address),
+            "ERROR [2] : presale user is not pointer as staker"
         );
 
         assertEq(
             historyAsync[0].timestamp,
             block.timestamp,
-            "ERROR [payment async execution] : timestamp in history [0] is not correct"
+            "ERROR [2] : timestamp in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].transactionType,
             DEPOSIT_HISTORY_SMATE_IDENTIFIER,
-            "ERROR [payment async execution] : transactionType in history [0] is not correct"
+            "ERROR [2] : transactionType in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].amount,
             1,
-            "ERROR [payment async execution] : amount in history [0] is not correct"
+            "ERROR [2] : amount in history [0] is not correct"
         );
         assertEq(
             historyAsync[0].totalStaked,
             1,
-            "ERROR [payment async execution] : totalStaked in history [0] is not correct"
+            "ERROR [2] : totalStaked in history [0] is not correct"
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount() * 2) * 2) +
-                paramsAsync.priorityFee +
-                paramsSync.priorityFee,
-            "ERROR [payment async execution] : balance of fisher after staking is not correct"
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount() * 2) * 2) +
+                params2.priorityFee +
+                params1.priorityFee,
+            "ERROR [2] : balance of fisher after staking is not correct"
         );
     }
 
@@ -754,15 +746,17 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
     {
         for (uint256 i = 0; i < 2; i++) {
             _addBalance(USER.Address, 0);
-            _execute_makePresaleStaking(
+            _executeFn_staking_presaleStaking(
                 USER,
                 true,
+                address(0),
                 uint256(
                     0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00
                 ) + i,
                 0,
-                evvm.getNextCurrentSyncNonce(USER.Address),
-                false,
+                uint256(
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
+                ) + i,
                 GOLDEN_STAKER
             );
         }
@@ -773,9 +767,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 420,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -785,9 +778,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 2000002000002,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            priorityFlagEVVM: true,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -799,37 +791,37 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             paramsUnstake.signatureStake,
-            paramsUnstake.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            paramsUnstake.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             paramsUnstake.user,
             paramsUnstake.isStaking,
+            address(0),
             paramsUnstake.nonceStake,
             paramsUnstake.priorityFee,
-            paramsUnstake.nonceEVVM,
-            paramsUnstake.priorityFlagEVVM
+            paramsUnstake.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         staking.presaleStaking(
             paramsUnstake.user.Address,
             paramsUnstake.isStaking,
+            address(0),
             paramsUnstake.nonceStake,
             paramsUnstake.signatureStake,
             paramsUnstake.priorityFee,
-            paramsUnstake.nonceEVVM,
-            paramsUnstake.priorityFlagEVVM,
-            paramsUnstake.signatureEVVM
+            paramsUnstake.noncePay,
+            paramsUnstake.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyUnstake = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyUnstake = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsUnstake.user.Address)
             );
         historyUnstake = staking.getAddressHistory(paramsUnstake.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(paramsUnstake.user.Address),
+            core.isAddressStaker(paramsUnstake.user.Address),
             "ERROR [unstake execution] : presale user must still point as staker"
         );
 
@@ -855,7 +847,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ERROR [unstake execution] : balance of fisher after staking is not correct"
         );
@@ -870,31 +862,31 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             paramsFullUnstake.signatureStake,
-            paramsFullUnstake.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            paramsFullUnstake.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             paramsFullUnstake.user,
             paramsFullUnstake.isStaking,
+            address(0),
             paramsFullUnstake.nonceStake,
             paramsFullUnstake.priorityFee,
-            paramsFullUnstake.nonceEVVM,
-            paramsFullUnstake.priorityFlagEVVM
+            paramsFullUnstake.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         staking.presaleStaking(
             paramsFullUnstake.user.Address,
             paramsFullUnstake.isStaking,
+            address(0),
             paramsFullUnstake.nonceStake,
             paramsFullUnstake.signatureStake,
             paramsFullUnstake.priorityFee,
-            paramsFullUnstake.nonceEVVM,
-            paramsFullUnstake.priorityFlagEVVM,
-            paramsFullUnstake.signatureEVVM
+            paramsFullUnstake.noncePay,
+            paramsFullUnstake.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyFullUnstake = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyFullUnstake = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(paramsFullUnstake.user.Address)
             );
         historyFullUnstake = staking.getAddressHistory(
@@ -902,7 +894,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertFalse(
-            evvm.isAddressStaker(paramsFullUnstake.user.Address),
+            core.isAddressStaker(paramsFullUnstake.user.Address),
             "ERROR [full unstake execution] : presale user must not point as staker anymore"
         );
 
@@ -928,7 +920,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ERROR [full unstake execution]  : balance of fisher after staking is not correct"
         );
@@ -938,29 +930,33 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         external
     {
         _addBalance(USER.Address, 0);
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             USER,
             true,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
             0,
-            evvm.getNextCurrentSyncNonce(USER.Address),
-            false,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
             GOLDEN_STAKER
         );
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             USER,
             false,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
             0,
-            evvm.getNextCurrentSyncNonce(USER.Address),
-            false,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
+            ),
             GOLDEN_STAKER
         );
 
@@ -970,9 +966,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            priorityFlagEVVM: true,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -985,14 +980,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         skip(staking.getSecondsToUnlockStaking());
@@ -1001,23 +996,23 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyFullUnstake = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyFullUnstake = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
         historyFullUnstake = staking.getAddressHistory(params.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "ERROR [stake after full unstake execution] : presale user must be pointer as staker"
         );
 
@@ -1043,7 +1038,7 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ERROR [stake after full unstake execution]  : balance of fisher after staking is not correct"
         );
@@ -1053,29 +1048,33 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         external
     {
         _addBalance(USER.Address, 0);
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             USER,
             true,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
             0,
-            evvm.getNextCurrentSyncNonce(USER.Address),
-            false,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
             GOLDEN_STAKER
         );
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             USER,
             false,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
             0,
-            evvm.getNextCurrentSyncNonce(USER.Address),
-            false,
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
+            ),
             GOLDEN_STAKER
         );
 
@@ -1085,9 +1084,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            priorityFlagEVVM: true,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -1100,14 +1098,14 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         skip(staking.getSecondsToUnlockStaking());
@@ -1116,23 +1114,23 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
-        Staking.HistoryMetadata[]
-            memory historyFullUnstake = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory historyFullUnstake = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(params.user.Address)
             );
         historyFullUnstake = staking.getAddressHistory(params.user.Address);
 
         assertTrue(
-            evvm.isAddressStaker(params.user.Address),
+            core.isAddressStaker(params.user.Address),
             "ERROR [stake after full unstake execution] : presale user must be pointer as staker"
         );
 
@@ -1158,8 +1156,8 @@ contract unitTestCorrect_Staking_presaleStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() * 2) + params.priorityFee,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() * 2) + params.priorityFee,
             "ERROR [stake after full unstake execution]  : balance of fisher after staking is not correct"
         );
     }

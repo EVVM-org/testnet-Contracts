@@ -65,14 +65,14 @@ export async function isChainIdRegistered(chainId: number): Promise<boolean> {
  * EVVM ID. This ID is used to identify the EVVM instance across the ecosystem.
  *
  * @param {number} hostChainId - Chain ID where the EVVM is deployed
- * @param {`0x${string}`} evvmAddress - Address of the deployed EVVM contract
+ * @param {`0x${string}`} coreAddress - Address of the deployed Core contract
  * @param {string} walletName - Foundry wallet name to use for the transaction
  * @param {string} ethRpcUrl - Ethereum Sepolia RPC URL for registry interaction
  * @returns {Promise<number | undefined>} The assigned EVVM ID, or undefined on error
  */
 export async function callRegisterEvvm(
   hostChainId: number,
-  evvmAddress: string,
+  coreAddress: string,
   walletName: string = "defaultKey",
   ethRpcUrl: string = EthSepoliaPublicRpc
 ): Promise<number | undefined> {
@@ -80,14 +80,14 @@ export async function callRegisterEvvm(
 
   try {
     const result =
-      await $`cast call ${RegisteryEvvmAddress} --rpc-url ${ethRpcUrl} "registerEvvm(uint256,address)(uint256)" ${hostChainId} ${evvmAddress} --account ${walletName}`.quiet();
+      await $`cast call ${RegisteryEvvmAddress} --rpc-url ${ethRpcUrl} "registerEvvm(uint256,address)(uint256)" ${hostChainId} ${coreAddress} --account ${walletName}`.quiet();
 
 
     await castSend(
       RegisteryEvvmAddress as `0x${string}`,
       ethRpcUrl,
       "registerEvvm(uint256,address)(uint256)",
-      [hostChainId.toString(), evvmAddress],
+      [hostChainId.toString(), coreAddress],
       walletName
     );
 
@@ -100,12 +100,12 @@ export async function callRegisterEvvm(
 }
 
 /**
- * Sets the EVVM ID on the deployed EVVM contract
+ * Sets the EVVM ID on the deployed Core contract
  *
  * After receiving an EVVM ID from the registry, this function updates the
- * EVVM contract with its assigned ID. Required to complete EVVM initialization.
+ * Core contract with its assigned ID. Required to complete EVVM initialization.
  *
- * @param {`0x${string}`} evvmAddress - Address of the EVVM contract
+ * @param {`0x${string}`} coreAddress - Address of the Core contract
  * @param {number} evvmID - The EVVM ID assigned by the registry
  * @param {string} hostChainRpcUrl - RPC URL for the chain where EVVM is deployed
  * @param {string} walletName - Foundry wallet name to use for the transaction
@@ -402,8 +402,19 @@ export async function forgeScript(
     await $`${command}`;
 
     confirmation("Deployment script executed successfully.");
-  } catch (error) {
-    criticalError(`Deployment failed.`);
+  } catch (error: any) {
+    const errorOutput = error?.stderr?.toString() || error?.message || "";
+    
+    // Check if the error is only about verification failure (deployment succeeded)
+    if (errorOutput.includes("Not all") && errorOutput.includes("contracts were verified")) {
+      warning(
+        "Some contracts were not verified",
+        "The deployment was successful, but not all contracts could be verified on the block explorer.\nYou can manually verify them later."
+      );
+      confirmation("Deployment script executed successfully.");
+    } else {
+      criticalError(`Deployment failed.`);
+    }
   }
 }
 
@@ -472,15 +483,15 @@ export async function walletIsSetup(
 }
 
 /**
- * Displays deployed contracts and extracts EVVM contract address
+ * Displays deployed contracts and extracts Core contract address
  *
  * Reads the Foundry broadcast file to:
  * 1. Extract all deployed contract addresses
  * 2. Display them in a formatted list
- * 3. Locate and return the EVVM contract address
+ * 3. Locate and return the Core contract address
  *
  * @param {number} chainId - Chain ID where contracts were deployed
- * @returns {Promise<`0x${string}` | null>} EVVM contract address, or null if not found
+ * @returns {Promise<`0x${string}` | null>} Core contract address, or null if not found
  */
 export async function showDeployContractsAndFindEvvm(
   chainId: number
@@ -532,11 +543,14 @@ export async function showDeployContractsAndFindEvvm(
 
   await saveDeploymentToJson(createdContracts, chainId, chainData?.Chain);
 
-  return (
+  const coreContract =
     createdContracts.find(
-      (contract: CreatedContract) => contract.contractName === "Evvm"
-    )?.contractAddress ?? null
-  );
+      (contract: CreatedContract) =>
+        contract.contractName === "Core"
+    );
+
+  return coreContract?.contractAddress ?? null;
+
 }
 
 /**
@@ -553,13 +567,13 @@ export async function showDeployContractsAndFindEvvm(
  * @param {number} chainIdHost - Chain ID where host contracts were deployed
  * @param {number} chainIdExternal - Chain ID where external contracts were deployed
  * @returns {Promise<Object>} Object containing extracted contract addresses:
- *   - evvmAddress: EVVM core contract address (or null if not found)
+ *   - coreAddress: EVVM core contract address (or null if not found)
  *   - treasuryHostChainStationAddress: Host station address (or null if not found)
  *   - treasuryExternalChainStationAddress: External station address (or null if not found)
  *
  * @example
  * ```typescript
- * const { evvmAddress, treasuryHostChainStationAddress, treasuryExternalChainStationAddress } =
+ * const { coreAddress, treasuryHostChainStationAddress, treasuryExternalChainStationAddress } =
  *   await showAllCrossChainDeployedContracts(11155111, 421614);
  * ```
  */
@@ -567,7 +581,7 @@ export async function showAllCrossChainDeployedContracts(
   chainIdHost: number,
   chainIdExternal: number
 ): Promise<{
-  evvmAddress: `0x${string}` | null;
+  coreAddress: `0x${string}` | null;
   treasuryHostChainStationAddress: `0x${string}` | null;
   treasuryExternalChainStationAddress: `0x${string}` | null;
 }> {
@@ -663,9 +677,10 @@ export async function showAllCrossChainDeployedContracts(
     ChainData[chainIdExternal]?.Chain || undefined
   );
 
-  const evvmAddress =
+  const coreAddress =
     createdContractsHost.find(
-      (contract: CreatedContract) => contract.contractName === "Evvm"
+      (contract: CreatedContract) =>
+        contract.contractName === "Core"
     )?.contractAddress ?? null;
 
   const treasuryHostChainStationAddress =
@@ -681,7 +696,7 @@ export async function showAllCrossChainDeployedContracts(
     )?.contractAddress ?? null;
 
   return {
-    evvmAddress,
+    coreAddress,
     treasuryHostChainStationAddress,
     treasuryExternalChainStationAddress,
   };
@@ -699,7 +714,7 @@ export async function contractInterfacesGenerator() {
   const contractName = await promptSelect(
     "Select contract to make interface for:",
     [
-      "Evvm",
+      "Core",
       "NameService",
       "P2PSwap",
       "Staking",
@@ -715,8 +730,8 @@ export async function contractInterfacesGenerator() {
 
   let contracts: ContractFileMetadata[] = [
     {
-      contractName: "Evvm",
-      folderName: "evvm",
+      contractName: "Core",
+      folderName: "core",
     },
     {
       contractName: "NameService",
@@ -829,7 +844,7 @@ export async function contractInterfacesGenerator() {
 
 export async function contractTesting() {
   const contractName: string = await promptSelect("Select contract to test:", [
-    "EVVM",
+    "Core",
     "NameService",
     "P2PSwap",
     "Staking",

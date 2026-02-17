@@ -23,14 +23,14 @@ import "forge-std/console2.sol";
 
 import {Constants} from "test/Constants.sol";
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     Erc191TestBuilder
 } from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
@@ -38,24 +38,22 @@ import {
     Estimator
 } from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
 import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
+    CoreStorage
+} from "@evvm/testnet-contracts/contracts/core/lib/CoreStorage.sol";
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 import {
     Treasury
 } from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
 import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
 import {
     P2PSwapStructs
-} from "@evvm/testnet-contracts/contracts/p2pSwap/lib/P2PSwapStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
-    
-
     function addBalance(address user, address token, uint256 amount) private {
-        evvm.addBalance(user, token, amount);
+        core.addBalance(user, token, amount);
     }
 
     /// @notice Creates an order for testing purposes
@@ -68,12 +66,12 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM,
-        bool priorityFlag
+        uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 amountA: amountA,
@@ -83,7 +81,9 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -101,18 +101,19 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         (v, r, s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
-                nonceEVVM,
-                priorityFlag,
-                address(p2pSwap)
+                address(p2pSwap),
+                noncePay,
+                true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -124,9 +125,8 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             orderData,
             signatureP2P,
             priorityFee,
-            nonceEVVM,
-            priorityFlag,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
@@ -140,12 +140,15 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
-        uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        uint256 noncePay = 0;
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         (uint256 market, uint256 orderId) = createOrder(
             COMMON_USER_STAKER,
@@ -156,8 +159,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM,
-            priorityFlag
+            noncePay
         );
 
         nonceP2PSwap = 5453;
@@ -168,7 +170,9 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForCancelOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenA, // tokenA twice here
@@ -185,6 +189,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         P2PSwapStructs.MetadataCancelOrder memory orderData = P2PSwapStructs
             .MetadataCancelOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 orderId: orderId,
@@ -194,18 +199,19 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
-                nonceEVVM,
-                priorityFlag,
-                address(p2pSwap)
+                address(p2pSwap),
+                noncePay,
+                true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -217,17 +223,16 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             orderData,
             priorityFee,
-            nonceEVVM,
-            priorityFlag,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0
         );
-        assertEq(evvm.getBalance(address(p2pSwap), ETHER_ADDRESS), amountA);
+        assertEq(core.getBalance(address(p2pSwap), ETHER_ADDRESS), amountA);
     }
 
     function test__unit_revert__cancelOrder_invalidNonce() external {
@@ -237,12 +242,16 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
-        uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        uint256 noncePay = 0;
+        
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         (uint256 market, uint256 orderId) = createOrder(
             COMMON_USER_STAKER,
@@ -253,8 +262,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM,
-            priorityFlag
+            noncePay
         );
 
         // nonceP2PSwap = 5453; // we don't change the nonce, thus reverting
@@ -265,7 +273,9 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForCancelOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -282,6 +292,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         P2PSwapStructs.MetadataCancelOrder memory orderData = P2PSwapStructs
             .MetadataCancelOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 orderId: orderId,
@@ -291,18 +302,19 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
-                nonceEVVM,
-                priorityFlag,
-                address(p2pSwap)
+                address(p2pSwap),
+                noncePay,
+                true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -314,17 +326,16 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             orderData,
             priorityFee,
-            nonceEVVM,
-            priorityFlag,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0
         );
-        assertEq(evvm.getBalance(address(p2pSwap), ETHER_ADDRESS), amountA);
+        assertEq(core.getBalance(address(p2pSwap), ETHER_ADDRESS), amountA);
     }
 
     function test__unit_revert__cancelOrder_invalidOrder() external {
@@ -334,8 +345,8 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0;
-        uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        uint256 noncePay = 0;
+        
 
         // Fund user1 with amountA
         addBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS, amountA);
@@ -343,7 +354,9 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForCancelOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -360,6 +373,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         P2PSwapStructs.MetadataCancelOrder memory orderData = P2PSwapStructs
             .MetadataCancelOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 orderId: 1,
@@ -369,18 +383,19 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
-                nonceEVVM,
-                priorityFlag,
-                address(p2pSwap)
+                address(p2pSwap),
+                noncePay,
+                true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -392,9 +407,8 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             orderData,
             priorityFee,
-            nonceEVVM,
-            priorityFlag,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
     }
@@ -407,8 +421,8 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         uint256 amountA = 0.001 ether;
         uint256 amountB = 0.01 ether;
         uint256 priorityFee = 0.0001 ether;
-        uint256 nonceEVVM = 0;
-        bool priorityFlag = false;
+        uint256 noncePay = 0;
+        
 
         // Fund user1 with amountA + priorityFee
         addBalance(
@@ -416,7 +430,11 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             ETHER_ADDRESS,
             amountA + (priorityFee * 2)
         );
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         (uint256 market, uint256 orderId) = createOrder(
             COMMON_USER_STAKER,
@@ -427,8 +445,7 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             amountA,
             amountB,
             priorityFee,
-            nonceEVVM,
-            priorityFlag
+            noncePay
         );
 
         nonceP2PSwap = 5453;
@@ -439,7 +456,9 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForCancelOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -456,18 +475,19 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
-                nonceEVVM, // we use the same nonce here
-                priorityFlag,
-                address(p2pSwap)
+                address(p2pSwap),
+                noncePay, // we use the same nonce here
+                true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -479,26 +499,26 @@ contract unitTestRevert_P2PSwap_cancelOrder is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             P2PSwapStructs.MetadataCancelOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 orderId: orderId,
                 signature: signatureP2P
             }),
             priorityFee,
-            nonceEVVM,
-            priorityFlag,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             priorityFee
         );
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
+            core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee
         );
-        assertEq(evvm.getBalance(address(p2pSwap), ETHER_ADDRESS), amountA);
+        assertEq(core.getBalance(address(p2pSwap), ETHER_ADDRESS), amountA);
     }
 }

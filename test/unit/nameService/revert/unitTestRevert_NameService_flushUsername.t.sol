@@ -24,19 +24,17 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
-import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
-import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+    NameServiceError
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_flushUsername is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -49,55 +47,60 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
     string constant CUSTOM_METADATA_VALUE_2 = "test>2";
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             1,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+            ),
+            address(0),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             )
         );
 
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             CUSTOM_METADATA_VALUE_0,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
-            ),
-            true
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
+            )
         );
 
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             CUSTOM_METADATA_VALUE_1,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
-            ),
-            true
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6
+            )
         );
 
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             CUSTOM_METADATA_VALUE_2,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
-            ),
-            true
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8
+            )
         );
     }
 
@@ -109,7 +112,7 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         private
         returns (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToFlushUsername(usernameToFlushCustomMetadata) +
@@ -122,58 +125,63 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         totalPriorityFeeAmount = priorityFeeAmount;
     }
 
-    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_evvmID() external {
+    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_evvmID()
+        external
+    {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
-        uint256 nonceNameService = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 nonce = 110010011;
+        uint256 noncePay = 1001;
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForFlushUsername(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
+                address(nameService),
                 USERNAME,
-                nonceNameService
+                address(0),
+                nonce
             )
         );
-        bytes memory signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
+        bytes memory signatureNameService = Erc191TestBuilder
+            .buildERC191Signature(v, r, s);
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToFlushUsername(USERNAME),
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            address(nameService)
+            address(nameService),
+            noncePay,
+            true
         );
 
-        (address userBefore, uint256 expireDateBefore) = nameService
+        (address userBefore, uint256 expirationDateBefore) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         assertEq(
@@ -182,13 +190,13 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "Username owner should remain the same after failed flushUsername"
         );
         assertEq(
-            expireDate,
-            expireDateBefore,
+            expirationDate,
+            expirationDateBefore,
             "Username expire date should remain the same after failed flushUsername"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -197,48 +205,50 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_signer() external {
+    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_signer()
+        external
+    {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
-        uint256 nonceNameService = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 nonce = 110010011;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_flushUsername(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
-        (address userBefore, uint256 expireDateBefore) = nameService
+        (address userBefore, uint256 expirationDateBefore) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         assertEq(
@@ -247,13 +257,13 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "Username owner should remain the same after failed flushUsername"
         );
         assertEq(
-            expireDate,
-            expireDateBefore,
+            expirationDate,
+            expirationDateBefore,
             "Username expire date should remain the same after failed flushUsername"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -262,48 +272,50 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_username() external {
+    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_username()
+        external
+    {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
-        uint256 nonceNameService = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 nonce = 110010011;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different username 🢃 */
                 "differentUsername",
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
-        (address userBefore, uint256 expireDateBefore) = nameService
+        (address userBefore, uint256 expirationDateBefore) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         assertEq(
@@ -312,13 +324,13 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "Username owner should remain the same after failed flushUsername"
         );
         assertEq(
-            expireDate,
-            expireDateBefore,
+            expirationDate,
+            expirationDateBefore,
             "Username expire date should remain the same after failed flushUsername"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -327,48 +339,50 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_nonce() external {
+    function test__unit_revert__flushUsername__InvalidSignatureOnNameService_nonce()
+        external
+    {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
-        uint256 nonceNameService = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 nonce = 110010011;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 /* 🢃 different nonce 🢃 */
-                nonceNameService + 1,
+                nonce + 1,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
-        (address userBefore, uint256 expireDateBefore) = nameService
+        (address userBefore, uint256 expirationDateBefore) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         assertEq(
@@ -377,13 +391,13 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "Username owner should remain the same after failed flushUsername"
         );
         assertEq(
-            expireDate,
-            expireDateBefore,
+            expirationDate,
+            expirationDateBefore,
             "Username expire date should remain the same after failed flushUsername"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -392,50 +406,55 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_revert__flushUsername__UserIsNotOwnerOfIdentity() external {
+    function test__unit_revert__flushUsername__UserIsNotOwnerOfIdentity()
+        external
+    {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
-                        /* 🢃 non owner address 🢃 */
-        ) = _addBalance(COMMON_USER_NO_STAKER_2, USERNAME, 0.0001 ether);
+        ) = /* 🢃 non owner address 🢃 */ _addBalance(
+                COMMON_USER_NO_STAKER_2,
+                USERNAME,
+                0.0001 ether
+            );
 
-        uint256 nonceNameService = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 nonce = 110010011;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_flushUsername(
                 /* 🢃 non owner address 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
-        (address userBefore, uint256 expireDateBefore) = nameService
+        (address userBefore, uint256 expirationDateBefore) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.UserIsNotOwnerOfIdentity.selector);
+        vm.expectRevert(NameServiceError.UserIsNotOwnerOfIdentity.selector);
         nameService.flushUsername(
             /* 🢃 non owner address 🢃 */
             COMMON_USER_NO_STAKER_2.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         assertEq(
@@ -444,13 +463,13 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "Username owner should remain the same after failed flushUsername"
         );
         assertEq(
-            expireDate,
-            expireDateBefore,
+            expirationDate,
+            expirationDateBefore,
             "Username expire date should remain the same after failed flushUsername"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -458,7 +477,6 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "User balance should remain the same after failed flushUsername"
         );
     }
-
 
     function test__unit_revert__flushUsername__OwnershipExpired() external {
         /* 🢃 advance time to expire ownership 🢃 */
@@ -468,41 +486,41 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
-        uint256 nonceNameService = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 nonce = 110010011;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
-        (address userBefore, uint256 expireDateBefore) = nameService
+        (address userBefore, uint256 expirationDateBefore) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.OwnershipExpired.selector);
+        vm.expectRevert(NameServiceError.OwnershipExpired.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         assertEq(
@@ -511,13 +529,13 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "Username owner should remain the same after failed flushUsername"
         );
         assertEq(
-            expireDate,
-            expireDateBefore,
+            expirationDate,
+            expirationDateBefore,
             "Username expire date should remain the same after failed flushUsername"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -529,10 +547,11 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
     function test__unit_revert__flushUsername__IdentityIsNotAUsername()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "testrevert",
             67,
+            address(0),
             uint256(
                 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00
             )
@@ -551,41 +570,41 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, invalidUsername, 0.0001 ether);
 
-        uint256 nonceNameService = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 nonce = 110010011;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 invalidUsername,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
-        (address userBefore, uint256 expireDateBefore) = nameService
+        (address userBefore, uint256 expirationDateBefore) = nameService
             .getIdentityBasicMetadata(invalidUsername);
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.IdentityIsNotAUsername.selector);
+        vm.expectRevert(NameServiceError.IdentityIsNotAUsername.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             invalidUsername,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(invalidUsername);
 
         assertEq(
@@ -594,13 +613,13 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "Username owner should remain the same after failed flushUsername"
         );
         assertEq(
-            expireDate,
-            expireDateBefore,
+            expirationDate,
+            expirationDateBefore,
             "Username expire date should remain the same after failed flushUsername"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -609,51 +628,50 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-
-    function test__unit_revert__flushUsername__AsyncNonceAlreadyUsed() external {
+    function test__unit_revert__flushUsername_NonceAlreadyUsed() external {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
         /* 🢃 nonce already used 🢃 */
-        uint256 nonceNameService = uint256(
-            0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+        uint256 nonce = uint256(
+            0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
         );
-        uint256 nonceEVVM = 1001;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
-        (address userBefore, uint256 expireDateBefore) = nameService
+        (address userBefore, uint256 expirationDateBefore) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         assertEq(
@@ -662,13 +680,13 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "Username owner should remain the same after failed flushUsername"
         );
         assertEq(
-            expireDate,
-            expireDateBefore,
+            expirationDate,
+            expirationDateBefore,
             "Username expire date should remain the same after failed flushUsername"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -677,50 +695,51 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_revert__flushUsername__InvalidSignature_fromEvvm() external {
+    function test__unit_revert__flushUsername__InvalidSignature_fromEvvm()
+        external
+    {
         (
             uint256 totalAmountFlush,
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.0001 ether);
 
-        uint256 nonceNameService = 110010011;
-        uint256 nonceEVVM = 1001;
+        uint256 nonce = 110010011;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
-                /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1,
-                /* 🢃 different priorityFlag 🢃 */
-                false
+                /* 🢃 different noncePay 🢃 */
+                noncePay + 1
             );
 
-        (address userBefore, uint256 expireDateBefore) = nameService
+        (address userBefore, uint256 expirationDateBefore) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         assertEq(
@@ -729,13 +748,13 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "Username owner should remain the same after failed flushUsername"
         );
         assertEq(
-            expireDate,
-            expireDateBefore,
+            expirationDate,
+            expirationDateBefore,
             "Username expire date should remain the same after failed flushUsername"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -744,43 +763,44 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
         );
     }
 
-    function test__unit_revert__flushUsername__InsufficientBalance_fromEvvm() external {
-
-        uint256 nonceNameService = 110010011;
-        uint256 nonceEVVM = 1001;
+    function test__unit_revert__flushUsername__InsufficientBalance_fromEvvm()
+        external
+    {
+        uint256 nonce = 110010011;
+        uint256 noncePay = 1001;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_flushUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 0,
-                nonceEVVM,
-                true
+                noncePay
             );
 
-        (address userBefore, uint256 expireDateBefore) = nameService
+        (address userBefore, uint256 expirationDateBefore) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         nameService.flushUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             0,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(USERNAME);
 
         assertEq(
@@ -789,13 +809,13 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "Username owner should remain the same after failed flushUsername"
         );
         assertEq(
-            expireDate,
-            expireDateBefore,
+            expirationDate,
+            expirationDateBefore,
             "Username expire date should remain the same after failed flushUsername"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -803,5 +823,4 @@ contract unitTestRevert_NameService_flushUsername is Test, Constants {
             "User balance should remain the same after failed flushUsername"
         );
     }
-    
 }

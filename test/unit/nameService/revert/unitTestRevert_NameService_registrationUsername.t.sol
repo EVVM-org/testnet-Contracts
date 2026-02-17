@@ -23,23 +23,21 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
-import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
-import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+    NameServiceError
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function executeBeforeSetUp() internal override {
-        evvm.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
     }
 
     function _addBalance(
@@ -50,7 +48,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         private
         returns (uint256 registrationPrice, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceOfRegistration(username) + priorityFeeAmount
@@ -63,10 +61,11 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_evvmID()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
+            address(0),
             111
         );
 
@@ -84,9 +83,11 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRegistrationUsername(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(core),
                 "test",
                 777,
+                address(0),
                 222
             )
         );
@@ -97,40 +98,41 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
+                address(core),
                 address(nameService),
                 "",
                 PRINCIPAL_TOKEN_ADDRESS,
                 nameService.getPriceOfRegistration("test"),
                 totalPriorityFeeAmount,
+                address(nameService),
                 222,
-                true,
-                address(nameService)
+                true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "test",
             777,
+            address(0),
             222,
             signatureNameService,
             totalPriorityFeeAmount,
             222,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -149,10 +151,11 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_signer()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
+            address(0),
             111
         );
 
@@ -165,16 +168,16 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_registrationUsername(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 "test",
                 777,
+                address(0),
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -183,17 +186,17 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             "test",
             777,
+            address(0),
             10101,
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -212,10 +215,11 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_username()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
+            address(0),
             111
         );
 
@@ -228,16 +232,16 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different username 🢃 */
                 "invalid",
                 777,
+                address(0),
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -246,17 +250,17 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             "test",
             777,
+            address(0),
             10101,
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -272,13 +276,14 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         assertEq(expirationDate, 0, "username expiration date should be zero");
     }
 
-    function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_clowNumber()
+    function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_lockNumber()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
+            address(0),
             111
         );
 
@@ -291,16 +296,16 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
-                /* 🢃 different clowNumber 🢃 */
+                /* 🢃 different lockNumber 🢃 */
                 888,
+                address(0),
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -309,17 +314,17 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             "test",
             777,
+            address(0),
             10101,
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -338,10 +343,11 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InvalidSignatureOnNameService_nameServiceNonce()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
+            address(0),
             111
         );
 
@@ -354,16 +360,16 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
                 777,
+                address(0),
                 /* 🢃 different nameServiceNonce 🢃 */
                 67,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -372,17 +378,17 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             COMMON_USER_NO_STAKER_1.Address,
             "test",
             777,
+            address(0),
             10101,
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -402,10 +408,11 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         external
     {
         /* 🢂 username with invalid character '@' 🢀 */
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "@test",
             777,
+            address(0),
             111
         );
 
@@ -418,34 +425,34 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "@test",
                 777,
+                address(0),
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        vm.expectRevert(ErrorsLib.InvalidUsername.selector);
+        vm.expectRevert(NameServiceError.InvalidUsername.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "@test",
             777,
+            address(0),
             10101,
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -464,12 +471,15 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__UsernameAlreadyRegistered()
         external
     {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             "test",
+            444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -478,10 +488,11 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
             )
         );
 
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
+            address(0),
             111
         );
 
@@ -494,34 +505,34 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
                 777,
+                address(0),
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        vm.expectRevert(ErrorsLib.UsernameAlreadyRegistered.selector);
+        vm.expectRevert(NameServiceError.UsernameAlreadyRegistered.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "test",
             777,
+            address(0),
             10101,
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -538,13 +549,14 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         );
     }
 
-    function test__unit_revert__registrationUsername__AsyncNonceAlreadyUsed()
+    function test__unit_revert__registrationUsername_NonceAlreadyUsed()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
+            address(0),
             111
         );
 
@@ -557,36 +569,36 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
                 777,
+                address(0),
                 /* 🢃 reuse nonce 111 🢃 */
                 111,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "test",
             777,
+            address(0),
             /* 🢃 reuse nonce 111 🢃 */
             111,
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -605,10 +617,11 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InvalidSignature_fromEvvm()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
+            address(0),
             111
         );
 
@@ -621,35 +634,35 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
                 777,
+                address(0),
                 10101,
                 totalPriorityFeeAmount,
                 /* 🢃 different evvm nonce 🢃 */
-                67,
-                true
+                67
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "test",
             777,
+            address(0),
             10101,
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -668,10 +681,11 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
     function test__unit_revert__registrationUsername__InsufficientBalance_fromEvvm()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
             777,
+            address(0),
             111
         );
 
@@ -680,7 +694,7 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
         uint256 registrationPrice = nameService.getPriceOfRegistration("test");
         uint256 totalPriorityFeeAmount = 0.001 ether;
 
-        evvm.addBalance(
+        core.addBalance(
             COMMON_USER_NO_STAKER_1.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceOfRegistration("test") / 2 + 0.001 ether
@@ -688,34 +702,34 @@ contract unitTestRevert_NameService_registrationUsername is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRegistrationUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_registrationUsername(
                 COMMON_USER_NO_STAKER_1,
                 "test",
                 777,
+                address(0),
                 10101,
                 totalPriorityFeeAmount,
-                10001,
-                true
+                10001
             );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         nameService.registrationUsername(
             COMMON_USER_NO_STAKER_1.Address,
             "test",
             777,
+            address(0),
             10101,
             signatureNameService,
             totalPriorityFeeAmount,
             10001,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),

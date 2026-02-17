@@ -24,14 +24,14 @@ import "forge-std/console2.sol";
 
 import {Constants} from "test/Constants.sol";
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
 import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     Erc191TestBuilder
 } from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
@@ -39,24 +39,24 @@ import {
     Estimator
 } from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
 import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
+    CoreStorage
+} from "@evvm/testnet-contracts/contracts/core/lib/CoreStorage.sol";
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 import {
     Treasury
 } from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
 import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
 import {
     P2PSwapStructs
-} from "@evvm/testnet-contracts/contracts/p2pSwap/lib/P2PSwapStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
     
 
     function addBalance(address user, address token, uint256 amount) private {
-        evvm.addBalance(user, token, amount);
+        core.addBalance(user, token, amount);
     }
 
     /// @notice Creates an order for testing purposes
@@ -69,12 +69,12 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM,
-        bool priorityFlag
+        uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 amountA: amountA,
@@ -84,7 +84,9 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -102,18 +104,19 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         (v, r, s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
-                nonceEVVM,
-                priorityFlag,
-                address(p2pSwap)
+                address(p2pSwap),
+                noncePay,
+                true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -125,9 +128,8 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
             orderData,
             signatureP2P,
             priorityFee,
-            nonceEVVM,
-            priorityFlag,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 

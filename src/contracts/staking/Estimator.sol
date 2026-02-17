@@ -2,6 +2,12 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 pragma solidity ^0.8.0;
+
+import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
+import {
+    StakingStructs
+} from "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+
 /**
 MM""""""""`M            dP   oo                       dP                     
 MM  mmmmmmmM            88                            88                     
@@ -11,39 +17,14 @@ MM  MMMMMMMM       88   88   88 88  88  88 88.  .88   88   88.  .88 88
 MM        .M `88888P'   dP   dP dP  dP  dP `88888P8   dP   `88888P' dP       
 MMMMMMMMMMMM                                                                 
                                                                             
- * @title Staking Estimator Contract
+ * @title EVVM Staking Estimator
  * @author Mate Labs
- * @notice Contract responsible for calculating staking rewards based on time-weighted averages
- * @dev This contract works in conjunction with the Staking contract to calculate
- * and distribute rewards to stakers based on their participation during epochs.
- *
- * Key Responsibilities:
- * - Track epoch metadata (pool, total staked, time periods)
- * - Calculate time-weighted average stake for each user
- * - Determine proportional reward distribution
- *
- * Reward Calculation Formula:
- * The time-weighted average is calculated as:
- *   Sum of [(ti - ti-1) x Si-1] x 10^18 / (tFinal - tStart)
- *
- * Where:
- * - ti: timestamp of current iteration
- * - ti-1: timestamp of previous iteration
- * - Si-1: stake amount at previous iteration
- * - tFinal: epoch end timestamp
- * - tStart: epoch start timestamp
- *
- * Access Control:
- * - onlyStaking: Functions callable only by the Staking contract
- * - onlyActivator: Functions callable only by the epoch activator
- * - onlyAdmin: Administrative functions for governance
+ * @notice Calculates validator rewards using time-weighted averages.
+ * @dev Collaborates with Staking.sol to track epochs, total staked amounts, and distribution pools. 
+ *      Features time-delayed governance for administrative changes.
  */
 
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    StakingStructs
-} from "@evvm/testnet-contracts/contracts/staking/lib/StakingStructs.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+
 
 contract Estimator {
     /// @dev Struct for managing address change proposals with time delay
@@ -81,7 +62,7 @@ contract Estimator {
     /// @dev Proposal system for activator address changes
     AddressTypeProposal private activator;
     /// @dev Proposal system for EVVM address changes
-    AddressTypeProposal private evvmAddress;
+    AddressTypeProposal private coreAddress;
     /// @dev Proposal system for Staking contract address changes
     AddressTypeProposal private addressStaking;
     /// @dev Proposal system for admin address changes
@@ -119,18 +100,18 @@ contract Estimator {
      * @notice Initializes the Estimator contract
      * @dev Sets up all required addresses for contract operation
      * @param _activator Address authorized to start new epochs
-     * @param _evvmAddress Address of the EVVM core contract
+     * @param _coreAddress Address of the EVVM core contract
      * @param _addressStaking Address of the Staking contract
      * @param _admin Address with administrative privileges
      */
     constructor(
         address _activator,
-        address _evvmAddress,
+        address _coreAddress,
         address _addressStaking,
         address _admin
     ) {
         activator.actual = _activator;
-        evvmAddress.actual = _evvmAddress;
+        coreAddress.actual = _coreAddress;
         addressStaking.actual = _addressStaking;
         admin.actual = _admin;
     }
@@ -273,23 +254,23 @@ contract Estimator {
     /// @notice Proposes a new EVVM address with 1-day time delay
     /// @param _proposal Address of the proposed new EVVM contract
     function setEvvmAddressProposal(address _proposal) external onlyAdmin {
-        evvmAddress.proposal = _proposal;
-        evvmAddress.timeToAccept = block.timestamp + 1 days;
+        coreAddress.proposal = _proposal;
+        coreAddress.timeToAccept = block.timestamp + 1 days;
     }
 
     /// @notice Cancels the pending EVVM address proposal
     function cancelEvvmAddressProposal() external onlyAdmin {
-        evvmAddress.proposal = address(0);
-        evvmAddress.timeToAccept = 0;
+        coreAddress.proposal = address(0);
+        coreAddress.timeToAccept = 0;
     }
 
     /// @notice Accepts the EVVM address proposal after time delay
     function acceptEvvmAddressProposal() external onlyAdmin {
-        if (block.timestamp < evvmAddress.timeToAccept) revert();
+        if (block.timestamp < coreAddress.timeToAccept) revert();
 
-        evvmAddress.actual = evvmAddress.proposal;
-        evvmAddress.proposal = address(0);
-        evvmAddress.timeToAccept = 0;
+        coreAddress.actual = coreAddress.proposal;
+        coreAddress.proposal = address(0);
+        coreAddress.timeToAccept = 0;
     }
 
     /// @notice Proposes a new Staking contract address with 1-day time delay
@@ -370,12 +351,12 @@ contract Estimator {
 
     /// @notice Returns the EVVM address proposal information
     /// @return Complete AddressTypeProposal struct for EVVM
-    function getEvvmAddressMetadata()
+    function getCoreAddressMetadata()
         external
         view
         returns (AddressTypeProposal memory)
     {
-        return evvmAddress;
+        return coreAddress;
     }
 
     /// @notice Returns the Staking contract address proposal information

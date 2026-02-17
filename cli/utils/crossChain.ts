@@ -41,30 +41,33 @@ export async function checkCrossChainSupport(
     );
 
     if (
-      promptYesNo(
+      await promptYesNo(
         `${colors.yellow}Do you want to add Hyperlane data? (y/n):${colors.reset}`
       )
     ) {
-      auxChainData.Hyperlane.DomainId = promptNumber(
+      auxChainData.Hyperlane.DomainId = await promptNumber(
         `${colors.yellow}Enter Hyperlane Domain ID for ${
           chainData!.Chain
         } (${chainId}):${colors.reset} `
       );
-      auxChainData.Hyperlane.MailboxAddress = promptAddress(
+      auxChainData.Hyperlane.MailboxAddress = await promptAddress(
         `${colors.yellow}Enter Hyperlane Mailbox Address for ${
           chainData!.Chain
         } (${chainId}):${colors.reset} `
       );
     } else {
       if (
-        !promptYesNo(
+        !(await promptYesNo(
           `${colors.yellow}Do you want to continue without adding Hyperlane data? (y/n):${colors.reset}`
-        )
+        ))
       ) {
         criticalErrorCustom(
           `User opted to not add Hyperlane data.`,
           `Cross-chain deployment cannot proceed without it.`
         );
+      } else {
+        auxChainData.Hyperlane.DomainId = 0;
+        auxChainData.Hyperlane.MailboxAddress = "0x0000000000000000000000000000000000000000";
       }
     }
   }
@@ -77,30 +80,33 @@ export async function checkCrossChainSupport(
     );
 
     if (
-      promptYesNo(
+      await promptYesNo(
         `${colors.yellow}Do you want to add LayerZero data? (y/n):${colors.reset}`
       )
     ) {
-      auxChainData.LayerZero.EId = promptNumber(
+      auxChainData.LayerZero.EId = await promptNumber(
         `${colors.yellow}Enter LayerZero EId for ${
           chainData!.Chain
         } (${chainId}):${colors.reset} `
       );
-      auxChainData.LayerZero.EndpointAddress = promptAddress(
+      auxChainData.LayerZero.EndpointAddress = await promptAddress(
         `${colors.yellow}Enter LayerZero Endpoint Address for ${
           chainData!.Chain
         } (${chainId}):${colors.reset} `
       );
     } else {
       if (
-        !promptYesNo(
+        !(await promptYesNo(
           `${colors.yellow}Do you want to continue without adding LayerZero data? (y/n):${colors.reset}`
-        )
+        ))
       ) {
         criticalErrorCustom(
           `User opted to not add LayerZero data.`,
           `Cross-chain deployment cannot proceed without it.`
         );
+      } else {
+        auxChainData.LayerZero.EId = 0;
+        auxChainData.LayerZero.EndpointAddress = "0x0000000000000000000000000000000000000000";
       }
     }
   }
@@ -113,35 +119,39 @@ export async function checkCrossChainSupport(
     );
 
     if (
-      promptYesNo(
+      await promptYesNo(
         `${colors.yellow}Do you want to add Axelar data? (y/n):${colors.reset}`
       )
     ) {
-      auxChainData.Axelar.ChainName = promptString(
+      auxChainData.Axelar.ChainName = await promptString(
         `${colors.yellow}Enter Axelar Chain Name for ${
           chainData!.Chain
         } (${chainId}):${colors.reset} `
       );
-      auxChainData.Axelar.Gateway = promptAddress(
+      auxChainData.Axelar.Gateway = await promptAddress(
         `${colors.yellow}Enter Axelar Gateway Address for ${
           chainData!.Chain
         } (${chainId}):${colors.reset} `
       );
-      auxChainData.Axelar.GasService = promptAddress(
+      auxChainData.Axelar.GasService = await promptAddress(
         `${colors.yellow}Enter Axelar Gas Service Address for ${
           chainData!.Chain
         } (${chainId}):${colors.reset} `
       );
     } else {
       if (
-        !promptYesNo(
+        !(await promptYesNo(
           `${colors.yellow}Do you want to continue without adding Axelar data? (y/n):${colors.reset}`
-        )
+        ))
       ) {
         criticalErrorCustom(
           `User opted to not add Axelar data.`,
           `Cross-chain deployment cannot proceed without it.`
         );
+      } else {
+        auxChainData.Axelar.ChainName = "";
+        auxChainData.Axelar.Gateway = "0x0000000000000000000000000000000000000000";
+        auxChainData.Axelar.GasService = "0x0000000000000000000000000000000000000000";
       }
     }
   }

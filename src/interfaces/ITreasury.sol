@@ -4,11 +4,12 @@ pragma solidity ^0.8.0;
 
 interface ITreasury {
     error DepositAmountMustBeGreaterThanZero();
+    error DepositCoinWithToken();
     error InsufficientBalance();
     error InvalidDepositAmount();
     error PrincipalTokenIsNotWithdrawable();
 
     function deposit(address token, uint256 amount) external payable;
-    function getEvvmAddress() external view returns (address);
+    function getCoreAddress() external view returns (address);
     function withdraw(address token, uint256 amount) external;
 }

@@ -2,12 +2,14 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 pragma solidity ^0.8.0;
 
-library StakingStructs {
+library ProposalStructs {
     struct BoolTypeProposal {
         bool flag;
         uint256 timeToAccept;
     }
+}
 
+library StakingStructs {
     struct HistoryMetadata {
         bytes32 transactionType;
         uint256 amount;
@@ -21,17 +23,18 @@ interface IStaking {
     error AddressMismatch();
     error AddressMustWaitToFullUnstake();
     error AddressMustWaitToStakeAgain();
-    error AsyncNonceAlreadyUsed();
-    error InvalidSignatureOnStaking();
+    error LimitPresaleStakersExceeded();
     error PresaleStakingDisabled();
+    error PublicStakingDisabled();
     error SenderIsNotAdmin();
     error SenderIsNotGoldenFisher();
+    error SenderIsNotProposedAdmin();
     error ServiceDoesNotFulfillCorrectStakingAmount(uint256 requiredAmount);
     error ServiceDoesNotStakeInSameTx();
+    error TimeToAcceptProposalNotReached();
     error UserIsNotPresaleStaker();
     error UserPresaleStakerLimitExceeded();
 
-    function _setupEstimatorAndEvvm(address _estimator, address _evvm) external;
     function acceptNewAdmin() external;
     function acceptNewEstimator() external;
     function acceptNewGoldenFisher() external;
@@ -50,16 +53,16 @@ interface IStaking {
         external
         view
         returns (StakingStructs.HistoryMetadata memory);
-    function getAllowPresaleStaking() external view returns (StakingStructs.BoolTypeProposal memory);
-    function getAllowPublicStaking() external view returns (StakingStructs.BoolTypeProposal memory);
+    function getAllowPresaleStaking() external view returns (ProposalStructs.BoolTypeProposal memory);
+    function getAllowPublicStaking() external view returns (ProposalStructs.BoolTypeProposal memory);
+    function getCoreAddress() external view returns (address);
     function getEstimatorAddress() external view returns (address);
     function getEstimatorProposal() external view returns (address);
-    function getEvvmAddress() external view returns (address);
     function getEvvmID() external view returns (uint256);
     function getGoldenFisher() external view returns (address);
     function getGoldenFisherProposal() external view returns (address);
     function getIfUsedAsyncNonce(address user, uint256 nonce) external view returns (bool);
-    function getMateAddress() external pure returns (address);
+    function getMateAddress() external view returns (address);
     function getOwner() external view returns (address);
     function getPresaleStaker(address _account) external view returns (bool, uint256);
     function getPresaleStakerCount() external view returns (uint256);
@@ -78,7 +81,8 @@ interface IStaking {
             uint256 idToOverwriteUserHistory,
             uint256 timestampToBeOverwritten
         );
-    function goldenStaking(bool isStaking, uint256 amountOfStaking, bytes memory signature_EVVM) external;
+    function goldenStaking(bool isStaking, uint256 amountOfStaking, bytes memory signaturePay) external;
+    function initializeSystemContracts(address _estimator, address _core) external;
     function prepareChangeAllowPresaleStaking() external;
     function prepareChangeAllowPublicStaking() external;
     function prepareServiceStaking(uint256 amountOfStaking) external;
@@ -86,12 +90,12 @@ interface IStaking {
     function presaleStaking(
         address user,
         bool isStaking,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFee_EVVM,
-        uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
-        bytes memory signature_EVVM
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function priceOfStaking() external pure returns (uint256);
     function proposeAdmin(address _newAdmin) external;
@@ -102,12 +106,12 @@ interface IStaking {
         address user,
         bool isStaking,
         uint256 amountOfStaking,
+        address originExecutor,
         uint256 nonce,
         bytes memory signature,
-        uint256 priorityFee_EVVM,
-        uint256 nonce_EVVM,
-        bool priorityFlag_EVVM,
-        bytes memory signature_EVVM
+        uint256 priorityFeePay,
+        uint256 noncePay,
+        bytes memory signaturePay
     ) external;
     function rejectProposalAdmin() external;
     function rejectProposalEstimator() external;

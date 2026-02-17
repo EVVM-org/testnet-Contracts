@@ -23,19 +23,17 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
-import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
-import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+    NameServiceError
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -47,29 +45,34 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
     string constant CUSTOM_METADATA_VALUE_0 = "test>0";
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             1,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
+            ),
+            address(0),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             )
         );
 
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
             CUSTOM_METADATA_VALUE_0,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
-            ),
-            true
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
+            )
         );
     }
 
@@ -83,7 +86,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             uint256 totalPriorityFeeAmount
         )
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToRemoveCustomMetadata() + priorityFeeAmount
@@ -102,50 +105,52 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
-        uint256 nonceNameService = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 nonce = 10001;
+        uint256 noncePay = 20002;
 
         bytes memory signatureNameService;
-        bytes memory signatureEVVM;
+        bytes memory signaturePay;
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRemoveCustomMetadata(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
+                address(nameService),
                 USERNAME,
                 INDEX_CUSTOM_METADATA,
-                nonceNameService
+                address(0),
+                nonce
             )
         );
 
         signatureNameService = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        signatureEVVM = _execute_makeSignaturePay(
+        signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToRemoveCustomMetadata(),
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            address(nameService)
+            address(nameService),
+            noncePay,
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             INDEX_CUSTOM_METADATA,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -166,7 +171,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -183,36 +188,36 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
-        uint256 nonceNameService = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 nonce = 10001;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_removeCustomMetadata(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
                 INDEX_CUSTOM_METADATA,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             INDEX_CUSTOM_METADATA,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -233,7 +238,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -250,36 +255,36 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
-        uint256 nonceNameService = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 nonce = 10001;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different username 🢃 */
                 "differentUsername",
                 INDEX_CUSTOM_METADATA,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             INDEX_CUSTOM_METADATA,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -300,7 +305,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -317,36 +322,36 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
-        uint256 nonceNameService = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 nonce = 10001;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 /* 🢃 different key 🢃 */
                 INDEX_CUSTOM_METADATA + 1,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             INDEX_CUSTOM_METADATA,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -367,7 +372,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -384,36 +389,36 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
-        uint256 nonceNameService = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 nonce = 10001;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 INDEX_CUSTOM_METADATA,
+                address(0),
                 /* 🢃 different nonce 🢃 */
-                nonceNameService + 1,
+                nonce + 1,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             INDEX_CUSTOM_METADATA,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -434,7 +439,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -454,37 +459,37 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
                 0.0001 ether
             );
 
-        uint256 nonceNameService = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 nonce = 10001;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_removeCustomMetadata(
                 /* 🢃 different user 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
                 INDEX_CUSTOM_METADATA,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.UserIsNotOwnerOfIdentity.selector);
+        vm.expectRevert(NameServiceError.UserIsNotOwnerOfIdentity.selector);
         nameService.removeCustomMetadata(
             /* 🢃 different user 🢃 */
             COMMON_USER_NO_STAKER_2.Address,
             USERNAME,
             INDEX_CUSTOM_METADATA,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -505,7 +510,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -514,7 +519,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
     }
 
-    function test__unit_revert__removeCustomMetadata__AsyncNonceAlreadyUsed()
+    function test__unit_revert__removeCustomMetadata_NonceAlreadyUsed()
         external
     {
         (
@@ -523,37 +528,37 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
         /* 🢃 reused nonce 🢃 */
-        uint256 nonceNameService = uint256(
-            0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+        uint256 nonce = uint256(
+            0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
         );
-        uint256 nonceEVVM = 20002;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 INDEX_CUSTOM_METADATA,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             INDEX_CUSTOM_METADATA,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -574,7 +579,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -589,37 +594,37 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
-        uint256 nonceNameService = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 nonce = 10001;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 /* 🢃 invalid key 🢃 */
                 INDEX_CUSTOM_METADATA + 1,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidKey.selector);
+        vm.expectRevert(NameServiceError.InvalidKey.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             /* 🢃 invalid key 🢃 */
             INDEX_CUSTOM_METADATA + 1,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -631,7 +636,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -648,38 +653,37 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, 0.0001 ether);
 
-        uint256 nonceNameService = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 nonce = 10001;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 INDEX_CUSTOM_METADATA,
-                nonceNameService,
+                address(0),
+                nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
-                /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1,
-                /* 🢃 different priorityFlag 🢃 */
-                false
+                /* 🢃 different noncePay 🢃 */
+                noncePay + 1
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             INDEX_CUSTOM_METADATA,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -700,7 +704,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -712,35 +716,35 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
     function test__unit_revert__removeCustomMetadata__InsufficientBalance_fromEvvm()
         external
     {
-        uint256 nonceNameService = 10001;
-        uint256 nonceEVVM = 20002;
+        uint256 nonce = 10001;
+        uint256 noncePay = 20002;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRemoveCustomMetadataSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_removeCustomMetadata(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
                 INDEX_CUSTOM_METADATA,
-                nonceNameService,
+                address(0),
+                nonce,
                 1 ether,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         nameService.removeCustomMetadata(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
             INDEX_CUSTOM_METADATA,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             1 ether,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -761,7 +765,7 @@ contract unitTestRevert_NameService_removeCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),

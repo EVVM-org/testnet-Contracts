@@ -16,13 +16,13 @@ import { registerCross } from "./registerCross";
  * Determines whether to execute a single-chain registration (registerSingle)
  * or a cross-chain registration (registerCross) based on the --crossChain flag.
  *
- * Single-chain registration: Registers EVVM contract only
- * Cross-chain registration: Registers EVVM and external treasury station
+ * Single-chain registration: Registers Core contract only
+ * Cross-chain registration: Registers Core and external treasury station
  *
  * @param {string[]} args - Command-line arguments passed to registration
  * @param {any} options - Command options including:
  *   - crossChain: Boolean flag to enable cross-chain mode
- *   - evvmAddress: Address of deployed EVVM contract
+ *   - coreAddress: Address of deployed Core contract
  *   - treasuryExternalStationAddress: Address of external station (cross-chain only)
  *   - walletName/walletNameHost/walletNameExternal: Wallet accounts
  *   - useCustomEthRpc: Use custom Ethereum Sepolia RPC for registry

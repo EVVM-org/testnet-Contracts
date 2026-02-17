@@ -18,6 +18,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract fuzzTest_NameService_acceptOffer is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -34,21 +35,23 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         AccountData user;
         string username;
         uint256 offerID;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bool priorityEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -62,7 +65,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             priorityFeeAmount
@@ -76,33 +79,37 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         uint128 amountToOffer;
         uint8 expirationDateDays;
         // acceptOffer parameters
-        uint256 nonceNameService;
+        uint256 nonce;
         uint32 priorityFeeAmountEVVM;
         uint256 nonceAsyncEVVM;
-        bool priorityFlagEVVM;
+        bool isAsyncExecEVVM;
     }
 
     function test__fuzz__acceptOffer__noStaker(Input memory input) external {
         vm.assume(input.amountToOffer > 0);
-        vm.assume(input.expirationDateDays > 0);
+        vm.assume(input.expirationDateDays > 1);
         vm.assume(
-            input.nonceNameService <
+            input.nonce <
                 uint256(
-                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
                 )
         );
         vm.assume(
             input.nonceAsyncEVVM <
                 uint256(
-                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
                 )
         );
+        vm.assume(
+            input.nonceAsyncEVVM != input.nonce
+        );
 
-        uint offerID = _execute_makeMakeOffer(
+        uint offerID = _executeFn_nameService_makeOffer(
             USER,
             USERNAME,
-            block.timestamp + (uint256(input.expirationDateDays) * 1 days),
             input.amountToOffer,
+            block.timestamp + (uint256(input.expirationDateDays) * 1 days),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -110,7 +117,6 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
-            true,
             GOLDEN_STAKER
         );
 
@@ -118,46 +124,41 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             user: USER_USERNAME_OWNER,
             username: USERNAME,
             offerID: offerID,
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             signatureNameService: "",
             priorityFee: uint256(input.priorityFeeAmountEVVM),
-            nonceEVVM: input.priorityFlagEVVM
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            priorityEVVM: input.priorityFlagEVVM,
-            signatureEVVM: ""
+            noncePay: input.nonceAsyncEVVM,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+            params.signaturePay
+        ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
-            params.offerID,
-            params.nonceNameService,
+            params.offerID,address(0),
+            params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
+            params.noncePay
         );
 
         vm.prank(FISHER_NO_STAKER.Address);
         nameService.acceptOffer(
             params.user.Address,
             params.username,
-            params.offerID,
-            params.nonceNameService,
+            params.offerID,address(0),
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -166,7 +167,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             block.timestamp + (uint256(input.expirationDateDays) * 1 days),
             "Error: offer expiration date should remain the same"
         );
@@ -188,7 +189,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error staker: balance incorrectly changed"
         );
@@ -196,25 +197,30 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
 
     function test__fuzz__acceptOffer__staker(Input memory input) external {
         vm.assume(input.amountToOffer > 0);
-        vm.assume(input.expirationDateDays > 0);
+        vm.assume(input.expirationDateDays > 1);
         vm.assume(
-            input.nonceNameService <
+            input.nonce <
                 uint256(
-                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
                 )
         );
         vm.assume(
             input.nonceAsyncEVVM <
                 uint256(
-                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
                 )
         );
 
-        uint offerID = _execute_makeMakeOffer(
+        vm.assume(
+            input.nonceAsyncEVVM != input.nonce
+        );
+
+        uint offerID = _executeFn_nameService_makeOffer(
             USER,
             USERNAME,
-            block.timestamp + (uint256(input.expirationDateDays) * 1 days),
             input.amountToOffer,
+            block.timestamp + (uint256(input.expirationDateDays) * 1 days),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -222,7 +228,6 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
-            true,
             GOLDEN_STAKER
         );
 
@@ -230,46 +235,42 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             user: USER_USERNAME_OWNER,
             username: USERNAME,
             offerID: offerID,
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             signatureNameService: "",
             priorityFee: uint256(input.priorityFeeAmountEVVM),
-            nonceEVVM: input.priorityFlagEVVM
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            priorityEVVM: input.priorityFlagEVVM,
-            signatureEVVM: ""
+            noncePay: input.nonceAsyncEVVM,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeAcceptOfferSignatures(
+            params.signaturePay
+        ) = _executeSig_nameService_acceptOffer(
             params.user,
             params.username,
-            params.offerID,
-            params.nonceNameService,
+            params.offerID,address(0),
+            params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
+            params.noncePay
         );
+
 
         vm.prank(FISHER_STAKER.Address);
         nameService.acceptOffer(
             params.user.Address,
             params.username,
-            params.offerID,
-            params.nonceNameService,
+            params.offerID,address(0),
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(params.username, params.offerID);
 
         assertEq(
@@ -278,7 +279,7 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
             "Error: offerer address should be zeroed out"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             block.timestamp + (uint256(input.expirationDateDays) * 1 days),
             "Error: offer expiration date should remain the same"
         );
@@ -300,8 +301,8 @@ contract fuzzTest_NameService_acceptOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((evvm.getRewardAmount()) +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((core.getRewardAmount()) +
                 (((uint256(checkData.amount) * 1) / 199) / 4) +
                 uint256(params.priorityFee)),
             "Error staker: balance incorrectly changed"

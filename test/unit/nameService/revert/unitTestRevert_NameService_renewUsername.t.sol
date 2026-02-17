@@ -23,19 +23,17 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
-import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
-import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+    NameServiceError
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_renewUsername is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
@@ -45,12 +43,15 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
     string constant USERNAME = "test";
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             USERNAME,
+            444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -68,7 +69,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         private
         returns (uint256 totalRenewalAmount, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.seePriceToRenew(username) + priorityFeeAmount
@@ -86,31 +87,33 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
 
-        uint256 nonceNameService = 11111111;
-        uint256 nonceEVVM = 22222222;
+        uint256 nonce = 11111111;
+        uint256 noncePay = 22222222;
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForRenewUsername(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
+                address(nameService),
                 USERNAME,
-                nonceNameService
+                address(0),
+                nonce
             )
         );
         bytes memory signatureNameService = Erc191TestBuilder
             .buildERC191Signature(v, r, s);
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_1,
             address(nameService),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.seePriceToRenew(USERNAME),
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            address(nameService)
+            address(nameService),
+            noncePay,
+            true
         );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -118,16 +121,16 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -142,7 +145,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -159,20 +162,20 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
 
-        uint256 nonceNameService = 11111111;
-        uint256 nonceEVVM = 22222222;
+        uint256 nonce = 11111111;
+        uint256 noncePay = 22222222;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_renewUsername(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -180,16 +183,16 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -204,7 +207,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -221,20 +224,20 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
 
-        uint256 nonceNameService = 11111111;
-        uint256 nonceEVVM = 22222222;
+        uint256 nonce = 11111111;
+        uint256 noncePay = 22222222;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 /* 🢃 different username 🢃 */
                 "differentUsername",
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -242,16 +245,16 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -266,7 +269,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -283,20 +286,20 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
 
-        uint256 nonceNameService = 11111111;
-        uint256 nonceEVVM = 22222222;
+        uint256 nonce = 11111111;
+        uint256 noncePay = 22222222;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
+                address(0),
                 /* 🢃 different nonce 🢃 */
-                nonceNameService + 67,
+                nonce + 67,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -304,16 +307,16 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -328,7 +331,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -340,10 +343,11 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
     function test__unit_revert__renewUsername__IdentityIsNotAUsername()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_1,
             "testrevert",
             67,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffA
             )
@@ -362,39 +366,39 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, invalidUsername, 0.001 ether);
 
-        uint256 nonceNameService = 11111111;
-        uint256 nonceEVVM = 22222222;
+        uint256 nonce = 11111111;
+        uint256 noncePay = 22222222;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 invalidUsername,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.IdentityIsNotAUsername.selector);
+        vm.expectRevert(NameServiceError.IdentityIsNotAUsername.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             invalidUsername,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -411,20 +415,20 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_2, USERNAME, 0.001 ether);
 
-        uint256 nonceNameService = 11111111;
-        uint256 nonceEVVM = 22222222;
+        uint256 nonce = 11111111;
+        uint256 noncePay = 22222222;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_renewUsername(
                 /* 🢃 different user 🢃 */
                 COMMON_USER_NO_STAKER_2,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -432,17 +436,17 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.UserIsNotOwnerOfIdentity.selector);
+        vm.expectRevert(NameServiceError.UserIsNotOwnerOfIdentity.selector);
         nameService.renewUsername(
             /* 🢃 different user 🢃 */
             COMMON_USER_NO_STAKER_2.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -457,7 +461,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -469,23 +473,26 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
     function test__unit_revert__renewUsername__RenewalTimeLimitExceeded()
         external
     {
-        uint256 nonceLoop = uint256(
+        uint256 nonceLoopA = uint256(
             0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000
         );
+        uint256 nonceLoopB = uint256(
+            0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000
+        );
         for (uint256 i = 0; i < 99; i++) {
-            evvm.addBalance(
+            core.addBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS,
                 nameService.seePriceToRenew(USERNAME)
             );
 
-            _execute_makeRenewUsername(
+            _executeFn_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
-                nonceLoop + i,
+                address(0),
+                nonceLoopA + i,
                 0,
-                nonceLoop + i,
-                true,
+                nonceLoopB + i,
                 COMMON_USER_NO_STAKER_3
             );
         }
@@ -495,19 +502,19 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
 
-        uint256 nonceNameService = 11111111;
-        uint256 nonceEVVM = 22222222;
+        uint256 nonce = 11;
+        uint256 noncePay = 22;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -515,16 +522,16 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.RenewalTimeLimitExceeded.selector);
+        vm.expectRevert(NameServiceError.RenewalTimeLimitExceeded.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -539,7 +546,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -548,29 +555,28 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
     }
 
-
-    function test__unit_revert__renewUsername__AsyncNonceAlreadyUsed() external {
+    function test__unit_revert__renewUsername_NonceAlreadyUsed() external {
         (
             uint256 totalRenewalAmount,
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
 
         /* 🢃 reused nonce 🢃 */
-        uint256 nonceNameService = uint256(
+        uint256 nonce = uint256(
             0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
         );
-        uint256 nonceEVVM = 22222222;
+        uint256 noncePay = 22222222;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 totalPriorityFeeAmount,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -578,16 +584,16 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -602,7 +608,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -611,29 +617,29 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
     }
 
-    
-    function test__unit_revert__renewUsername__InvalidSignature_fromEvvm() external {
+    function test__unit_revert__renewUsername__InvalidSignature_fromEvvm()
+        external
+    {
         (
             uint256 totalRenewalAmount,
             uint256 totalPriorityFeeAmount
         ) = _addBalance(COMMON_USER_NO_STAKER_1, USERNAME, 0.001 ether);
 
-        uint256 nonceNameService = 11111111;
-        uint256 nonceEVVM = 22222222;
+        uint256 nonce = 11111111;
+        uint256 noncePay = 22222222;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 /* 🢃 different totalPriorityFee 🢃 */
                 totalPriorityFeeAmount + 50,
-                /* 🢃 different nonceEVVM 🢃 */
-                nonceEVVM + 1,
-                /* 🢃 different priorityFlag 🢃 */
-                false
+                /* 🢃 different noncePay 🢃 */
+                noncePay + 1
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -641,16 +647,16 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             totalPriorityFeeAmount,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -665,7 +671,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -674,21 +680,22 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
     }
 
-    function test__unit_revert__renewUsername__InsufficientBalance_fromEvvm() external {
-
-        uint256 nonceNameService = 11111111;
-        uint256 nonceEVVM = 22222222;
+    function test__unit_revert__renewUsername__InsufficientBalance_fromEvvm()
+        external
+    {
+        uint256 nonce = 11111111;
+        uint256 noncePay = 22222222;
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_renewUsername(
                 COMMON_USER_NO_STAKER_1,
                 USERNAME,
-                nonceNameService,
+                address(0),
+                nonce,
                 0,
-                nonceEVVM,
-                true
+                noncePay
             );
 
         (, uint256 beforeUsernameExpirationTime) = nameService
@@ -696,16 +703,16 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         nameService.renewUsername(
             COMMON_USER_NO_STAKER_1.Address,
             USERNAME,
-            nonceNameService,
+            address(0),
+            nonce,
             signatureNameService,
             0,
-            nonceEVVM,
-            true,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
 
         vm.stopPrank();
@@ -720,7 +727,7 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -728,5 +735,4 @@ contract unitTestRevert_NameService_renewUsername is Test, Constants {
             "user balance should not change"
         );
     }
-    
 }

@@ -18,6 +18,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract fuzzTest_NameService_flushUsername is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -34,64 +35,66 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
     struct Params {
         AccountData user;
         string username;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bool priorityEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            44,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8
+            ),
+            address(0),
+            uint256(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
-            ),
-            uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6
             )
         );
 
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_1,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
-            ),
-            true
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4
+            )
         );
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_2,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
-            ),
-            true
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
+            )
         );
-        _execute_makeAddCustomMetadata(
+        _executeFn_nameService_addCustomMetadata(
             USER_USERNAME_OWNER,
             USERNAME,
             CUSTOM_METADATA_VALUE_3,
+            address(0),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
             uint256(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9
-            ),
-            true
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
+            )
         );
     }
 
@@ -103,7 +106,7 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
         private
         returns (uint256 totalAmountFlush, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToFlushUsername(usernameToFlushCustomMetadata) +
@@ -117,15 +120,15 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
     }
 
     struct Input {
-        uint256 nonceNameService;
+        uint256 nonce;
         uint32 priorityFee;
         uint256 nonceAsyncEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
     }
 
     function test__fuzz__flushUsername__noStaker(Input memory input) external {
         vm.assume(
-            input.nonceNameService <
+            input.nonce <
                 uint256(
                     0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000
                 )
@@ -138,31 +141,30 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
                 )
         );
 
+        vm.assume(input.nonceAsyncEVVM != input.nonce);
+
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             signatureNameService: "",
             priorityFee: uint256(input.priorityFee),
-            nonceEVVM: input.priorityEVVM
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(USER_USERNAME_OWNER.Address),
-            priorityEVVM: input.priorityEVVM,
-            signatureEVVM: ""
+            noncePay: input.nonceAsyncEVVM,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.username, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeFlushUsernameSignatures(
+            params.signaturePay
+        ) = _executeSig_nameService_flushUsername(
             params.user,
             params.username,
-            params.nonceNameService,
+            address(0),
+            params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
+            params.noncePay
         );
 
         uint256 amountOfSlotsBefore = nameService.getAmountOfCustomMetadata(
@@ -174,30 +176,30 @@ contract fuzzTest_NameService_flushUsername is Test, Constants {
         nameService.flushUsername(
             params.user.Address,
             params.username,
-            params.nonceNameService,
+            address(0),
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
 
         vm.stopPrank();
 
-        (address user, uint256 expireDate) = nameService
+        (address user, uint256 expirationDate) = nameService
             .getIdentityBasicMetadata(params.username);
 
         assertEq(user, address(0), "username owner should be flushed");
-        assertEq(expireDate, 0, "username expire date should be flushed");
+        assertEq(expirationDate, 0, "username expire date should be flushed");
 
         assertEq(
-            evvm.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "username owner balance should be zeroed"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            ((5 * evvm.getRewardAmount()) * amountOfSlotsBefore) +
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            ((5 * core.getRewardAmount()) * amountOfSlotsBefore) +
                 params.priorityFee,
             "fisher no staker balance should be increased correctly"
         );

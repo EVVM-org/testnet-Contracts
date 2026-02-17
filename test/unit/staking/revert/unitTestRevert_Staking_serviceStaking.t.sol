@@ -21,9 +21,11 @@ pragma abicoder v2;
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
-import "@evvm/testnet-contracts/contracts/staking/lib/ErrorsLib.sol";
+import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+import "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_Staking_serviceStaking is Test, Constants {
     MockContractToStake mockContract;
@@ -36,7 +38,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
         address user,
         uint256 stakingAmount
     ) private returns (uint256 totalOfMate) {
-        evvm.addBalance(
+        core.addBalance(
             user,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking() * stakingAmount)
@@ -48,7 +50,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
     function test__unit_revert__publicServiceStaking__prepareServiceStaking__AddressIsNotAService()
         external
     {
-        uint256 amountStakingBefore = evvm.getBalance(
+        uint256 amountStakingBefore = core.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -56,14 +58,14 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
         _addBalance(WILDCARD_USER.Address, 10);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.AddressIsNotAService.selector);
+        vm.expectRevert(StakingError.AddressIsNotAService.selector);
         staking.prepareServiceStaking(10);
         vm.stopPrank();
 
-        assert(!evvm.isAddressStaker(address(WILDCARD_USER.Address)));
+        assert(!core.isAddressStaker(address(WILDCARD_USER.Address)));
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 address(WILDCARD_USER.Address),
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -71,7 +73,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
             amountStakingBefore
         );
 
@@ -81,7 +83,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
     function test__unit_revert__publicServiceStaking__confirmServiceStaking__AddressIsNotAService()
         external
     {
-        uint256 amountStakingBefore = evvm.getBalance(
+        uint256 amountStakingBefore = core.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -89,14 +91,14 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
         uint256 amountStaking = _addBalance(WILDCARD_USER.Address, 10);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.AddressIsNotAService.selector);
+        vm.expectRevert(StakingError.AddressIsNotAService.selector);
         staking.confirmServiceStaking();
         vm.stopPrank();
 
-        assert(!evvm.isAddressStaker(address(WILDCARD_USER.Address)));
+        assert(!core.isAddressStaker(address(WILDCARD_USER.Address)));
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 address(WILDCARD_USER.Address),
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -104,7 +106,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
             amountStakingBefore
         );
 
@@ -114,7 +116,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
     function test__unit_revert__publicServiceStaking__confirmServiceStaking__ServiceDoesNotFulfillCorrectStakingAmount()
         external
     {
-        uint256 amountStakingBefore = evvm.getBalance(
+        uint256 amountStakingBefore = core.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -123,21 +125,21 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ErrorsLib.ServiceDoesNotFulfillCorrectStakingAmount.selector,
+                StakingError.ServiceDoesNotFulfillCorrectStakingAmount.selector,
                 (5 * staking.priceOfStaking())
             )
         );
         mockContract.stakeWithAmountDiscrepancy(10, 5);
 
-        assert(!evvm.isAddressStaker(address(mockContract)));
+        assert(!core.isAddressStaker(address(mockContract)));
 
         assertEq(
-            evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
             amountStaking
         );
 
         assertEq(
-            evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
             amountStakingBefore
         );
 
@@ -147,7 +149,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
     function test__unit_revert__publicServiceStaking__confirmServiceStaking__ServiceDoesNotStakeInSameTx()
         external
     {
-        uint256 amountStakingBefore = evvm.getBalance(
+        uint256 amountStakingBefore = core.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -158,18 +160,18 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
 
         skip(1);
 
-        vm.expectRevert(ErrorsLib.ServiceDoesNotStakeInSameTx.selector);
+        vm.expectRevert(StakingError.ServiceDoesNotStakeInSameTx.selector);
         mockContract.stakeJustConfirm();
 
-        assert(!evvm.isAddressStaker(address(mockContract)));
+        assert(!core.isAddressStaker(address(mockContract)));
 
         assertEq(
-            evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
             0
         );
 
         assertEq(
-            evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
             amountStakingBefore + amountStaking
         );
 
@@ -179,7 +181,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
     function test__unit_revert__publicServiceStaking__confirmServiceStaking__AddressMismatch()
         external
     {
-        uint256 amountStakingBefore = evvm.getBalance(
+        uint256 amountStakingBefore = core.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -194,18 +196,18 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
 
         mockContract.stakeJustInPartTwo(10);
 
-        vm.expectRevert(ErrorsLib.AddressMismatch.selector);
+        vm.expectRevert(StakingError.AddressMismatch.selector);
         auxMockContract.stakeJustConfirm();
 
-        assert(!evvm.isAddressStaker(address(mockContract)));
+        assert(!core.isAddressStaker(address(mockContract)));
 
         assertEq(
-            evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
             0
         );
 
         assertEq(
-            evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
             amountStakingBefore + amountStaking
         );
 
@@ -215,7 +217,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
     function test__unit_correct__publicServiceStaking__fullUnstake_AddressMustWaitToFullUnstake()
         external
     {
-        uint256 amountStakingBefore = evvm.getBalance(
+        uint256 amountStakingBefore = core.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -224,27 +226,27 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
 
         mockContract.stake(10);
 
-        assert(evvm.isAddressStaker(address(mockContract)));
+        assert(core.isAddressStaker(address(mockContract)));
 
         skip(staking.getSecondsToUnlockFullUnstaking() - 50);
 
-        vm.expectRevert(ErrorsLib.AddressMustWaitToFullUnstake.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToFullUnstake.selector);
         mockContract.unstake(10);
 
-        assert(evvm.isAddressStaker(address(mockContract)));
+        assert(core.isAddressStaker(address(mockContract)));
 
         assertEq(
-            evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
             0
         );
 
         assertEq(
-            evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
             amountStakingBefore + amountStaking
         );
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(address(mockContract))
             );
 
@@ -268,7 +270,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
         staking.acceptSetSecondsToUnlockStaking();
         vm.stopPrank();
 
-        uint256 amountStakingBefore = evvm.getBalance(
+        uint256 amountStakingBefore = core.getBalance(
             address(staking),
             PRINCIPAL_TOKEN_ADDRESS
         );
@@ -277,7 +279,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
 
         mockContract.stake(10);
 
-        assert(evvm.isAddressStaker(address(mockContract)));
+        assert(core.isAddressStaker(address(mockContract)));
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
@@ -285,23 +287,23 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
 
         skip(staking.getSecondsToUnlockStaking() - 10);
 
-        vm.expectRevert(ErrorsLib.AddressMustWaitToStakeAgain.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToStakeAgain.selector);
         mockContract.stake(10);
 
-        assert(!evvm.isAddressStaker(address(mockContract)));
+        assert(!core.isAddressStaker(address(mockContract)));
 
         assertEq(
-            evvm.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(address(mockContract), PRINCIPAL_TOKEN_ADDRESS),
             (staking.priceOfStaking() * 10)
         );
 
         assertEq(
-            evvm.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
-            amountStakingBefore + evvm.getRewardAmount()
+            core.getBalance(address(staking), PRINCIPAL_TOKEN_ADDRESS),
+            amountStakingBefore + core.getRewardAmount()
         );
 
-        Staking.HistoryMetadata[]
-            memory history = new Staking.HistoryMetadata[](
+        StakingStructs.HistoryMetadata[]
+            memory history = new StakingStructs.HistoryMetadata[](
                 staking.getSizeOfAddressHistory(address(mockContract))
             );
 
@@ -330,7 +332,7 @@ contract unitTestRevert_Staking_serviceStaking is Test, Constants {
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.AddressIsNotAService.selector);
+        vm.expectRevert(StakingError.AddressIsNotAService.selector);
         staking.serviceUnstaking(10);
         vm.stopPrank();
     }

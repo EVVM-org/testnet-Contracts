@@ -21,12 +21,12 @@ pragma abicoder v2;
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
-import "@evvm/testnet-contracts/contracts/staking/lib/ErrorsLib.sol";
+import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+import "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     function executeBeforeSetUp() internal override {
@@ -41,7 +41,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
         address user,
         uint256 stakingAmount
     ) private returns (uint256 amount) {
-        evvm.addBalance(
+        core.addBalance(
             user,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking() * stakingAmount)
@@ -58,18 +58,19 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(core),
                 address(staking),
                 "",
                 PRINCIPAL_TOKEN_ADDRESS,
                 amount,
                 0,
-                evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-                false,
-                address(staking)
+                address(staking),
+                core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
+                false
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -77,8 +78,8 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(ErrorsLib.SenderIsNotGoldenFisher.selector);
-        staking.goldenStaking(true, 1, signatureEVVM);
+        vm.expectRevert(StakingError.SenderIsNotGoldenFisher.selector);
+        staking.goldenStaking(true, 1, signaturePay);
 
         vm.stopPrank();
     }
@@ -88,16 +89,16 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     {
         _addBalance(GOLDEN_STAKER.Address, 10);
 
-        bytes memory signatureEVVMstake = _execute_makeGoldenStakingSignature(
+        bytes memory signaturePaystake = _executeSig_staking_goldenStaking(
             true,
             10
         );
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
-        staking.goldenStaking(true, 10, signatureEVVMstake);
+        staking.goldenStaking(true, 10, signaturePaystake);
 
-        vm.expectRevert(ErrorsLib.AddressMustWaitToFullUnstake.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToFullUnstake.selector);
 
         staking.goldenStaking(false, 10, "");
 
@@ -109,27 +110,27 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     {
         _addBalance(GOLDEN_STAKER.Address, 10);
 
-        bytes memory signatureEVVM1 = _execute_makeGoldenStakingSignature(
+        bytes memory signaturePay1 = _executeSig_staking_goldenStaking(
             true,
             10
         );
 
-        bytes memory signatureEVVM2 = _execute_makeGoldenStakingSignature(
+        bytes memory signaturePay2 = _executeSig_staking_goldenStaking(
             true,
             10
         );
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
-        staking.goldenStaking(true, 10, signatureEVVM1);
+        staking.goldenStaking(true, 10, signaturePay1);
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
         staking.goldenStaking(false, 10, "");
 
-        vm.expectRevert(ErrorsLib.AddressMustWaitToStakeAgain.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToStakeAgain.selector);
 
-        staking.goldenStaking(true, 10, signatureEVVM2);
+        staking.goldenStaking(true, 10, signaturePay2);
 
         vm.stopPrank();
     }
@@ -137,7 +138,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
     function test__unitRevert__goldenStaking__InvalidSignature_evvm() external {
         _addBalance(GOLDEN_STAKER.Address, 10);
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             GOLDEN_STAKER,
             address(staking),
             "",
@@ -147,15 +148,15 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
             10000000,
             /* 🢃 Different priorityFee (pf>0) 🢃 */
             100,
-            evvm.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
-            false,
-            address(staking)
+            address(staking),
+            core.getNextCurrentSyncNonce(GOLDEN_STAKER.Address),
+            false
         );
 
         vm.startPrank(GOLDEN_STAKER.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
-        staking.goldenStaking(true, 10, signatureEVVM);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
+        staking.goldenStaking(true, 10, signaturePay);
 
         vm.stopPrank();
     }

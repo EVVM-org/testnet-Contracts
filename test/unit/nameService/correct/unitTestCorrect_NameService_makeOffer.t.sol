@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract unitTestCorrect_NameService_makeOffer is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -36,12 +37,11 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         string username;
         uint256 expiratonDate;
         uint256 amount;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bool priorityEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function _addBalance(
@@ -52,7 +52,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         private
         returns (uint256 totalOfferAmount, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             offerAmount + priorityFeeAmount
@@ -62,12 +62,15 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -77,7 +80,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         );
     }
 
-    function test__unit_correct__preRegistrationUsername__noStaking_noPriorityFee_sync()
+    function test__unit_correct__preRegistrationUsername__noStaking_noPriorityFee()
         external
     {
         Params memory params = Params({
@@ -85,46 +88,45 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             username: USERNAME,
             expiratonDate: block.timestamp + 70 days,
             amount: 1.67 ether,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: false,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.amount, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            params.signaturePay
+        ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            address(0),
+            params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
+            params.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         nameService.makeOffer(
             params.user.Address,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            address(0),
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(USERNAME, 0);
 
         assertEq(
@@ -133,7 +135,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             "Error: offerer address not correct"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             params.expiratonDate,
             "Error: offer expiration date not correct"
         );
@@ -145,15 +147,15 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() +
                 ((params.amount * 125) / 100_000) +
                 params.priorityFee),
             "Error: fisherr balance not correct"
         );
     }
 
-    function test__unit_correct__preRegistrationUsername__noStaking_noPriorityFee_async()
+    function test__unit_correct__preRegistrationUsername__staking_noPriorityFee()
         external
     {
         Params memory params = Params({
@@ -161,46 +163,120 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             username: USERNAME,
             expiratonDate: block.timestamp + 70 days,
             amount: 1.67 ether,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            priorityEVVM: true,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.amount, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            params.signaturePay
+        ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            address(0),
+            params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
+            params.noncePay
+        );
+
+        vm.startPrank(FISHER_STAKER.Address);
+        nameService.makeOffer(
+            params.user.Address,
+            params.username,
+            params.amount,
+            params.expiratonDate,
+            address(0),
+            params.nonce,
+            params.signatureNameService,
+            params.priorityFee,
+            params.noncePay,
+            params.signaturePay
+        );
+        vm.stopPrank();
+
+        NameServiceStructs.OfferMetadata memory checkData = nameService
+            .getSingleOfferOfUsername(USERNAME, 0);
+
+        assertEq(
+            checkData.offerer,
+            params.user.Address,
+            "Error: offerer address not correct"
+        );
+        assertEq(
+            checkData.expirationDate,
+            params.expiratonDate,
+            "Error: offer expiration date not correct"
+        );
+
+        assertEq(
+            checkData.amount,
+            ((params.amount * 995) / 1000),
+            "Error: offer amount not correct"
+        );
+
+        assertEq(
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() +
+                ((params.amount * 125) / 100_000) +
+                params.priorityFee),
+            "Error: fisherr balance not correct"
+        );
+    }
+
+    function test__unit_correct__preRegistrationUsername__noStaking_priorityFee()
+        external
+    {
+        Params memory params = Params({
+            user: USER,
+            username: USERNAME,
+            expiratonDate: block.timestamp + 70 days,
+            amount: 1.67 ether,
+            nonce: 123,
+            signatureNameService: "",
+            priorityFee: 0.00001 ether,
+            noncePay: 67,
+            signaturePay: ""
+        });
+
+        _addBalance(params.user, params.amount, params.priorityFee);
+
+        (
+            params.signatureNameService,
+            params.signaturePay
+        ) = _executeSig_nameService_makeOffer(
+            params.user,
+            params.username,
+            params.amount,
+            params.expiratonDate,
+            address(0),
+            params.nonce,
+            params.priorityFee,
+            params.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
         nameService.makeOffer(
             params.user.Address,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            address(0),
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(USERNAME, 0);
 
         assertEq(
@@ -209,7 +285,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             "Error: offerer address not correct"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             params.expiratonDate,
             "Error: offer expiration date not correct"
         );
@@ -221,15 +297,15 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() +
                 ((params.amount * 125) / 100_000) +
                 params.priorityFee),
             "Error: fisherr balance not correct"
         );
     }
 
-    function test__unit_correct__preRegistrationUsername__staking_noPriorityFee_sync()
+    function test__unit_correct__preRegistrationUsername__staking_priorityFee()
         external
     {
         Params memory params = Params({
@@ -237,46 +313,45 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             username: USERNAME,
             expiratonDate: block.timestamp + 70 days,
             amount: 1.67 ether,
-            nonceNameService: 123,
+            nonce: 123,
             signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: false,
-            signatureEVVM: ""
+            priorityFee: 0.00001 ether,
+            noncePay: 67,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.amount, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            params.signaturePay
+        ) = _executeSig_nameService_makeOffer(
             params.user,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            address(0),
+            params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
+            params.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
         nameService.makeOffer(
             params.user.Address,
             params.username,
-            params.expiratonDate,
             params.amount,
-            params.nonceNameService,
+            params.expiratonDate,
+            address(0),
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(USERNAME, 0);
 
         assertEq(
@@ -285,7 +360,7 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
             "Error: offerer address not correct"
         );
         assertEq(
-            checkData.expireDate,
+            checkData.expirationDate,
             params.expiratonDate,
             "Error: offer expiration date not correct"
         );
@@ -297,388 +372,8 @@ contract unitTestCorrect_NameService_makeOffer is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
-                ((params.amount * 125) / 100_000) +
-                params.priorityFee),
-            "Error: fisherr balance not correct"
-        );
-    }
-
-    function test__unit_correct__preRegistrationUsername__staking_noPriorityFee_async()
-        external
-    {
-        Params memory params = Params({
-            user: USER,
-            username: USERNAME,
-            expiratonDate: block.timestamp + 70 days,
-            amount: 1.67 ether,
-            nonceNameService: 123,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: 67,
-            priorityEVVM: true,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params.user, params.amount, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
-            params.user,
-            params.username,
-            params.expiratonDate,
-            params.amount,
-            params.nonceNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-        nameService.makeOffer(
-            params.user.Address,
-            params.username,
-            params.expiratonDate,
-            params.amount,
-            params.nonceNameService,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername(USERNAME, 0);
-
-        assertEq(
-            checkData.offerer,
-            params.user.Address,
-            "Error: offerer address not correct"
-        );
-        assertEq(
-            checkData.expireDate,
-            params.expiratonDate,
-            "Error: offer expiration date not correct"
-        );
-
-        assertEq(
-            checkData.amount,
-            ((params.amount * 995) / 1000),
-            "Error: offer amount not correct"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
-                ((params.amount * 125) / 100_000) +
-                params.priorityFee),
-            "Error: fisherr balance not correct"
-        );
-    }
-
-    function test__unit_correct__preRegistrationUsername__noStaking_priorityFee_sync()
-        external
-    {
-        Params memory params = Params({
-            user: USER,
-            username: USERNAME,
-            expiratonDate: block.timestamp + 70 days,
-            amount: 1.67 ether,
-            nonceNameService: 123,
-            signatureNameService: "",
-            priorityFee: 0.00001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: false,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params.user, params.amount, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
-            params.user,
-            params.username,
-            params.expiratonDate,
-            params.amount,
-            params.nonceNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-        nameService.makeOffer(
-            params.user.Address,
-            params.username,
-            params.expiratonDate,
-            params.amount,
-            params.nonceNameService,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername(USERNAME, 0);
-
-        assertEq(
-            checkData.offerer,
-            params.user.Address,
-            "Error: offerer address not correct"
-        );
-        assertEq(
-            checkData.expireDate,
-            params.expiratonDate,
-            "Error: offer expiration date not correct"
-        );
-
-        assertEq(
-            checkData.amount,
-            ((params.amount * 995) / 1000),
-            "Error: offer amount not correct"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
-                ((params.amount * 125) / 100_000) +
-                params.priorityFee),
-            "Error: fisherr balance not correct"
-        );
-    }
-
-    function test__unit_correct__preRegistrationUsername__noStaking_priorityFee_async()
-        external
-    {
-        Params memory params = Params({
-            user: USER,
-            username: USERNAME,
-            expiratonDate: block.timestamp + 70 days,
-            amount: 1.67 ether,
-            nonceNameService: 123,
-            signatureNameService: "",
-            priorityFee: 0.00001 ether,
-            nonceEVVM: 67,
-            priorityEVVM: true,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params.user, params.amount, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
-            params.user,
-            params.username,
-            params.expiratonDate,
-            params.amount,
-            params.nonceNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-        nameService.makeOffer(
-            params.user.Address,
-            params.username,
-            params.expiratonDate,
-            params.amount,
-            params.nonceNameService,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername(USERNAME, 0);
-
-        assertEq(
-            checkData.offerer,
-            params.user.Address,
-            "Error: offerer address not correct"
-        );
-        assertEq(
-            checkData.expireDate,
-            params.expiratonDate,
-            "Error: offer expiration date not correct"
-        );
-
-        assertEq(
-            checkData.amount,
-            ((params.amount * 995) / 1000),
-            "Error: offer amount not correct"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
-                ((params.amount * 125) / 100_000) +
-                params.priorityFee),
-            "Error: fisherr balance not correct"
-        );
-    }
-
-    function test__unit_correct__preRegistrationUsername__staking_priorityFee_sync()
-        external
-    {
-        Params memory params = Params({
-            user: USER,
-            username: USERNAME,
-            expiratonDate: block.timestamp + 70 days,
-            amount: 1.67 ether,
-            nonceNameService: 123,
-            signatureNameService: "",
-            priorityFee: 0.00001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(USER.Address),
-            priorityEVVM: false,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params.user, params.amount, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
-            params.user,
-            params.username,
-            params.expiratonDate,
-            params.amount,
-            params.nonceNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-        nameService.makeOffer(
-            params.user.Address,
-            params.username,
-            params.expiratonDate,
-            params.amount,
-            params.nonceNameService,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername(USERNAME, 0);
-
-        assertEq(
-            checkData.offerer,
-            params.user.Address,
-            "Error: offerer address not correct"
-        );
-        assertEq(
-            checkData.expireDate,
-            params.expiratonDate,
-            "Error: offer expiration date not correct"
-        );
-
-        assertEq(
-            checkData.amount,
-            ((params.amount * 995) / 1000),
-            "Error: offer amount not correct"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
-                ((params.amount * 125) / 100_000) +
-                params.priorityFee),
-            "Error: fisherr balance not correct"
-        );
-    }
-
-    function test__unit_correct__preRegistrationUsername__staking_priorityFee_async()
-        external
-    {
-        Params memory params = Params({
-            user: USER,
-            username: USERNAME,
-            expiratonDate: block.timestamp + 70 days,
-            amount: 1.67 ether,
-            nonceNameService: 123,
-            signatureNameService: "",
-            priorityFee: 0.00001 ether,
-            nonceEVVM: 67,
-            priorityEVVM: true,
-            signatureEVVM: ""
-        });
-
-        _addBalance(params.user, params.amount, params.priorityFee);
-
-        (
-            params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
-            params.user,
-            params.username,
-            params.expiratonDate,
-            params.amount,
-            params.nonceNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-        nameService.makeOffer(
-            params.user.Address,
-            params.username,
-            params.expiratonDate,
-            params.amount,
-            params.nonceNameService,
-            params.signatureNameService,
-            params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
-        );
-        vm.stopPrank();
-
-        NameService.OfferMetadata memory checkData = nameService
-            .getSingleOfferOfUsername(USERNAME, 0);
-
-        assertEq(
-            checkData.offerer,
-            params.user.Address,
-            "Error: offerer address not correct"
-        );
-        assertEq(
-            checkData.expireDate,
-            params.expiratonDate,
-            "Error: offer expiration date not correct"
-        );
-
-        assertEq(
-            checkData.amount,
-            ((params.amount * 995) / 1000),
-            "Error: offer amount not correct"
-        );
-
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            (evvm.getRewardAmount() +
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            (core.getRewardAmount() +
                 ((params.amount * 125) / 100_000) +
                 params.priorityFee),
             "Error: fisherr balance not correct"

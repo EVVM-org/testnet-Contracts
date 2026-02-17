@@ -3,6 +3,56 @@
 
 pragma solidity ^0.8.0;
 
+import {
+    CrossChainTreasuryError as Error
+} from "@evvm/testnet-contracts/library/errors/CrossChainTreasuryError.sol";
+import {
+    TreasuryCrossChainHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/TreasuryCrossChainHashUtils.sol";
+import {
+    HostChainStationStructs as Structs
+} from "@evvm/testnet-contracts/library/structs/HostChainStationStructs.sol";
+import {
+    PayloadUtils
+} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/PayloadUtils.sol";
+
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
+
+import {
+    AdvancedStrings
+} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
+import {
+    MessagingParams,
+    MessagingReceipt
+} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
+import {
+    OApp,
+    Origin,
+    MessagingFee
+} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
+import {
+    OAppOptionsType3
+} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OAppOptionsType3.sol";
+import {
+    OptionsBuilder
+} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
+import {
+    AxelarExecutable
+} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
+import {
+    IAxelarGasService
+} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol";
+import {
+    IInterchainGasEstimation
+} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IInterchainGasEstimation.sol";
+
+
 /**
  _____                                                       
 /__   \_ __ ___  __ _ ___ _   _ _ __ _   _                   
@@ -27,95 +77,41 @@ pragma solidity ^0.8.0;
  / __  / /_/ (__  / /_   / /__/ / / / /_/ / / / / /
 /_/ /_/\____/____/\__/   \___/_/ /_/\__,_/_/_/ /_/ 
                                                    
- * @title Treasury Cross-Chain Host Station Contract
+ * @title EVVM Host Chain Station
  * @author Mate labs
+ * @notice Manages cross-chain withdrawals from the EVVM host chain to an external chain.
+ * @dev Multi-protocol bridge supporting Hyperlane, LayerZero V2, and Axelar. 
+ *      Integrates with Core.sol for balance updates and uses Fisher-specific nonces.
  */
 
-import {IERC20} from "@evvm/testnet-contracts/library/primitives/IERC20.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
-import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/ErrorsLib.sol";
-import {
-    HostChainStationStructs
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/HostChainStationStructs.sol";
-
-import {
-    SignatureUtils
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/SignatureUtils.sol";
-import {
-    PayloadUtils
-} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/PayloadUtils.sol";
-
-import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
-
-import {
-    MessagingParams,
-    MessagingReceipt
-} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
-import {
-    OApp,
-    Origin,
-    MessagingFee
-} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
-import {
-    OAppOptionsType3
-} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OAppOptionsType3.sol";
-import {
-    OptionsBuilder
-} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
-import {
-    AxelarExecutable
-} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
-import {
-    IAxelarGasService
-} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol";
-import {
-    IInterchainGasEstimation
-} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IInterchainGasEstimation.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-
-contract TreasuryHostChainStation is
-    HostChainStationStructs,
-    OApp,
-    OAppOptionsType3,
-    AxelarExecutable
-{
+contract TreasuryHostChainStation is OApp, OAppOptionsType3, AxelarExecutable {
     /// @notice EVVM core contract for balance operations
     /// @dev Used to integrate with EVVM's balance management and token operations
-    Evvm evvm;
+    Core core;
 
     /// @notice Admin address management with time-delayed proposals
     /// @dev Stores current admin, proposed admin, and acceptance timestamp
-    AddressTypeProposal admin;
+    ProposalStructs.AddressTypeProposal admin;
 
     /// @notice Fisher executor address management with time-delayed proposals
     /// @dev Fisher executor can process cross-chain bridge transactions
-    AddressTypeProposal fisherExecutor;
+    ProposalStructs.AddressTypeProposal fisherExecutor;
 
     /// @notice Hyperlane protocol configuration for cross-chain messaging
     /// @dev Contains domain ID, external chain address, and mailbox contract address
-    HyperlaneConfig hyperlane;
+    Structs.HyperlaneConfig hyperlane;
 
     /// @notice LayerZero protocol configuration for omnichain messaging
     /// @dev Contains endpoint ID, external chain address, and endpoint contract address
-    LayerZeroConfig layerZero;
+    Structs.LayerZeroConfig layerZero;
 
     /// @notice Axelar protocol configuration for cross-chain communication
     /// @dev Contains chain name, external chain address, gas service, and gateway addresses
-    AxelarConfig axelar;
+    Structs.AxelarConfig axelar;
 
     /// @notice Pending proposal for changing external chain addresses across all protocols
     /// @dev Used for coordinated updates to external chain addresses with time delay
-    ChangeExternalChainAddressParams externalChainAddressChangeProposal;
-
-    /// @notice Tracks the next nonce for Fisher bridge operations per user address
-    /// @dev Prevents replay attacks in Fisher bridge transactions
-    mapping(address => uint256) nextFisherExecutionNonce;
+    Structs.ChangeExternalChainAddressParams externalChainAddressChangeProposal;
 
     /// @notice LayerZero execution options with gas limit configuration
     /// @dev Pre-built options for LayerZero message execution (200k gas limit)
@@ -166,40 +162,40 @@ contract TreasuryHostChainStation is
 
     /// @notice Initializes the Host Chain Station with EVVM integration and cross-chain protocols
     /// @dev Sets up Hyperlane, LayerZero, and Axelar configurations for multi-protocol support
-    /// @param _evvmAddress Address of the EVVM core contract for balance operations
+    /// @param _coreAddress Address of the EVVM core contract for balance operations
     /// @param _admin Initial admin address with full administrative privileges
     /// @param _crosschainConfig Configuration struct containing all cross-chain protocol settings
     constructor(
-        address _evvmAddress,
+        address _coreAddress,
         address _admin,
-        CrosschainConfig memory _crosschainConfig
+        Structs.CrosschainConfig memory _crosschainConfig
     )
         OApp(_crosschainConfig.layerZero.endpointAddress, _admin)
         Ownable(_admin)
         AxelarExecutable(_crosschainConfig.axelar.gatewayAddress)
     {
-        evvm = Evvm(_evvmAddress);
+        core = Core(_coreAddress);
 
-        admin = AddressTypeProposal({
+        admin = ProposalStructs.AddressTypeProposal({
             current: _admin,
             proposal: address(0),
             timeToAccept: 0
         });
-        hyperlane = HyperlaneConfig({
+        hyperlane = Structs.HyperlaneConfig({
             externalChainStationDomainId: _crosschainConfig
                 .hyperlane
                 .externalChainStationDomainId,
             externalChainStationAddress: "",
             mailboxAddress: _crosschainConfig.hyperlane.mailboxAddress
         });
-        layerZero = LayerZeroConfig({
+        layerZero = Structs.LayerZeroConfig({
             externalChainStationEid: _crosschainConfig
                 .layerZero
                 .externalChainStationEid,
             externalChainStationAddress: "",
             endpointAddress: _crosschainConfig.layerZero.endpointAddress
         });
-        axelar = AxelarConfig({
+        axelar = Structs.AxelarConfig({
             externalChainStationChainName: _crosschainConfig
                 .axelar
                 .externalChainStationChainName,
@@ -234,25 +230,63 @@ contract TreasuryHostChainStation is
         fuseSetExternalChainAddress = 0x00;
     }
 
-    /// @notice Withdraws tokens from EVVM balance and sends to external chain via selected protocol
-    /// @dev Validates balance, deducts from EVVM, and bridges via Hyperlane/LayerZero/Axelar
-    /// @param toAddress Recipient address on the external chain
-    /// @param token Token contract address (cannot be Principal Token)
-    /// @param amount Amount to withdraw and send to external chain
-    /// @param protocolToExecute Protocol selector: 0x01=Hyperlane, 0x02=LayerZero, 0x03=Axelar
+    /**
+     * @notice Withdraws tokens via selected protocol
+     * @dev Deducts Evvm balance then bridges to external chain
+     *
+     * Process:
+     * - Validate: Check Evvm.getBalance >= amount
+     * - Deduct: executerEVVM(false) removes balance
+     * - Encode: PayloadUtils.encodePayload
+     * - Route: Protocol-specific message dispatch
+     * - Receive: External chain receives tokens
+     *
+     * Protocol Routing:
+     * - 0x01: Hyperlane (mailbox.dispatch + quote fee)
+     * - 0x02: LayerZero (_lzSend + msg.value fee)
+     * - 0x03: Axelar (payNativeGas + callContract)
+     *
+     * Evvm Integration:
+     * - Balance Check: core.getBalance(sender, token)
+     * - Deduction: evvm.removeAmountFromUser
+     * - Principal Token: Cannot withdraw (MATE locked)
+     * - Other Tokens: Full withdrawal support
+     *
+     * Fee Payment:
+     * - Hyperlane: msg.value = quote
+     * - LayerZero: msg.value = fee (refund excess)
+     * - Axelar: msg.value for gas service
+     *
+     * External Chain Integration:
+     * - Receives: handle/_lzReceive/_execute
+     * - Transfers: Tokens sent from contract balance
+     * - Native ETH: address(0) representation
+     *
+     * Security:
+     * - MATE Block: Principal token cannot withdraw
+     * - Balance Check: Revert if insufficient Evvm
+     * - Sender Only: msg.sender balance deducted
+     * - Protocol Validation: External checks sender
+     *
+     * @param toAddress Recipient on external chain
+     * @param token Token address (NOT principal token)
+     * @param amount Token amount to withdraw
+     * @param protocolToExecute 0x01=Hyperlane,
+     * 0x02=LZ, 0x03=Axelar
+     */
     function withdraw(
         address toAddress,
         address token,
         uint256 amount,
         bytes1 protocolToExecute
     ) external payable {
-        if (token == evvm.getEvvmMetadata().principalTokenAddress)
-            revert ErrorsLib.PrincipalTokenIsNotWithdrawable();
+        if (token == core.getEvvmMetadata().principalTokenAddress)
+            revert Error.PrincipalTokenIsNotWithdrawable();
 
-        if (evvm.getBalance(msg.sender, token) < amount)
-            revert ErrorsLib.InsufficientBalance();
+        if (core.getBalance(msg.sender, token) < amount)
+            revert Error.InsufficientBalance();
 
-        executerEVVM(false, msg.sender, token, amount);
+        executerCore(false, msg.sender, token, amount);
 
         bytes memory payload = PayloadUtils.encodePayload(
             token,
@@ -299,84 +333,174 @@ contract TreasuryHostChainStation is
         }
     }
 
-    /// @notice Receives Fisher bridge transactions from external chain and credits EVVM balances
-    /// @dev Verifies signature, increments nonce, and adds balance to recipient and executor
-    /// @param from Original sender address from external chain
-    /// @param addressToReceive Recipient address on this host chain
-    /// @param tokenAddress Token contract address (address(0) for ETH)
-    /// @param priorityFee Fee amount paid to Fisher executor
-    /// @param amount Amount of tokens being received
-    /// @param signature ECDSA signature proving transaction authorization
+    /**
+     * @notice Receives Fisher bridge deposits from external
+     * @dev Validates signature via Core.sol, credits balances
+     *
+     * Purpose:
+     * - Receive: Deposits from external chain
+     * - Validate: ECDSA signature via Core.sol
+     * - Credit: Add tokens to Core balances
+     * - Fee: Pay Fisher executor priority fee
+     *
+     * Fisher Bridge Flow:
+     * - External: TreasuryExternalChainStation emits
+     * - Monitor: Fisher executor watches events
+     * - Call: Executor calls this function
+     * - Validate: core.validateAndConsumeNonce
+     * - Credit: Core balances updated
+     *
+     * Core Integration:
+     * - Nonce: core.validateAndConsumeNonce
+     * - Hash: TreasuryCrossChainHashUtils.hashData...
+     * - Async: true (independent nonce system)
+     * - Signature: ECDSA via SignatureRecover
+     *
+     * Core Balance Operations:
+     * - Recipient: core.addAmountToUser(to, token,
+     *   amount)
+     * - Fee: core.addAmountToUser(executor, token,
+     *   priorityFee)
+     * - Total: amount + priorityFee credited
+     * - No Transfer: Core tracks virtual balances
+     *
+     * Nonce System:
+     * - Core.sol: validateAndConsumeNonce(from, hash,
+     *   nonce...)
+     * - Sequential: User manages own nonces
+     * - Replay Prevention: Core.sol marks used
+     * - Async: true (Fisher bridge nonces)
+     *
+     * Security:
+     * - Executor Only: onlyFisherExecutor modifier
+     * - Signature: Core.sol validates ECDSA
+     * - Nonce: Core.sol prevents replays
+     * - Fee Payment: Executor compensated for gas
+     *
+     * @param from Original sender on external chain
+     * @param addressToReceive Recipient on host chain
+     * @param tokenAddress Token (address(0) for ETH)
+     * @param priorityFee Fee for Fisher executor
+     * @param amount Token amount received
+     * @param nonce Sequential nonce from user
+     * @param signature ECDSA signature from 'from'
+     */
     function fisherBridgeReceive(
         address from,
         address addressToReceive,
         address tokenAddress,
         uint256 priorityFee,
         uint256 amount,
+        uint256 nonce,
         bytes memory signature
     ) external onlyFisherExecutor {
-        if (
-            !SignatureUtils.verifyMessageSignedForFisherBridge(
-                evvm.getEvvmID(),
-                from,
+        core.validateAndConsumeNonce(
+            from,
+            Hash.hashDataForFisherBridge(
                 addressToReceive,
-                nextFisherExecutionNonce[from],
                 tokenAddress,
                 priorityFee,
-                amount,
-                signature
-            )
-        ) revert ErrorsLib.InvalidSignature();
+                amount
+            ),
+            fisherExecutor.current,
+            nonce,
+            true,
+            signature
+        );
 
-        nextFisherExecutionNonce[from]++;
-
-        executerEVVM(true, addressToReceive, tokenAddress, amount);
+        executerCore(true, addressToReceive, tokenAddress, amount);
 
         if (priorityFee > 0)
-            executerEVVM(true, msg.sender, tokenAddress, priorityFee);
+            executerCore(true, msg.sender, tokenAddress, priorityFee);
     }
 
-    /// @notice Processes Fisher bridge token transfers from host to external chain
-    /// @dev Validates balance and signature, deducts from sender, pays executor fee
-    /// @param from Sender address initiating the bridge transaction
-    /// @param addressToReceive Recipient address on the external chain
-    /// @param tokenAddress Token contract address (cannot be Principal Token)
-    /// @param priorityFee Fee amount paid to Fisher executor
-    /// @param amount Amount of tokens to bridge to external chain
-    /// @param signature ECDSA signature proving transaction authorization
+    /**
+     * @notice Executes Fisher bridge withdrawal to external
+     * @dev Validates signature, deducts Evvm balance, emits
+     *
+     * Purpose:
+     * - Withdraw: Deduct Evvm balance for bridging
+     * - Validate: ECDSA signature via Core.sol
+     * - Fee: Pay Fisher executor from sender balance
+     * - Emit: Log for Fisher to process on external
+     *
+     * Fisher Bridge Flow:
+     * - Host: User signs intent + executor calls this
+     * - Validate: State.validateAndConsumeNonce
+     * - Deduct: Evvm removes amount + priorityFee
+     * - Fee: Executor compensated from user balance
+     * - Emit: FisherBridgeSend event
+     * - External: Fisher processes + sends tokens
+     *
+     * Core.sol Integration:
+     * - Nonce: state.validateAndConsumeNonce
+     * - Hash: TreasuryCrossChainHashUtils.hashData...
+     * - Async: true (Fisher bridge nonces)
+     * - Signature: ECDSA validation via Core.sol
+     *
+     * Evvm Balance Operations:
+     * - Validate: core.getBalance(from, token) >=
+     *   amount
+     * - Deduct: evvm.removeAmountFromUser(from, token,
+     *   amount+fee)
+     * - Credit Fee: evvm.addAmountToUser(executor,
+     *   token, fee)
+     * - Principal: MATE cannot be withdrawn
+     *
+     * External Chain Processing:
+     * - Monitor: Fisher watches FisherBridgeSend event
+     * - Action: Fisher calls external station functions
+     * - Transfer: Tokens sent from external contract
+     * - Recipient: addressToReceive gets tokens
+     *
+     * Security:
+     * - MATE Block: Principal token cannot withdraw
+     * - Balance Check: Revert if insufficient Evvm
+     * - Signature: Core.sol validates ECDSA
+     * - Nonce: Core.sol prevents replays
+     * - Executor Only: onlyFisherExecutor modifier
+     *
+     * @param from Sender (signer) on host chain
+     * @param addressToReceive Recipient on external chain
+     * @param tokenAddress Token (NOT principal token)
+     * @param priorityFee Fee for Fisher executor
+     * @param amount Token amount to bridge
+     * @param nonce Sequential nonce from user
+     * @param signature ECDSA signature from 'from'
+     */
     function fisherBridgeSend(
         address from,
         address addressToReceive,
         address tokenAddress,
         uint256 priorityFee,
         uint256 amount,
+        uint256 nonce,
         bytes memory signature
     ) external onlyFisherExecutor {
-        if (tokenAddress == evvm.getEvvmMetadata().principalTokenAddress)
-            revert ErrorsLib.PrincipalTokenIsNotWithdrawable();
+        if (tokenAddress == core.getEvvmMetadata().principalTokenAddress)
+            revert Error.PrincipalTokenIsNotWithdrawable();
 
-        if (evvm.getBalance(from, tokenAddress) < amount)
-            revert ErrorsLib.InsufficientBalance();
+        if (core.getBalance(from, tokenAddress) < amount)
+            revert Error.InsufficientBalance();
 
-        if (
-            !SignatureUtils.verifyMessageSignedForFisherBridge(
-                evvm.getEvvmID(),
-                from,
+        core.validateAndConsumeNonce(
+            from,
+            Hash.hashDataForFisherBridge(
                 addressToReceive,
-                nextFisherExecutionNonce[from],
                 tokenAddress,
                 priorityFee,
-                amount,
-                signature
-            )
-        ) revert ErrorsLib.InvalidSignature();
+                amount
+            ),
+            fisherExecutor.current,
+            nonce,
+            true,
+            signature
+        );
 
-        nextFisherExecutionNonce[from]++;
-
-        executerEVVM(false, from, tokenAddress, amount + priorityFee);
+        executerCore(false, from, tokenAddress, amount + priorityFee);
 
         if (priorityFee > 0)
-            executerEVVM(true, msg.sender, tokenAddress, priorityFee);
+            executerCore(true, msg.sender, tokenAddress, priorityFee);
 
         emit FisherBridgeSend(
             from,
@@ -384,7 +508,7 @@ contract TreasuryHostChainStation is
             tokenAddress,
             priorityFee,
             amount,
-            nextFisherExecutionNonce[from] - 1
+            nonce
         );
     }
 
@@ -409,24 +533,60 @@ contract TreasuryHostChainStation is
             );
     }
 
-    /// @notice Handles incoming Hyperlane messages from the external chain
-    /// @dev Validates origin, sender authorization, and processes deposit to EVVM
-    /// @param _origin Source chain domain ID where the message originated
-    /// @param _sender Address of the message sender (must be external chain station)
-    /// @param _data Encoded payload containing deposit instructions
+    /**
+     * @notice Handles incoming Hyperlane messages
+     * @dev Validates origin, sender, credits Evvm balance
+     *
+     * Purpose:
+     * - Receive: Messages from external via Hyperlane
+     * - Validate: Origin domain + sender address
+     * - Process: Decode payload + credit Evvm balance
+     * - Security: Multi-layer validation checks
+     *
+     * Hyperlane Message Flow:
+     * - External: TreasuryExternalChainStation.dispatch
+     * - Relayer: Submits message to host chain
+     * - Mailbox: Calls this handle() function
+     * - Process: decodeAndDeposit credits Evvm
+     *
+     * Validation Layers:
+     * - Caller: Must be hyperlane.mailboxAddress
+     * - Sender: Must be hyperlane.externalChain
+     *   StationAddress
+     * - Origin: Must be hyperlane.externalChain
+     *   StationDomainId
+     * - All checks prevent unauthorized deposits
+     *
+     * Evvm Integration:
+     * - Decode: PayloadUtils.decodePayload(_data)
+     * - Extract: token address, recipient, amount
+     * - Credit: evvm.addAmountToUser(recipient, token,
+     *   amt)
+     * - Balance: Virtual balance in Core.sol
+     *
+     * Security:
+     * - Mailbox Only: Reverts if caller not mailbox
+     * - Sender Check: Reverts if not external station
+     * - Domain Check: Reverts if wrong origin
+     * - Three-layer validation prevents attacks
+     *
+     * @param _origin Source chain domain ID
+     * @param _sender Sender address (external station)
+     * @param _data Encoded payload (token, to, amount)
+     */
     function handle(
         uint32 _origin,
         bytes32 _sender,
         bytes calldata _data
     ) external payable virtual {
         if (msg.sender != hyperlane.mailboxAddress)
-            revert ErrorsLib.MailboxNotAuthorized();
+            revert Error.MailboxNotAuthorized();
 
         if (_sender != hyperlane.externalChainStationAddress)
-            revert ErrorsLib.SenderNotAuthorized();
+            revert Error.SenderNotAuthorized();
 
         if (_origin != hyperlane.externalChainStationDomainId)
-            revert ErrorsLib.ChainIdNotAuthorized();
+            revert Error.ChainIdNotAuthorized();
 
         decodeAndDeposit(_data);
     }
@@ -453,10 +613,47 @@ contract TreasuryHostChainStation is
         return fee.nativeFee;
     }
 
-    /// @notice Handles incoming LayerZero messages from the external chain
-    /// @dev Validates origin chain and sender, then processes deposit to EVVM
-    /// @param _origin Origin information containing source endpoint ID and sender
-    /// @param message Encoded payload containing deposit instructions
+    /**
+     * @notice Handles incoming LayerZero messages
+     * @dev Validates origin + sender, credits Evvm balance
+     *
+     * Purpose:
+     * - Receive: Messages from external via LayerZero V2
+     * - Validate: Origin eid + sender address
+     * - Process: Decode payload + credit Evvm balance
+     * - Security: Multi-layer validation checks
+     *
+     * LayerZero Message Flow:
+     * - External: TreasuryExternalChainStation._lzSend
+     * - DVNs: Verify message across networks
+     * - Executor: Submits message to host chain
+     * - Endpoint: Calls this _lzReceive function
+     *
+     * Validation Layers:
+     * - Origin EID: Must be layerZero.externalChain
+     *   StationEid
+     * - Sender: Must be layerZero.externalChain
+     *   StationAddress
+     * - Peer: OApp validates via _getPeerOrRevert
+     * - All checks prevent unauthorized deposits
+     *
+     * Evvm Integration:
+     * - Decode: PayloadUtils.decodePayload(message)
+     * - Extract: token address, recipient, amount
+     * - Credit: evvm.addAmountToUser(recipient, token,
+     *   amt)
+     * - Balance: Virtual balance in Core.sol
+     *
+     * Security:
+     * - EID Check: Reverts if wrong source endpoint
+     * - Sender Check: Reverts if not external station
+     * - OApp Pattern: Peer validation built-in
+     * - Two-layer validation prevents attacks
+     *
+     * @param _origin Origin info (srcEid, sender,
+     * nonce)
+     * @param message Encoded payload (token, to, amount)
+     */
     function _lzReceive(
         Origin calldata _origin,
         bytes32 /*_guid*/,
@@ -466,10 +663,10 @@ contract TreasuryHostChainStation is
     ) internal override {
         // Decode the payload to get the message
         if (_origin.srcEid != layerZero.externalChainStationEid)
-            revert ErrorsLib.ChainIdNotAuthorized();
+            revert Error.ChainIdNotAuthorized();
 
         if (_origin.sender != layerZero.externalChainStationAddress)
-            revert ErrorsLib.SenderNotAuthorized();
+            revert Error.SenderNotAuthorized();
 
         decodeAndDeposit(message);
     }
@@ -509,11 +706,54 @@ contract TreasuryHostChainStation is
 
     // Axelar Specific Functions //
 
-    /// @notice Handles incoming Axelar messages from the external chain
-    /// @dev Validates source chain and address, then processes deposit to EVVM
-    /// @param _sourceChain Source blockchain name (must match configured external chain)
-    /// @param _sourceAddress Source contract address (must match external chain station)
-    /// @param _payload Encoded payload containing deposit instructions
+    /**
+     * @notice Handles incoming Axelar messages
+     * @dev Validates source chain/address, credits Evvm
+     *
+     * Purpose:
+     * - Receive: Messages from external via Axelar
+     * - Validate: Source chain name + sender address
+     * - Process: Decode payload + credit Evvm balance
+     * - Security: Multi-layer validation checks
+     *
+     * Axelar Message Flow:
+     * - External: TreasuryExternalChainStation.
+     *   callContract
+     * - Axelar: Validates via validator network
+     * - Gateway: Calls this _execute function
+     * - Process: decodeAndDeposit credits Evvm
+     *
+     * Validation Layers:
+     * - Source Chain: Must be axelar.externalChain
+     *   StationChainName
+     * - Source Address: Must be axelar.externalChain
+     *   StationAddress
+     * - Gateway: AxelarExecutable validates caller
+     * - All checks prevent unauthorized deposits
+     *
+     * String Comparison:
+     * - AdvancedStrings.equal: Chain name validation
+     * - Case-Sensitive: Exact match required
+     * - Address Format: String type for Axelar
+     * - Security: Double validation of source
+     *
+     * Evvm Integration:
+     * - Decode: PayloadUtils.decodePayload(_payload)
+     * - Extract: token address, recipient, amount
+     * - Credit: evvm.addAmountToUser(recipient, token,
+     *   amt)
+     * - Balance: Virtual balance in Core.sol
+     *
+     * Security:
+     * - Chain Check: Reverts if wrong source chain
+     * - Address Check: Reverts if not external station
+     * - Gateway Pattern: AxelarExecutable validation
+     * - Two-layer validation prevents attacks
+     *
+     * @param _sourceChain Source blockchain name
+     * @param _sourceAddress Source contract address
+     * @param _payload Encoded payload (token, to, amount)
+     */
     function _execute(
         bytes32 /*commandId*/,
         string calldata _sourceChain,
@@ -525,14 +765,14 @@ contract TreasuryHostChainStation is
                 _sourceChain,
                 axelar.externalChainStationChainName
             )
-        ) revert ErrorsLib.ChainIdNotAuthorized();
+        ) revert Error.ChainIdNotAuthorized();
 
         if (
             !AdvancedStrings.equal(
                 _sourceAddress,
                 axelar.externalChainStationAddress
             )
-        ) revert ErrorsLib.SenderNotAuthorized();
+        ) revert Error.SenderNotAuthorized();
 
         decodeAndDeposit(_payload);
     }
@@ -614,21 +854,23 @@ contract TreasuryHostChainStation is
     ) external onlyAdmin {
         if (fuseSetExternalChainAddress == 0x01) revert();
 
-        externalChainAddressChangeProposal = ChangeExternalChainAddressParams({
-            porposeAddress_AddressType: externalChainStationAddress,
-            porposeAddress_StringType: externalChainStationAddressString,
-            timeToAccept: block.timestamp + 1 minutes
-        });
+        externalChainAddressChangeProposal = Structs
+            .ChangeExternalChainAddressParams({
+                porposeAddress_AddressType: externalChainStationAddress,
+                porposeAddress_StringType: externalChainStationAddressString,
+                timeToAccept: block.timestamp + 1 minutes
+            });
     }
 
     /// @notice Cancels a pending external chain address change proposal
     /// @dev Resets the external chain address proposal to default state
     function rejectProposalExternalChainAddress() external onlyAdmin {
-        externalChainAddressChangeProposal = ChangeExternalChainAddressParams({
-            porposeAddress_AddressType: address(0),
-            porposeAddress_StringType: "",
-            timeToAccept: 0
-        });
+        externalChainAddressChangeProposal = Structs
+            .ChangeExternalChainAddressParams({
+                porposeAddress_AddressType: address(0),
+                porposeAddress_StringType: "",
+                timeToAccept: 0
+            });
     }
 
     /// @notice Accepts pending external chain address changes across all protocols
@@ -665,7 +907,11 @@ contract TreasuryHostChainStation is
 
     /// @notice Returns the complete admin configuration including proposals and timelock
     /// @return Current admin address, proposed admin, and acceptance timestamp
-    function getAdmin() external view returns (AddressTypeProposal memory) {
+    function getAdmin()
+        external
+        view
+        returns (ProposalStructs.AddressTypeProposal memory)
+    {
         return admin;
     }
 
@@ -674,7 +920,7 @@ contract TreasuryHostChainStation is
     function getFisherExecutor()
         external
         view
-        returns (AddressTypeProposal memory)
+        returns (ProposalStructs.AddressTypeProposal memory)
     {
         return fisherExecutor;
     }
@@ -683,16 +929,17 @@ contract TreasuryHostChainStation is
     /// @dev Used to prevent replay attacks in cross-chain bridge transactions
     /// @param user Address to query the next Fisher execution nonce for
     /// @return Next sequential nonce value for the user's Fisher bridge operations
-    function getNextFisherExecutionNonce(
-        address user
-    ) external view returns (uint256) {
-        return nextFisherExecutionNonce[user];
+    function getIfUsedAsyncNonce(
+        address user,
+        uint256 nonce
+    ) external view returns (bool) {
+        return core.getIfUsedAsyncNonce(user, nonce);
     }
 
     /// @notice Returns the EVVM core contract address
     /// @return Address of the EVVM contract used for balance operations
-    function getEvvmAddress() external view returns (address) {
-        return address(evvm);
+    function getCoreAddress() external view returns (address) {
+        return address(core);
     }
 
     /// @notice Returns the complete Hyperlane protocol configuration
@@ -700,7 +947,7 @@ contract TreasuryHostChainStation is
     function getHyperlaneConfig()
         external
         view
-        returns (HyperlaneConfig memory)
+        returns (Structs.HyperlaneConfig memory)
     {
         return hyperlane;
     }
@@ -710,14 +957,18 @@ contract TreasuryHostChainStation is
     function getLayerZeroConfig()
         external
         view
-        returns (LayerZeroConfig memory)
+        returns (Structs.LayerZeroConfig memory)
     {
         return layerZero;
     }
 
     /// @notice Returns the complete Axelar protocol configuration
     /// @return Axelar configuration including chain name, addresses, gas service, and gateway
-    function getAxelarConfig() external view returns (AxelarConfig memory) {
+    function getAxelarConfig()
+        external
+        view
+        returns (Structs.AxelarConfig memory)
+    {
         return axelar;
     }
 
@@ -735,7 +986,7 @@ contract TreasuryHostChainStation is
     function decodeAndDeposit(bytes memory payload) internal {
         (address token, address from, uint256 amount) = PayloadUtils
             .decodePayload(payload);
-        executerEVVM(true, from, token, amount);
+        executerCore(true, from, token, amount);
     }
 
     /// @notice Executes EVVM balance operations (add or remove)
@@ -744,7 +995,7 @@ contract TreasuryHostChainStation is
     /// @param userToExecute Address whose balance will be modified
     /// @param token Token contract address for the balance operation
     /// @param amount Amount to add or remove from the user's balance
-    function executerEVVM(
+    function executerCore(
         bool typeOfExecution,
         address userToExecute,
         address token,
@@ -752,10 +1003,10 @@ contract TreasuryHostChainStation is
     ) internal {
         if (typeOfExecution) {
             // true = add
-            evvm.addAmountToUser(userToExecute, token, amount);
+            core.addAmountToUser(userToExecute, token, amount);
         } else {
             // false = remove
-            evvm.removeAmountFromUser(userToExecute, token, amount);
+            core.removeAmountFromUser(userToExecute, token, amount);
         }
     }
 

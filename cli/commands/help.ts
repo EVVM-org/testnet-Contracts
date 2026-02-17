@@ -70,8 +70,8 @@ ${colors.bright}DEPLOY OPTIONS:${colors.reset}
   ${colors.darkGray}      Never store private keys in .env files${colors.reset}
 
 ${colors.bright}REGISTER OPTIONS:${colors.reset}
-  ${colors.yellow}--evvmAddress${colors.reset} ${colors.darkGray}<address>${colors.reset}
-                          Address of deployed EVVM contract to register
+  ${colors.yellow}--coreAddress${colors.reset} ${colors.darkGray}<address>${colors.reset}
+                          Address of deployed Core contract to register
 
   ${colors.yellow}--treasuryExternalStationAddress${colors.reset} ${colors.darkGray}<address>${colors.reset}
                           External chain station address (cross-chain only)
@@ -126,7 +126,7 @@ ${colors.bright}DEPLOYMENT WORKFLOWS:${colors.reset}
      ${colors.evvmGreen}evvm deploy --skipInputConfig${colors.reset}
 
   ${colors.blue}3. Register your EVVM instance:${colors.reset}
-     ${colors.evvmGreen}evvm register --evvmAddress <address> --walletName <name>${colors.reset}
+     ${colors.evvmGreen}evvm register --coreAddress <address> --walletName <name>${colors.reset}
 
   ${colors.darkGray}Cross-Chain Deployment:${colors.reset}
   ${colors.blue}1. Deploy EVVM with treasury stations on both chains:${colors.reset}
@@ -140,7 +140,7 @@ ${colors.bright}DEPLOYMENT WORKFLOWS:${colors.reset}
 
   ${colors.blue}3. Register your cross-chain EVVM:${colors.reset}
      ${colors.evvmGreen}evvm register --crossChain \\${colors.reset}
-     ${colors.evvmGreen}  --evvmAddress <address> \\${colors.reset}
+     ${colors.evvmGreen}  --coreAddress <address> \\${colors.reset}
      ${colors.evvmGreen}  --treasuryExternalStationAddress <address> \\${colors.reset}
      ${colors.evvmGreen}  --walletName <name>${colors.reset}
 

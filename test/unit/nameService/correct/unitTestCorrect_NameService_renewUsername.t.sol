@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract unitTestCorrect_NameService_renewUsername is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -37,21 +38,23 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
     struct Params {
         AccountData user;
         string username;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bool priorityEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -62,11 +65,12 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
     }
 
     function _executeMakeOffer(uint256 amount) internal {
-        _execute_makeMakeOffer(
+        _executeFn_nameService_makeOffer(
             USER,
             USERNAME,
-            EXPIRATION_DATE,
             amount,
+            EXPIRATION_DATE,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -74,7 +78,6 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
-            true,
             GOLDEN_STAKER
         );
     }
@@ -84,7 +87,7 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         string memory username,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.seePriceToRenew(username) + priorityFeeAmount
@@ -98,64 +101,36 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         Params memory params1 = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 1001,
+            nonce: 2002,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            priorityEVVM: false,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 2002,
+            nonce: 4004,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            priorityEVVM: true,
-            signatureEVVM: ""
+            noncePay: 89,
+            signaturePay: ""
         });
 
-        Params memory params3 = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonceNameService: 3003,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ) + 1,
-            priorityEVVM: false,
-            signatureEVVM: ""
-        });
-
-        Params memory params4 = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonceNameService: 4004,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: 89,
-            priorityEVVM: true,
-            signatureEVVM: ""
-        });
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params1.user, params1.username, params1.priorityFee);
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            params1.signaturePay
+        ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -163,28 +138,28 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params1.user.Address,
             params1.username,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
 
-        (, uint256 expirationTime1) = nameService.getIdentityBasicMetadata(
+        (, uint256 expirationTime2) = nameService.getIdentityBasicMetadata(
             params1.username
         );
 
         assertEq(
-            expirationTime1,
+            expirationTime2,
             block.timestamp + ((366 days) * 2),
             "Error on 1: expiration date incorrectly set after renewal"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -192,24 +167,28 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             "Error on 1: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error on 1: balance incorrectly changed after renewal"
         );
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Executing offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        uint256 offerPrice = nameService.seePriceToRenew(USERNAME) * 10;
+        _executeMakeOffer(offerPrice);
+
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params2.user, params2.username, params2.priorityFee);
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            params2.signaturePay
+        ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -217,150 +196,38 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params2.user.Address,
             params2.username,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM,
-            params2.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 expirationTime2) = nameService.getIdentityBasicMetadata(
-            params2.username
-        );
-
-        assertEq(
-            expirationTime2,
-            block.timestamp + ((366 days) * 3),
-            "Error on 2: expiration date incorrectly set after renewal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error on 2: balance incorrectly changed after renewal"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error on 2: balance incorrectly changed after renewal"
-        );
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Executing offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        uint256 offerPrice = nameService.seePriceToRenew(USERNAME) * 10;
-        _executeMakeOffer(offerPrice);
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        _addBalance(params3.user, params3.username, params3.priorityFee);
-
-        (
-            params3.signatureNameService,
-            params3.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
-            params3.user,
-            params3.username,
-            params3.nonceNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.renewUsername(
-            params3.user.Address,
-            params3.username,
-            params3.nonceNameService,
-            params3.signatureNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM,
-            params3.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 expirationTime3) = nameService.getIdentityBasicMetadata(
-            params3.username
-        );
-
-        assertEq(
-            expirationTime3,
-            block.timestamp + ((366 days) * 4),
-            "Error on 3: expiration date incorrectly set after renewal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error on 3: balance incorrectly changed after renewal"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error on 3: balance incorrectly changed after renewal"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        _addBalance(params4.user, params4.username, params4.priorityFee);
-
-        (
-            params4.signatureNameService,
-            params4.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
-            params4.user,
-            params4.username,
-            params4.nonceNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.renewUsername(
-            params4.user.Address,
-            params4.username,
-            params4.nonceNameService,
-            params4.signatureNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM,
-            params4.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();
 
         (, uint256 expirationTime4) = nameService.getIdentityBasicMetadata(
-            params4.username
+            params2.username
         );
 
         assertEq(
             expirationTime4,
-            block.timestamp + ((366 days) * 5),
-            "Error on 4: expiration date incorrectly set after renewal"
+            block.timestamp + ((366 days) * 3),
+            "Error on 2: expiration date incorrectly set after renewal"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             0,
-            "Error on 4: balance incorrectly changed after renewal"
+            "Error on 2: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
-            "Error on 4: balance incorrectly changed after renewal"
+            "Error on 2: balance incorrectly changed after renewal"
         );
     }
 
@@ -370,68 +237,40 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         Params memory params1 = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 1001,
+            nonce: 2002,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            priorityEVVM: false,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 2002,
+            nonce: 4004,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: 67,
-            priorityEVVM: true,
-            signatureEVVM: ""
+            noncePay: 89,
+            signaturePay: ""
         });
 
-        Params memory params3 = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonceNameService: 3003,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ) + 1,
-            priorityEVVM: false,
-            signatureEVVM: ""
-        });
-
-        Params memory params4 = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonceNameService: 4004,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: 89,
-            priorityEVVM: true,
-            signatureEVVM: ""
-        });
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params1.user, params1.username, params1.priorityFee);
 
-        uint256 stakerBalance1 = evvm.getRewardAmount() +
+        uint256 stakerBalance1 = core.getRewardAmount() +
             ((nameService.seePriceToRenew(params1.username) * 50) / 100) +
             params1.priorityFee;
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            params1.signaturePay
+        ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -439,58 +278,61 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params1.user.Address,
             params1.username,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
 
-        (, uint256 expirationTime1) = nameService.getIdentityBasicMetadata(
+        (, uint256 expirationTime2) = nameService.getIdentityBasicMetadata(
             params1.username
         );
 
         assertEq(
-            expirationTime1,
+            expirationTime2,
             block.timestamp + ((366 days) * 2),
             "Error on 1: expiration date incorrectly set after renewal"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             0,
             "Error on 1: balance incorrectly changed after renewal"
         );
-
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             stakerBalance1,
             "Error on 1: balance incorrectly changed after renewal"
         );
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Executing offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        uint256 offerPrice = nameService.seePriceToRenew(USERNAME) * 10;
+        _executeMakeOffer(offerPrice);
+
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params2.user, params2.username, params2.priorityFee);
 
-        uint256 stakerBalance2 = evvm.getRewardAmount() +
+        uint256 stakerBalance2 = core.getRewardAmount() +
             ((nameService.seePriceToRenew(params2.username) * 50) / 100) +
             params2.priorityFee;
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            params2.signaturePay
+        ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -498,157 +340,38 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params2.user.Address,
             params2.username,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM,
-            params2.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 expirationTime2) = nameService.getIdentityBasicMetadata(
-            params2.username
-        );
-
-        assertEq(
-            expirationTime2,
-            block.timestamp + ((366 days) * 3),
-            "Error on 2: expiration date incorrectly set after renewal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error on 2: balance incorrectly changed after renewal"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            stakerBalance1 + stakerBalance2,
-            "Error on 2: balance incorrectly changed after renewal"
-        );
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Executing offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        uint256 offerPrice = nameService.seePriceToRenew(USERNAME) * 10;
-        _executeMakeOffer(offerPrice);
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        _addBalance(params3.user, params3.username, params3.priorityFee);
-
-        uint256 stakerBalance3 = evvm.getRewardAmount() +
-            ((nameService.seePriceToRenew(params3.username) * 50) / 100) +
-            params3.priorityFee;
-        (
-            params3.signatureNameService,
-            params3.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
-            params3.user,
-            params3.username,
-            params3.nonceNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.renewUsername(
-            params3.user.Address,
-            params3.username,
-            params3.nonceNameService,
-            params3.signatureNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM,
-            params3.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 expirationTime3) = nameService.getIdentityBasicMetadata(
-            params3.username
-        );
-
-        assertEq(
-            expirationTime3,
-            block.timestamp + ((366 days) * 4),
-            "Error on 3: expiration date incorrectly set after renewal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error on 3: balance incorrectly changed after renewal"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            stakerBalance1 + stakerBalance2 + stakerBalance3,
-            "Error on 3: balance incorrectly changed after renewal"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        _addBalance(params4.user, params4.username, params4.priorityFee);
-
-        uint256 stakerBalance4 = evvm.getRewardAmount() +
-            ((nameService.seePriceToRenew(params4.username) * 50) / 100) +
-            params4.priorityFee;
-
-        (
-            params4.signatureNameService,
-            params4.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
-            params4.user,
-            params4.username,
-            params4.nonceNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.renewUsername(
-            params4.user.Address,
-            params4.username,
-            params4.nonceNameService,
-            params4.signatureNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM,
-            params4.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();
 
         (, uint256 expirationTime4) = nameService.getIdentityBasicMetadata(
-            params4.username
+            params2.username
         );
 
         assertEq(
             expirationTime4,
-            block.timestamp + ((366 days) * 5),
-            "Error on 4: expiration date incorrectly set after renewal"
+            block.timestamp + ((366 days) * 3),
+            "Error on 2: expiration date incorrectly set after renewal"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             0,
-            "Error on 4: balance incorrectly changed after renewal"
+            "Error on 2: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            stakerBalance1 + stakerBalance2 + stakerBalance3 + stakerBalance4,
-            "Error on 4: balance incorrectly changed after renewal"
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            stakerBalance1 + stakerBalance2,
+            "Error on 2: balance incorrectly changed after renewal"
         );
     }
 
@@ -658,64 +381,36 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         Params memory params1 = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 1001,
+            nonce: 2002,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            priorityEVVM: false,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 2002,
+            nonce: 4004,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: 67,
-            priorityEVVM: true,
-            signatureEVVM: ""
+            noncePay: 89,
+            signaturePay: ""
         });
 
-        Params memory params3 = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonceNameService: 3003,
-            signatureNameService: "",
-            priorityFee: 0.001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ) + 1,
-            priorityEVVM: false,
-            signatureEVVM: ""
-        });
-
-        Params memory params4 = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonceNameService: 4004,
-            signatureNameService: "",
-            priorityFee: 0.001 ether,
-            nonceEVVM: 89,
-            priorityEVVM: true,
-            signatureEVVM: ""
-        });
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params1.user, params1.username, params1.priorityFee);
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            params1.signaturePay
+        ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -723,28 +418,28 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params1.user.Address,
             params1.username,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
 
-        (, uint256 expirationTime1) = nameService.getIdentityBasicMetadata(
+        (, uint256 expirationTime2) = nameService.getIdentityBasicMetadata(
             params1.username
         );
 
         assertEq(
-            expirationTime1,
+            expirationTime2,
             block.timestamp + ((366 days) * 2),
             "Error on 1: expiration date incorrectly set after renewal"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -752,24 +447,28 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
             "Error on 1: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error on 1: balance incorrectly changed after renewal"
         );
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Executing offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        uint256 offerPrice = nameService.seePriceToRenew(USERNAME) * 10;
+        _executeMakeOffer(offerPrice);
+
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params2.user, params2.username, params2.priorityFee);
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            params2.signaturePay
+        ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -777,150 +476,38 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params2.user.Address,
             params2.username,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM,
-            params2.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 expirationTime2) = nameService.getIdentityBasicMetadata(
-            params2.username
-        );
-
-        assertEq(
-            expirationTime2,
-            block.timestamp + ((366 days) * 3),
-            "Error on 2: expiration date incorrectly set after renewal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error on 2: balance incorrectly changed after renewal"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error on 2: balance incorrectly changed after renewal"
-        );
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Executing offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        uint256 offerPrice = nameService.seePriceToRenew(USERNAME) * 10;
-        _executeMakeOffer(offerPrice);
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        _addBalance(params3.user, params3.username, params3.priorityFee);
-
-        (
-            params3.signatureNameService,
-            params3.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
-            params3.user,
-            params3.username,
-            params3.nonceNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.renewUsername(
-            params3.user.Address,
-            params3.username,
-            params3.nonceNameService,
-            params3.signatureNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM,
-            params3.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 expirationTime3) = nameService.getIdentityBasicMetadata(
-            params3.username
-        );
-
-        assertEq(
-            expirationTime3,
-            block.timestamp + ((366 days) * 4),
-            "Error on 3: expiration date incorrectly set after renewal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error on 3: balance incorrectly changed after renewal"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error on 3: balance incorrectly changed after renewal"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        _addBalance(params4.user, params4.username, params4.priorityFee);
-
-        (
-            params4.signatureNameService,
-            params4.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
-            params4.user,
-            params4.username,
-            params4.nonceNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.renewUsername(
-            params4.user.Address,
-            params4.username,
-            params4.nonceNameService,
-            params4.signatureNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM,
-            params4.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();
 
         (, uint256 expirationTime4) = nameService.getIdentityBasicMetadata(
-            params4.username
+            params2.username
         );
 
         assertEq(
             expirationTime4,
-            block.timestamp + ((366 days) * 5),
-            "Error on 4: expiration date incorrectly set after renewal"
+            block.timestamp + ((366 days) * 3),
+            "Error on 2: expiration date incorrectly set after renewal"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             0,
-            "Error on 4: balance incorrectly changed after renewal"
+            "Error on 2: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
-            "Error on 4: balance incorrectly changed after renewal"
+            "Error on 2: balance incorrectly changed after renewal"
         );
     }
 
@@ -928,68 +515,40 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         Params memory params1 = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 1001,
+            nonce: 2002,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            priorityEVVM: false,
-            signatureEVVM: ""
+            noncePay: 67,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: 2002,
+            nonce: 4004,
             signatureNameService: "",
             priorityFee: 0.001 ether,
-            nonceEVVM: 67,
-            priorityEVVM: true,
-            signatureEVVM: ""
+            noncePay: 89,
+            signaturePay: ""
         });
 
-        Params memory params3 = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonceNameService: 3003,
-            signatureNameService: "",
-            priorityFee: 0.001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ) + 1,
-            priorityEVVM: false,
-            signatureEVVM: ""
-        });
-
-        Params memory params4 = Params({
-            user: USER_USERNAME_OWNER,
-            username: USERNAME,
-            nonceNameService: 4004,
-            signatureNameService: "",
-            priorityFee: 0.001 ether,
-            nonceEVVM: 89,
-            priorityEVVM: true,
-            signatureEVVM: ""
-        });
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params1.user, params1.username, params1.priorityFee);
 
-        uint256 stakerBalance1 = evvm.getRewardAmount() +
+        uint256 stakerBalance1 = core.getRewardAmount() +
             ((nameService.seePriceToRenew(params1.username) * 50) / 100) +
             params1.priorityFee;
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            params1.signaturePay
+        ) = _executeSig_nameService_renewUsername(
             params1.user,
             params1.username,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -997,58 +556,61 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params1.user.Address,
             params1.username,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
 
-        (, uint256 expirationTime1) = nameService.getIdentityBasicMetadata(
+        (, uint256 expirationTime2) = nameService.getIdentityBasicMetadata(
             params1.username
         );
 
         assertEq(
-            expirationTime1,
+            expirationTime2,
             block.timestamp + ((366 days) * 2),
             "Error on 1: expiration date incorrectly set after renewal"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             0,
             "Error on 1: balance incorrectly changed after renewal"
         );
-
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             stakerBalance1,
             "Error on 1: balance incorrectly changed after renewal"
         );
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Executing offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async no offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        uint256 offerPrice = nameService.seePriceToRenew(USERNAME) * 10;
+        _executeMakeOffer(offerPrice);
+
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing  offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
         _addBalance(params2.user, params2.username, params2.priorityFee);
 
-        uint256 stakerBalance2 = evvm.getRewardAmount() +
+        uint256 stakerBalance2 = core.getRewardAmount() +
             ((nameService.seePriceToRenew(params2.username) * 50) / 100) +
             params2.priorityFee;
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            params2.signaturePay
+        ) = _executeSig_nameService_renewUsername(
             params2.user,
             params2.username,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -1056,157 +618,38 @@ contract unitTestCorrect_NameService_renewUsername is Test, Constants {
         nameService.renewUsername(
             params2.user.Address,
             params2.username,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM,
-            params2.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 expirationTime2) = nameService.getIdentityBasicMetadata(
-            params2.username
-        );
-
-        assertEq(
-            expirationTime2,
-            block.timestamp + ((366 days) * 3),
-            "Error on 2: expiration date incorrectly set after renewal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error on 2: balance incorrectly changed after renewal"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            stakerBalance1 + stakerBalance2,
-            "Error on 2: balance incorrectly changed after renewal"
-        );
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Executing offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        uint256 offerPrice = nameService.seePriceToRenew(USERNAME) * 10;
-        _executeMakeOffer(offerPrice);
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        _addBalance(params3.user, params3.username, params3.priorityFee);
-
-        uint256 stakerBalance3 = evvm.getRewardAmount() +
-            ((nameService.seePriceToRenew(params3.username) * 50) / 100) +
-            params3.priorityFee;
-        (
-            params3.signatureNameService,
-            params3.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
-            params3.user,
-            params3.username,
-            params3.nonceNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.renewUsername(
-            params3.user.Address,
-            params3.username,
-            params3.nonceNameService,
-            params3.signatureNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM,
-            params3.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        (, uint256 expirationTime3) = nameService.getIdentityBasicMetadata(
-            params3.username
-        );
-
-        assertEq(
-            expirationTime3,
-            block.timestamp + ((366 days) * 4),
-            "Error on 3: expiration date incorrectly set after renewal"
-        );
-
-        assertEq(
-            evvm.getBalance(
-                COMMON_USER_NO_STAKER_1.Address,
-                PRINCIPAL_TOKEN_ADDRESS
-            ),
-            0,
-            "Error on 3: balance incorrectly changed after renewal"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            stakerBalance1 + stakerBalance2 + stakerBalance3,
-            "Error on 3: balance incorrectly changed after renewal"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async offer ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-        _addBalance(params4.user, params4.username, params4.priorityFee);
-
-        uint256 stakerBalance4 = evvm.getRewardAmount() +
-            ((nameService.seePriceToRenew(params4.username) * 50) / 100) +
-            params4.priorityFee;
-
-        (
-            params4.signatureNameService,
-            params4.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
-            params4.user,
-            params4.username,
-            params4.nonceNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.renewUsername(
-            params4.user.Address,
-            params4.username,
-            params4.nonceNameService,
-            params4.signatureNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM,
-            params4.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();
 
         (, uint256 expirationTime4) = nameService.getIdentityBasicMetadata(
-            params4.username
+            params2.username
         );
 
         assertEq(
             expirationTime4,
-            block.timestamp + ((366 days) * 5),
-            "Error on 4: expiration date incorrectly set after renewal"
+            block.timestamp + ((366 days) * 3),
+            "Error on 2: expiration date incorrectly set after renewal"
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             0,
-            "Error on 4: balance incorrectly changed after renewal"
+            "Error on 2: balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            stakerBalance1 + stakerBalance2 + stakerBalance3 + stakerBalance4,
-            "Error on 4: balance incorrectly changed after renewal"
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            stakerBalance1 + stakerBalance2,
+            "Error on 2: balance incorrectly changed after renewal"
         );
     }
 }

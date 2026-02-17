@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
-import {EvvmStructs} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {HostChainStationStructs} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/HostChainStationStructs.sol";
-import {ExternalChainStationStructs} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/ExternalChainStationStructs.sol";
+import {
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
+import {
+    HostChainStationStructs
+} from "@evvm/testnet-contracts/library/structs/HostChainStationStructs.sol";
+import {
+    ExternalChainStationStructs
+} from "@evvm/testnet-contracts/library/structs/ExternalChainStationStructs.sol";
 
 abstract contract CrossChainInputs {
     address constant adminExternal = 0x0000000000000000000000000000000000000000;

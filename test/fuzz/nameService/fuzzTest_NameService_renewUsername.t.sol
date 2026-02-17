@@ -18,6 +18,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract fuzzTest_NameService_renewUsername is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -34,21 +35,23 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
     struct Params {
         AccountData user;
         string username;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bool priorityEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -59,11 +62,12 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
     }
 
     function _executeMakeOffer(uint256 amount) internal {
-        _execute_makeMakeOffer(
+        _executeFn_nameService_makeOffer(
             USER,
             USERNAME,
-            EXPIRATION_DATE,
             amount,
+            EXPIRATION_DATE,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
@@ -71,7 +75,6 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
-            true,
             GOLDEN_STAKER
         );
     }
@@ -81,7 +84,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
         string memory username,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.seePriceToRenew(username) + priorityFeeAmount
@@ -90,28 +93,29 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
     }
 
     struct Input {
-        uint256 nonceNameService;
+        uint256 nonce;
         uint16 priorityFee;
         uint256 nonceAsyncEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
         bool hasOffer;
         uint112 offerAmount;
     }
 
     function test__fuzz__renewUsername__noStaker(Input memory input) external {
         vm.assume(
-            input.nonceNameService <
+            input.nonce <
                 uint256(
-                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
                 )
         );
 
         vm.assume(
             input.nonceAsyncEVVM <
                 uint256(
-                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
                 )
         );
+        vm.assume(input.nonceAsyncEVVM != input.nonce);
 
         if (input.hasOffer) {
             vm.assume(input.offerAmount > 0);
@@ -121,41 +125,36 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(USER_USERNAME_OWNER.Address),
-            priorityEVVM: input.priorityEVVM,
-            signatureEVVM: ""
+            noncePay: input.nonceAsyncEVVM,
+            signaturePay: ""
         });
 
         _addBalance(params.user, params.username, params.priorityFee);
 
         (
             params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            params.signaturePay
+        ) = _executeSig_nameService_renewUsername(
             params.user,
-            params.username,
-            params.nonceNameService,
+            params.username,address(0),
+            params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
+            params.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
 
         nameService.renewUsername(
             params.user.Address,
-            params.username,
-            params.nonceNameService,
+            params.username,address(0),
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
 
         vm.stopPrank();
@@ -171,7 +170,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -179,48 +178,44 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
             "balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "balance incorrectly changed after renewal"
         );
     }
 
-
     function test__fuzz__renewUsername__staker(Input memory input) external {
         vm.assume(
-            input.nonceNameService <
+            input.nonce <
                 uint256(
-                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
                 )
         );
 
         vm.assume(
             input.nonceAsyncEVVM <
                 uint256(
-                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc
+                    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
                 )
         );
+
+        vm.assume(input.nonceAsyncEVVM != input.nonce);
 
         if (input.hasOffer) {
             vm.assume(input.offerAmount > 0);
             _executeMakeOffer(uint256(input.offerAmount));
         }
-        
 
         Params memory params = Params({
             user: USER_USERNAME_OWNER,
             username: USERNAME,
-            nonceNameService: input.nonceNameService,
+            nonce: input.nonce,
             signatureNameService: "",
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(USER_USERNAME_OWNER.Address),
-            priorityEVVM: input.priorityEVVM,
-            signatureEVVM: ""
+            noncePay: input.nonceAsyncEVVM,
+            signaturePay: ""
         });
-
-        uint256 stakerBalance = evvm.getRewardAmount() +
+        uint256 stakerBalance = core.getRewardAmount() +
             ((nameService.seePriceToRenew(params.username) * 50) / 100) +
             params.priorityFee;
 
@@ -228,27 +223,25 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
 
         (
             params.signatureNameService,
-            params.signatureEVVM
-        ) = _execute_makeRenewUsernameSignatures(
+            params.signaturePay
+        ) = _executeSig_nameService_renewUsername(
             params.user,
-            params.username,
-            params.nonceNameService,
+            params.username,address(0),
+            params.nonce,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM
+            params.noncePay
         );
 
         vm.startPrank(FISHER_STAKER.Address);
 
         nameService.renewUsername(
             params.user.Address,
-            params.username,
-            params.nonceNameService,
+            params.username,address(0),
+            params.nonce,
             params.signatureNameService,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
 
         vm.stopPrank();
@@ -264,7 +257,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -272,7 +265,7 @@ contract fuzzTest_NameService_renewUsername is Test, Constants {
             "balance incorrectly changed after renewal"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             stakerBalance,
             "balance incorrectly changed after renewal"
         );

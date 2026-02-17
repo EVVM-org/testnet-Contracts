@@ -23,7 +23,7 @@ import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Evvm} from "@evvm/testnet-contracts/contracts/evvm/Evvm.sol";
+import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
 import {
     Erc191TestBuilder
 } from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
@@ -31,32 +31,28 @@ import {
     Estimator
 } from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
 import {
-    EvvmStorage
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStorage.sol";
+    CoreStorage
+} from "@evvm/testnet-contracts/contracts/core/lib/CoreStorage.sol";
 import {
     AdvancedStrings
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {
-    EvvmStructs
-} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 import {
     Treasury
 } from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
 import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
 import {
     P2PSwapStructs
-} from "@evvm/testnet-contracts/contracts/p2pSwap/lib/P2PSwapStructs.sol";
+} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
-
-
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
-
-
 
     function addBalance(address user, address token, uint256 amount) private {
         if (amount == 0) return;
-        evvm.addBalance(user, token, amount);
+        core.addBalance(user, token, amount);
     }
 
     function createOrder(
@@ -68,12 +64,12 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         uint256 amountA,
         uint256 amountB,
         uint256 priorityFee,
-        uint256 nonceEVVM,
-        bool priorityFlag
+        uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
         P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
             .MetadataMakeOrder({
                 nonce: nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 amountA: amountA,
@@ -83,7 +79,9 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(p2pSwap),
+                address(0),
                 nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -101,18 +99,19 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         (v, r, s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenA,
                 amountA,
                 priorityFee,
-                nonceEVVM,
-                priorityFlag,
-                address(p2pSwap)
+                address(p2pSwap),
+                noncePay,
+                true
             )
         );
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -124,9 +123,8 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             orderData,
             signatureP2P,
             priorityFee,
-            nonceEVVM,
-            priorityFlag,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
@@ -135,11 +133,10 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
 
     struct DispatchOrderFuzzTestInput {
         bool hasPriorityFee;
-        bool isAsync;
         uint16 amountA;
         uint16 amountB;
         uint16 priorityFee;
-        uint16 nonceEVVM;
+        uint16 noncePay;
         uint16 nonceP2PSwap;
         bool tokenScenario;
     }
@@ -149,6 +146,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
     ) external {
         vm.assume(input.priorityFee > 0);
         vm.assume(input.amountA > 0 && input.amountB > 0);
+        vm.assume(input.noncePay != input.nonceP2PSwap);
 
         // 1. define params
         address tokenA = input.tokenScenario
@@ -159,7 +157,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
-        uint256 nonceEVVM = input.isAsync ? input.nonceEVVM : 0;
+        uint256 noncePay = 99999;
 
         uint256 fee = (uint256(input.amountB) * 500) / 10_000;
 
@@ -169,7 +167,11 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             tokenB,
             input.amountB + fee + priorityFee
         );
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -181,19 +183,21 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             input.amountA,
             input.amountB,
             0, // priorityFee is 0 for createOrder
-            nonceEVVM,
-            input.isAsync
+            noncePay
         );
         input.nonceP2PSwap = 43242;
+        noncePay = 99999;
 
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
+        assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
         // 3. dispatch that order
         // 3.1 create p2p signature
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(p2pSwap),
+                address(0),
                 input.nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -211,6 +215,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
             .MetadataDispatchOrder({
                 nonce: input.nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 orderId: orderId,
@@ -221,19 +226,20 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenB,
                 metadata.amountOfTokenBToFill,
                 priorityFee,
-                nonceEVVM,
-                input.isAsync,
-                address(p2pSwap)
+                address(p2pSwap),
+                noncePay,
+                true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -249,9 +255,8 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            input.isAsync,
-            signatureEVVM
+            noncePay,
+            signaturePay
         );
         vm.stopPrank();
 
@@ -259,7 +264,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         order = p2pSwap.getOrder(market, orderId);
         assertEq(order.seller, address(0));
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
             input.amountA
         );
         P2PSwap.Percentage memory rewards = p2pSwap.getRewardPercentage();
@@ -268,12 +273,12 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             ((fee * rewards.seller) / 10_000);
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
             sellerAmount
         );
 
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenB), 0);
+        assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
+        assertEq(core.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenB), 0);
 
         uint256 serviceFee = (fee * 4000) / 10_000;
         assertEq(p2pSwap.getBalanceOfContract(tokenB), serviceFee);
@@ -284,11 +289,14 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             executorAmount += (fee * 1000) / 10_000;
             executorAmount += priorityFee;
         }
-        executorAmount += 2 * evvm.getRewardAmount(); // from makeOrder
-        executorAmount += 4 * evvm.getRewardAmount(); // from dispatchOrder
+        executorAmount += 2 * core.getRewardAmount(); // from makeOrder
+        executorAmount += 4 * core.getRewardAmount(); // from dispatchOrder
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
             executorAmount
         );
     }
@@ -298,6 +306,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
     ) external {
         vm.assume(input.priorityFee > 0);
         vm.assume(input.amountA > 0 && input.amountB > 0);
+        vm.assume(input.noncePay != input.nonceP2PSwap);
 
         // 1. define params
         address tokenA = input.tokenScenario
@@ -308,7 +317,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
-        uint256 nonceEVVM = input.isAsync ? input.nonceEVVM : 0;
+        uint256 noncePay = input.noncePay;
 
         uint256 proportionalFee = (uint256(input.amountB) * 500) / 10_000;
         uint256 _amountOut = 0.001 ether; // greater than proportionalFee
@@ -329,7 +338,11 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             tokenB,
             input.amountB + fee + priorityFee
         );
-        addBalance(address(p2pSwap), PRINCIPAL_TOKEN_ADDRESS, 50000000000000000000);
+        addBalance(
+            address(p2pSwap),
+            PRINCIPAL_TOKEN_ADDRESS,
+            50000000000000000000
+        );
 
         // 2. create an order
         (uint256 market, uint256 orderId) = createOrder(
@@ -341,19 +354,21 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             input.amountA,
             input.amountB,
             0, // priorityFee is 0 for createOrder
-            nonceEVVM,
-            input.isAsync
+            noncePay
         );
         input.nonceP2PSwap = 43242;
+        noncePay = 99999;
 
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
+        assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
 
         // 3. dispatch that order
         // 3.1 create p2p signature
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForDispatchOrder(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(p2pSwap),
+                address(0),
                 input.nonceP2PSwap,
                 tokenA,
                 tokenB,
@@ -371,6 +386,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
             .MetadataDispatchOrder({
                 nonce: input.nonceP2PSwap,
+                originExecutor: address(0),
                 tokenA: tokenA,
                 tokenB: tokenB,
                 orderId: orderId,
@@ -381,19 +397,20 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(core),
                 address(p2pSwap),
                 "",
                 tokenB,
                 metadata.amountOfTokenBToFill,
                 priorityFee,
-                nonceEVVM,
-                input.isAsync,
-                address(p2pSwap)
+                address(p2pSwap),
+                noncePay,
+                true
             )
         );
 
-        bytes memory signatureEVVM = Erc191TestBuilder.buildERC191Signature(
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
             v,
             r,
             s
@@ -409,9 +426,8 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             COMMON_USER_NO_STAKER_2.Address,
             metadata,
             priorityFee,
-            nonceEVVM,
-            input.isAsync,
-            signatureEVVM,
+            noncePay,
+            signaturePay,
             _amountOut
         );
         vm.stopPrank();
@@ -420,7 +436,7 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
         order = p2pSwap.getOrder(market, orderId);
         assertEq(order.seller, address(0));
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenA),
             input.amountA
         );
         P2PSwap.Percentage memory rewards = p2pSwap.getRewardPercentage();
@@ -429,12 +445,12 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             ((fee * rewards.seller) / 10_000);
 
         assertEq(
-            evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenB),
             sellerAmount
         );
 
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
-        assertEq(evvm.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenB), 0);
+        assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
+        assertEq(core.getBalance(COMMON_USER_NO_STAKER_2.Address, tokenB), 0);
 
         uint256 serviceFee = (fee * rewards.service) / 10_000;
         assertEq(p2pSwap.getBalanceOfContract(tokenB), serviceFee);
@@ -445,11 +461,14 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
             executorAmount += (fee * 1000) / 10_000;
             executorAmount += priorityFee;
         }
-        executorAmount += 2 * evvm.getRewardAmount(); // from makeOrder
-        executorAmount += 4 * evvm.getRewardAmount(); // from dispatchOrder
+        executorAmount += 2 * core.getRewardAmount(); // from makeOrder
+        executorAmount += 4 * core.getRewardAmount(); // from dispatchOrder
 
         assertEq(
-            evvm.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
             executorAmount
         );
     }

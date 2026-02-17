@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -37,21 +38,23 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         AccountData user;
         string identity;
         string value;
-        uint256 nonceNameService;
+        uint256 nonce;
         bytes signatureNameService;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bool priorityEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             USER_USERNAME_OWNER,
             USERNAME,
+            444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd
             ),
@@ -65,7 +68,7 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         AccountData memory user,
         uint256 priorityFeeAmount
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             nameService.getPriceToAddCustomMetadata() + priorityFeeAmount
@@ -78,69 +81,39 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             value: "test>1",
-            nonceNameService: 10001,
+            nonce: 20002,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            priorityEVVM: false,
-            signatureEVVM: ""
+            noncePay: 22,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
-            value: "test>2",
-            nonceNameService: 20002,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: 20002,
-            priorityEVVM: true,
-            signatureEVVM: ""
-        });
-
-        Params memory params3 = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            value: "test>3",
-            nonceNameService: 30003,
+            value: "test>1",
+            nonce: 40004,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ) + 1,
-            priorityEVVM: false,
-            signatureEVVM: ""
+            noncePay: 44,
+            signaturePay: ""
         });
 
-        Params memory params4 = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            value: "test>4",
-            nonceNameService: 40004,
-            signatureNameService: "",
-            priorityFee: 0.00001 ether,
-            nonceEVVM: 40004,
-            priorityEVVM: true,
-            signatureEVVM: ""
-        });
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync no priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing no priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         _addBalance(params1.user, params1.priorityFee);
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+            params1.signaturePay
+        ) = _executeSig_nameService_addCustomMetadata(
             params1.user,
             params1.identity,
             params1.value,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -149,12 +122,12 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.value,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
@@ -175,31 +148,31 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 1: user balance incorrectly changed after adding custom metadata"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 1: fisher balance incorrectly changed after adding custom metadata"
         );
 
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async no priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         _addBalance(params2.user, params2.priorityFee);
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+            params2.signaturePay
+        ) = _executeSig_nameService_addCustomMetadata(
             params2.user,
             params2.identity,
             params2.value,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.noncePay
         );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -208,12 +181,12 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params2.user.Address,
             params2.identity,
             params2.value,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();
@@ -234,132 +207,14 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 2: user balance incorrectly changed after adding custom metadata"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 2: fisher balance incorrectly changed after adding custom metadata"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        _addBalance(params3.user, params3.priorityFee);
-
-        (
-            params3.signatureNameService,
-            params3.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
-            params3.user,
-            params3.identity,
-            params3.value,
-            params3.nonceNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.addCustomMetadata(
-            params3.user.Address,
-            params3.identity,
-            params3.value,
-            params3.nonceNameService,
-            params3.signatureNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM,
-            params3.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata3 = nameService
-            .getSingleCustomMetadataOfIdentity(params3.identity, 2);
-
-        assertEq(
-            customMetadata3,
-            params3.value,
-            "Error 3: custom metadata value incorrect"
-        );
-
-        assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity(params3.identity),
-            3,
-            "Error 3: custom metadata slots incorrect"
-        );
-
-        assertEq(
-            evvm.getBalance(params3.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error 3: user balance incorrectly changed after adding custom metadata"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error 3: fisher balance incorrectly changed after adding custom metadata"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        _addBalance(params4.user, params4.priorityFee);
-
-        (
-            params4.signatureNameService,
-            params4.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
-            params4.user,
-            params4.identity,
-            params4.value,
-            params4.nonceNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM
-        );
-
-        vm.startPrank(FISHER_NO_STAKER.Address);
-
-        nameService.addCustomMetadata(
-            params4.user.Address,
-            params4.identity,
-            params4.value,
-            params4.nonceNameService,
-            params4.signatureNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM,
-            params4.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata4 = nameService
-            .getSingleCustomMetadataOfIdentity(params4.identity, 3);
-
-        assertEq(
-            customMetadata4,
-            params4.value,
-            "Error 4: custom metadata value incorrect"
-        );
-
-        assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity(params4.identity),
-            4,
-            "Error 4: custom metadata slots incorrect"
-        );
-
-        assertEq(
-            evvm.getBalance(params4.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error 4: user balance incorrectly changed after adding custom metadata"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error 4: fisher balance incorrectly changed after adding custom metadata"
         );
     }
 
@@ -368,72 +223,42 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
             value: "test>1",
-            nonceNameService: 10001,
+            nonce: 20002,
             signatureNameService: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ),
-            priorityEVVM: false,
-            signatureEVVM: ""
+            noncePay: 22,
+            signaturePay: ""
         });
 
         Params memory params2 = Params({
             user: USER_USERNAME_OWNER,
             identity: USERNAME,
-            value: "test>2",
-            nonceNameService: 20002,
-            signatureNameService: "",
-            priorityFee: 0,
-            nonceEVVM: 20002,
-            priorityEVVM: true,
-            signatureEVVM: ""
-        });
-
-        Params memory params3 = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            value: "test>3",
-            nonceNameService: 30003,
+            value: "test>1",
+            nonce: 40004,
             signatureNameService: "",
             priorityFee: 0.00001 ether,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                USER_USERNAME_OWNER.Address
-            ) + 1,
-            priorityEVVM: false,
-            signatureEVVM: ""
+            noncePay: 44,
+            signaturePay: ""
         });
 
-        Params memory params4 = Params({
-            user: USER_USERNAME_OWNER,
-            identity: USERNAME,
-            value: "test>4",
-            nonceNameService: 40004,
-            signatureNameService: "",
-            priorityFee: 0.00001 ether,
-            nonceEVVM: 40004,
-            priorityEVVM: true,
-            signatureEVVM: ""
-        });
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync no priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async no priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         _addBalance(params1.user, params1.priorityFee);
 
         (
             params1.signatureNameService,
-            params1.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+            params1.signaturePay
+        ) = _executeSig_nameService_addCustomMetadata(
             params1.user,
             params1.identity,
             params1.value,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM
+            params1.noncePay
         );
 
-        uint256 amountToReward1 = (5 * evvm.getRewardAmount()) +
+        uint256 amountToReward1 = (5 * core.getRewardAmount()) +
             ((nameService.getPriceToAddCustomMetadata() * 50) / 100) +
             params1.priorityFee;
 
@@ -443,12 +268,12 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params1.user.Address,
             params1.identity,
             params1.value,
-            params1.nonceNameService,
+            address(0),
+            params1.nonce,
             params1.signatureNameService,
             params1.priorityFee,
-            params1.nonceEVVM,
-            params1.priorityEVVM,
-            params1.signatureEVVM
+            params1.noncePay,
+            params1.signaturePay
         );
 
         vm.stopPrank();
@@ -469,34 +294,34 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params1.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 1: user balance incorrectly changed after adding custom metadata"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             amountToReward1,
             "Error 1: fisher balance incorrectly changed after adding custom metadata"
         );
 
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async no priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
+        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
 
         _addBalance(params2.user, params2.priorityFee);
 
         (
             params2.signatureNameService,
-            params2.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
+            params2.signaturePay
+        ) = _executeSig_nameService_addCustomMetadata(
             params2.user,
             params2.identity,
             params2.value,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM
+            params2.noncePay
         );
 
-        uint256 amountToReward2 = (5 * evvm.getRewardAmount()) +
+        uint256 amountToReward2 = (5 * core.getRewardAmount()) +
             ((nameService.getPriceToAddCustomMetadata() * 50) / 100) +
             params2.priorityFee;
 
@@ -506,12 +331,12 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
             params2.user.Address,
             params2.identity,
             params2.value,
-            params2.nonceNameService,
+            address(0),
+            params2.nonce,
             params2.signatureNameService,
             params2.priorityFee,
-            params2.nonceEVVM,
-            params2.priorityEVVM,
-            params2.signatureEVVM
+            params2.noncePay,
+            params2.signaturePay
         );
 
         vm.stopPrank();
@@ -532,140 +357,14 @@ contract unitTestCorrect_NameService_addCustomMetadata is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(params2.user.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error 2: user balance incorrectly changed after adding custom metadata"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             amountToReward2 + amountToReward1,
             "Error 2: fisher balance incorrectly changed after adding custom metadata"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing sync priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        _addBalance(params3.user, params3.priorityFee);
-
-        (
-            params3.signatureNameService,
-            params3.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
-            params3.user,
-            params3.identity,
-            params3.value,
-            params3.nonceNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM
-        );
-
-        uint256 amountToReward3 = (5 * evvm.getRewardAmount()) +
-            ((nameService.getPriceToAddCustomMetadata() * 50) / 100) +
-            params3.priorityFee;
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.addCustomMetadata(
-            params3.user.Address,
-            params3.identity,
-            params3.value,
-            params3.nonceNameService,
-            params3.signatureNameService,
-            params3.priorityFee,
-            params3.nonceEVVM,
-            params3.priorityEVVM,
-            params3.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata3 = nameService
-            .getSingleCustomMetadataOfIdentity(params3.identity, 2);
-
-        assertEq(
-            customMetadata3,
-            params3.value,
-            "Error 3: custom metadata value incorrect"
-        );
-
-        assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity(params3.identity),
-            3,
-            "Error 3: custom metadata slots incorrect"
-        );
-
-        assertEq(
-            evvm.getBalance(params3.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error 3: user balance incorrectly changed after adding custom metadata"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            amountToReward3 + amountToReward2 + amountToReward1,
-            "Error 3: fisher balance incorrectly changed after adding custom metadata"
-        );
-
-        /*⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ Testing async priorityFee ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇*/
-
-        _addBalance(params4.user, params4.priorityFee);
-
-        (
-            params4.signatureNameService,
-            params4.signatureEVVM
-        ) = _execute_makeAddCustomMetadataSignatures(
-            params4.user,
-            params4.identity,
-            params4.value,
-            params4.nonceNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM
-        );
-
-        uint256 amountToReward4 = (5 * evvm.getRewardAmount()) +
-            ((nameService.getPriceToAddCustomMetadata() * 50) / 100) +
-            params4.priorityFee;
-
-        vm.startPrank(FISHER_STAKER.Address);
-
-        nameService.addCustomMetadata(
-            params4.user.Address,
-            params4.identity,
-            params4.value,
-            params4.nonceNameService,
-            params4.signatureNameService,
-            params4.priorityFee,
-            params4.nonceEVVM,
-            params4.priorityEVVM,
-            params4.signatureEVVM
-        );
-
-        vm.stopPrank();
-
-        string memory customMetadata4 = nameService
-            .getSingleCustomMetadataOfIdentity(params4.identity, 3);
-
-        assertEq(
-            customMetadata4,
-            params4.value,
-            "Error 4: custom metadata value incorrect"
-        );
-
-        assertEq(
-            nameService.getCustomMetadataMaxSlotsOfIdentity(params4.identity),
-            4,
-            "Error 4: custom metadata slots incorrect"
-        );
-
-        assertEq(
-            evvm.getBalance(params4.user.Address, PRINCIPAL_TOKEN_ADDRESS),
-            0,
-            "Error 4: user balance incorrectly changed after adding custom metadata"
-        );
-        assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            amountToReward4 + amountToReward3 + amountToReward2 + amountToReward1,
-            "Error 4: fisher balance incorrectly changed after adding custom metadata"
         );
     }
 }

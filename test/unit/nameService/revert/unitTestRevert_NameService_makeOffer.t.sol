@@ -23,30 +23,31 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 import {
     NameService
 } from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
 import {
-    ErrorsLib
-} from "@evvm/testnet-contracts/contracts/nameService/lib/ErrorsLib.sol";
-import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
-import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+    NameServiceError
+} from "@evvm/testnet-contracts/library/errors/NameServiceError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_makeOffer is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
-        _execute_makeRegistrationUsername(
+        _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_1,
             "test",
+            444,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0
             ),
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1
             ),
@@ -64,7 +65,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         private
         returns (uint256 totalOfferAmount, uint256 totalPriorityFeeAmount)
     {
-        evvm.addBalance(
+        core.addBalance(
             user.Address,
             PRINCIPAL_TOKEN_ADDRESS,
             offerAmount + priorityFeeAmount
@@ -91,46 +92,48 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOffer(
                 /* 🢃 different evvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
+                address(nameService),
                 "test",
-                expirationDate,
                 totalOfferAmount,
+                expirationDate,
+                address(0),
                 10001
             )
         );
         bytes memory signatureNameService = Erc191TestBuilder
             .buildERC191Signature(v, r, s);
 
-        bytes memory signatureEVVM = _execute_makeSignaturePay(
+        bytes memory signaturePay = _executeSig_evvm_pay(
             COMMON_USER_NO_STAKER_2,
             address(nameService),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             totalOfferAmount,
             priorityFeeAmount,
+            address(nameService),
             101,
-            true,
-            address(nameService)
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
         assertEq(
@@ -139,10 +142,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -162,37 +169,37 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 /* 🢃 different signer 🢃 */
                 COMMON_USER_NO_STAKER_3,
                 "test",
-                expirationDate,
                 totalOfferAmount,
+                expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
-                101,
-                true
+                101
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
         assertEq(
@@ -201,10 +208,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -224,37 +235,37 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 /* 🢃 different username 🢃 */
                 "differentusername",
-                expirationDate,
                 totalOfferAmount,
+                expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
-                101,
-                true
+                101
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
         assertEq(
@@ -263,10 +274,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -286,37 +301,37 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
+                totalOfferAmount,
                 /* 🢃 different dateExpire 🢃 */
                 expirationDate + 1,
-                totalOfferAmount,
+                address(0),
                 10001,
                 priorityFeeAmount,
-                101,
-                true
+                101
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
         assertEq(
@@ -325,10 +340,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -348,37 +367,37 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
-                expirationDate,
                 /* 🢃 different amount 🢃 */
                 totalOfferAmount + 1,
+                expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
-                101,
-                true
+                101
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
         assertEq(
@@ -387,10 +406,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -410,37 +433,37 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
-                expirationDate,
                 totalOfferAmount,
+                expirationDate,
+                address(0),
                 /* 🢃 different nameServiceNonce 🢃 */
                 67,
                 priorityFeeAmount,
-                101,
-                true
+                101
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnNameService.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
         assertEq(
@@ -449,10 +472,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -464,10 +491,11 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
     function test__unit_revert__makeOffer__InvalidUsername_flagNotAUsername()
         external
     {
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_3,
             "testrevert",
             67,
+            address(0),
             uint256(
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffA
             )
@@ -489,36 +517,36 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 invalidUsername,
-                expirationDate,
                 totalOfferAmount,
+                expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
-                101,
-                true
+                101
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidUsername.selector);
+        vm.expectRevert(NameServiceError.InvalidUsername.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             invalidUsername,
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(invalidUsername, 0);
 
         assertEq(
@@ -527,10 +555,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -552,36 +584,36 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         string memory unregisteredUsername = "testrevert";
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 unregisteredUsername,
-                expirationDate,
                 totalOfferAmount,
+                expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
-                101,
-                true
+                101
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.InvalidUsername.selector);
+        vm.expectRevert(NameServiceError.InvalidUsername.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             unregisteredUsername,
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername(unregisteredUsername, 0);
 
         assertEq(
@@ -590,10 +622,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -614,36 +650,36 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp - 1;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
-                expirationDate,
                 totalOfferAmount,
+                expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
-                101,
-                true
+                101
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.CannotBeBeforeCurrentTime.selector);
+        vm.expectRevert(NameServiceError.CannotBeBeforeCurrentTime.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
         assertEq(
@@ -652,10 +688,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -676,36 +716,36 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
-                expirationDate,
                 totalOfferAmount,
+                expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
-                101,
-                true
+                101
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(ErrorsLib.AmountMustBeGreaterThanZero.selector);
+        vm.expectRevert(NameServiceError.AmountMustBeGreaterThanZero.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
         assertEq(
@@ -714,10 +754,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -726,7 +770,7 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         );
     }
 
-    function test__unit_revert__makeOffer__AsyncNonceAlreadyUsed() external {
+    function test__unit_revert__makeOffer_NonceAlreadyUsed() external {
         (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.001 ether,
@@ -736,25 +780,26 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         /* 🢃 reuse nonce 🢃 */
         uint256 nonceToUse = 10001;
 
-        _execute_makePreRegistrationUsername(
+        _executeFn_nameService_preRegistrationUsername(
             COMMON_USER_NO_STAKER_2,
             "testrevert",
             67,
+            address(0),
             nonceToUse
         );
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
-                expirationDate,
                 totalOfferAmount,
+                expirationDate,
+                address(0),
                 nonceToUse,
                 priorityFeeAmount,
-                101,
-                true
+                101
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -765,16 +810,16 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "test",
             expirationDate,
             totalOfferAmount,
+            address(0),
             nonceToUse,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
         assertEq(
@@ -783,10 +828,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -795,7 +844,9 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         );
     }
 
-    function test__unit_revert__makeOffer__InvalidSignature_fromEvvm() external {
+    function test__unit_revert__makeOffer__InvalidSignature_fromEvvm()
+        external
+    {
         (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.001 ether,
@@ -804,37 +855,37 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         uint256 expirationDate = block.timestamp + 30 days;
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
-                expirationDate,
                 totalOfferAmount,
+                expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
                 /* 🢃 different evvm nonce 🢃 */
-                67,
-                true
+                67
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
         assertEq(
@@ -843,10 +894,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -855,7 +910,9 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
         );
     }
 
-    function test__unit_revert__makeOffer__InsufficientBalance_fromEvvm() external {
+    function test__unit_revert__makeOffer__InsufficientBalance_fromEvvm()
+        external
+    {
         (uint256 totalOfferAmount, uint256 priorityFeeAmount) = _addBalance(
             COMMON_USER_NO_STAKER_2,
             0.001 ether,
@@ -868,36 +925,36 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
 
         (
             bytes memory signatureNameService,
-            bytes memory signatureEVVM
-        ) = _execute_makeMakeOfferSignatures(
+            bytes memory signaturePay
+        ) = _executeSig_nameService_makeOffer(
                 COMMON_USER_NO_STAKER_2,
                 "test",
-                expirationDate,
                 totalOfferAmount,
+                expirationDate,
+                address(0),
                 10001,
                 priorityFeeAmount,
-                101,
-                true
+                101
             );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
 
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         nameService.makeOffer(
             COMMON_USER_NO_STAKER_2.Address,
             "test",
-            expirationDate,
             totalOfferAmount,
+            expirationDate,
+            address(0),
             10001,
             signatureNameService,
             priorityFeeAmount,
             101,
-            true,
-            signatureEVVM
+            signaturePay
         );
         vm.stopPrank();
 
-        NameService.OfferMetadata memory checkData = nameService
+        NameServiceStructs.OfferMetadata memory checkData = nameService
             .getSingleOfferOfUsername("test", 0);
 
         assertEq(
@@ -906,10 +963,14 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "Offerer address should be zero"
         );
         assertEq(checkData.amount, 0, "Offer amount should be zero");
-        assertEq(checkData.expireDate, 0, "Offer expire date should be zero");
+        assertEq(
+            checkData.expirationDate,
+            0,
+            "Offer expire date should be zero"
+        );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_2.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -917,5 +978,4 @@ contract unitTestRevert_NameService_makeOffer is Test, Constants {
             "User balance should be the same after revert"
         );
     }
-    
 }

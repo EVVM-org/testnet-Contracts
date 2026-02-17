@@ -21,15 +21,12 @@ pragma abicoder v2;
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
-import "@evvm/testnet-contracts/contracts/staking/lib/ErrorsLib.sol";
+import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    ErrorsLib as EvvmErrorsLib
-} from "@evvm/testnet-contracts/contracts/evvm/lib/ErrorsLib.sol";
-import {
-    AsyncNonce
-} from "@evvm/testnet-contracts/library/utils/nonces/AsyncNonce.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+import "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     function executeBeforeSetUp() internal override {
@@ -68,7 +65,7 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         address user,
         uint256 priorityFee
     ) private returns (uint256 amount, uint256 amountPriorityFee) {
-        evvm.addBalance(
+        core.addBalance(
             user,
             PRINCIPAL_TOKEN_ADDRESS,
             (staking.priceOfStaking()) + priorityFee
@@ -83,9 +80,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         uint256 _amountInPrincipal;
         bytes signatureStake;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bool priorityFlagEVVM;
-        bytes signatureEVVM;
+        uint256 noncePay;
+        bytes signaturePay;
     }
 
     function test__unit_revert__presaleStaking__PresaleStakingDisabled_allowPresaleStaking()
@@ -104,11 +100,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -119,27 +112,27 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.PresaleStakingDisabled.selector);
+        vm.expectRevert(StakingError.PresaleStakingDisabled.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
@@ -160,11 +153,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -175,27 +165,27 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.PresaleStakingDisabled.selector);
+        vm.expectRevert(StakingError.PresaleStakingDisabled.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
@@ -218,11 +208,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -233,32 +220,32 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.PresaleStakingDisabled.selector);
+        vm.expectRevert(StakingError.PresaleStakingDisabled.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
 
-    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_evvmID()
+    function test__unit_revert__presaleStaking__InvalidSignature_evvmID()
         external
     {
         Params memory params = Params({
@@ -267,11 +254,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -284,42 +268,45 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             params.user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPresaleStaking(
                 /* 🢃 Diferent EvvmID 🢃 */
-                evvm.getEvvmID() + 1,
+                core.getEvvmID() + 1,
+                address(staking),
                 params.isStaking,
                 1,
+                address(0),
                 params.nonceStake
             )
         );
         params.signatureStake = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        params.signatureEVVM = _execute_makeSignaturePay(
+        params.signaturePay = _executeSig_evvm_pay(
             params.user,
             address(staking),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             staking.priceOfStaking(),
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            address(staking)
+            address(staking),
+            params.noncePay,
+            true
         );
+    
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
 
-    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_signer()
+    function test__unit_revert__presaleStaking__InvalidSignature_signer()
         external
     {
         Params memory params = Params({
@@ -328,11 +315,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -343,33 +327,33 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             /* 🢃 Different Signer 🢃 */
             COMMON_USER_NO_STAKER_2,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
 
-    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_isStaking()
+    function test__unit_revert__presaleStaking__InvalidSignature_isStaking()
         external
     {
         Params memory params = Params({
@@ -378,11 +362,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -393,33 +374,33 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             /* 🢃 Different flag isStaking 🢃 */
             !params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
 
-    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_amountOfStaking()
+    function test__unit_revert__presaleStaking__InvalidSignature_amountOfStaking()
         external
     {
         Params memory params = Params({
@@ -428,11 +409,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -444,43 +422,45 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             params.user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(staking),
                 params.isStaking,
                 /* 🢃 Different amount of staking 🢃 */
                 67,
+                address(0),
                 params.nonceStake
             )
         );
         params.signatureStake = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        params.signatureEVVM = _execute_makeSignaturePay(
+        params.signaturePay = _executeSig_evvm_pay(
             params.user,
             address(staking),
             "",
             PRINCIPAL_TOKEN_ADDRESS,
             staking.priceOfStaking(),
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            address(staking)
+            address(staking),
+            params.noncePay,
+            true
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
 
-    function test__unit_revert__presaleStaking__InvalidSignatureOnStaking_nonce()
+    function test__unit_revert__presaleStaking__InvalidSignature_nonce()
         external
     {
         Params memory params = Params({
@@ -489,11 +469,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -504,28 +481,27 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
-            params.isStaking,
+            params.isStaking,address(0),
             /* 🢃 Different nonce 🢃 */
             params.nonceStake + 1,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.InvalidSignatureOnStaking.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
@@ -539,11 +515,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_2.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -554,45 +527,42 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.UserIsNotPresaleStaker.selector);
+        vm.expectRevert(StakingError.UserIsNotPresaleStaker.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
 
     function test__unit_revert__presaleStaking__AsyncNonceAlreadyUsed()
         external
-    {   
-        _addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            0
-        );
-        _execute_makePresaleStaking(
+    {
+        _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
+            address(0),
             1000001000001,
             0,
-            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            false,
+            33,
             GOLDEN_STAKER
         );
 
@@ -602,11 +572,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -617,27 +584,27 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(AsyncNonce.AsyncNonceAlreadyUsed.selector);
+        vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
@@ -651,37 +618,34 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.UserPresaleStakerLimitExceeded.selector);
+        vm.expectRevert(StakingError.UserPresaleStakerLimitExceeded.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
@@ -689,30 +653,24 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_maxLimit()
         external
     {
-        _addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            0
-        );
-        _execute_makePresaleStaking(
+        _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
+            address(0),
             111,
             0,
-            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            false,
+            1111,
             GOLDEN_STAKER
         );
-        _addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            0
-        );
-        _execute_makePresaleStaking(
+        _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
+            address(0),
             222,
             0,
-            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            false,
+            2222,
             GOLDEN_STAKER
         );
 
@@ -722,11 +680,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -737,27 +692,27 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.UserPresaleStakerLimitExceeded.selector);
+        vm.expectRevert(StakingError.UserPresaleStakerLimitExceeded.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
@@ -765,17 +720,14 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_AddressMustWaitToFullUnstake()
         external
     {
-        _addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            0
-        );
-        _execute_makePresaleStaking(
+        _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
+            address(0),
             111,
             0,
-            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            false,
+            1111,
             GOLDEN_STAKER
         );
 
@@ -785,11 +737,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -800,27 +749,27 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.AddressMustWaitToFullUnstake.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToFullUnstake.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
@@ -828,29 +777,26 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
     function test__unit_revert__presaleStaking__UserPresaleStakerLimitExceeded_AddressMustWaitToStakeAgain()
         external
     {
-        _addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            0
-        );
-        _execute_makePresaleStaking(
+        _addBalance(COMMON_USER_NO_STAKER_1.Address, 0);
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             true,
+            address(0),
             111,
             0,
-            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            false,
+            1111,
             GOLDEN_STAKER
         );
 
         skip(staking.getSecondsToUnlockFullUnstaking());
 
-        _execute_makePresaleStaking(
+        _executeFn_staking_presaleStaking(
             COMMON_USER_NO_STAKER_1,
             false,
+            address(0),
             222,
             0,
-            evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            false,
+            2222,
             GOLDEN_STAKER
         );
 
@@ -860,37 +806,34 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(ErrorsLib.AddressMustWaitToStakeAgain.selector);
+        vm.expectRevert(StakingError.AddressMustWaitToStakeAgain.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
@@ -904,11 +847,8 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
@@ -920,15 +860,17 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             params.user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPresaleStaking(
-                evvm.getEvvmID(),
+                core.getEvvmID(),
+                address(staking),
                 params.isStaking,
                 1,
+                address(0),
                 params.nonceStake
             )
         );
         params.signatureStake = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        params.signatureEVVM = _execute_makeSignaturePay(
+        params.signaturePay = _executeSig_evvm_pay(
             params.user,
             address(staking),
             "",
@@ -937,23 +879,24 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             staking.priceOfStaking() + 1,
             /* 🢃 Diferent priority fee 🢃 */
             params.priorityFee + 1,
+            address(staking),
             /* 🢃 Diferent nonce 🢃 */
-            params.nonceEVVM + 1,
-            params.priorityFlagEVVM,
-            address(staking)
+            params.noncePay + 1,
+            /* 🢃 Diferent isAsyncExec 🢃 */
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmErrorsLib.InvalidSignature.selector);
+        vm.expectRevert(CoreError.InvalidSignature.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }
@@ -967,37 +910,34 @@ contract unitTestRevert_Staking_presaleStaking is Test, Constants {
             nonceStake: 1000001000001,
             signatureStake: "",
             priorityFee: 0,
-            nonceEVVM: evvm.getNextCurrentSyncNonce(
-                COMMON_USER_NO_STAKER_1.Address
-            ),
-            priorityFlagEVVM: false,
-            signatureEVVM: "",
+            noncePay: 67,
+            signaturePay: "",
             _amountInPrincipal: 0
         });
 
         (
             params.signatureStake,
-            params.signatureEVVM
-        ) = _execute_makePresaleStakingSignature(
+            params.signaturePay
+        ) = _executeSig_staking_presaleStaking(
             params.user,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM
+            params.noncePay
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
-        vm.expectRevert(EvvmErrorsLib.InsufficientBalance.selector);
+        vm.expectRevert(CoreError.InsufficientBalance.selector);
         staking.presaleStaking(
             params.user.Address,
             params.isStaking,
+            address(0),
             params.nonceStake,
             params.signatureStake,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityFlagEVVM,
-            params.signatureEVVM
+            params.noncePay,
+            params.signaturePay
         );
         vm.stopPrank();
     }

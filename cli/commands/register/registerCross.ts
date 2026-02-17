@@ -3,7 +3,7 @@
  *
  * Handles registration of cross-chain EVVM deployments in the EVVM Registry
  * contract on Ethereum Sepolia. Generates a unique EVVM ID and updates both
- * the host chain EVVM contract and external chain treasury station with the
+ * the host chain Core contract and external chain treasury station with the
  * assigned identifier.
  *
  * @module cli/commands/register/registerCross
@@ -39,15 +39,15 @@ import { saveEvvmCrossChainRegistrationToJson } from "../../utils/outputJson";
  *
  * Process:
  * 1. Validates Foundry installation and both wallet accounts
- * 2. Prompts for EVVM and treasury station addresses if not provided
+ * 2. Prompts for Core and treasury station addresses if not provided
  * 3. Validates both host and external chains are supported (skips for local chains)
  * 4. Calls EVVM Registry on Ethereum Sepolia to generate EVVM ID
- * 5. Updates host chain EVVM contract with assigned ID
+ * 5. Updates host chain Core contract with assigned ID
  * 6. Updates external chain treasury station contract with same ID
  *
  * @param {string[]} _args - Command arguments (unused, reserved for future use)
  * @param {any} options - Command options:
- *   - evvmAddress: Address of deployed EVVM contract on host chain
+ *   - coreAddress: Address of deployed Core contract on host chain
  *   - treasuryExternalStationAddress: Address of treasury station on external chain
  *   - walletNameHost: Foundry wallet for host chain (default: "defaultKey")
  *   - walletNameExternal: Foundry wallet for external chain (default: "defaultKey")
@@ -58,7 +58,7 @@ export async function registerCross(_args: string[], options: any) {
   console.log(`${colors.bright}Starting EVVM registration...${colors.reset}\n`);
 
   // Get values from optional flags
-  let evvmAddress: `0x${string}` | undefined = options.evvmAddress;
+  let coreAddress: `0x${string}` | undefined = options.coreAddress;
   let treasuryExternalStationAddress: `0x${string}` | undefined =
     options.treasuryExternalStationAddress;
   let walletNameHost: string = options.walletNameHost || "defaultKey";
@@ -77,17 +77,17 @@ export async function registerCross(_args: string[], options: any) {
   // If --useCustomEthRpc is present, look for EVVM_REGISTRATION_RPC_URL in .env or prompt user
   ethRPC = useCustomEthRpc
     ? process.env.EVVM_REGISTRATION_RPC_URL ||
-      promptString(
+      (await promptString(
         `${colors.yellow}Enter the custom Ethereum Sepolia RPC URL:${colors.reset}`
-      )
+      ))
     : EthSepoliaPublicRpc;
 
   // Validate or prompt for missing values
-  evvmAddress ||= promptAddress(
-    `${colors.yellow}Enter the EVVM Address:${colors.reset}`
+  coreAddress ||= await promptAddress(
+    `${colors.yellow}Enter the Core Address:${colors.reset}`
   );
 
-  treasuryExternalStationAddress ||= promptAddress(
+  treasuryExternalStationAddress ||= await promptAddress(
     `${colors.yellow}Enter the Treasury External Station Address:${colors.reset}`
   );
 
@@ -111,25 +111,25 @@ export async function registerCross(_args: string[], options: any) {
 
   const evvmID: number | undefined = await callRegisterEvvm(
     Number(hostChainId),
-    evvmAddress,
+    coreAddress,
     walletNameHost,
     ethRPC
   );
 
   if (evvmID === undefined) {
-    criticalError(`Failed to obtain EVVM ID for contract ${evvmAddress}.`);
+    criticalError(`Failed to obtain EVVM ID for contract ${coreAddress}.`);
   }
 
   confirmation(`Generated EVVM ID: ${colors.bright}${evvmID}${colors.reset}`);
 
   infoWithChainData(
-    `Setting EVVM ID on EVVM contract`,
+    `Setting EVVM ID on Core contract`,
     ChainData[hostChainId]?.Chain || "",
     hostChainId
   );
 
   await callSetEvvmID(
-    evvmAddress as `0x${string}`,
+    coreAddress as `0x${string}`,
     evvmID!,
     hostRpcUrl,
     walletNameHost
@@ -150,7 +150,7 @@ export async function registerCross(_args: string[], options: any) {
 
   await saveEvvmCrossChainRegistrationToJson(
     Number(evvmID),
-    evvmAddress as `0x${string}`,
+    coreAddress as `0x${string}`,
     Number(hostChainId),
     treasuryExternalStationAddress as `0x${string}`,
     Number(externalChainId),
@@ -165,7 +165,7 @@ export async function registerCross(_args: string[], options: any) {
   console.log(
     `${colors.green}EVVM ID:  ${colors.bright}${evvmID!}${colors.reset}`
   );
-  console.log(`${colors.green}Contract: ${evvmAddress}${colors.reset}`);
+  console.log(`${colors.green}Core Address: ${coreAddress}${colors.reset}`);
   console.log(
     `${colors.green}Treasury External Station: ${treasuryExternalStationAddress}${colors.reset}`
   );

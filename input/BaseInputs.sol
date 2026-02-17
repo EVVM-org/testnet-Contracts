@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
-import {EvvmStructs} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+import {
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
 abstract contract BaseInputs {
     address admin = 0x0000000000000000000000000000000000000000;
     address goldenFisher = 0x0000000000000000000000000000000000000000;
     address activator = 0x0000000000000000000000000000000000000000;
 
-    EvvmStructs.EvvmMetadata inputMetadata =
-        EvvmStructs.EvvmMetadata({
+    CoreStructs.EvvmMetadata inputMetadata =
+        CoreStructs.EvvmMetadata({
             EvvmName: "EVVM",
             // evvmID will be set to 0, and it will be assigned when you register the evvm
             EvvmID: 0,

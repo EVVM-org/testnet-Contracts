@@ -27,7 +27,7 @@ contract fuzzTest_Treasury is Test, Constants {
         uint256 amount,
         address token
     ) private returns (uint256) {
-        evvm.addBalance(user, token, amount);
+        core.addBalance(user, token, amount);
 
         return amount;
     }
@@ -63,7 +63,7 @@ contract fuzzTest_Treasury is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 input.user,
                 (address(input.isHostNative ? address(0) : address(testToken)))
             ),
@@ -102,7 +102,11 @@ contract fuzzTest_Treasury is Test, Constants {
     }
 
     function test__fuzz__withdraw(withdrawFuzzTestInput memory input) external {
-        vm.assume(input.user != address(1) && input.user != address(treasury));
+        vm.assume(
+            input.user != address(1) &&
+                input.user != address(treasury) &&
+                input.user.code.length == 0
+        );
         vm.assume(input.withdrawAmount > 0);
 
         if (input.isHostNative) {
@@ -123,7 +127,7 @@ contract fuzzTest_Treasury is Test, Constants {
         vm.stopPrank();
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 input.user,
                 (address(input.isHostNative ? address(0) : address(testToken)))
             ),

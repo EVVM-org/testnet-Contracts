@@ -18,6 +18,7 @@ import "forge-std/console2.sol";
 import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/NameServiceStructs.sol";
 
 contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
     AccountData FISHER_NO_STAKER = WILDCARD_USER;
@@ -26,59 +27,56 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
     struct Params {
         AccountData user;
         string username;
-        uint256 clowNumber;
-        uint256 nonceNameService;
+        uint256 lockNumber;
+        uint256 nonce;
         uint256 priorityFee;
-        uint256 nonceEVVM;
-        bool priorityEVVM;
+        uint256 noncePay;
     }
 
     function _addBalance(
         AccountData memory user,
         uint256 priorityFee
     ) private returns (uint256 totalPriorityFeeAmount) {
-        evvm.addBalance(user.Address, PRINCIPAL_TOKEN_ADDRESS, priorityFee);
+        core.addBalance(user.Address, PRINCIPAL_TOKEN_ADDRESS, priorityFee);
 
         return priorityFee;
     }
 
     struct Input {
         string username;
-        uint256 clowNumber;
-        uint256 nonceNameService;
+        uint256 lockNumber;
+        uint256 nonce;
         uint32 priorityFee;
         uint256 nonceAsyncEVVM;
-        bool priorityEVVM;
+        bool isAsyncExecEvvm;
     }
 
     function test__fuzz__preRegistrationUsername__noStaker(
         Input memory input
     ) external {
+        vm.assume(input.nonce != input.nonceAsyncEVVM);
         Params memory params = Params({
             user: COMMON_USER_NO_STAKER_1,
             username: input.username,
-            clowNumber: input.clowNumber,
-            nonceNameService: input.nonceNameService,
+            lockNumber: input.lockNumber,
+            nonce: input.nonce,
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            priorityEVVM: input.priorityEVVM
+            noncePay: input.nonceAsyncEVVM
         });
 
         _addBalance(params.user, params.priorityFee);
 
         (
             bytes memory signatureNameServiceOne,
-            bytes memory signatureEvvmOne
-        ) = _execute_makePreRegistrationUsernameSignature(
+            bytes memory signaturePayOne
+        ) = _executeSig_nameService_preRegistrationUsername(
                 params.user,
                 params.username,
-                params.clowNumber,
-                params.nonceNameService,
+                params.lockNumber,
+                address(0),
+                params.nonce,
                 params.priorityFee,
-                params.nonceEVVM,
-                params.priorityEVVM
+                params.noncePay
             );
 
         vm.startPrank(FISHER_NO_STAKER.Address);
@@ -86,14 +84,14 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         nameService.preRegistrationUsername(
             params.user.Address,
             keccak256(
-                abi.encodePacked(params.username, uint256(params.clowNumber))
+                abi.encodePacked(params.username, uint256(params.lockNumber))
             ),
-            params.nonceNameService,
+            address(0),
+            params.nonce,
             signatureNameServiceOne,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            signatureEvvmOne
+            params.noncePay,
+            signaturePayOne
         );
 
         vm.stopPrank();
@@ -105,7 +103,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                     keccak256(
                         abi.encodePacked(
                             params.username,
-                            uint256(params.clowNumber)
+                            uint256(params.lockNumber)
                         )
                     )
                 )
@@ -119,7 +117,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -127,7 +125,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             "Error NonStaker: balance incorrectly changed after preRegistrationUsername"
         );
         assertEq(
-            evvm.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getBalance(FISHER_NO_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
             "Error NonStaker: balance incorrectly changed after preRegistrationUsername"
         );
@@ -136,31 +134,29 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
     function test__fuzz__preRegistrationUsername__staker(
         Input memory input
     ) external {
+        vm.assume(input.nonce != input.nonceAsyncEVVM);
         Params memory params = Params({
             user: COMMON_USER_NO_STAKER_1,
             username: input.username,
-            clowNumber: input.clowNumber,
-            nonceNameService: input.nonceNameService,
+            lockNumber: input.lockNumber,
+            nonce: input.nonce,
             priorityFee: input.priorityFee,
-            nonceEVVM: input.priorityEVVM
-                ? input.nonceAsyncEVVM
-                : evvm.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
-            priorityEVVM: input.priorityEVVM
+            noncePay: input.nonceAsyncEVVM
         });
 
         _addBalance(params.user, params.priorityFee);
 
         (
             bytes memory signatureNameServiceOne,
-            bytes memory signatureEvvmOne
-        ) = _execute_makePreRegistrationUsernameSignature(
+            bytes memory signaturePayOne
+        ) = _executeSig_nameService_preRegistrationUsername(
                 params.user,
                 params.username,
-                params.clowNumber,
-                params.nonceNameService,
+                params.lockNumber,
+                address(0),
+                params.nonce,
                 params.priorityFee,
-                params.nonceEVVM,
-                params.priorityEVVM
+                params.noncePay
             );
 
         vm.startPrank(FISHER_STAKER.Address);
@@ -168,14 +164,14 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         nameService.preRegistrationUsername(
             params.user.Address,
             keccak256(
-                abi.encodePacked(params.username, uint256(params.clowNumber))
+                abi.encodePacked(params.username, uint256(params.lockNumber))
             ),
-            params.nonceNameService,
+            address(0),
+            params.nonce,
             signatureNameServiceOne,
             params.priorityFee,
-            params.nonceEVVM,
-            params.priorityEVVM,
-            signatureEvvmOne
+            params.noncePay,
+            signaturePayOne
         );
 
         vm.stopPrank();
@@ -187,7 +183,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
                     keccak256(
                         abi.encodePacked(
                             params.username,
-                            uint256(params.clowNumber)
+                            uint256(params.lockNumber)
                         )
                     )
                 )
@@ -201,7 +197,7 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
         );
 
         assertEq(
-            evvm.getBalance(
+            core.getBalance(
                 COMMON_USER_NO_STAKER_1.Address,
                 PRINCIPAL_TOKEN_ADDRESS
             ),
@@ -209,8 +205,8 @@ contract fuzzTest_NameService_preRegistrationUsername is Test, Constants {
             "Error NonStaker: balance incorrectly changed after preRegistrationUsername"
         );
         assertEq(
-            evvm.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-            evvm.getRewardAmount() + params.priorityFee,
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            core.getRewardAmount() + params.priorityFee,
             "Error Staker: balance incorrectly changed after preRegistrationUsername"
         );
     }

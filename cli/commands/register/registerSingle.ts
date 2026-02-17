@@ -32,20 +32,20 @@ import { saveEvvmRegistrationToJson } from "../../utils/outputJson";
  * Registers a single-chain EVVM instance in the EVVM Registry
  *
  * This command interacts with the EVVM Registry contract on Ethereum Sepolia
- * to obtain a globally unique EVVM ID, then updates the deployed EVVM contract
+ * to obtain a globally unique EVVM ID, then updates the deployed Core contract
  * with this identifier. The registry maintains a canonical list of all EVVM
  * instances across supported chains.
  *
  * Process:
  * 1. Validates Foundry installation and wallet setup
- * 2. Prompts for EVVM contract address if not provided
+ * 2. Prompts for Core contract address if not provided
  * 3. Validates host chain is supported (skips for local chains 31337/1337)
  * 4. Calls EVVM Registry on Ethereum Sepolia to generate EVVM ID
- * 5. Updates EVVM contract with assigned ID via setEvvmID()
+ * 5. Updates Core contract with assigned ID via setEvvmID()
  *
  * @param {string[]} _args - Command arguments (unused, reserved for future use)
  * @param {any} options - Command options:
- *   - evvmAddress: Address of deployed EVVM contract
+ *   - coreAddress: Address of deployed Core contract
  *   - walletName: Foundry wallet account name (default: "defaultKey")
  *   - useCustomEthRpc: Use custom Ethereum Sepolia RPC instead of public (default: false)
  * @returns {Promise<void>}
@@ -54,7 +54,7 @@ export async function registerSingle(_args: string[], options: any) {
   console.log(`${colors.bright}Starting EVVM registration...${colors.reset}\n`);
 
   // Get values from optional flags
-  let evvmAddress: `0x${string}` | undefined = options.evvmAddress;
+  let coreAddress: `0x${string}` | undefined = options.coreAddress;
   let walletName: string = options.walletName || "defaultKey";
   let useCustomEthRpc: boolean = options.useCustomEthRpc || false;
 
@@ -67,14 +67,14 @@ export async function registerSingle(_args: string[], options: any) {
   // If --useCustomEthRpc is present, look for EVVM_REGISTRATION_RPC_URL in .env or prompt user
   ethRPC = useCustomEthRpc
     ? process.env.EVVM_REGISTRATION_RPC_URL ||
-      promptString(
+      (await promptString(
         `${colors.yellow}Enter the custom Ethereum Sepolia RPC URL:${colors.reset}`
-      )
+      ))
     : EthSepoliaPublicRpc;
 
   // Validate or prompt for missing values
-  evvmAddress ||= promptAddress(
-    `${colors.yellow}Enter the EVVM Address:${colors.reset}`
+  coreAddress ||= await promptAddress(
+    `${colors.yellow}Enter the Core Address:${colors.reset}`
   );
 
   let { rpcUrl, chainId } = await getRPCUrlAndChainId(process.env.RPC_URL);
@@ -90,28 +90,28 @@ export async function registerSingle(_args: string[], options: any) {
 
   const evvmID: number | undefined = await callRegisterEvvm(
     Number(chainId),
-    evvmAddress,
+    coreAddress,
     walletName,
     ethRPC
   );
 
   if (!evvmID) {
-    criticalError(`Failed to obtain EVVM ID for contract ${evvmAddress}.`);
+    criticalError(`Failed to obtain EVVM ID for contract ${coreAddress}.`);
   }
 
   confirmation(`Generated EVVM ID: ${colors.bright}${evvmID}${colors.reset}`);
 
   infoWithChainData(
-    `Setting EVVM ID on EVVM contract`,
+    `Setting EVVM ID on Core contract`,
     ChainData[chainId]?.Chain || "",
     chainId
   );
 
-  await callSetEvvmID(evvmAddress, evvmID!, rpcUrl, walletName);
+  await callSetEvvmID(coreAddress, evvmID!, rpcUrl, walletName);
 
   await saveEvvmRegistrationToJson(
     Number(evvmID),
-    evvmAddress,
+    coreAddress,
     chainId,
     ChainData[chainId]?.Chain
   );
@@ -123,7 +123,7 @@ export async function registerSingle(_args: string[], options: any) {
     `${colors.green}EVVM ID: ${colors.bright}${evvmID}${colors.reset}`
   );
   console.log(
-    `${colors.green}Contract: ${colors.bright}${evvmAddress}${colors.reset}`
+    `${colors.green}Core Address: ${colors.bright}${coreAddress}${colors.reset}`
   );
   console.log(
     `${colors.darkGray}\nYour EVVM instance is now ready to use!${colors.reset}\n`

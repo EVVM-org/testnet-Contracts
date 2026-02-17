@@ -48,46 +48,46 @@ export async function configurationBasic() {
 
   do {
     for (const key of Object.keys(addresses) as (keyof BaseInputAddresses)[]) {
-      addresses[key] = promptAddress(
+      addresses[key] = await promptAddress(
         `${colors.yellow}Enter the ${key} address:${colors.reset}`
       );
     }
 
-    evvmMetadata.EvvmName = promptString(
+    evvmMetadata.EvvmName = await promptString(
       `${colors.yellow}EVVM Name ${colors.darkGray}[${evvmMetadata.EvvmName}]:${colors.reset}`,
       evvmMetadata.EvvmName ?? undefined
     );
 
-    evvmMetadata.principalTokenName = promptString(
+    evvmMetadata.principalTokenName = await promptString(
       `${colors.yellow}Principal Token Name ${colors.darkGray}[${evvmMetadata.principalTokenName}]:${colors.reset}`,
       evvmMetadata.principalTokenName ?? undefined
     );
 
-    evvmMetadata.principalTokenSymbol = promptString(
+    evvmMetadata.principalTokenSymbol = await promptString(
       `${colors.yellow}Principal Token Symbol ${colors.darkGray}[${evvmMetadata.principalTokenSymbol}]:${colors.reset}`,
       evvmMetadata.principalTokenSymbol ?? undefined
     );
 
     if (
-      promptYesNo(
+      await promptYesNo(
         `${colors.yellow}Configure advanced metadata (totalSupply, eraTokens, reward)? (y/n):${colors.reset}`
       )
     ) {
-      evvmMetadata.totalSupply = promptNumber(
+      evvmMetadata.totalSupply = await promptNumber(
         `${colors.yellow}Total Supply ${colors.darkGray}[${formatNumber(
           evvmMetadata.totalSupply
         )}]:${colors.reset}`,
         evvmMetadata.totalSupply ?? undefined
       );
 
-      evvmMetadata.eraTokens = promptNumber(
+      evvmMetadata.eraTokens = await promptNumber(
         `${colors.yellow}Era Tokens ${colors.darkGray}[${formatNumber(
           evvmMetadata.eraTokens
         )}]:${colors.reset}`,
         evvmMetadata.eraTokens ?? undefined
       );
 
-      evvmMetadata.reward = promptNumber(
+      evvmMetadata.reward = await promptNumber(
         `${colors.yellow}Reward ${colors.darkGray}[${formatNumber(
           evvmMetadata.reward
         )}]:${colors.reset}`,
@@ -97,7 +97,7 @@ export async function configurationBasic() {
 
     baseConfigurationSummary(addresses, evvmMetadata);
   } while (
-    !promptYesNo(`${colors.yellow}Confirm configuration? (y/n):${colors.reset}`)
+    !(await promptYesNo(`${colors.yellow}Confirm configuration? (y/n):${colors.reset}`))
   );
 
   await writeBaseInputsFile(addresses, evvmMetadata);
@@ -172,7 +172,7 @@ export async function configurationCrossChain(): Promise<{
 
     let hostChainData = await checkCrossChainSupport(hostChainId!);
 
-    let addressAdminExternal = promptAddress(
+    let addressAdminExternal = await promptAddress(
       `${colors.yellow}Enter the external admin address:${colors.reset}`
     );
 
@@ -221,9 +221,9 @@ export async function configurationCrossChain(): Promise<{
       crossChainInputs
     );
   } while (
-    !promptYesNo(
+    !(await promptYesNo(
       `${colors.yellow}Confirm cross-chain configuration? (y/n):${colors.reset}`
-    )
+    ))
   );
 
   await writeCrossChainInputsFile(crossChainInputs);
@@ -268,15 +268,17 @@ export async function writeBaseInputsFile(
 
   const inputFileContent = `// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
-import {EvvmStructs} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
+import {
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
 
 abstract contract BaseInputs {
     address admin = ${getAddress(addresses.admin!)};
     address goldenFisher = ${getAddress(addresses.goldenFisher!)};
     address activator = ${getAddress(addresses.activator!)};
 
-    EvvmStructs.EvvmMetadata inputMetadata =
-        EvvmStructs.EvvmMetadata({
+    CoreStructs.EvvmMetadata inputMetadata =
+        CoreStructs.EvvmMetadata({
             EvvmName: "${evvmMetadata.EvvmName}",
             // evvmID will be set to 0, and it will be assigned when you register the evvm
             EvvmID: 0,
@@ -312,9 +314,15 @@ export async function writeCrossChainInputsFile(
 
   const inputFileContent = `// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
-import {EvvmStructs} from "@evvm/testnet-contracts/contracts/evvm/lib/EvvmStructs.sol";
-import {HostChainStationStructs} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/HostChainStationStructs.sol";
-import {ExternalChainStationStructs} from "@evvm/testnet-contracts/contracts/treasuryTwoChains/lib/ExternalChainStationStructs.sol";
+import {
+    CoreStructs
+} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
+import {
+    HostChainStationStructs
+} from "@evvm/testnet-contracts/library/structs/HostChainStationStructs.sol";
+import {
+    ExternalChainStationStructs
+} from "@evvm/testnet-contracts/library/structs/ExternalChainStationStructs.sol";
 
 abstract contract CrossChainInputs {
     address constant adminExternal = ${getAddress(

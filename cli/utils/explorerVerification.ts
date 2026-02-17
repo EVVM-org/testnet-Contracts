@@ -46,14 +46,14 @@ export async function explorerVerification(
     case "Blockscout":
       let blockscoutHomepage = process.env.BLOCKSCOUT_HOMEPAGE
         ? process.env.BLOCKSCOUT_HOMEPAGE
-        : promptString("Enter your Blockscout homepage URL");
+        : await promptString("Enter your Blockscout homepage URL");
       verificationflag = `--verify --verifier blockscout --verifier-url ${blockscoutHomepage}/api/`;
       break;
     case "Sourcify":
       verificationflag = `--verify --verifier sourcify --verifier-url https://sourcify.dev/server`;
       break;
     case "Custom":
-      verificationflag = promptString("Enter your custom verification flags:");
+      verificationflag = await promptString("Enter your custom verification flags:");
       break;
     case "Skip verification (not recommended)":
       verificationflag = "";

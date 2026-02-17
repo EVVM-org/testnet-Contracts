@@ -43,7 +43,7 @@ import { registerCross } from "../register/registerCross";
  *
  * Host Chain Deployment:
  * - TreasuryHostChainStation.sol (cross-chain treasury coordinator)
- * - Evvm.sol (core protocol with cross-chain support)
+ * - Core.sol (core protocol with cross-chain support)
  * - Staking.sol (validator staking)
  * - Estimator.sol (gas estimation)
  * - NameService.sol (domain name resolution)
@@ -160,7 +160,7 @@ export async function deployCross(args: string[], options: any) {
     `  ${colors.green}•${colors.reset} Treasury cross-chain contract ${colors.darkGray}(TreasuryHostChainStation.sol)${colors.reset}`
   );
   console.log(
-    `  ${colors.green}•${colors.reset} EVVM core contract ${colors.darkGray}(Evvm.sol)${colors.reset}`
+    `  ${colors.green}•${colors.reset} EVVM core contract ${colors.darkGray}(Core.sol)${colors.reset}`
   );
   console.log(
     `  ${colors.green}•${colors.reset} Staking contract ${colors.darkGray}(Staking.sol)${colors.reset}`
@@ -185,10 +185,20 @@ export async function deployCross(args: string[], options: any) {
   confirmation(`Cross-chain EVVM deployed successfully!`);
 
   const {
-    evvmAddress,
+    coreAddress,
     treasuryHostChainStationAddress,
     treasuryExternalChainStationAddress,
   } = await showAllCrossChainDeployedContracts(hostChainId!, externalChainId!);
+
+  if (!coreAddress)
+    criticalError(
+      `Failed to detect deployed Core contract address. Check ./broadcast/DeployCrossChainHost.s.sol/${hostChainId}/run-latest.json`
+    );
+
+  if (!treasuryHostChainStationAddress || !treasuryExternalChainStationAddress)
+    criticalError(
+      `Failed to detect treasury station addresses. Check host/external broadcast files.`
+    );
 
   sectionSubtitle("Cross-chain communication setup and EVVM registration");
   console.log(`
@@ -210,7 +220,7 @@ ${colors.darkGray}1. Cross-chain communication:${colors.reset}
 
 ${colors.darkGray}2. EVVM registration:${colors.reset}
    ${colors.evvmGreen}evvm registerCrossChain \\${colors.reset}
-   ${colors.evvmGreen}  --evvmAddress ${evvmAddress} \\${colors.reset}
+   ${colors.evvmGreen}  --coreAddress ${coreAddress} \\${colors.reset}
    ${colors.evvmGreen}  --treasuryExternalStationAddress ${treasuryExternalChainStationAddress} \\${colors.reset}
    ${colors.evvmGreen}  --walletName <wallet>${colors.reset}
 
@@ -243,7 +253,7 @@ ${colors.darkGray}More info: ${colors.blue}https://www.evvm.info/docs/QuickStart
   );
 
   await registerCross([], {
-    evvmAddress: evvmAddress,
+    coreAddress: coreAddress,
     treasuryExternalStationAddress: treasuryExternalChainStationAddress,
     walletNameHost: walletNameHost,
     walletNameExternal: walletNameExternal,

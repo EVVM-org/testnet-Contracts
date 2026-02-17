@@ -153,7 +153,7 @@ async function main() {
    * - walletName/walletNameHost/walletNameExternal: Foundry wallet account names
    *
    * Registration options:
-   * - evvmAddress: Address of deployed EVVM contract
+   * - coreAddress: Address of deployed Core contract
    * - useCustomEthRpc: Use custom Ethereum Sepolia RPC for registry calls
    *
    * Cross-chain setup options:
@@ -183,7 +183,7 @@ async function main() {
       walletNameExternal: { type: "string" },
 
       // register command specific
-      evvmAddress: { type: "string" },
+      coreAddress: { type: "string" },
       useCustomEthRpc: { type: "boolean" },
 
       //dev command specific

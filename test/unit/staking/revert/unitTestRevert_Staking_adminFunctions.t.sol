@@ -21,14 +21,16 @@ pragma abicoder v2;
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "test/Constants.sol";
-import "@evvm/testnet-contracts/contracts/staking/lib/ErrorsLib.sol";
+import "@evvm/testnet-contracts/library/errors/StakingError.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
+import "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_Staking_adminFunctions is Test, Constants {
     function test__unitRevert__addPresaleStaker__SenderIsNotAdmin() external {
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.addPresaleStaker(COMMON_USER_NO_STAKER_1.Address);
         vm.stopPrank();
     }
@@ -47,7 +49,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
             );
             staking.addPresaleStaker(newStaker);
         }
-        vm.expectRevert(ErrorsLib.LimitPresaleStakersExceeded.selector);
+        vm.expectRevert(StakingError.LimitPresaleStakersExceeded.selector);
         staking.addPresaleStaker(makeAddr("one_more_staker"));
         vm.stopPrank();
     }
@@ -58,7 +60,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         stakers[1] = makeAddr("bob");
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.addPresaleStakers(stakers);
         vm.stopPrank();
     }
@@ -83,14 +85,14 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         stakers[0] = makeAddr("alice");
         stakers[1] = makeAddr("bob");
 
-        vm.expectRevert(ErrorsLib.LimitPresaleStakersExceeded.selector);
+        vm.expectRevert(StakingError.LimitPresaleStakersExceeded.selector);
         staking.addPresaleStakers(stakers);
         vm.stopPrank();
     }
 
     function test__unitRevert__proposeAdmin__SenderIsNotAdmin() external {
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.proposeAdmin(WILDCARD_USER.Address);
         vm.stopPrank();
     }
@@ -105,7 +107,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.warp(block.timestamp + 2 hours);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.rejectProposalAdmin();
         vm.stopPrank();
     }
@@ -118,7 +120,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
         vm.warp(block.timestamp + 1 days + 1);
         vm.startPrank(ADMIN.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotProposedAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotProposedAdmin.selector);
         staking.acceptNewAdmin();
         vm.stopPrank();
     }
@@ -131,7 +133,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
         vm.warp(block.timestamp + 10 hours);
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.TimeToAcceptProposalNotReached.selector);
+        vm.expectRevert(StakingError.TimeToAcceptProposalNotReached.selector);
         staking.acceptNewAdmin();
         vm.stopPrank();
     }
@@ -140,7 +142,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.proposeGoldenFisher(WILDCARD_USER.Address);
         vm.stopPrank();
     }
@@ -153,7 +155,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.warp(block.timestamp + 2 hours);
         vm.stopPrank();
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.rejectProposalGoldenFisher();
         vm.stopPrank();
     }
@@ -168,7 +170,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.warp(block.timestamp + 1 days + 1);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.acceptNewGoldenFisher();
         vm.stopPrank();
     }
@@ -188,7 +190,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.proposeSetSecondsToUnlockStaking(2 days);
         vm.stopPrank();
     }
@@ -203,7 +205,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.warp(block.timestamp + 10 hours);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.rejectProposalSetSecondsToUnlockStaking();
         vm.stopPrank();
     }
@@ -218,7 +220,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.warp(block.timestamp + 1 days + 1);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.acceptSetSecondsToUnlockStaking();
         vm.stopPrank();
     }
@@ -229,7 +231,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.startPrank(ADMIN.Address);
         staking.proposeSetSecondsToUnlockStaking(2 days);
         vm.warp(block.timestamp + 10 hours);
-        vm.expectRevert(ErrorsLib.TimeToAcceptProposalNotReached.selector);
+        vm.expectRevert(StakingError.TimeToAcceptProposalNotReached.selector);
         staking.acceptSetSecondsToUnlockStaking();
         vm.stopPrank();
     }
@@ -238,7 +240,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.prepareSetSecondsToUnllockFullUnstaking(2 days);
         vm.stopPrank();
     }
@@ -253,7 +255,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.warp(block.timestamp + 10 hours);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.cancelSetSecondsToUnllockFullUnstaking();
         vm.stopPrank();
     }
@@ -268,7 +270,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.warp(block.timestamp + 1 days + 1);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.confirmSetSecondsToUnllockFullUnstaking();
         vm.stopPrank();
     }
@@ -279,7 +281,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.startPrank(ADMIN.Address);
         staking.prepareSetSecondsToUnllockFullUnstaking(2 days);
         vm.warp(block.timestamp + 10 hours);
-        vm.expectRevert(ErrorsLib.TimeToAcceptProposalNotReached.selector);
+        vm.expectRevert(StakingError.TimeToAcceptProposalNotReached.selector);
         staking.confirmSetSecondsToUnllockFullUnstaking();
         vm.stopPrank();
     }
@@ -288,7 +290,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.prepareChangeAllowPublicStaking();
         vm.stopPrank();
     }
@@ -303,7 +305,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.warp(block.timestamp + 2 hours);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.cancelChangeAllowPublicStaking();
         vm.stopPrank();
     }
@@ -318,7 +320,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.warp(block.timestamp + 1 days + 1);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.confirmChangeAllowPublicStaking();
         vm.stopPrank();
     }
@@ -329,7 +331,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.startPrank(ADMIN.Address);
         staking.prepareChangeAllowPublicStaking();
         vm.warp(block.timestamp + 10 hours);
-        vm.expectRevert(ErrorsLib.TimeToAcceptProposalNotReached.selector);
+        vm.expectRevert(StakingError.TimeToAcceptProposalNotReached.selector);
         staking.confirmChangeAllowPublicStaking();
         vm.stopPrank();
     }
@@ -338,7 +340,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.prepareChangeAllowPresaleStaking();
         vm.stopPrank();
     }
@@ -353,7 +355,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.warp(block.timestamp + 2 hours);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.cancelChangeAllowPresaleStaking();
         vm.stopPrank();
     }
@@ -368,7 +370,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.warp(block.timestamp + 1 days + 1);
 
         vm.startPrank(WILDCARD_USER.Address);
-        vm.expectRevert(ErrorsLib.SenderIsNotAdmin.selector);
+        vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.confirmChangeAllowPresaleStaking();
         vm.stopPrank();
     }
@@ -379,7 +381,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.startPrank(ADMIN.Address);
         staking.prepareChangeAllowPresaleStaking();
         vm.warp(block.timestamp + 10 hours);
-        vm.expectRevert(ErrorsLib.TimeToAcceptProposalNotReached.selector);
+        vm.expectRevert(StakingError.TimeToAcceptProposalNotReached.selector);
         staking.confirmChangeAllowPresaleStaking();
         vm.stopPrank();
     }

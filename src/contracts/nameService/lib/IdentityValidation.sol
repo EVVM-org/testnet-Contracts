@@ -2,33 +2,27 @@
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
 pragma solidity ^0.8.0;
-
 /**
- * @title IdentityValidation
+ * @title EVVM Identity Validation
  * @author Mate labs
- * @notice Library for validating usernames, emails, and phone numbers in the NameService system
- * @dev Provides pure validation functions for identity-related strings used in NameService.sol.
- *      All validations are performed at the byte level for gas efficiency and precision.
- *
- * Validation Types:
- * - Username: Alphanumeric identifiers with specific length and format requirements
- * - Email: Standard email format validation with prefix, domain, and TLD checks
- * - Phone Number: Numeric phone numbers with length constraints
- *
- * Character Validation:
- * - Uses ASCII byte ranges for precise character classification
- * - Supports letters (A-Z, a-z), digits (0-9), and specific symbols
- * - All checks performed without external dependencies for security
- *
- * @custom:scope Exclusive to NameService.sol contract
- * @custom:security All functions are pure with no external calls
- * @custom:gas-optimization Byte-level operations for maximum efficiency
+ * @notice Byte-level validation for usernames, phone numbers, and emails.
+ * @dev Optimized for gas efficiency. Rules: Usernames (4+ chars, start with letter), 
+ *      Phones (digit checks), Emails (structural structure).
  */
 library IdentityValidation{
     /**
-     * @notice Validates username format according to system rules
-     * @dev Username must be at least 4 characters, start with a letter, and contain only letters/digits
+     * @notice Validates username format per system rules
+     * @dev Username must be 4+ chars, start with letter,
+     *      contain only letters/digits
+     *
+     * Validation Rules:
+     * - Minimum length: 4 characters
+     * - Must start with a letter (A-Z or a-z)
+     * - Can only contain letters and digits
+     * - No special characters or spaces allowed
+     *
      * @param username The username string to validate
+     * @return True if valid username format, false otherwise
      */
     function isValidUsername(string memory username) internal pure returns (bool) {
         bytes memory usernameBytes = bytes(username);
