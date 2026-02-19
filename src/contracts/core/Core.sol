@@ -688,17 +688,15 @@ contract Core is Storage {
      * - Canceling pending service operations
      * - Correcting accidental reservations
      * - Freeing nonces for different services
-     *
-     * @param user Address that reserved the nonce
      * @param nonce The async nonce to revoke reservation for
      */
-    function revokeAsyncNonce(address user, uint256 nonce) external {
-        if (asyncNonce[user][nonce]) revert Error.AsyncNonceAlreadyUsed();
+    function revokeAsyncNonce(uint256 nonce) external {
+        if (asyncNonce[msg.sender][nonce]) revert Error.AsyncNonceAlreadyUsed();
 
-        if (asyncNonceReservedPointers[user][nonce] == address(0))
+        if (asyncNonceReservedPointers[msg.sender][nonce] == address(0))
             revert Error.AsyncNonceNotReserved();
 
-        asyncNonceReservedPointers[user][nonce] = address(0);
+        asyncNonceReservedPointers[msg.sender][nonce] = address(0);
     }
 
     //░▒▓█ UserValidator Management Functions █████████████████████████████████████▓▒░

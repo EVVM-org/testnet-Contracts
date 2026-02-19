@@ -133,11 +133,10 @@ abstract contract CoreExecution {
     /**
      * @notice Revokes reserved async nonce before use
      * @dev Calls core.revokeAsyncNonce(user, nonce). Cannot revoke consumed nonces.
-     * @param user User address that reserved nonce
      * @param nonce Async nonce number to revoke
      */
-    function revokeAsyncNonceToService(address user, uint256 nonce) external {
-        core.revokeAsyncNonce(user, nonce);
+    function revokeAsyncNonceToService(uint256 nonce) external {
+        core.revokeAsyncNonce(msg.sender, nonce);
     }
 
     /**
