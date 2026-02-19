@@ -1,6 +1,6 @@
 # EVVM Testnet Contracts
 
-![Version](https://img.shields.io/badge/version-3.0.0%20%22Ichiban%22-red.svg)
+![Version](https://img.shields.io/badge/version-3.0.1%20%22Ichiban%22-red.svg)
 ![Solidity](https://img.shields.io/badge/Solidity-^0.8.0-363636?logo=solidity)
 ![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C?logo=foundry)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript)
