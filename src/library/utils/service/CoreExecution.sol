@@ -122,24 +122,6 @@ abstract contract CoreExecution {
     }
 
     /**
-     * @notice Reserves async nonce for user and this service exclusively
-     * @dev Calls core.reserveAsyncNonce(user, nonce, address(this)). Nonce can be revoked before use.
-     * @param nonce Async nonce number to reserve
-     */
-    function reserveAsyncNonceToService(uint256 nonce) external {
-        core.reserveAsyncNonce(nonce, address(this));
-    }
-
-    /**
-     * @notice Revokes reserved async nonce before use
-     * @dev Calls core.revokeAsyncNonce(user, nonce). Cannot revoke consumed nonces.
-     * @param nonce Async nonce number to revoke
-     */
-    function revokeAsyncNonceToService(uint256 nonce) external {
-        core.revokeAsyncNonce(msg.sender, nonce);
-    }
-
-    /**
      * @notice Gets next sequential sync nonce for user
      * @dev View function returning core.getNextCurrentSyncNonce(user). Auto-increments after each use.
      * @param user User address to query

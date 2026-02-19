@@ -145,7 +145,7 @@ interface ICore {
     function rejectUpgrade() external;
     function removeAmountFromUser(address user, address token, uint256 amount) external;
     function reserveAsyncNonce(uint256 nonce, address serviceAddress) external;
-    function revokeAsyncNonce(address user, uint256 nonce) external;
+    function revokeAsyncNonce(uint256 nonce) external;
     function setEvvmID(uint256 newEvvmID) external;
     function setPointStaker(address user, bytes1 answer) external;
     function validateAndConsumeNonce(

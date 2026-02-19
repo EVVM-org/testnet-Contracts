@@ -128,8 +128,9 @@ contract unitTestCorrect_Core_state is Test, Constants {
         );
     }
 
-
-    function test__unit_correct__validateAndConsumeNonce_originExecutor() external {
+    function test__unit_correct__validateAndConsumeNonce_originExecutor()
+        external
+    {
         InputsValidateAndConsumeNonce
             memory inputs = InputsValidateAndConsumeNonce({
                 user: COMMON_USER_NO_STAKER_1,
@@ -150,7 +151,10 @@ contract unitTestCorrect_Core_state is Test, Constants {
             false
         );
 
-        vm.startPrank(COMMON_USER_NO_STAKER_2.Address, COMMON_USER_NO_STAKER_2.Address);
+        vm.startPrank(
+            COMMON_USER_NO_STAKER_2.Address,
+            COMMON_USER_NO_STAKER_2.Address
+        );
         helper.StateTest(
             COMMON_USER_NO_STAKER_1.Address,
             inputs.testA,
@@ -163,7 +167,6 @@ contract unitTestCorrect_Core_state is Test, Constants {
             signature
         );
         vm.stopPrank();
-    
 
         assertEq(
             core.getNextCurrentSyncNonce(COMMON_USER_NO_STAKER_1.Address),
@@ -196,7 +199,7 @@ contract unitTestCorrect_Core_state is Test, Constants {
     function test__unit_correct__revokeAsyncNonce() external {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
         core.reserveAsyncNonce(45, address(this));
-        core.revokeAsyncNonce(COMMON_USER_NO_STAKER_1.Address, 45);
+        core.revokeAsyncNonce(45);
         vm.stopPrank();
 
         assertEq(

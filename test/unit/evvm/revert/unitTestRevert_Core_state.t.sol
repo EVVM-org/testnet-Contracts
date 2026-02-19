@@ -440,7 +440,7 @@ contract unitTestRevert_Core_state is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
         vm.expectRevert(CoreError.AsyncNonceAlreadyUsed.selector);
-        core.revokeAsyncNonce(COMMON_USER_NO_STAKER_1.Address, 67);
+        core.revokeAsyncNonce(67);
         vm.stopPrank();
     }
 
@@ -449,7 +449,7 @@ contract unitTestRevert_Core_state is Test, Constants {
     {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
         vm.expectRevert(CoreError.AsyncNonceNotReserved.selector);
-        core.revokeAsyncNonce(COMMON_USER_NO_STAKER_1.Address, 67);
+        core.revokeAsyncNonce(67);
         vm.stopPrank();
     }
 }

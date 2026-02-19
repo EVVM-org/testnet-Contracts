@@ -130,7 +130,7 @@ contract fuzzTest_Core_state is Test, Constants {
 
         vm.startPrank(inputs.user);
         core.reserveAsyncNonce(inputs.nonceAsync, inputs.serviceAddress);
-        core.revokeAsyncNonce(inputs.user, inputs.nonceAsync);
+        core.revokeAsyncNonce(inputs.nonceAsync);
         vm.stopPrank();
 
         assertEq(
