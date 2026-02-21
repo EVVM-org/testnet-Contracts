@@ -804,6 +804,8 @@ contract Core is Storage {
         address token,
         uint256 amount
     ) external {
+        if (listStatus != 0x00) verifyTokenInteractionAllowance(token);
+
         if (msg.sender != treasuryAddress) revert Error.SenderIsNotTreasury();
 
         balances[user][token] += amount;
@@ -1294,6 +1296,36 @@ contract Core is Storage {
         return userValidatorAddress;
     }
 
+    /**
+     * @notice Gets the current token list status (none, denylist, allowlist)
+     * @dev Returns byte code indicating current token restriction mode
+     *      - 0x00: No restrictions
+     *      - 0x01: Denylist active
+     *      - 0x02: Allowlist active
+     */
+    function getListStatus() public view returns (bytes1) {
+        return listStatus;
+    }
+    /**
+     * @notice Checks if a token is on the denylist or allowlist based on current list status
+     * @dev Returns boolean indicating if token is restricted for execution 
+     *      - true if denied
+     *      - false if allowed
+     */
+    function getDenylistStatus(address token) public view returns (bool) {
+        return denylist[token];
+    }
+
+    /**
+     * @notice Checks if a token is on the allowlist or denylist based on current list status
+     * @dev Returns boolean indicating if token is allowed for execution
+     *      - true if allowed
+     *      - false if denied
+     */
+    function getAllowlistStatus(address token) public view returns (bool) {
+        return allowlist[token];
+    }
+
     //░▒▓█ Internal Functions █████████████████████████████████████████████████████▓▒░
 
     //██ Balance Management █████████████████████████████████████████████
@@ -1323,6 +1355,8 @@ contract Core is Storage {
         address token,
         uint256 value
     ) internal {
+        if (listStatus != 0x00) verifyTokenInteractionAllowance(token);
+
         uint256 fromBalance = balances[from][token];
         if (fromBalance < value) revert Error.InsufficientBalance();
 
@@ -1362,6 +1396,18 @@ contract Core is Storage {
 
         return (userBalance + principalReward ==
             balances[user][evvmMetadata.principalTokenAddress]);
+    }
+
+    /**
+     *  @notice Internal function to check from the token allowlist/denylist 
+     *         based on current list status and revert if the token is not allowed for execution
+     *  @dev Used by functions that execute transactions to enforce token restrictions
+     */
+    function verifyTokenInteractionAllowance(address token) internal view {
+        if (
+            (listStatus == 0x01 && denylist[token]) ||
+            (listStatus == 0x02 && !allowlist[token])
+        ) revert Error.TokenIsDeniedForExecution();
     }
 
     //██ User Validation █████████████████████████████████████████████

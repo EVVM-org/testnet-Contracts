@@ -123,6 +123,16 @@ abstract contract CoreStorage {
      */
     bytes1 breakerSetupNameServiceAddress;
 
+    //░▒▓█ List state ████████████████████████████████████████████████████████▓▒░
+
+    /**
+     * @notice Indicates if the EVVM nees to check the allowlist or the denylist for token operations.
+     * @dev 0x00 = no lists active
+     *      0x01 = allowlist active
+     *      0x02 = denylist active
+     */
+    bytes1 listStatus;
+
     //░▒▓█ Staker Registry █████████████████████████████████████████████████████████████▓▒░
 
     /**
@@ -168,4 +178,29 @@ abstract contract CoreStorage {
      * @notice tracks the next expected nonce for sequential (synchronous) transactions.
      */
     mapping(address user => uint256 nonce) nextSyncNonce;
+
+    //░▒▓█ Token allowlist/denylist ██████████████████████████████████████████████████████████▓▒░
+
+    /**
+     * @notice Tracks what token addresses are denied for use in the EVVM 
+     *         if a token is in the denylist, it cannot:
+     *         - be deposited to the EVVM
+     *         - be used for execution payments (transfers between accounts/services)
+     *         but it can:
+     *         - be withdrawn from the EVVM (users can get their tokens out, but not back in)
+     *         by default all the tokens are allowed until they are added to the 
+     *         denylist, if the denylist is active (listStatus = 0x02)
+     */
+    mapping (address tokenAdress => bool isDenied) denylist;
+
+    /**
+     * @notice Tracks what token addresses are allowed for use in the EVVM 
+     *         if a token is in the allowlist, it can:
+     *         - be deposited to the EVVM
+     *         - be used for execution payments (transfers between accounts/services)
+     *         - can be withdrawn from the EVVM
+     *         by default all the tokens are denied until they are added to the 
+     *         allowlist, if the allowlist is active (listStatus = 0x01)
+     */
+    mapping (address tokenAdress => bool isAllowed) allowlist;
 }

@@ -113,4 +113,11 @@ library CoreError {
 
     /// @dev Thrown when reserving nonce with service == address(0)
     error InvalidServiceAddress();
+    
+    /**
+     * @dev Thrown when a token is in
+     *    - the denylist (if the denylist is active)
+     *    - not in the allowlist (if the allowlist is active)
+     */
+    error TokenIsDeniedForExecution();
 }

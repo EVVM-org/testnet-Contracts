@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.2] - [UNRELEASED]
+
+### Added
+
+- **Core.sol**: Added `verifyTokenInteractionAllowance` function to check if a token is allowed for interaction (deposit, payment) based on the `allowlist` and `denylist` status, improving security and control over token usage in the EVVM ecosystem.
+- **CoreStorage.sol**: Added `allowlist` and `denylist` mappings to track token addresses that are allowed or denied for use in the EVVM, along with `listStatus` to indicate which list is active, providing a flexible mechanism for managing token permissions in the system.
+
+## [3.0.1] - 2026-02-19
+
+### Fixed
+- **Core.sol**: Improved logic in `revokeAsyncNonce` for better handling of nonce revocation scenarios.
+
+
 ## [3.0.0] - 2026-02-17
 
 ### Codename: "Ichiban"
