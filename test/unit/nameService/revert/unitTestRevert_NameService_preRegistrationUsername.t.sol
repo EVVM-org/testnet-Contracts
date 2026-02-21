@@ -37,7 +37,7 @@ import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_NameService_preRegistrationUsername is Test, Constants {
     function executeBeforeSetUp() internal override {
-        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        
     }
 
     function _addBalance(

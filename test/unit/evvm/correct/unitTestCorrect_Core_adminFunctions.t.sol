@@ -62,7 +62,7 @@ contract unitTestCorrect_Core_adminFunctions is Test, Constants {
             address(treasury)
         );
 
-        //core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        //
 
         executeBeforeSetUp();
     }

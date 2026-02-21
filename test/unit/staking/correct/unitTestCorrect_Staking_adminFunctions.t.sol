@@ -25,7 +25,7 @@ import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 
 contract unitTestCorrect_Staking_adminFunctions is Test, Constants {
     function executeBeforeSetUp() internal override {
-        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        
     }
 
     function test__unit_correct__admin_addPresaleStaker() external {

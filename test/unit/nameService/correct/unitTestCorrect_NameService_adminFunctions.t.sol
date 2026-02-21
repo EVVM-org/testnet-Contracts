@@ -27,7 +27,7 @@ contract unitTestCorrect_NameService_adminFunctions is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
-        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        
     }
 
     function test__unit_correct__proposeAdmin() external {

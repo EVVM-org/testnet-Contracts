@@ -24,10 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from [Yakuza: Like a Dragon](https://en.wikipedia.org/wiki/Yakuza:_Like_a_Dragon), this release embodies the spirit of rebuilding from the ground up. Just as Ichiban rebuilt his life and united scattered allies into a cohesive team, this release fundamentally restructures EVVM by centralizing previously fragmented functionalities into a unified Core. The name reflects both its literal meaning ("number one") and the protagonist's journey of transforming chaos into order, mirroring how this version consolidates from disparate services into a single, robust foundation for the entire EVVM ecosystem.
 
-
 ### Added
 
-- **Changelog**: Added codenames to releases for a more engaging and memorable version history
+- **Changelog**: Added codenames to releases for a more engaging and memorable version history. The codename will change only in major and minor releases; patch releases are reserved for bug fixes and small improvements that do not require a codename change.
 - **Signature standardization**: Implemented a standardized signature payload construction method in `AdvancedStrings.sol` to ensure consistent signature generation and verification across all EVVM services, improving security and interoperability
   - This standard consists of concatenating the following parameters in order: 
     `"<evvmID>,<serviceAddress>,<hashInput>,<executor>,<nonce>,<isAsyncExec>"` where `hashInput` is a service-specific hash of the relevant transaction data using `keccak256(abi.encode("functionName", param1, param2, ...))` and `executor` represents the address executing the transaction (origin executor service transactions and sender for payment transactions on `Core.sol`). This standardization allows for a single signature verification method in `Core.sol` that can be used across all services, eliminating inconsistencies and potential security vulnerabilities from service-specific signature implementations.

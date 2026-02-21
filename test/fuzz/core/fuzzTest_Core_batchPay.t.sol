@@ -27,7 +27,7 @@ contract fuzzTest_Core_batchPay is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
-        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        
         _executeFn_nameService_registrationUsername(
             COMMON_USER_NO_STAKER_2,
             "dummy",

@@ -41,7 +41,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             )
         );
-        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        
     }
 
     function _addBalance(

@@ -22,7 +22,7 @@ import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract fuzzTest_Core_caPay is Test, Constants {
     function executeBeforeSetUp() internal override {
-        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        
     }
 
     function addBalance(address user, address token, uint256 amount) private {

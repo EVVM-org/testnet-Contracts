@@ -46,7 +46,7 @@ contract unitTestRevert_Core_dispersePay is Test, Constants {
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             )
         );
-        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        
     }
 
     function _addBalance(

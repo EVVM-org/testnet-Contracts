@@ -26,7 +26,7 @@ contract unitTestCorrect_Treasury is Test, Constants {
     TestERC20 testToken;
 
     function executeBeforeSetUp() internal override {
-        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        
 
         testToken = new TestERC20();
     }

@@ -23,7 +23,7 @@ contract fuzzTest_Staking_goldenStaking is Test, Constants {
     AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
 
     function executeBeforeSetUp() internal override {
-        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        
 
         _addBalance(10);
 

@@ -27,7 +27,7 @@ contract unitTestCorrect_Staking_serviceStaking is Test, Constants {
     MockContractToStake mockContract;
 
     function executeBeforeSetUp() internal override {
-        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
+        
 
         vm.startPrank(ADMIN.Address);
 
