@@ -845,7 +845,7 @@ contract Core is Storage {
     //██ List state Management ████████████████████████████████████████
 
     function proposeListStatus(bytes1 newStatus) external onlyAdmin {
-        if (newStatus != 0x00 && newStatus != 0x01 && newStatus != 0x02)
+        if (uint8(newStatus) >= uint8(0x03))
             revert Error.InvalidListStatus();
 
         listStatus.proposal = newStatus;
