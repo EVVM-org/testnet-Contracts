@@ -368,6 +368,14 @@ contract Core is Storage {
             }
 
             if (
+                (listStatus.current == 0x01 && !allowList[payment.token]) ||
+                (listStatus.current == 0x02 && denyList[payment.token])
+            ) {
+                results[iteration] = false;
+                continue;
+            }
+
+            if (
                 (payment.senderExecutor != address(0) &&
                     msg.sender != payment.senderExecutor) ||
                 ((isSenderStaker ? payment.priorityFee : 0) + payment.amount >
@@ -480,6 +488,8 @@ contract Core is Storage {
         if (balances[from][token] < amount + (isSenderStaker ? priorityFee : 0))
             revert Error.InsufficientBalance();
 
+        if (listStatus.current != 0x00) _verifyTokenInteractionAllowance(token);
+
         uint256 acomulatedAmount = 0;
         balances[from][token] -= (amount + (isSenderStaker ? priorityFee : 0));
         address to_aux;
@@ -546,6 +556,8 @@ contract Core is Storage {
         address token,
         uint256 amount
     ) external {
+        if (listStatus.current != 0x00) _verifyTokenInteractionAllowance(token);
+
         address from = msg.sender;
 
         if (!CAUtils.verifyIfCA(from)) revert Error.NotAnCA();
@@ -804,7 +816,7 @@ contract Core is Storage {
         address token,
         uint256 amount
     ) external {
-        if (listStatus.current != 0x00) verifyTokenInteractionAllowance(token);
+        if (listStatus.current != 0x00) _verifyTokenInteractionAllowance(token);
 
         if (msg.sender != treasuryAddress) revert Error.SenderIsNotTreasury();
 
@@ -1396,7 +1408,7 @@ contract Core is Storage {
         address token,
         uint256 value
     ) internal {
-        if (listStatus.current != 0x00) verifyTokenInteractionAllowance(token);
+        if (listStatus.current != 0x00) _verifyTokenInteractionAllowance(token);
 
         uint256 fromBalance = balances[from][token];
         if (fromBalance < value) revert Error.InsufficientBalance();
@@ -1444,7 +1456,7 @@ contract Core is Storage {
      *         based on current list status and revert if the token is not allowed for execution
      *  @dev Used by functions that execute transactions to enforce token restrictions
      */
-    function verifyTokenInteractionAllowance(address token) internal view {
+    function _verifyTokenInteractionAllowance(address token) internal view {
         if (
             (listStatus.current == 0x01 && !allowList[token]) ||
             (listStatus.current == 0x02 && denyList[token])
