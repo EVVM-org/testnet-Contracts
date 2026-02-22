@@ -58,8 +58,6 @@ contract unitTestRevert_Core_adminFunctions is Test, Constants {
         treasury = new Treasury(address(core));
         core.initializeSystemContracts(address(nameService), address(treasury));
 
-        
-
         executeBeforeSetUp();
     }
 
@@ -270,4 +268,76 @@ contract unitTestRevert_Core_adminFunctions is Test, Constants {
         core.acceptUserValidatorProposal();
         vm.stopPrank();
     }
+
+    function test__unit_revert__proposeListStatus__SenderIsNotAdmin() external {
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.proposeListStatus(0x01);
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__proposeListStatus__InvalidListStatus()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        vm.expectRevert(CoreError.InvalidListStatus.selector);
+        core.proposeListStatus(0x03);
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__rejectListStatusProposal__SenderIsNotAdmin()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01);
+        vm.stopPrank();
+
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.rejectListStatusProposal();
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__acceptListStatusProposal__SenderIsNotAdmin()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01);
+        vm.stopPrank();
+        skip(1 days);
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__acceptListStatusProposal_ProposalForListStatusNotReady()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01);
+        skip(10 minutes);
+        vm.expectRevert(CoreError.ProposalForListStatusNotReady.selector);
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__setTokenStatusOnDenyList__SenderIsNotAdmin()
+        external
+    {
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.setTokenStatusOnDenyList(address(67), true);
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__setTokenStatusOnAllowList__SenderIsNotAdmin()
+        external
+    {
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.setTokenStatusOnAllowList(address(67), true);
+        vm.stopPrank();
+    }
 }
+
