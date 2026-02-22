@@ -106,6 +106,9 @@ contract fuzzTest_Core_dispersePay is Test, Constants {
                 input.executor != input.toAddressA &&
                 input.executor != COMMON_USER_NO_STAKER_2.Address &&
                 input.executor != COMMON_USER_NO_STAKER_1.Address &&
+                input.executor != address(nameService) &&
+                input.executor != address(core) &&
+                input.executor != address(treasury) &&
                 input.toAddressA != COMMON_USER_NO_STAKER_1.Address &&
                 input.toAddressA != COMMON_USER_NO_STAKER_2.Address
         );
