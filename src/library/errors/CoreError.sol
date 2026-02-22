@@ -79,8 +79,7 @@ library CoreError {
     /// @dev Thrown when attempting time-locked action before delay (30d impl, 1d admin)
     error TimeLockNotExpired();
 
-
-
+    //░▒▓█ Async/Sync Nonce Errors ██████████████████████████████████████████████▓▒░
     /// @dev Thrown when async nonce already consumed
     error AsyncNonceAlreadyUsed();
 
@@ -113,11 +112,18 @@ library CoreError {
 
     /// @dev Thrown when reserving nonce with service == address(0)
     error InvalidServiceAddress();
-    
+
+    //░▒▓█ Token List Errors ████████████████████████████████████████████████████▓▒░
     /**
      * @dev Thrown when a token is in
      *    - the denylist (if the denylist is active)
      *    - not in the allowlist (if the allowlist is active)
      */
     error TokenIsDeniedForExecution();
+
+    /// @dev Thrown when list status is invalid (not 0x00, 0x01, or 0x02)
+    error InvalidListStatus();
+
+    /// @dev Thrown when accepting list status proposal before timelock
+    error ProposalForListStatusNotReady();
 }

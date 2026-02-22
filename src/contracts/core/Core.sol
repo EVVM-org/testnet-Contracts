@@ -804,7 +804,7 @@ contract Core is Storage {
         address token,
         uint256 amount
     ) external {
-        if (listStatus != 0x00) verifyTokenInteractionAllowance(token);
+        if (listStatus.current != 0x00) verifyTokenInteractionAllowance(token);
 
         if (msg.sender != treasuryAddress) revert Error.SenderIsNotTreasury();
 
@@ -829,6 +829,44 @@ contract Core is Storage {
     }
 
     //░▒▓█ Administrative Functions ████████████████████████████████████████████████████████▓▒░
+
+    //██ List state Management ████████████████████████████████████████
+
+    function proposeListStatus(bytes1 newStatus) external onlyAdmin {
+        if (newStatus != 0x00 && newStatus != 0x01 && newStatus != 0x02)
+            revert Error.InvalidListStatus();
+
+        listStatus.proposal = newStatus;
+        listStatus.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
+    }
+
+    function rejectListStatusProposal() external onlyAdmin {
+        listStatus.proposal = 0x00;
+        listStatus.timeToAccept = 0;
+    }
+
+    function acceptListStatusProposal() external onlyAdmin {
+        if (block.timestamp < listStatus.timeToAccept)
+            revert Error.ProposalForListStatusNotReady();
+
+        listStatus.current = listStatus.proposal;
+        listStatus.proposal = 0x00;
+        listStatus.timeToAccept = 0;
+    }
+
+    function setTokenStatusOnAllowList(
+        address token,
+        bool status
+    ) external onlyAdmin {
+        allowList[token] = status;
+    }
+
+    function setTokenStatusOnDenyList(
+        address token,
+        bool status
+    ) external onlyAdmin {
+        denyList[token] = status;
+    }
 
     //██ Proxy Management █████████████████████████████████████████████
 
@@ -1175,22 +1213,12 @@ contract Core is Storage {
         return admin.current;
     }
 
-    /**
-     * @notice Gets the proposed admin address
-     * @dev Returns the address pending approval for admin privileges
-     * @return Address of the proposed admin (zero if no pending proposal)
-     */
-    function getProposalAdmin() public view returns (address) {
-        return admin.proposal;
-    }
-
-    /**
-     * @notice Gets the acceptance deadline for the pending admin change
-     * @dev Returns timestamp when the proposed admin can accept the role
-     * @return Timestamp when admin change can be executed (0 if no pending proposal)
-     */
-    function getTimeToAcceptAdmin() public view returns (uint256) {
-        return admin.timeToAccept;
+    function getFullDetailAdmin()
+        public
+        view
+        returns (ProposalStructs.AddressTypeProposal memory)
+    {
+        return admin;
     }
 
     /**
@@ -1303,27 +1331,40 @@ contract Core is Storage {
      *      - 0x01: Denylist active
      *      - 0x02: Allowlist active
      */
-    function getListStatus() public view returns (bytes1) {
-        return listStatus;
-    }
-    /**
-     * @notice Checks if a token is on the denylist or allowlist based on current list status
-     * @dev Returns boolean indicating if token is restricted for execution 
-     *      - true if denied
-     *      - false if allowed
-     */
-    function getDenylistStatus(address token) public view returns (bool) {
-        return denylist[token];
+    function getCurrentListStatus() public view returns (bytes1) {
+        return listStatus.current;
     }
 
     /**
-     * @notice Checks if a token is on the allowlist or denylist based on current list status
+     * @notice Gets comprehensive token list status details
+     * @dev Returns current list status along with pending proposal info
+     */
+    function getFullDetailListStatus()
+        public
+        view
+        returns (ProposalStructs.Bytes1TypeProposal memory)
+    {
+        return listStatus;
+    }
+
+    /**
+     * @notice Checks if a token is on the allowList or denyList based on current list status
      * @dev Returns boolean indicating if token is allowed for execution
      *      - true if allowed
      *      - false if denied
      */
-    function getAllowlistStatus(address token) public view returns (bool) {
-        return allowlist[token];
+    function getAllowListStatus(address token) public view returns (bool) {
+        return allowList[token];
+    }
+
+    /**
+     * @notice Checks if a token is on the denylist or allowlist based on current list status
+     * @dev Returns boolean indicating if token is restricted for execution
+     *      - true if denied
+     *      - false if allowed
+     */
+    function getDenyListStatus(address token) public view returns (bool) {
+        return denyList[token];
     }
 
     //░▒▓█ Internal Functions █████████████████████████████████████████████████████▓▒░
@@ -1355,7 +1396,7 @@ contract Core is Storage {
         address token,
         uint256 value
     ) internal {
-        if (listStatus != 0x00) verifyTokenInteractionAllowance(token);
+        if (listStatus.current != 0x00) verifyTokenInteractionAllowance(token);
 
         uint256 fromBalance = balances[from][token];
         if (fromBalance < value) revert Error.InsufficientBalance();
@@ -1399,14 +1440,14 @@ contract Core is Storage {
     }
 
     /**
-     *  @notice Internal function to check from the token allowlist/denylist 
+     *  @notice Internal function to check from the token allowlist/denylist
      *         based on current list status and revert if the token is not allowed for execution
      *  @dev Used by functions that execute transactions to enforce token restrictions
      */
     function verifyTokenInteractionAllowance(address token) internal view {
         if (
-            (listStatus == 0x01 && denylist[token]) ||
-            (listStatus == 0x02 && !allowlist[token])
+            (listStatus.current == 0x01 && !allowList[token]) ||
+            (listStatus.current == 0x02 && denyList[token])
         ) revert Error.TokenIsDeniedForExecution();
     }
 

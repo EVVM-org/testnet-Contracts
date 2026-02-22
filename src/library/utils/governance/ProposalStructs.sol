@@ -46,4 +46,10 @@ library ProposalStructs {
         bool flag;
         uint256 timeToAccept;
     }
+
+    struct Bytes1TypeProposal {
+        bytes1 current;
+        bytes1 proposal;
+        uint256 timeToAccept;
+    }
 }

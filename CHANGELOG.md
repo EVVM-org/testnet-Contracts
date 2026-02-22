@@ -9,8 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Core.sol**: Added `verifyTokenInteractionAllowance` function to check if a token is allowed for interaction (deposit, payment) based on the `allowlist` and `denylist` status, improving security and control over token usage in the EVVM ecosystem.
-- **CoreStorage.sol**: Added `allowlist` and `denylist` mappings to track token addresses that are allowed or denied for use in the EVVM, along with `listStatus` to indicate which list is active, providing a flexible mechanism for managing token permissions in the system.
+- **Core.sol**: 
+  - Added `verifyTokenInteractionAllowance` function to check if a token is allowed for interaction (deposit, payment) based on the `allowList` and `denyList` status, improving security and control over token usage in the EVVM ecosystem.
+  - Added `proposeListStatus`, `rejectListStatusProposal` and `acceptListStatusProposal` functions to manage proposals for changing the active token list (none, allowList or denyList), enabling a flexible governance mechanism for token permissions in the system.
+  - Added `setTokenStatusOnAllowList` and `setTokenStatusOnDenyList` functions to allow the admin to update the status of specific tokens on the allowList and denyList, providing granular control over which tokens are permitted or denied for use in the EVVM.
+- **CoreStorage.sol**: Added `allowList` and `denyList` mappings to track token addresses that are allowed or denied for use in the EVVM, along with `listStatus` to indicate which list is active, providing a flexible mechanism for managing token permissions in the system.
+- **ProposalStructs.sol**: Added `Bytes1TypeProposal` struct to represent proposals for bytes1 type parameters.
+
+### Changed
+- **Core.sol**: Refactor TypeProposal getter functions to return
+  - The current status of the proposal
+  - The full proposal struct with all details   
+  for better transparency and usability in the frontend and other services.
 
 ## [3.0.1] - 2026-02-19
 

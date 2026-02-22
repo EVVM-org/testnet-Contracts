@@ -131,7 +131,7 @@ abstract contract CoreStorage {
      *      0x01 = allowlist active
      *      0x02 = denylist active
      */
-    bytes1 listStatus;
+    ProposalStructs.Bytes1TypeProposal listStatus;
 
     //░▒▓█ Staker Registry █████████████████████████████████████████████████████████████▓▒░
 
@@ -189,18 +189,18 @@ abstract contract CoreStorage {
      *         but it can:
      *         - be withdrawn from the EVVM (users can get their tokens out, but not back in)
      *         by default all the tokens are allowed until they are added to the 
-     *         denylist, if the denylist is active (listStatus = 0x02)
+     *         denyList, if the denyList is active (listStatus = 0x02)
      */
-    mapping (address tokenAdress => bool isDenied) denylist;
+    mapping (address tokenAdress => bool isDenied) denyList;
 
     /**
      * @notice Tracks what token addresses are allowed for use in the EVVM 
-     *         if a token is in the allowlist, it can:
+     *         if a token is in the allowList, it can:
      *         - be deposited to the EVVM
      *         - be used for execution payments (transfers between accounts/services)
      *         - can be withdrawn from the EVVM
      *         by default all the tokens are denied until they are added to the 
-     *         allowlist, if the allowlist is active (listStatus = 0x01)
+     *         allowList, if the allowList is active (listStatus = 0x01)
      */
-    mapping (address tokenAdress => bool isAllowed) allowlist;
+    mapping (address tokenAdress => bool isAllowed) allowList;
 }
