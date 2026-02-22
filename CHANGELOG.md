@@ -19,8 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Core.sol**: Refactor TypeProposal getter functions to return
   - The current status of the proposal
-  - The full proposal struct with all details   
-  for better transparency and usability in the frontend and other services.
+  - The full proposal struct with all details for better transparency and usability in the frontend and other services.
   - Improved `getRandom` with additional entropy sources (blockhash, tx.origin, gasleft).
 
 ## [3.0.1] - 2026-02-19
