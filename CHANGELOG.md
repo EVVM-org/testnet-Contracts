@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `setTokenStatusOnAllowList` and `setTokenStatusOnDenyList` functions to allow the admin to update the status of specific tokens on the allowList and denyList, providing granular control over which tokens are permitted or denied for use in the EVVM.
 - **CoreStorage.sol**: Added `allowList` and `denyList` mappings to track token addresses that are allowed or denied for use in the EVVM, along with `listStatus` to indicate which list is active, providing a flexible mechanism for managing token permissions in the system.
 - **ProposalStructs.sol**: Added `Bytes1TypeProposal` struct to represent proposals for bytes1 type parameters.
+- **Tests**: Added comprehensive tests for the new token list management functionality in `Core.sol`, including tests for proposing, accepting, and rejecting list status changes, as well as verifying token interaction allowances based on the active list.
 
 ### Changed
 - **Core.sol**: Refactor TypeProposal getter functions to return
