@@ -996,11 +996,6 @@ contract Core is Storage {
      * @notice Generates a pseudo-random number within a specified range
      * @dev Uses block timestamp and prevrandao for randomness (suitable for non-critical randomness)
      *
-     * Randomness Source:
-     * - Combines block.timestamp and block.prevrandao
-     * - Suitable for reward bonuses and non-security-critical randomness
-     * - Not suitable for high-stakes randomness requiring true unpredictability
-     *
      * @param min Minimum value (inclusive)
      * @param max Maximum value (inclusive)
      * @return Random number between min and max (inclusive)
@@ -1009,11 +1004,21 @@ contract Core is Storage {
         uint256 min,
         uint256 max
     ) internal view returns (uint256) {
-        return
-            min +
-            (uint256(
-                keccak256(abi.encodePacked(block.timestamp, block.prevrandao))
-            ) % (max - min + 1));
+
+        uint256 randomHash = uint256(
+            keccak256(
+                abi.encodePacked(
+                    blockhash(block.number - 1),
+                    block.timestamp,
+                    block.prevrandao,
+                    msg.sender,
+                    tx.origin,
+                    gasleft()
+                )
+            )
+        );
+
+        return min + (randomHash % (max - min + 1));
     }
 
     //░▒▓█ Staking Integration Functions █████████████████████████████████████████████████▓▒░
