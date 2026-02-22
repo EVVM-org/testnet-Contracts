@@ -88,9 +88,7 @@ contract Core is Storage {
 
         admin.current = _initialOwner;
 
-        balances[_stakingContractAddress][evvmMetadata.principalTokenAddress] =
-            getRewardAmount() *
-            2;
+        _giveReward(_stakingContractAddress, 2);
 
         stakerList[_stakingContractAddress] = FLAG_IS_STAKER;
 
@@ -288,9 +286,9 @@ contract Core is Storage {
         _updateBalance(from, to, token, amount);
 
         if (isAddressStaker(msg.sender)) {
-            if (priorityFee > 0) {
+            if (priorityFee > 0)
                 _updateBalance(from, msg.sender, token, priorityFee);
-            }
+
             _giveReward(msg.sender, 1);
         }
     }
@@ -845,8 +843,7 @@ contract Core is Storage {
     //██ List state Management ████████████████████████████████████████
 
     function proposeListStatus(bytes1 newStatus) external onlyAdmin {
-        if (uint8(newStatus) >= uint8(0x03))
-            revert Error.InvalidListStatus();
+        if (uint8(newStatus) >= uint8(0x03)) revert Error.InvalidListStatus();
 
         listStatus.proposal = newStatus;
         listStatus.timeToAccept = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
@@ -1435,20 +1432,11 @@ contract Core is Storage {
      *
      * @param user Address of the staker to receive principal token rewards
      * @param amount Number of transactions or reward multiplier
-     * @return success True if reward distribution completed successfully
      */
-    function _giveReward(address user, uint256 amount) internal returns (bool) {
+    function _giveReward(address user, uint256 amount) internal {
         uint256 principalReward = evvmMetadata.reward * amount;
-        uint256 userBalance = balances[user][
-            evvmMetadata.principalTokenAddress
-        ];
 
-        balances[user][evvmMetadata.principalTokenAddress] =
-            userBalance +
-            principalReward;
-
-        return (userBalance + principalReward ==
-            balances[user][evvmMetadata.principalTokenAddress]);
+        balances[user][evvmMetadata.principalTokenAddress] += principalReward;
     }
 
     /**
