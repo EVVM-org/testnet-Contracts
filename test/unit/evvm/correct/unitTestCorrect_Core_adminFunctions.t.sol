@@ -40,27 +40,18 @@ contract unitTestCorrect_Core_adminFunctions is Test, Constants {
                 reward: 5000000000000000000
             })
         );
-        
+
         estimator = new Estimator(
             ACTIVATOR.Address,
             address(core),
             address(staking),
             ADMIN.Address
         );
-        nameService = new NameService(
-            address(core),
-            ADMIN.Address
-        );
+        nameService = new NameService(address(core), ADMIN.Address);
 
-        staking.initializeSystemContracts(
-            address(estimator),
-            address(core)
-        );
+        staking.initializeSystemContracts(address(estimator), address(core));
         treasury = new Treasury(address(core));
-        core.initializeSystemContracts(
-            address(nameService),
-            address(treasury)
-        );
+        core.initializeSystemContracts(address(nameService), address(treasury));
 
         //
 
@@ -217,6 +208,109 @@ contract unitTestCorrect_Core_adminFunctions is Test, Constants {
             proposal.timeToAccept,
             0,
             "Time to accept should be set to 0 after confirmation"
+        );
+    }
+
+    function test__unit_correct__proposeListStatus() external {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01);
+        vm.stopPrank();
+
+        assertEq(
+            uint8(core.getFullDetailListStatus().current),
+            uint8(0x00),
+            "Current list status should be 0x00 after proposal"
+        );
+
+        assertEq(
+            uint8(core.getFullDetailListStatus().proposal),
+            uint8(0x01),
+            "Proposed list status should be 0x01 after proposal"
+        );
+
+        assertEq(
+            core.getFullDetailListStatus().timeToAccept,
+            block.timestamp + 1 days,
+            "Time to accept should be set in after proposal"
+        );
+    }
+
+    function test__unit_correct__rejectListStatusProposal() external {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01);
+        core.rejectListStatusProposal();
+        vm.stopPrank();
+
+        assertEq(
+            uint8(core.getFullDetailListStatus().current),
+            uint8(0x00),
+            "Current list status should be 0x00 after rejection"
+        );
+
+        assertEq(
+            uint8(core.getFullDetailListStatus().proposal),
+            uint8(0x00),
+            "Proposed list status should be 0x00 after rejection"
+        );
+
+        assertEq(
+            core.getFullDetailListStatus().timeToAccept,
+            0,
+            "Time to accept should be set to 0 after rejection"
+        );
+    }
+
+    function test__unit_correct__acceptListStatusProposal() external {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01);
+        skip(1 days);
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+
+        assertEq(
+            uint8(core.getFullDetailListStatus().current),
+            uint8(0x01),
+            "Current list status should be 0x01 after accepting proposal"
+        );
+
+        assertEq(
+            uint8(core.getFullDetailListStatus().proposal),
+            uint8(0x00),
+            "Proposed list status should be 0x00 after accepting proposal"
+        );
+
+        assertEq(
+            core.getFullDetailListStatus().timeToAccept,
+            0,
+            "Time to accept should be set to 0 after accepting proposal"
+        );
+    }
+
+    function test__unit_correct__setTokenStatusOnDenyList() external {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x02);
+        skip(1 days + 1);
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnDenyList(address(67), true);
+        vm.stopPrank();
+
+        assertTrue(
+            core.getDenyListStatus(address(67)),
+            "Token status on denyList was not set to true correctly"
+        );
+    }
+
+    function test__unit_correct__setTokenStatusOnAllowList() external {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01);
+        skip(1 days + 1);
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnAllowList(address(67), true);
+        vm.stopPrank();
+
+        assertTrue(
+            core.getAllowListStatus(address(67)),
+            "Token status on allowList was not set to true correctly"
         );
     }
 }
