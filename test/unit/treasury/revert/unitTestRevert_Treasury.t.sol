@@ -26,6 +26,9 @@ import "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 import {
     TreasuryError
 } from "@evvm/testnet-contracts/library/errors/TreasuryError.sol";
+import {
+    CoreError
+} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_Treasury is Test, Constants {
     TestERC20 testToken;
@@ -51,7 +54,9 @@ contract unitTestRevert_Treasury is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(TreasuryError.DepositAmountMustBeGreaterThanZero.selector);
+        vm.expectRevert(
+            TreasuryError.DepositAmountMustBeGreaterThanZero.selector
+        );
 
         treasury.deposit{value: 0 ether}(address(0), 0 ether);
 
@@ -115,7 +120,9 @@ contract unitTestRevert_Treasury is Test, Constants {
 
         testToken.approve(address(treasury), 10 ether);
 
-        vm.expectRevert(TreasuryError.DepositAmountMustBeGreaterThanZero.selector);
+        vm.expectRevert(
+            TreasuryError.DepositAmountMustBeGreaterThanZero.selector
+        );
         treasury.deposit(address(testToken), 0);
 
         vm.stopPrank();
@@ -161,7 +168,6 @@ contract unitTestRevert_Treasury is Test, Constants {
     function test__unit_revert__withdraw__PrincipalTokenIsNotWithdrawable()
         external
     {
-        
         _addBalance(
             COMMON_USER_NO_STAKER_1.Address,
             10 ether,
@@ -182,6 +188,51 @@ contract unitTestRevert_Treasury is Test, Constants {
 
         vm.expectRevert(TreasuryError.InsufficientBalance.selector);
         treasury.withdraw(ETHER_ADDRESS, 2 ether);
+
+        vm.stopPrank();
+    }
+
+
+    function test__unit_revert__withdraw__TokenIsDeniedForExecution_denyList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x02); // Activate denyList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnDenyList(address(testToken), true);
+        vm.stopPrank();
+
+        testToken.mint(COMMON_USER_NO_STAKER_1.Address, 10 ether);
+
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+
+        testToken.approve(address(treasury), 10 ether);
+
+        vm.expectRevert(CoreError.TokenIsDeniedForExecution.selector);
+        treasury.deposit(address(testToken), 10 ether);
+
+        vm.stopPrank();
+    }
+
+
+    function test__unit_revert__withdraw__TokenIsDeniedForExecution_allowList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01); // Activate allowList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+
+        testToken.mint(COMMON_USER_NO_STAKER_1.Address, 10 ether);
+
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+
+        testToken.approve(address(treasury), 10 ether);
+
+        vm.expectRevert(CoreError.TokenIsDeniedForExecution.selector);
+        treasury.deposit(address(testToken), 10 ether);
 
         vm.stopPrank();
     }

@@ -26,8 +26,6 @@ contract unitTestCorrect_Treasury is Test, Constants {
     TestERC20 testToken;
 
     function executeBeforeSetUp() internal override {
-        
-
         testToken = new TestERC20();
     }
 
@@ -144,6 +142,81 @@ contract unitTestCorrect_Treasury is Test, Constants {
             testToken.balanceOf(COMMON_USER_NO_STAKER_1.Address),
             10 ether,
             "Error: incorrect user token balance after withdraw"
+        );
+    }
+
+    function test__unit_correct__deposit__denyList() external {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x02); // Activate denyList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+
+        testToken.mint(COMMON_USER_NO_STAKER_1.Address, 10 ether);
+
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+
+        testToken.approve(address(treasury), 10 ether);
+
+        treasury.deposit(address(testToken), 10 ether);
+
+        vm.stopPrank();
+
+        assertEq(
+            core.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                address(testToken)
+            ),
+            10 ether,
+            "Error: incorrect balance after deposit"
+        );
+        assertEq(
+            testToken.balanceOf(address(treasury)),
+            10 ether,
+            "Error: incorrect treasury token balance after deposit"
+        );
+        assertEq(
+            testToken.balanceOf(COMMON_USER_NO_STAKER_1.Address),
+            0,
+            "Error: incorrect user token balance after deposit"
+        );
+    }
+
+    function test__unit_correct__deposit__allowList() external {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01); // Activate allowList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnAllowList(address(testToken), true);
+        vm.stopPrank();
+
+        testToken.mint(COMMON_USER_NO_STAKER_1.Address, 10 ether);
+
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+
+        testToken.approve(address(treasury), 10 ether);
+
+        treasury.deposit(address(testToken), 10 ether);
+
+        vm.stopPrank();
+
+        assertEq(
+            core.getBalance(
+                COMMON_USER_NO_STAKER_1.Address,
+                address(testToken)
+            ),
+            10 ether,
+            "Error: incorrect balance after deposit"
+        );
+        assertEq(
+            testToken.balanceOf(address(treasury)),
+            10 ether,
+            "Error: incorrect treasury token balance after deposit"
+        );
+        assertEq(
+            testToken.balanceOf(COMMON_USER_NO_STAKER_1.Address),
+            0,
+            "Error: incorrect user token balance after deposit"
         );
     }
 }
