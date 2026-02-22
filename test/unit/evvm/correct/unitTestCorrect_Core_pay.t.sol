@@ -41,7 +41,6 @@ contract unitTestCorrect_Core_pay is Test, Constants {
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             )
         );
-        
     }
 
     function _addBalance(
@@ -1075,6 +1074,105 @@ contract unitTestCorrect_Core_pay is Test, Constants {
             core.getBalance(COMMON_USER_STAKER.Address, ETHER_ADDRESS),
             priorityFee_1 + priorityFee_2,
             "Staker balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
+        );
+    }
+
+    function test__unit_correct__pay__denyList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x02); // Activate denyList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+
+        _addBalance(COMMON_USER_NO_STAKER_1, ETHER_ADDRESS, 100, 0);
+
+        bytes memory signaturePay = _executeSig_evvm_pay(
+            COMMON_USER_NO_STAKER_1,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            ETHER_ADDRESS,
+            100,
+            0,
+            address(0),
+            777,
+            true
+        );
+
+        core.pay(
+            COMMON_USER_NO_STAKER_1.Address,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            ETHER_ADDRESS,
+            100,
+            0,
+            address(0),
+            777,
+            true,
+            signaturePay
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            0,
+            "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            100,
+            "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
+        );
+    }
+
+    function test__unit_correct__pay__allowList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01); // Activate allowList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnAllowList(ETHER_ADDRESS, true);
+        vm.stopPrank();
+
+        _addBalance(COMMON_USER_NO_STAKER_1, ETHER_ADDRESS, 100, 0);
+
+        bytes memory signaturePay = _executeSig_evvm_pay(
+            COMMON_USER_NO_STAKER_1,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            ETHER_ADDRESS,
+            100,
+            0,
+            address(0),
+            777,
+            true
+        );
+
+        core.pay(
+            COMMON_USER_NO_STAKER_1.Address,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            ETHER_ADDRESS,
+            100,
+            0,
+            address(0),
+            777,
+            true,
+            signaturePay
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            0,
+            "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            100,
+            "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
         );
     }
 }

@@ -46,7 +46,7 @@ contract unitTestRevert_Core_dispersePay is Test, Constants {
                 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2
             )
         );
-        
+        core.setPointStaker(COMMON_USER_STAKER.Address, 0x01);
     }
 
     function _addBalance(
@@ -1096,6 +1096,111 @@ contract unitTestRevert_Core_dispersePay is Test, Constants {
             core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             0,
             "Receiver balance must be zero because pay reverted"
+        );
+    }
+
+    function test__unit_revert__dispersePay__TokenIsDeniedForExecution_denyList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x02); // Activate denyList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnDenyList(address(67), true);
+        vm.stopPrank();
+
+        _addBalance(COMMON_USER_NO_STAKER_1, address(67), 100, 0);
+
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
+
+        toData[0] = CoreStructs.DispersePayMetadata({
+            amount: 50,
+            to_address: COMMON_USER_NO_STAKER_2.Address,
+            to_identity: ""
+        });
+
+        toData[1] = CoreStructs.DispersePayMetadata({
+            amount: 50,
+            to_address: address(0),
+            to_identity: "dummy"
+        });
+
+        bytes memory signature = _executeSig_evvm_dispersePay(
+            COMMON_USER_NO_STAKER_1,
+            toData,
+            address(67),
+            100,
+            0,
+            address(0),
+            0,
+            false
+        );
+
+        vm.expectRevert(CoreError.TokenIsDeniedForExecution.selector);
+
+        core.dispersePay(
+            COMMON_USER_NO_STAKER_1.Address,
+            toData,
+            address(67),
+            100,
+            0,
+            address(0),
+            0,
+            false,
+            signature
+        );
+    }
+
+    function test__unit_revert__dispersePay__TokenIsDeniedForExecution_allowList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01); // Activate allowList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+
+        _addBalance(COMMON_USER_NO_STAKER_1, address(67), 100, 0);
+
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
+
+        toData[0] = CoreStructs.DispersePayMetadata({
+            amount: 50,
+            to_address: COMMON_USER_NO_STAKER_2.Address,
+            to_identity: ""
+        });
+
+        toData[1] = CoreStructs.DispersePayMetadata({
+            amount: 50,
+            to_address: address(0),
+            to_identity: "dummy"
+        });
+
+        bytes memory signature = _executeSig_evvm_dispersePay(
+            COMMON_USER_NO_STAKER_1,
+            toData,
+            address(67),
+            100,
+            0,
+            address(0),
+            0,
+            false
+        );
+
+        vm.expectRevert(CoreError.TokenIsDeniedForExecution.selector);
+
+        core.dispersePay(
+            COMMON_USER_NO_STAKER_1.Address,
+            toData,
+            address(67),
+            100,
+            0,
+            address(0),
+            0,
+            false,
+            signature
         );
     }
 }

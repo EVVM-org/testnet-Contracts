@@ -84,8 +84,8 @@ contract unitTestCorrect_Core_dispersePay is Test, Constants {
             amount,
             priorityFee,
             address(0),
-                0,
-                false
+            0,
+            false
         );
 
         vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
@@ -238,8 +238,8 @@ contract unitTestCorrect_Core_dispersePay is Test, Constants {
             amount,
             priorityFee,
             address(0),
-                0,
-                false
+            0,
+            false
         );
 
         vm.startPrank(COMMON_USER_STAKER.Address);
@@ -359,6 +359,177 @@ contract unitTestCorrect_Core_dispersePay is Test, Constants {
             ),
             core.getRewardAmount(),
             "Fisher balance must be rewarded because fisher is staker"
+        );
+    }
+
+    function test__unit_correct__dispersePay__denyList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x02); // Activate denyList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+
+        (uint256 amount, uint256 priorityFee) = _addBalance(
+            COMMON_USER_NO_STAKER_1,
+            ETHER_ADDRESS,
+            0.10 ether,
+            0.01 ether
+        );
+
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
+
+        toData[0] = CoreStructs.DispersePayMetadata({
+            amount: amount / 2,
+            to_address: COMMON_USER_NO_STAKER_2.Address,
+            to_identity: ""
+        });
+
+        toData[1] = CoreStructs.DispersePayMetadata({
+            amount: amount / 2,
+            to_address: address(0),
+            to_identity: "dummy"
+        });
+
+        bytes memory signature = _executeSig_evvm_dispersePay(
+            COMMON_USER_NO_STAKER_1,
+            toData,
+            ETHER_ADDRESS,
+            amount,
+            priorityFee,
+            address(0),
+            67,
+            true
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+        core.dispersePay(
+            COMMON_USER_NO_STAKER_1.Address,
+            toData,
+            ETHER_ADDRESS,
+            amount,
+            priorityFee,
+            address(0),
+            67,
+            true,
+            signature
+        );
+
+        vm.stopPrank();
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            priorityFee,
+            "Sender balance must be equal to priority fee because fisher is not staker"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            amount,
+            "Receiver balance must be equal to all amount sent"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_3.Address, ETHER_ADDRESS),
+            0,
+            "Fisher balance must be 0 because fisher is not staker"
+        );
+
+        assertEq(
+            core.getBalance(
+                COMMON_USER_NO_STAKER_3.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "Fisher balance must be 0 because fisher is not staker they cannot receive rewards"
+        );
+    }
+
+    function test__unit_correct__dispersePay__allowList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01); // Activate allowList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnAllowList(ETHER_ADDRESS, true);
+        vm.stopPrank();
+
+        (uint256 amount, uint256 priorityFee) = _addBalance(
+            COMMON_USER_NO_STAKER_1,
+            ETHER_ADDRESS,
+            0.10 ether,
+            0.01 ether
+        );
+
+        CoreStructs.DispersePayMetadata[]
+            memory toData = new CoreStructs.DispersePayMetadata[](2);
+
+        toData[0] = CoreStructs.DispersePayMetadata({
+            amount: amount / 2,
+            to_address: COMMON_USER_NO_STAKER_2.Address,
+            to_identity: ""
+        });
+
+        toData[1] = CoreStructs.DispersePayMetadata({
+            amount: amount / 2,
+            to_address: address(0),
+            to_identity: "dummy"
+        });
+
+        bytes memory signature = _executeSig_evvm_dispersePay(
+            COMMON_USER_NO_STAKER_1,
+            toData,
+            ETHER_ADDRESS,
+            amount,
+            priorityFee,
+            address(0),
+            67,
+            true
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_3.Address);
+        core.dispersePay(
+            COMMON_USER_NO_STAKER_1.Address,
+            toData,
+            ETHER_ADDRESS,
+            amount,
+            priorityFee,
+            address(0),
+            67,
+            true,
+            signature
+        );
+
+        vm.stopPrank();
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            priorityFee,
+            "Sender balance must be equal to priority fee because fisher is not staker"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            amount,
+            "Receiver balance must be equal to all amount sent"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_3.Address, ETHER_ADDRESS),
+            0,
+            "Fisher balance must be 0 because fisher is not staker"
+        );
+
+        assertEq(
+            core.getBalance(
+                COMMON_USER_NO_STAKER_3.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "Fisher balance must be 0 because fisher is not staker they cannot receive rewards"
         );
     }
 }

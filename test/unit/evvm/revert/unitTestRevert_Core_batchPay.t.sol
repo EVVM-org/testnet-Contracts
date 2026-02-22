@@ -1015,4 +1015,127 @@ contract unitTestRevert_Core_batchPay is Test, Constants {
             "Receiver balance must be 0 because pay skipped"
         );
     }
+
+    function test__unit_revert__batchPay__TokenIsDeniedForExecution_denyList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x02); // Activate denyList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnDenyList(address(67), true);
+        vm.stopPrank();
+
+        _addBalance(COMMON_USER_NO_STAKER_1, address(67), 100, 0);
+
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
+            1
+        );
+
+        batchData[0] = CoreStructs.BatchData(
+            COMMON_USER_NO_STAKER_1.Address,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            address(67),
+            100,
+            0,
+            address(0),
+            0,
+            false,
+            _executeSig_evvm_pay(
+                COMMON_USER_NO_STAKER_1,
+                COMMON_USER_NO_STAKER_2.Address,
+                "",
+                address(67),
+                100,
+                0,
+                address(0),
+                0,
+                false
+            )
+        );
+
+        vm.startPrank(COMMON_USER_STAKER.Address);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
+        vm.stopPrank();
+
+        assertEq(
+            successfulTransactions,
+            0,
+            "There should be 0 successful transactions"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, address(67)),
+            100,
+            "Sender balance must be the same because pay skipped"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, address(67)),
+            0,
+            "Receiver balance must be 0 because pay skipped"
+        );
+    }
+
+    function test__unit_revert__batchPay__TokenIsDeniedForExecution_allowList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01); // Activate allowList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+
+        _addBalance(COMMON_USER_NO_STAKER_1, address(67), 100, 0);
+
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
+            1
+        );
+
+        batchData[0] = CoreStructs.BatchData(
+            COMMON_USER_NO_STAKER_1.Address,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            address(67),
+            100,
+            0,
+            address(0),
+            0,
+            false,
+            _executeSig_evvm_pay(
+                COMMON_USER_NO_STAKER_1,
+                COMMON_USER_NO_STAKER_2.Address,
+                "",
+                address(67),
+                100,
+                0,
+                address(0),
+                0,
+                false
+            )
+        );
+
+        vm.startPrank(COMMON_USER_STAKER.Address);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
+        vm.stopPrank();
+
+        assertEq(
+            successfulTransactions,
+            0,
+            "There should be 0 successful transactions"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, address(67)),
+            100,
+            "Sender balance must be the same because pay skipped"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, address(67)),
+            0,
+            "Receiver balance must be 0 because pay skipped"
+        );
+    }
 }

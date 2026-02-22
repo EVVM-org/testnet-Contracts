@@ -88,4 +88,70 @@ contract unitTestCorrect_Core_caPay is Test, Constants {
             "ca recieve rewards because is an staker"
         );
     }
+
+
+    function test__unit_correct__pay__denyList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x02); // Activate denyList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+
+        uint256 amount = _addBalance(address(this), ETHER_ADDRESS, 0.001 ether);
+
+        core.caPay(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS, amount);
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            amount,
+            "Amount should be recibed"
+        );
+
+        assertEq(
+            core.getBalance(address(this), ETHER_ADDRESS),
+            0,
+            "Amount should be deducted"
+        );
+
+        assertEq(
+            core.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "ca dont recieve rewards because is not an staker"
+        );
+    }
+
+    function test__unit_correct__pay__allowList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01); // Activate allowList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnAllowList(ETHER_ADDRESS, true);
+        vm.stopPrank();
+
+        uint256 amount = _addBalance(address(this), ETHER_ADDRESS, 0.001 ether);
+
+        core.caPay(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS, amount);
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            amount,
+            "Amount should be recibed"
+        );
+
+        assertEq(
+            core.getBalance(address(this), ETHER_ADDRESS),
+            0,
+            "Amount should be deducted"
+        );
+
+        assertEq(
+            core.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "ca dont recieve rewards because is not an staker"
+        );
+    }
 }

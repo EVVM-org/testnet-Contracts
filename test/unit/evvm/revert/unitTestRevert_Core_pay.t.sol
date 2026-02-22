@@ -1028,4 +1028,83 @@ contract unitTestRevert_Core_pay is Test, Constants {
             "Fisher does not receive principal token reward because pay reverted"
         );
     }
+
+
+    function test__unit_revert__pay__TokenIsDeniedForExecution_denyList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x02); // Activate denyList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnDenyList(address(67), true);
+        vm.stopPrank();
+
+        _addBalance(COMMON_USER_NO_STAKER_1, address(67), 100, 0);
+
+        bytes memory signaturePay = _executeSig_evvm_pay(
+            COMMON_USER_NO_STAKER_1,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            address(67),
+            100,
+            0,
+            address(0),
+            777,
+            true
+        );
+
+        vm.expectRevert(CoreError.TokenIsDeniedForExecution.selector);
+        core.pay(
+            COMMON_USER_NO_STAKER_1.Address,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            address(67),
+            100,
+            0,
+            address(0),
+            777,
+            true,
+            signaturePay
+        );
+    }
+
+
+    function test__unit_revert__pay__TokenIsDeniedForExecution_allowList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01); // Activate allowList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+
+        _addBalance(COMMON_USER_NO_STAKER_1, address(67), 100, 0);
+
+        bytes memory signaturePay = _executeSig_evvm_pay(
+            COMMON_USER_NO_STAKER_1,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            address(67),
+            100,
+            0,
+            address(0),
+            777,
+            true
+        );
+
+        vm.expectRevert(CoreError.TokenIsDeniedForExecution.selector);
+        core.pay(
+            COMMON_USER_NO_STAKER_1.Address,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            address(67),
+            100,
+            0,
+            address(0),
+            777,
+            true,
+            signaturePay
+        );
+    }
 }

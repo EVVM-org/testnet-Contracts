@@ -105,4 +105,85 @@ contract unitTestCorrect_Core_disperseCaPay is Test, Constants {
             "Staker ca should recieve rewards"
         );
     }
+
+    function test__unit_correct__disperseCaPay__denyList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x02); // Activate denyList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+
+        (uint256 amount) = _addBalance(address(this), ETHER_ADDRESS, 0.1 ether);
+
+        CoreStructs.DisperseCaPayMetadata[]
+            memory toData = new CoreStructs.DisperseCaPayMetadata[](1);
+
+        toData[0] = CoreStructs.DisperseCaPayMetadata({
+            amount: amount,
+            toAddress: COMMON_USER_NO_STAKER_2.Address
+        });
+
+        core.disperseCaPay(toData, ETHER_ADDRESS, amount);
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            amount,
+            "Amount should be recibed"
+        );
+
+        assertEq(
+            core.getBalance(address(this), ETHER_ADDRESS),
+            0,
+            "Amount should be deducted"
+        );
+
+        assertEq(
+            core.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "ca dosent recieve rewards because is no an staker"
+        );
+    }
+
+    function test__unit_correct__disperseCaPay__allowList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01); // Activate allowList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnAllowList(ETHER_ADDRESS, true);
+        vm.stopPrank();
+
+        (uint256 amount) = _addBalance(address(this), ETHER_ADDRESS, 0.1 ether);
+
+        CoreStructs.DisperseCaPayMetadata[]
+            memory toData = new CoreStructs.DisperseCaPayMetadata[](1);
+
+        toData[0] = CoreStructs.DisperseCaPayMetadata({
+            amount: amount,
+            toAddress: COMMON_USER_NO_STAKER_2.Address
+        });
+
+        core.disperseCaPay(toData, ETHER_ADDRESS, amount);
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            amount,
+            "Amount should be recibed"
+        );
+
+        assertEq(
+            core.getBalance(address(this), ETHER_ADDRESS),
+            0,
+            "Amount should be deducted"
+        );
+
+        assertEq(
+            core.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "ca dosent recieve rewards because is no an staker"
+        );
+    }
 }

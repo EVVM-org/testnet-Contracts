@@ -65,4 +65,35 @@ contract unitTestRevert_Core_caPay is Test, Constants {
             "Amount should be 0 because of revert"
         );
     }
+
+    function test__unit_revert__caPay__TokenIsDeniedForExecution_denyList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x02); // Activate denyList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        core.setTokenStatusOnDenyList(address(67), true);
+        vm.stopPrank();
+
+        _addBalance(address(this), address(67), 100);
+
+        vm.expectRevert(CoreError.TokenIsDeniedForExecution.selector);
+        core.caPay(COMMON_USER_NO_STAKER_2.Address, address(67), 100);
+    }
+
+    function test__unit_revert__caPay__TokenIsDeniedForExecution_allowList()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        core.proposeListStatus(0x01); // Activate allowList
+        skip(1 days + 1); // Skip timelock
+        core.acceptListStatusProposal();
+        vm.stopPrank();
+
+        _addBalance(address(this), address(67), 100);
+
+        vm.expectRevert(CoreError.TokenIsDeniedForExecution.selector);
+        core.caPay(COMMON_USER_NO_STAKER_2.Address, address(67), 100);
+    }
 }
