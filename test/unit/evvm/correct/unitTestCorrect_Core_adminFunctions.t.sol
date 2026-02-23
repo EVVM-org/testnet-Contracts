@@ -139,7 +139,7 @@ contract unitTestCorrect_Core_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         ProposalStructs.AddressTypeProposal memory proposal = core
-            .getUserValidatorAddressDetails();
+            .getFullDetailUserValidator();
 
         assertEq(
             proposal.current,
@@ -165,7 +165,7 @@ contract unitTestCorrect_Core_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         ProposalStructs.AddressTypeProposal memory proposal = core
-            .getUserValidatorAddressDetails();
+            .getFullDetailUserValidator();
 
         assertEq(
             proposal.current,
@@ -192,7 +192,7 @@ contract unitTestCorrect_Core_adminFunctions is Test, Constants {
         vm.stopPrank();
 
         ProposalStructs.AddressTypeProposal memory proposal = core
-            .getUserValidatorAddressDetails();
+            .getFullDetailUserValidator();
 
         assertEq(
             proposal.current,

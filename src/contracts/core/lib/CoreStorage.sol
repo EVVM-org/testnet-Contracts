@@ -61,23 +61,6 @@ abstract contract CoreStorage {
      */
     address treasuryAddress;
 
-    //░▒▓█ Token Whitelist Proposal State ██████████████████████████████████████████████▓▒░
-
-    /**
-     * @notice Pending token address to be whitelisted.
-     */
-    address whitelistTokenToBeAdded_address;
-
-    /**
-     * @notice Uniswap V3 (or similar) pool address used to verify liquidity for the pending token.
-     */
-    address whitelistTokenToBeAdded_pool;
-
-    /**
-     * @notice Timestamp when the pending token whitelist proposal can be accepted.
-     */
-    uint256 whitelistTokenToBeAdded_dateToSet;
-
     //░▒▓█ Proxy Implementation State ██████████████████████████████████████████████████▓▒░
 
     /**
@@ -104,6 +87,11 @@ abstract contract CoreStorage {
     uint256 windowTimeToChangeEvvmID;
 
     /**
+     * @notice Current total supply of the principal token within the EVVM.
+     */
+    uint256 currentSupply;
+
+    /**
      * @notice Metadata configuration for this EVVM instance (ID, token info, rewards).
      * @dev Crucial for EIP-191 signature verification to prevent replay attacks.
      */
@@ -116,12 +104,15 @@ abstract contract CoreStorage {
      */
     ProposalStructs.AddressTypeProposal admin;
 
-    //░▒▓█ Initialization State ████████████████████████████████████████████████████████▓▒░
+    //░▒▓█ Reward Distribution State ██████████████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Internal guard to ensure system contracts are initialized only once.
+     * @notice This flag can be used to pause or resume the distribution of staking rewards
+     *         if the 99.99% of the maximum supply has been reached. If true the distribution of rewards
+     *         is active, if false the distribution of rewards is paused.
+     *
      */
-    bytes1 breakerSetupNameServiceAddress;
+    ProposalStructs.BoolTypeProposal rewardFlowDistribution;
 
     //░▒▓█ List state ████████████████████████████████████████████████████████▓▒░
 
@@ -132,6 +123,13 @@ abstract contract CoreStorage {
      *      0x02 = denylist active
      */
     ProposalStructs.Bytes1TypeProposal listStatus;
+
+    //░▒▓█ Initialization State ████████████████████████████████████████████████████████▓▒░
+
+    /**
+     * @notice Internal guard to ensure system contracts are initialized only once.
+     */
+    bytes1 breakerSetupNameServiceAddress;
 
     //░▒▓█ Staker Registry █████████████████████████████████████████████████████████████▓▒░
 
@@ -147,13 +145,6 @@ abstract contract CoreStorage {
      * @dev Format: user => token => balance. address(0) = ETH.
      */
     mapping(address user => mapping(address token => uint256 quantity)) balances;
-
-    //░▒▓█ Fisher Bridge State ██████████████████████████████████████████████████████████▓▒░
-
-    /**
-     * @notice Nonce tracking for ordered Fisher Bridge cross-chain deposits.
-     */
-    mapping(address user => uint256 nonce) nextFisherDepositNonce;
 
     //░▒▓█ Nonce State ██████████████████████████████████████████████████████████▓▒░
 
@@ -182,25 +173,25 @@ abstract contract CoreStorage {
     //░▒▓█ Token allowlist/denylist ██████████████████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Tracks what token addresses are denied for use in the EVVM 
+     * @notice Tracks what token addresses are denied for use in the EVVM
      *         if a token is in the denylist, it cannot:
      *         - be deposited to the EVVM
      *         - be used for execution payments (transfers between accounts/services)
      *         but it can:
      *         - be withdrawn from the EVVM (users can get their tokens out, but not back in)
-     *         by default all the tokens are allowed until they are added to the 
+     *         by default all the tokens are allowed until they are added to the
      *         denyList, if the denyList is active (listStatus = 0x02)
      */
-    mapping (address tokenAdress => bool isDenied) denyList;
+    mapping(address tokenAdress => bool isDenied) denyList;
 
     /**
-     * @notice Tracks what token addresses are allowed for use in the EVVM 
+     * @notice Tracks what token addresses are allowed for use in the EVVM
      *         if a token is in the allowList, it can:
      *         - be deposited to the EVVM
      *         - be used for execution payments (transfers between accounts/services)
      *         - can be withdrawn from the EVVM
-     *         by default all the tokens are denied until they are added to the 
+     *         by default all the tokens are denied until they are added to the
      *         allowList, if the allowList is active (listStatus = 0x01)
      */
-    mapping (address tokenAdress => bool isAllowed) allowList;
+    mapping(address tokenAdress => bool isAllowed) allowList;
 }

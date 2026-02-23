@@ -187,7 +187,7 @@ contract unitTestRevert_Core_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__acceptAdmin__TimeLockNotExpired() external {
+    function test__unit_revert__acceptAdmin__ProposalNotReadyToAccept() external {
         vm.startPrank(ADMIN.Address);
 
         core.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
@@ -196,7 +196,7 @@ contract unitTestRevert_Core_adminFunctions is Test, Constants {
 
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
 
-        vm.expectRevert(CoreError.TimeLockNotExpired.selector);
+        vm.expectRevert(CoreError.ProposalNotReadyToAccept.selector);
         core.acceptAdmin();
 
         vm.stopPrank();
@@ -258,13 +258,13 @@ contract unitTestRevert_Core_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__acceptUserValidatorProposal__ProposalForUserValidatorNotReady()
+    function test__unit_revert__acceptUserValidatorProposal__ProposalNotReadyToAccept()
         external
     {
         vm.startPrank(ADMIN.Address);
         core.proposeUserValidator(address(125));
         skip(10 minutes);
-        vm.expectRevert(CoreError.ProposalForUserValidatorNotReady.selector);
+        vm.expectRevert(CoreError.ProposalNotReadyToAccept.selector);
         core.acceptUserValidatorProposal();
         vm.stopPrank();
     }
@@ -311,13 +311,13 @@ contract unitTestRevert_Core_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__acceptListStatusProposal_ProposalForListStatusNotReady()
+    function test__unit_revert__acceptListStatusProposal_ProposalNotReadyToAccept()
         external
     {
         vm.startPrank(ADMIN.Address);
         core.proposeListStatus(0x01);
         skip(10 minutes);
-        vm.expectRevert(CoreError.ProposalForListStatusNotReady.selector);
+        vm.expectRevert(CoreError.ProposalNotReadyToAccept.selector);
         core.acceptListStatusProposal();
         vm.stopPrank();
     }

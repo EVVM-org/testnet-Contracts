@@ -88,6 +88,8 @@ contract Core is Storage {
 
         admin.current = _initialOwner;
 
+        rewardFlowDistribution.flag = true;
+
         _giveReward(_stakingContractAddress, 2);
 
         stakerList[_stakingContractAddress] = FLAG_IS_STAKER;
@@ -112,9 +114,9 @@ contract Core is Storage {
             revert Error.AddressCantBeZero();
 
         nameServiceAddress = _nameServiceAddress;
-        balances[nameServiceAddress][evvmMetadata.principalTokenAddress] =
-            10000 *
-            10 ** 18;
+
+        _giveReward(_nameServiceAddress, 20);
+
         stakerList[nameServiceAddress] = FLAG_IS_STAKER;
 
         treasuryAddress = _treasuryAddress;
@@ -180,6 +182,8 @@ contract Core is Storage {
         }
     }
 
+    //░▒▓█ Testnet Functions ██████████████████████████████████████████████████████▓▒░
+    
     /**
      * @notice Faucet: Adds balance to a user for testing (Testnet only).
      * @param user Recipient address.
@@ -192,6 +196,9 @@ contract Core is Storage {
         uint256 quantity
     ) external {
         balances[user][token] += quantity;
+
+        if (token == evvmMetadata.principalTokenAddress)
+            currentSupply += quantity;
     }
 
     /**
@@ -252,7 +259,7 @@ contract Core is Storage {
             ) != from
         ) revert Error.InvalidSignature();
 
-        if (!canExecuteUserTransaction(from))
+        if (!_canExecuteUserTransaction(from))
             revert Error.UserCannotExecuteTransaction();
 
         if (isAsyncExec) {
@@ -330,7 +337,7 @@ contract Core is Storage {
                     payment.signature
                 ) !=
                 payment.from ||
-                !canExecuteUserTransaction(payment.from)
+                !_canExecuteUserTransaction(payment.from)
             ) {
                 results[iteration] = false;
                 continue;
@@ -456,7 +463,7 @@ contract Core is Storage {
             ) != from
         ) revert Error.InvalidSignature();
 
-        if (!canExecuteUserTransaction(from))
+        if (!_canExecuteUserTransaction(from))
             revert Error.UserCannotExecuteTransaction();
 
         if (isAsyncExec) {
@@ -618,7 +625,7 @@ contract Core is Storage {
         if (originExecutor != address(0) && tx.origin != originExecutor)
             revert Error.OriginIsNotTheOriginExecutor();
 
-        if (!canExecuteUserTransaction(user))
+        if (!_canExecuteUserTransaction(user))
             revert Error.UserCannotExecuteTransaction();
 
         if (isAsyncExec) {
@@ -772,7 +779,7 @@ contract Core is Storage {
      */
     function acceptUserValidatorProposal() external onlyAdmin {
         if (block.timestamp < userValidatorAddress.timeToAccept)
-            revert Error.ProposalForUserValidatorNotReady();
+            revert Error.ProposalNotReadyToAccept();
 
         userValidatorAddress.current = userValidatorAddress.proposal;
         userValidatorAddress.proposal = address(0);
@@ -840,6 +847,27 @@ contract Core is Storage {
 
     //░▒▓█ Administrative Functions ████████████████████████████████████████████████████████▓▒░
 
+    function proposeChangeRewardFlowDistribution() external onlyAdmin {
+        if (currentSupply > (evvmMetadata.totalSupply * 9999) / 10000)
+            revert Error.RewardFlowDistributionChangeNotAllowed();
+
+        rewardFlowDistribution.timeToAccept =
+            block.timestamp +
+            TIME_TO_ACCEPT_PROPOSAL;
+    }
+
+    function rejectChangeRewardFlowDistribution() external onlyAdmin {
+        rewardFlowDistribution.timeToAccept = 0;
+    }
+
+    function acceptChangeRewardFlowDistribution() external onlyAdmin {
+        if (block.timestamp < rewardFlowDistribution.timeToAccept)
+            revert Error.ProposalNotReadyToAccept();
+
+        rewardFlowDistribution.flag = !rewardFlowDistribution.flag;
+        rewardFlowDistribution.timeToAccept = 0;
+    }
+
     //██ List state Management ████████████████████████████████████████
 
     function proposeListStatus(bytes1 newStatus) external onlyAdmin {
@@ -856,7 +884,7 @@ contract Core is Storage {
 
     function acceptListStatusProposal() external onlyAdmin {
         if (block.timestamp < listStatus.timeToAccept)
-            revert Error.ProposalForListStatusNotReady();
+            revert Error.ProposalNotReadyToAccept();
 
         listStatus.current = listStatus.proposal;
         listStatus.proposal = 0x00;
@@ -904,7 +932,7 @@ contract Core is Storage {
      */
     function acceptImplementation() external onlyAdmin {
         if (block.timestamp < timeToAcceptImplementation)
-            revert Error.TimeLockNotExpired();
+            revert Error.ProposalNotReadyToAccept();
 
         currentImplementation = proposalImplementation;
         proposalImplementation = address(0);
@@ -945,7 +973,7 @@ contract Core is Storage {
      */
     function acceptAdmin() external {
         if (block.timestamp < admin.timeToAccept)
-            revert Error.TimeLockNotExpired();
+            revert Error.ProposalNotReadyToAccept();
 
         if (msg.sender != admin.proposal)
             revert Error.SenderIsNotTheProposedAdmin();
@@ -985,40 +1013,11 @@ contract Core is Storage {
                 evvmMetadata.eraTokens) / 2);
             balances[msg.sender][evvmMetadata.principalTokenAddress] +=
                 evvmMetadata.reward *
-                getRandom(1, 5083);
+                _getRandom(1, 5083);
             evvmMetadata.reward = evvmMetadata.reward / 2;
         } else {
             revert();
         }
-    }
-
-    /**
-     * @notice Generates a pseudo-random number within a specified range
-     * @dev Uses block timestamp and prevrandao for randomness (suitable for non-critical randomness)
-     *
-     * @param min Minimum value (inclusive)
-     * @param max Maximum value (inclusive)
-     * @return Random number between min and max (inclusive)
-     */
-    function getRandom(
-        uint256 min,
-        uint256 max
-    ) internal view returns (uint256) {
-
-        uint256 randomHash = uint256(
-            keccak256(
-                abi.encodePacked(
-                    blockhash(block.number - 1),
-                    block.timestamp,
-                    block.prevrandao,
-                    msg.sender,
-                    tx.origin,
-                    gasleft()
-                )
-            )
-        );
-
-        return min + (randomHash % (max - min + 1));
     }
 
     //░▒▓█ Staking Integration Functions █████████████████████████████████████████████████▓▒░
@@ -1098,19 +1097,6 @@ contract Core is Storage {
     }
 
     /**
-     * @notice Gets the acceptance deadline for pending token whitelist proposals
-     * @dev Returns timestamp when prepared tokens can be added to whitelist
-     * @return Timestamp when pending token can be whitelisted (0 if no pending proposal)
-     */
-    function getWhitelistTokenToBeAddedDateToSet()
-        external
-        view
-        returns (uint256)
-    {
-        return whitelistTokenToBeAdded_dateToSet;
-    }
-
-    /**
      * @notice Gets the current NameService contract address
      * @dev Returns the address used for identity resolution in payments
      * @return Address of the integrated NameService contract
@@ -1126,18 +1112,6 @@ contract Core is Storage {
      */
     function getStakingContractAddress() external view returns (address) {
         return stakingContractAddress;
-    }
-
-    /**
-     * @notice Gets the next Fisher Bridge deposit nonce for a user
-     * @dev Returns the expected nonce for the next cross-chain deposit
-     * @param user Address to check deposit nonce for
-     * @return Next Fisher Bridge deposit nonce
-     */
-    function getNextFisherDepositNonce(
-        address user
-    ) external view returns (uint256) {
-        return nextFisherDepositNonce[user];
     }
 
     /**
@@ -1165,15 +1139,6 @@ contract Core is Storage {
     }
 
     /**
-     * @notice Gets the current era token threshold for reward transitions
-     * @dev Returns the token supply threshold that triggers the next reward halving
-     * @return Current era tokens threshold
-     */
-    function getEraPrincipalToken() public view returns (uint256) {
-        return evvmMetadata.eraTokens;
-    }
-
-    /**
      * @notice Gets the current Principal Token reward amount per transaction
      * @dev Returns the base reward distributed to stakers for transaction processing
      * @return Current reward amount in Principal Tokens
@@ -1192,6 +1157,14 @@ contract Core is Storage {
     }
 
     /**
+     * @notice Gets the current supply of the Principal Token in circulation
+     * @dev Returns the current circulating supply used for reward recalculations
+     */
+    function getCurrentSupply() public view returns (uint256) {
+        return currentSupply;
+    }
+
+    /**
      * @notice Gets the current active implementation contract address
      * @dev Returns the implementation used by the proxy for delegatecalls
      * @return Address of the current implementation contract
@@ -1201,21 +1174,23 @@ contract Core is Storage {
     }
 
     /**
-     * @notice Gets the proposed implementation contract address
-     * @dev Returns the implementation pending approval for proxy upgrade
-     * @return Address of the proposed implementation contract (zero if none)
+     * @notice Gets comprehensive details of the implementation upgrade proposal
+     * @dev Returns current, proposed implementation addresses and time-lock info
+     *
+     * @return Proposal struct with current implementation, proposed implementation,
+     *         and time to accept the proposal
      */
-    function getProposalImplementation() public view returns (address) {
-        return proposalImplementation;
-    }
-
-    /**
-     * @notice Gets the acceptance deadline for the pending implementation upgrade
-     * @dev Returns timestamp when the proposed implementation can be accepted
-     * @return Timestamp when implementation upgrade can be executed (0 if no pending proposal)
-     */
-    function getTimeToAcceptImplementation() public view returns (uint256) {
-        return timeToAcceptImplementation;
+    function getFullDetailImplementation()
+        public
+        view
+        returns (ProposalStructs.AddressTypeProposal memory)
+    {
+        return
+            ProposalStructs.AddressTypeProposal({
+                current: currentImplementation,
+                proposal: proposalImplementation,
+                timeToAccept: timeToAcceptImplementation
+            });
     }
 
     /**
@@ -1233,15 +1208,6 @@ contract Core is Storage {
         returns (ProposalStructs.AddressTypeProposal memory)
     {
         return admin;
-    }
-
-    /**
-     * @notice Gets the address of the token pending whitelist approval
-     * @dev Returns the token address that can be whitelisted after time delay
-     * @return Address of the token prepared for whitelisting (zero if none)
-     */
-    function getWhitelistTokenToBeAdded() public view returns (address) {
-        return whitelistTokenToBeAdded_address;
     }
 
     /**
@@ -1330,7 +1296,7 @@ contract Core is Storage {
      * @return Proposal struct with current validator address,
      *         proposed address, and time to accept
      */
-    function getUserValidatorAddressDetails()
+    function getFullDetailUserValidator()
         public
         view
         returns (ProposalStructs.AddressTypeProposal memory)
@@ -1382,6 +1348,34 @@ contract Core is Storage {
     }
 
     //░▒▓█ Internal Functions █████████████████████████████████████████████████████▓▒░
+
+    /**
+     * @notice Generates a pseudo-random number within a specified range
+     * @dev Uses block timestamp and prevrandao for randomness (suitable for non-critical randomness)
+     *
+     * @param min Minimum value (inclusive)
+     * @param max Maximum value (inclusive)
+     * @return Random number between min and max (inclusive)
+     */
+    function _getRandom(
+        uint256 min,
+        uint256 max
+    ) internal view returns (uint256) {
+        uint256 randomHash = uint256(
+            keccak256(
+                abi.encodePacked(
+                    blockhash(block.number - 1),
+                    block.timestamp,
+                    block.prevrandao,
+                    msg.sender,
+                    tx.origin,
+                    gasleft()
+                )
+            )
+        );
+
+        return min + (randomHash % (max - min + 1));
+    }
 
     //██ Balance Management █████████████████████████████████████████████
 
@@ -1439,9 +1433,11 @@ contract Core is Storage {
      * @param amount Number of transactions or reward multiplier
      */
     function _giveReward(address user, uint256 amount) internal {
-        uint256 principalReward = evvmMetadata.reward * amount;
+        if (!rewardFlowDistribution.flag) return;
 
+        uint256 principalReward = evvmMetadata.reward * amount;
         balances[user][evvmMetadata.principalTokenAddress] += principalReward;
+        currentSupply += principalReward;
     }
 
     /**
@@ -1475,7 +1471,7 @@ contract Core is Storage {
      * @param user Address to check execution permission for
      * @return True if user can execute, false if blocked
      */
-    function canExecuteUserTransaction(
+    function _canExecuteUserTransaction(
         address user
     ) internal view returns (bool) {
         if (userValidatorAddress.current == address(0)) return true;

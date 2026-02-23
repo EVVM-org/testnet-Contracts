@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `verifyTokenInteractionAllowance` function to check if a token is allowed for interaction (deposit, payment) based on the `allowList` and `denyList` status, improving security and control over token usage in the EVVM ecosystem.
   - Added `proposeListStatus`, `rejectListStatusProposal` and `acceptListStatusProposal` functions to manage proposals for changing the active token list (none, allowList or denyList), enabling a flexible governance mechanism for token permissions in the system.
   - Added `setTokenStatusOnAllowList` and `setTokenStatusOnDenyList` functions to allow the admin to update the status of specific tokens on the allowList and denyList, providing granular control over which tokens are permitted or denied for use in the EVVM.
+  - Added `rewardFlowDistribution` flag struct and logic to ensure that if the 99.99% of total supply is distributed the reward flow distribution can be stooped to prevent further rewards from being distributed, which can be used as a safety mechanism to preserve remaining supply in extreme scenarios or be re enabled if needed in the future.
 - **CoreStorage.sol**: Added `allowList` and `denyList` mappings to track token addresses that are allowed or denied for use in the EVVM, along with `listStatus` to indicate which list is active, providing a flexible mechanism for managing token permissions in the system.
 - **ProposalStructs.sol**: Added `Bytes1TypeProposal` struct to represent proposals for bytes1 type parameters.
 - **Tests**: Added comprehensive tests for the new token list management functionality in `Core.sol`, including tests for proposing, accepting, and rejecting list status changes, as well as verifying token interaction allowances based on the active list.
@@ -22,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The current status of the proposal
   - The full proposal struct with all details for better transparency and usability in the frontend and other services.
   - Improved `getRandom` with additional entropy sources (blockhash, tx.origin, gasleft).
+  - Revert mesages for accepting proposals before timelock have been standardized to `ProposalNotReadyToAccept` for better clarity and consistency across different proposal types in the system.
+  - Refactored `getTimeToAcceptImplementation`, `getProposalImplementation` into a single `getFullDetailImplementation` function that returns all variables into a struct for better efficiency and usability in the frontend and other services.
+  - Rename `getUserValidatorAddressDetails` to `getFullDetailUserValidator` for better clarity and consistency in naming conventions.
+  - Rename `canExecuteUserTransaction` to `_canExecuteUserTransaction` to indicate its internal use and prevent confusion with potential external functions.
 
 ## [3.0.1] - 2026-02-19
 

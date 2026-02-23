@@ -74,10 +74,10 @@ library CoreError {
     /// @dev Thrown when address validation fails in proposals
     error IncorrectAddressInput();
 
-    //░▒▓█ Time-Lock Errors █████████████████████████████████████████████████████▓▒░
+    //░▒▓█ Proposal Errors █████████████████████████████████████████████████████▓▒░
 
-    /// @dev Thrown when attempting time-locked action before delay (30d impl, 1d admin)
-    error TimeLockNotExpired();
+    /// @dev Thrown when accepting before timelock
+    error ProposalNotReadyToAccept();
 
     //░▒▓█ Async/Sync Nonce Errors ██████████████████████████████████████████████▓▒░
     /// @dev Thrown when async nonce already consumed
@@ -101,14 +101,8 @@ library CoreError {
     /// @dev Thrown when using async nonce reserved by different service
     error AsyncNonceIsReservedByAnotherService();
 
-    /// @dev Thrown when accepting UserValidator proposal before timelock
-    error ProposalForUserValidatorNotReady();
-
     /// @dev Thrown when validateAndConsumeNonce caller is EOA (contracts only)
     error MsgSenderIsNotAContract();
-
-    /// @dev Thrown when accepting EVVM address proposal before timelock
-    error ProposalForEvvmAddressNotReady();
 
     /// @dev Thrown when reserving nonce with service == address(0)
     error InvalidServiceAddress();
@@ -124,6 +118,7 @@ library CoreError {
     /// @dev Thrown when list status is invalid (not 0x00, 0x01, or 0x02)
     error InvalidListStatus();
 
-    /// @dev Thrown when accepting list status proposal before timelock
-    error ProposalForListStatusNotReady();
+    //░▒▓█ Reward Distribution State ██████████████████████████████████████████████████████▓▒░
+
+    error RewardFlowDistributionChangeNotAllowed();
 }

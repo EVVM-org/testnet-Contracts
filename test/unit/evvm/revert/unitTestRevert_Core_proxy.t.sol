@@ -140,7 +140,7 @@ contract unitTestRevert_Core_proxy is Test, Constants {
         vm.startPrank(ADMIN.Address);
         core.proposeImplementation(addressV1);
 
-        vm.expectRevert(CoreError.TimeLockNotExpired.selector);
+        vm.expectRevert(CoreError.ProposalNotReadyToAccept.selector);
         core.acceptImplementation();
         vm.stopPrank();
     }

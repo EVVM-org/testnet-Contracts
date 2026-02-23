@@ -142,9 +142,9 @@ contract unitTestCorrect_Core_proxy is Test, Constants {
         vm.stopPrank();
 
         assertEq(core.getCurrentImplementation(), address(0));
-        assertEq(core.getProposalImplementation(), addressV1);
+        assertEq(core.getFullDetailImplementation().proposal, addressV1);
         assertEq(
-            core.getTimeToAcceptImplementation(),
+            core.getFullDetailImplementation().timeToAccept,
             block.timestamp + 30 days
         );
     }
@@ -157,8 +157,8 @@ contract unitTestCorrect_Core_proxy is Test, Constants {
         vm.stopPrank();
 
         assertEq(core.getCurrentImplementation(), addressV1);
-        assertEq(core.getProposalImplementation(), address(0));
-        assertEq(core.getTimeToAcceptImplementation(), 0);
+        assertEq(core.getFullDetailImplementation().proposal, address(0));
+        assertEq(core.getFullDetailImplementation().timeToAccept, 0);
     }
 
     function test__unit_correct__rejectUpgrade() public {
@@ -169,8 +169,8 @@ contract unitTestCorrect_Core_proxy is Test, Constants {
         vm.stopPrank();
 
         assertEq(core.getCurrentImplementation(), address(0));
-        assertEq(core.getProposalImplementation(), address(0));
-        assertEq(core.getTimeToAcceptImplementation(), 0);
+        assertEq(core.getFullDetailImplementation().proposal, address(0));
+        assertEq(core.getFullDetailImplementation().timeToAccept, 0);
     }
 
     /// @notice because we tested in others init thes the pay
