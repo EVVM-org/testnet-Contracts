@@ -1457,7 +1457,10 @@ contract Core is Storage {
      * @param amount Number of transactions or reward multiplier
      */
     function _giveReward(address user, uint256 amount) internal {
-        if (!rewardFlowDistribution.flag) return;
+        if (
+            !rewardFlowDistribution.flag ||
+            currentSupply >= evvmMetadata.totalSupply
+        ) return;
 
         uint256 principalReward = evvmMetadata.reward * amount;
         balances[user][evvmMetadata.principalTokenAddress] += principalReward;
