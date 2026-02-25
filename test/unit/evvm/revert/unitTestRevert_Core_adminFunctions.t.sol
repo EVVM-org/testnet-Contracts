@@ -187,7 +187,9 @@ contract unitTestRevert_Core_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unit_revert__acceptAdmin__ProposalNotReadyToAccept() external {
+    function test__unit_revert__acceptAdmin__ProposalNotReadyToAccept()
+        external
+    {
         vm.startPrank(ADMIN.Address);
 
         core.proposeAdmin(COMMON_USER_NO_STAKER_1.Address);
@@ -339,5 +341,96 @@ contract unitTestRevert_Core_adminFunctions is Test, Constants {
         core.setTokenStatusOnAllowList(address(67), true);
         vm.stopPrank();
     }
-}
 
+    function test__unit_revert__proposeChangeRewardFlowDistribution__SenderIsNotAdmin()
+        external
+    {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.proposeChangeRewardFlowDistribution();
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__proposeChangeRewardFlowDistribution__RewardFlowDistributionChangeNotAllowed()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        vm.expectRevert(
+            CoreError.RewardFlowDistributionChangeNotAllowed.selector
+        );
+        core.proposeChangeRewardFlowDistribution();
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__rejectChangeRewardFlowDistribution__SenderIsNotAdmin()
+        external
+    {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeRewardFlowDistribution();
+        vm.stopPrank();
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.rejectChangeRewardFlowDistribution();
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__acceptChangeRewardFlowDistribution__SenderIsNotAdmin()
+        external
+    {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeRewardFlowDistribution();
+        vm.stopPrank();
+        skip(1 days);
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.acceptChangeRewardFlowDistribution();
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__acceptChangeRewardFlowDistribution__ProposalNotReadyToAccept()
+        external
+    {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeRewardFlowDistribution();
+        skip(10 minutes);
+        vm.expectRevert(CoreError.ProposalNotReadyToAccept.selector);
+        core.acceptChangeRewardFlowDistribution();
+        vm.stopPrank();
+    }
+}

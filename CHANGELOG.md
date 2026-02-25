@@ -16,7 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `rewardFlowDistribution` flag struct and logic to ensure that if the 99.99% of total supply is distributed the reward flow distribution can be stooped to prevent further rewards from being distributed, which can be used as a safety mechanism to preserve remaining supply in extreme scenarios or be re enabled if needed in the future.
 - **CoreStorage.sol**: Added `allowList` and `denyList` mappings to track token addresses that are allowed or denied for use in the EVVM, along with `listStatus` to indicate which list is active, providing a flexible mechanism for managing token permissions in the system.
 - **ProposalStructs.sol**: Added `Bytes1TypeProposal` struct to represent proposals for bytes1 type parameters.
-- **Tests**: Added comprehensive tests for the new token list management functionality in `Core.sol`, including tests for proposing, accepting, and rejecting list status changes, as well as verifying token interaction allowances based on the active list.
+- **Tests**: 
+  - Added comprehensive tests for the new token list management functionality in `Core.sol`, including tests for proposing, accepting, and rejecting list status changes, as well as verifying token interaction allowances based on the active list.
+  - Added tests for the `rewardFlowDistribution` flag to ensure it correctly stops reward distribution when 99.99% of total supply is distributed and allows re-enabling if needed.
 
 ### Changed
 - **Core.sol**: Refactor TypeProposal getter functions to return

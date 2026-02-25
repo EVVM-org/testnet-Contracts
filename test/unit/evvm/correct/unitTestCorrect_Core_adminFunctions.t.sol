@@ -313,4 +313,96 @@ contract unitTestCorrect_Core_adminFunctions is Test, Constants {
             "Token status on allowList was not set to true correctly"
         );
     }
+
+    function test__unit_correct__proposeChangeRewardFlowDistribution()
+        external
+    {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeRewardFlowDistribution();
+        vm.stopPrank();
+
+        ProposalStructs.BoolTypeProposal memory proposal = core
+            .getFullDetailRewardFlowDistribution();
+
+        assertTrue(
+            proposal.flag,
+            "Proposed reward flow distribution should still be true after proposal"
+        );
+
+        assertGt(
+            proposal.timeToAccept,
+            block.timestamp,
+            "Time to accept should be set in after proposal"
+        );
+    }
+
+    function test__unit_correct__rejectChangeRewardFlowDistribution() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeRewardFlowDistribution();
+        core.rejectChangeRewardFlowDistribution();
+        vm.stopPrank();
+
+        ProposalStructs.BoolTypeProposal memory proposal = core
+            .getFullDetailRewardFlowDistribution();
+
+        assertTrue(
+            proposal.flag,
+            "Proposed reward flow distribution should still be true after rejecting proposal"
+        );
+
+        assertEq(
+            proposal.timeToAccept,
+            0,
+            "Time to accept should be set to 0 after rejecting proposal"
+        );
+    }
+
+    function test__unit_correct__acceptChangeRewardFlowDistribution() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeRewardFlowDistribution();
+        skip(1 days);
+        core.acceptChangeRewardFlowDistribution();
+        vm.stopPrank();
+
+        ProposalStructs.BoolTypeProposal memory proposal = core
+            .getFullDetailRewardFlowDistribution();
+
+        assertFalse(
+            proposal.flag,
+            "Proposed reward flow distribution should be false after accepting proposal"
+        );
+
+        assertEq(
+            proposal.timeToAccept,
+            0,
+            "Time to accept should be set to 0 after accepting proposal"
+        );
+    }
 }

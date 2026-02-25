@@ -183,7 +183,7 @@ contract Core is Storage {
     }
 
     //░▒▓█ Testnet Functions ██████████████████████████████████████████████████████▓▒░
-    
+
     /**
      * @notice Faucet: Adds balance to a user for testing (Testnet only).
      * @param user Recipient address.
@@ -848,7 +848,7 @@ contract Core is Storage {
     //░▒▓█ Administrative Functions ████████████████████████████████████████████████████████▓▒░
 
     function proposeChangeRewardFlowDistribution() external onlyAdmin {
-        if (currentSupply > (evvmMetadata.totalSupply * 9999) / 10000)
+        if (currentSupply < (evvmMetadata.totalSupply * 9999) / 10000)
             revert Error.RewardFlowDistributionChangeNotAllowed();
 
         rewardFlowDistribution.timeToAccept =
@@ -1345,6 +1345,30 @@ contract Core is Storage {
      */
     function getDenyListStatus(address token) public view returns (bool) {
         return denyList[token];
+    }
+
+    /**
+     * @notice Gets the current status of the reward flow distribution flag
+     * @dev Returns boolean indicating if reward distribution is active
+     *      - true if rewards are distributed to stakers
+     *      - false if rewards are disabled
+     */
+    function getRewardFlowDistributionFlag() public view returns (bool) {
+        return rewardFlowDistribution.flag;
+    }
+
+    /**
+     * @notice Gets full details of the reward flow distribution proposal
+     * @dev Returns current flag, proposed flag, and time-lock info
+     *
+     * @return Proposal struct with current flag, proposed flag, and time to accept
+     */
+    function getFullDetailRewardFlowDistribution()
+        public
+        view
+        returns (ProposalStructs.BoolTypeProposal memory)
+    {
+        return rewardFlowDistribution;
     }
 
     //░▒▓█ Internal Functions █████████████████████████████████████████████████████▓▒░

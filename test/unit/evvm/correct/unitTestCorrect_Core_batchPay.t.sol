@@ -726,4 +726,68 @@ contract unitTestCorrect_Core_batchPay is Test, Constants {
             "executor should have received rewards because there is a fisher staker"
         );
     }
+
+    function test__unit_correct__batchPay__RewardFlowDistribution_false()
+        external
+    {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeRewardFlowDistribution();
+        skip(1 days);
+        core.acceptChangeRewardFlowDistribution();
+        vm.stopPrank();
+
+        _addBalance(COMMON_USER_NO_STAKER_1, address(67), 100, 0);
+
+        CoreStructs.BatchData[] memory batchData = new CoreStructs.BatchData[](
+            1
+        );
+
+        batchData[0] = CoreStructs.BatchData(
+            COMMON_USER_NO_STAKER_1.Address,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            address(67),
+            100,
+            0,
+            address(0),
+            0,
+            false,
+            _executeSig_evvm_pay(
+                COMMON_USER_NO_STAKER_1,
+                COMMON_USER_NO_STAKER_2.Address,
+                "",
+                address(67),
+                100,
+                0,
+                address(0),
+                0,
+                false
+            )
+        );
+
+        vm.startPrank(COMMON_USER_STAKER.Address);
+        (uint256 successfulTransactions, ) = core.batchPay(batchData);
+        vm.stopPrank();
+
+        assertEq(
+            successfulTransactions,
+            1,
+            "There should be 1 successful transaction"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "Receiver balance must be 0 because reward flow distribution is false so no payments should be processed"
+        );
+    }
 }

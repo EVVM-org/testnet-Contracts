@@ -1077,9 +1077,7 @@ contract unitTestCorrect_Core_pay is Test, Constants {
         );
     }
 
-    function test__unit_correct__pay__denyList()
-        external
-    {
+    function test__unit_correct__pay__denyList() external {
         vm.startPrank(ADMIN.Address);
         core.proposeListStatus(0x02); // Activate denyList
         skip(1 days + 1); // Skip timelock
@@ -1116,19 +1114,17 @@ contract unitTestCorrect_Core_pay is Test, Constants {
         assertEq(
             core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0,
-            "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
+            "User 1 balance after pay is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
             core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             100,
-            "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
+            "User 2 balance after pay is incorrect check if staker validation or _updateBalance is correct"
         );
     }
 
-    function test__unit_correct__pay__allowList()
-        external
-    {
+    function test__unit_correct__pay__allowList() external {
         vm.startPrank(ADMIN.Address);
         core.proposeListStatus(0x01); // Activate allowList
         skip(1 days + 1); // Skip timelock
@@ -1166,13 +1162,80 @@ contract unitTestCorrect_Core_pay is Test, Constants {
         assertEq(
             core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
             0,
-            "User 1 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
+            "User 1 balance after pay is incorrect check if staker validation or _updateBalance is correct"
         );
 
         assertEq(
             core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
             100,
-            "User 2 balance after pay with toIdentity is incorrect check if staker validation or _updateBalance is correct"
+            "User 2 balance after pay is incorrect check if staker validation or _updateBalance is correct"
+        );
+    }
+
+    function test__unit_correct__pay__RewardFlowDistribution_false() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeRewardFlowDistribution();
+        skip(1 days);
+        core.acceptChangeRewardFlowDistribution();
+        vm.stopPrank();
+
+        _addBalance(COMMON_USER_NO_STAKER_1, ETHER_ADDRESS, 100, 0);
+
+        bytes memory signaturePay = _executeSig_evvm_pay(
+            COMMON_USER_NO_STAKER_1,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            ETHER_ADDRESS,
+            100,
+            0,
+            address(0),
+            777,
+            true
+        );
+
+        vm.startPrank(COMMON_USER_STAKER.Address);
+        core.pay(
+            COMMON_USER_NO_STAKER_1.Address,
+            COMMON_USER_NO_STAKER_2.Address,
+            "",
+            ETHER_ADDRESS,
+            100,
+            0,
+            address(0),
+            777,
+            true,
+            signaturePay
+        );
+        vm.stopPrank();
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_1.Address, ETHER_ADDRESS),
+            0,
+            "User 1 balance after pay is incorrect check if staker validation or _updateBalance is correct"
+        );
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            100,
+            "User 2 balance after pay is incorrect check if staker validation or _updateBalance is correct"
+        );
+
+        assertEq(
+            core.getBalance(
+                COMMON_USER_STAKER.Address,
+                PRINCIPAL_TOKEN_ADDRESS
+            ),
+            0,
+            "Staker does not supposed to have reward after pay when reward flow distribution is false"
         );
     }
 }

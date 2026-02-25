@@ -21,9 +21,7 @@ import "test/Constants.sol";
 import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 
 import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
-import {
-    CoreError
-} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
+import {CoreError} from "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestCorrect_Core_caPay is Test, Constants {
     //function executeBeforeSetUp() internal override {}
@@ -89,10 +87,7 @@ contract unitTestCorrect_Core_caPay is Test, Constants {
         );
     }
 
-
-    function test__unit_correct__pay__denyList()
-        external
-    {
+    function test__unit_correct__pay__denyList() external {
         vm.startPrank(ADMIN.Address);
         core.proposeListStatus(0x02); // Activate denyList
         skip(1 days + 1); // Skip timelock
@@ -122,9 +117,7 @@ contract unitTestCorrect_Core_caPay is Test, Constants {
         );
     }
 
-    function test__unit_correct__pay__allowList()
-        external
-    {
+    function test__unit_correct__pay__allowList() external {
         vm.startPrank(ADMIN.Address);
         core.proposeListStatus(0x01); // Activate allowList
         skip(1 days + 1); // Skip timelock
@@ -152,6 +145,48 @@ contract unitTestCorrect_Core_caPay is Test, Constants {
             core.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
             0,
             "ca dont recieve rewards because is not an staker"
+        );
+    }
+
+    function test__unit_correct__caPay__RewardFlowDistribution_false()
+        external
+    {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeRewardFlowDistribution();
+        skip(1 days);
+        core.acceptChangeRewardFlowDistribution();
+        vm.stopPrank();
+
+        uint256 amount = _addBalance(address(this), ETHER_ADDRESS, 0.001 ether);
+        core.setPointStaker(address(this), 0x01);
+
+        core.caPay(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS, amount);
+
+        assertEq(
+            core.getBalance(COMMON_USER_NO_STAKER_2.Address, ETHER_ADDRESS),
+            amount,
+            "Amount should be recibed"
+        );
+
+        assertEq(
+            core.getBalance(address(this), ETHER_ADDRESS),
+            0,
+            "Amount should be deducted"
+        );
+
+        assertEq(
+            core.getBalance(address(this), PRINCIPAL_TOKEN_ADDRESS),
+            remainingSupply - 1,
+            "ca must be 0 because reward flow distribution is false so no rewards should be distributed"
         );
     }
 }
