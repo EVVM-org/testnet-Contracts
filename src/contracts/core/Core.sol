@@ -847,6 +847,28 @@ contract Core is Storage {
 
     //░▒▓█ Administrative Functions ████████████████████████████████████████████████████████▓▒░
 
+    function proposeDeleteTotalSupply() external onlyAdmin {
+        if (
+            currentSupply < (evvmMetadata.totalSupply * 9999) / 10000 ||
+            evvmMetadata.totalSupply == type(uint256).max
+        ) revert Error.MaxSupplyDeletionNotAllowed();
+
+        timeToDeleteMaxSupply = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
+    }
+
+    function rejectDeleteTotalSupply() external onlyAdmin {
+        timeToDeleteMaxSupply = 0;
+    }
+
+    function acceptDeleteTotalSupply() external onlyAdmin {
+        if (block.timestamp < timeToDeleteMaxSupply)
+            revert Error.ProposalNotReadyToAccept();
+
+        evvmMetadata.totalSupply = type(uint256).max;
+    }
+
+    //██ Reward distribution ████████████████████████████████████████
+
     function proposeChangeRewardFlowDistribution() external onlyAdmin {
         if (currentSupply < (evvmMetadata.totalSupply * 9999) / 10000)
             revert Error.RewardFlowDistributionChangeNotAllowed();
@@ -1369,6 +1391,16 @@ contract Core is Storage {
         returns (ProposalStructs.BoolTypeProposal memory)
     {
         return rewardFlowDistribution;
+    }
+
+    /**
+     * @notice Gets the time remaining to delete the maximum supply
+     * @dev Returns the timestamp when the max supply can be deleted
+     *
+     * @return Timestamp for max supply deletion
+     */
+    function getTimeToDeleteMaxSupply() public view returns (uint256) {
+        return timeToDeleteMaxSupply;
     }
 
     //░▒▓█ Internal Functions █████████████████████████████████████████████████████▓▒░

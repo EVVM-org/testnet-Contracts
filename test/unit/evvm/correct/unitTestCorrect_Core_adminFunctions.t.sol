@@ -405,4 +405,70 @@ contract unitTestCorrect_Core_adminFunctions is Test, Constants {
             "Time to accept should be set to 0 after accepting proposal"
         );
     }
+
+    function test__unit_correct__proposeDeleteTotalSupply() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeDeleteTotalSupply();
+        vm.stopPrank();
+
+        assertGt(
+            core.getTimeToDeleteMaxSupply(),
+            block.timestamp,
+            "Time to delete max supply should be set in after proposal"
+        );
+    }
+
+    function test__unit_correct__rejectDeleteTotalSupply() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeDeleteTotalSupply();
+        core.rejectDeleteTotalSupply();
+        vm.stopPrank();
+
+        assertEq(
+            core.getTimeToDeleteMaxSupply(),
+            0,
+            "Time to delete max supply should be set to 0 after rejecting proposal"
+        );
+    }
+
+    function test__unit_correct__acceptDeleteTotalSupply() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeDeleteTotalSupply();
+        skip(1 days);
+        core.acceptDeleteTotalSupply();
+        vm.stopPrank();
+
+        assertEq(
+            core.getEvvmMetadata().totalSupply,
+            type(uint256).max,
+            "Total supply should be deleted and set to uint256 max value"
+        );
+    }
 }

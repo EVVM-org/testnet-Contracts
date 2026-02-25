@@ -79,6 +79,13 @@ abstract contract CoreStorage {
      */
     uint256 timeToAcceptImplementation;
 
+    //░▒▓█ Total supply ██████████████████████████████████████████████████▓▒░
+
+    /**
+     * @notice Timestamp after which the maximum supply can be deleted.
+     */
+    uint256 timeToDeleteMaxSupply;
+
     //░▒▓█ EVVM Configuration State ████████████████████████████████████████████████████▓▒░
 
     /**
