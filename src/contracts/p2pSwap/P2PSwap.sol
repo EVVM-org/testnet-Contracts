@@ -43,10 +43,6 @@ contract P2PSwap is EvvmService {
     address owner_proposal;
     uint256 owner_timeToAccept;
 
-    address constant MATE_TOKEN_ADDRESS =
-        0x0000000000000000000000000000000000000001;
-    address constant ETH_ADDRESS = 0x0000000000000000000000000000000000000000;
-
     Structs.Percentage rewardPercentage;
     Structs.Percentage rewardPercentage_proposal;
     uint256 rewardPercentage_timeToAcceptNewChange;
@@ -246,7 +242,7 @@ contract P2PSwap is EvvmService {
         if (priorityFeePay > 0) {
             requestPay(
                 user,
-                MATE_TOKEN_ADDRESS,
+                core.getPrincipalTokenAddress(),
                 0,
                 priorityFeePay,
                 noncePay,
@@ -260,7 +256,11 @@ contract P2PSwap is EvvmService {
         _clearOrderAndUpdateMarket(market, orderId);
 
         if (core.isAddressStaker(msg.sender) && priorityFeePay > 0) {
-            makeCaPay(msg.sender, MATE_TOKEN_ADDRESS, priorityFeePay);
+            makeCaPay(
+                msg.sender,
+                core.getPrincipalTokenAddress(),
+                priorityFeePay
+            );
         }
         _rewardExecutor(msg.sender, priorityFeePay > 0 ? 3 : 2);
     }
@@ -616,7 +616,7 @@ contract P2PSwap is EvvmService {
         if (core.isAddressStaker(executor)) {
             makeCaPay(
                 executor,
-                MATE_TOKEN_ADDRESS,
+                core.getPrincipalTokenAddress(),
                 core.getRewardAmount() * multiplier
             );
         }
@@ -695,7 +695,12 @@ contract P2PSwap is EvvmService {
     ) internal returns (uint256) {
         marketCount++;
         marketId[tokenA][tokenB] = marketCount;
-        marketMetadata[marketCount] = Structs.MarketInformation(tokenA, tokenB, 0, 0);
+        marketMetadata[marketCount] = Structs.MarketInformation(
+            tokenA,
+            tokenB,
+            0,
+            0
+        );
         return marketCount;
     }
 
@@ -741,7 +746,11 @@ contract P2PSwap is EvvmService {
         if (_seller + _service + _mateStaker != 10_000) {
             revert();
         }
-        rewardPercentage_proposal = Structs.Percentage(_seller, _service, _mateStaker);
+        rewardPercentage_proposal = Structs.Percentage(
+            _seller,
+            _service,
+            _mateStaker
+        );
         rewardPercentage_timeToAcceptNewChange = block.timestamp + 1 days;
     }
 
@@ -773,7 +782,11 @@ contract P2PSwap is EvvmService {
         if (msg.sender != owner || _seller + _service + _mateStaker != 10_000) {
             revert();
         }
-        rewardPercentage_proposal = Structs.Percentage(_seller, _service, _mateStaker);
+        rewardPercentage_proposal = Structs.Percentage(
+            _seller,
+            _service,
+            _mateStaker
+        );
         rewardPercentage_timeToAcceptNewChange = block.timestamp + 1 days;
     }
 
@@ -952,7 +965,9 @@ contract P2PSwap is EvvmService {
         address user,
         uint256 market
     ) public view returns (Structs.OrderForGetter[] memory orders) {
-        orders = new Structs.OrderForGetter[](marketMetadata[market].maxSlot + 1);
+        orders = new Structs.OrderForGetter[](
+            marketMetadata[market].maxSlot + 1
+        );
 
         for (uint256 i = 1; i <= marketMetadata[market].maxSlot + 1; i++) {
             if (ordersInsideMarket[market][i].seller == user) {
