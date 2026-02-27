@@ -433,4 +433,135 @@ contract unitTestRevert_Core_adminFunctions is Test, Constants {
         core.acceptChangeRewardFlowDistribution();
         vm.stopPrank();
     }
+
+    function test__unit_revert__proposeChangeBaseRewardAmount__BaseRewardIncreaseNotAllowed_noMax()
+        external
+    {
+        vm.startPrank(ADMIN.Address);
+        vm.expectRevert(
+            CoreError.BaseRewardIncreaseNotAllowed.selector
+        );
+        core.proposeChangeBaseRewardAmount(100);
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__proposeChangeBaseRewardAmount__BaseRewardIncreaseNotAllowed_moreThanReward()
+        external
+    {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+        vm.startPrank(ADMIN.Address);
+        core.proposeDeleteTotalSupply();
+        skip(1 days);
+        core.acceptDeleteTotalSupply();
+        vm.stopPrank();
+
+        uint256 newReward = core.getEvvmMetadata().reward + 1;
+
+        vm.startPrank(ADMIN.Address);
+        vm.expectRevert(
+            CoreError.BaseRewardIncreaseNotAllowed.selector
+        );
+        core.proposeChangeBaseRewardAmount(newReward);
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__proposeChangeBaseRewardAmount__SenderIsNotAdmin() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+        vm.startPrank(ADMIN.Address);
+        core.proposeDeleteTotalSupply();
+        skip(1 days);
+        core.acceptDeleteTotalSupply();
+        vm.stopPrank();
+
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.proposeChangeBaseRewardAmount(100);
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__rejectChangeBaseRewardAmount__SenderIsNotAdmin() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+        vm.startPrank(ADMIN.Address);
+        core.proposeDeleteTotalSupply();
+        skip(1 days);
+        core.acceptDeleteTotalSupply();
+        vm.stopPrank();
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeBaseRewardAmount(100);
+        vm.stopPrank();
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.rejectChangeBaseRewardAmount();
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__acceptChangeBaseRewardAmount__SenderIsNotAdmin() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+        vm.startPrank(ADMIN.Address);
+        core.proposeDeleteTotalSupply();
+        skip(1 days);
+        core.acceptDeleteTotalSupply();
+        vm.stopPrank();
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeBaseRewardAmount(100);
+        vm.stopPrank();
+        skip(1 days);
+        vm.startPrank(COMMON_USER_NO_STAKER_1.Address);
+        vm.expectRevert(CoreError.SenderIsNotAdmin.selector);
+        core.acceptChangeBaseRewardAmount();
+        vm.stopPrank();
+    }
+
+    function test__unit_revert__acceptChangeBaseRewardAmount__ProposalNotReadyToAccept() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+        vm.startPrank(ADMIN.Address);
+        core.proposeDeleteTotalSupply();
+        skip(1 days);
+        core.acceptDeleteTotalSupply();
+        vm.stopPrank();
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeBaseRewardAmount(100);
+        skip(10 minutes);
+        vm.expectRevert(CoreError.ProposalNotReadyToAccept.selector);
+        core.acceptChangeBaseRewardAmount();
+        vm.stopPrank();
+    }
 }

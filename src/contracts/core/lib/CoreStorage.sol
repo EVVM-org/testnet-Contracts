@@ -121,6 +121,9 @@ abstract contract CoreStorage {
      */
     ProposalStructs.BoolTypeProposal rewardFlowDistribution;
 
+    uint256 proposalChangeReward;
+    uint256 timeToAcceptChangeReward;
+
     //░▒▓█ List state ████████████████████████████████████████████████████████▓▒░
 
     /**

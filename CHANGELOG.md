@@ -9,18 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Core.sol**: 
+- **Core.sol**:
   - Added `verifyTokenInteractionAllowance` function to check if a token is allowed for interaction (deposit, payment) based on the `allowList` and `denyList` status, improving security and control over token usage in the EVVM ecosystem.
   - Added `proposeListStatus`, `rejectListStatusProposal` and `acceptListStatusProposal` functions to manage proposals for changing the active token list (none, allowList or denyList), enabling a flexible governance mechanism for token permissions in the system.
   - Added `setTokenStatusOnAllowList` and `setTokenStatusOnDenyList` functions to allow the admin to update the status of specific tokens on the allowList and denyList, providing granular control over which tokens are permitted or denied for use in the EVVM.
   - Added `rewardFlowDistribution` flag struct and logic to ensure that if the 99.99% of total supply is distributed the reward flow distribution can be stooped to prevent further rewards from being distributed, which can be used as a safety mechanism to preserve remaining supply in extreme scenarios or be re enabled if needed in the future.
   - Added admin functions to "delete" the maximum supply by setting it to the maximum uint256 value, with a timelock mechanism to prevent immediate deletion and allow for community oversight before such a critical change is made.
+  - Added admin functions to change the base reward amount if the total supply is not fixed, with a timelock mechanism to prevent immediate changes and allow for community oversight before such a critical change is made.
 - **CoreStorage.sol**: Added `allowList` and `denyList` mappings to track token addresses that are allowed or denied for use in the EVVM, along with `listStatus` to indicate which list is active, providing a flexible mechanism for managing token permissions in the system.
 - **ProposalStructs.sol**: Added `Bytes1TypeProposal` struct to represent proposals for bytes1 type parameters.
-- **Tests**: 
+- **Tests**:
   - Added comprehensive tests for the new token list management functionality in `Core.sol`, including tests for proposing, accepting, and rejecting list status changes, as well as verifying token interaction allowances based on the active list.
   - Added tests for the `rewardFlowDistribution` flag to ensure it correctly stops reward distribution when 99.99% of total supply is distributed and allows re-enabling if needed.
+  - Added tests for the new admin functions to delete total supply and change base reward amount, including checks for proper timelock enforcement and access control.
+
 ### Changed
+
 - **Core.sol**: Refactor TypeProposal getter functions to return
   - The current status of the proposal
   - The full proposal struct with all details for better transparency and usability in the frontend and other services.
@@ -33,8 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.1] - 2026-02-19
 
 ### Fixed
-- **Core.sol**: Improved logic in `revokeAsyncNonce` for better handling of nonce revocation scenarios.
 
+- **Core.sol**: Improved logic in `revokeAsyncNonce` for better handling of nonce revocation scenarios.
 
 ## [3.0.0] - 2026-02-17
 
@@ -46,14 +50,14 @@ Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from 
 
 - **Changelog**: Added codenames to releases for a more engaging and memorable version history. The codename will change only in major and minor releases; patch releases are reserved for bug fixes and small improvements that do not require a codename change.
 - **Signature standardization**: Implemented a standardized signature payload construction method in `AdvancedStrings.sol` to ensure consistent signature generation and verification across all EVVM services, improving security and interoperability
-  - This standard consists of concatenating the following parameters in order: 
+  - This standard consists of concatenating the following parameters in order:
     `"<evvmID>,<serviceAddress>,<hashInput>,<executor>,<nonce>,<isAsyncExec>"` where `hashInput` is a service-specific hash of the relevant transaction data using `keccak256(abi.encode("functionName", param1, param2, ...))` and `executor` represents the address executing the transaction (origin executor service transactions and sender for payment transactions on `Core.sol`). This standardization allows for a single signature verification method in `Core.sol` that can be used across all services, eliminating inconsistencies and potential security vulnerabilities from service-specific signature implementations.
-- **Core.sol**: 
+- **Core.sol**:
   - A new core contract to:
-      - Manage treasury deposits and withdrawals
-      - Handle payments
-      - Handle signature verification for all EVVM transactions
-      - A centralized nonce for async and sync nonce validation across EVVM services preventing replay attacks in multi-service transactions
+    - Manage treasury deposits and withdrawals
+    - Handle payments
+    - Handle signature verification for all EVVM transactions
+    - A centralized nonce for async and sync nonce validation across EVVM services preventing replay attacks in multi-service transactions
 - **ICore**: Interface for cross-contract interaction with Core.sol
 - **Core tests**: Added comprehensive tests for Core.sol covering payment handling, signature verification, and nonce management
 - **AdvancedStrings.sol**: `buildSignaturePayload` function for standardized signature generation and verification
@@ -70,7 +74,7 @@ Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from 
 ### Changed
 
 - **Payment service handling inputs**: Change `<variableName>Evvm` or `<variableName>_EVVM` naming convention for all payment handling related variables across services to `<variableName>Pay` to clearly indicate their purpose in payment handling logic
-- **Cli**: 
+- **Cli**:
   - Changed CLI deployment script to deploy `Core.sol`
   - Updated CLI test script to reflect changes in CLI deployment and interaction with `Core.sol`
   - Updated CLI contract interface generation to include `Core.sol` state variables and functions
@@ -116,7 +120,7 @@ Named after [Ichiban Kasuga](https://en.wikipedia.org/wiki/Ichiban_Kasuga) from 
 
 ### Fixed
 
-- **CLI**: 
+- **CLI**:
   - Default values for Hyperlane, LayerZero, and Axelar data when user opts not to add on cli deployment script are now properly set to empty values instead of undefined
   - Updated CLI prompts to support async input handling and cursor navigation
 

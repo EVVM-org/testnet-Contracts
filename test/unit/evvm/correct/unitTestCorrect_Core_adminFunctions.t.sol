@@ -471,4 +471,118 @@ contract unitTestCorrect_Core_adminFunctions is Test, Constants {
             "Total supply should be deleted and set to uint256 max value"
         );
     }
+
+    function test__unit_correct__proposeChangeBaseRewardAmount() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+        vm.startPrank(ADMIN.Address);
+        core.proposeDeleteTotalSupply();
+        skip(1 days);
+        core.acceptDeleteTotalSupply();
+        vm.stopPrank();
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeBaseRewardAmount(100);
+        vm.stopPrank();
+
+        ProposalStructs.UintTypeProposal memory proposal = core
+            .getFullDetailReward();
+
+        assertEq(
+            proposal.proposal,
+            100,
+            "Proposed base reward amount should be 100 after proposal"
+        );
+
+        assertGt(
+            proposal.timeToAccept,
+            block.timestamp,
+            "Time to accept should be set in after proposal"
+        );
+    }
+
+    function test__unit_correct__rejectChangeBaseRewardAmount() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+        vm.startPrank(ADMIN.Address);
+        core.proposeDeleteTotalSupply();
+        skip(1 days);
+        core.acceptDeleteTotalSupply();
+        vm.stopPrank();
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeBaseRewardAmount(100);
+        core.rejectChangeBaseRewardAmount();
+        vm.stopPrank();
+
+        ProposalStructs.UintTypeProposal memory proposal = core
+            .getFullDetailReward();
+
+        assertEq(
+            proposal.proposal,
+            0,
+            "Proposed base reward amount should be 0 after rejecting proposal"
+        );
+
+        assertEq(
+            proposal.timeToAccept,
+            0,
+            "Time to accept should be set to 0 after rejecting proposal"
+        );
+    }
+
+    function test__unit_correct__acceptChangeBaseRewardAmount() external {
+        uint256 currentSupply = core.getCurrentSupply();
+        uint256 totalSupply = core.getEvvmMetadata().totalSupply;
+        uint256 remainingSupply = totalSupply - currentSupply;
+        core.addBalance(
+            address(this),
+            PRINCIPAL_TOKEN_ADDRESS,
+            remainingSupply - 1
+        );
+        vm.startPrank(ADMIN.Address);
+        core.proposeDeleteTotalSupply();
+        skip(1 days);
+        core.acceptDeleteTotalSupply();
+        vm.stopPrank();
+
+        vm.startPrank(ADMIN.Address);
+        core.proposeChangeBaseRewardAmount(100);
+        skip(1 days);
+        core.acceptChangeBaseRewardAmount();
+        vm.stopPrank();
+
+        ProposalStructs.UintTypeProposal memory proposal = core
+            .getFullDetailReward();
+
+        assertEq(
+            proposal.proposal,
+            0,
+            "Proposed base reward amount should be 0 after accepting proposal"
+        );
+
+        assertEq(
+            proposal.timeToAccept,
+            0,
+            "Time to accept should be set to 0 after accepting proposal"
+        );
+
+        assertEq(
+            core.getEvvmMetadata().reward,
+            100,
+            "Base reward amount in metadata should be updated to 100 after accepting proposal"
+        );
+    }
 }

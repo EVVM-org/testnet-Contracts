@@ -847,6 +847,8 @@ contract Core is Storage {
 
     //░▒▓█ Administrative Functions ████████████████████████████████████████████████████████▓▒░
 
+    //██ Total Supply Management ████████████████████████████████████████
+
     function proposeDeleteTotalSupply() external onlyAdmin {
         if (
             currentSupply < (evvmMetadata.totalSupply * 9999) / 10000 ||
@@ -868,6 +870,31 @@ contract Core is Storage {
     }
 
     //██ Reward distribution ████████████████████████████████████████
+
+    function proposeChangeBaseRewardAmount(
+        uint256 newBaseReward
+    ) external onlyAdmin {
+        if (
+            evvmMetadata.totalSupply != type(uint256).max ||
+            newBaseReward >= evvmMetadata.reward
+        ) revert Error.BaseRewardIncreaseNotAllowed();
+        proposalChangeReward = newBaseReward;
+        timeToAcceptChangeReward = block.timestamp + TIME_TO_ACCEPT_PROPOSAL;
+    }
+
+    function rejectChangeBaseRewardAmount() external onlyAdmin {
+        proposalChangeReward = 0;
+        timeToAcceptChangeReward = 0;
+    }
+
+    function acceptChangeBaseRewardAmount() external onlyAdmin {
+        if (block.timestamp < timeToAcceptChangeReward)
+            revert Error.ProposalNotReadyToAccept();
+
+        evvmMetadata.reward = proposalChangeReward;
+        proposalChangeReward = 0;
+        timeToAcceptChangeReward = 0;
+    }
 
     function proposeChangeRewardFlowDistribution() external onlyAdmin {
         if (currentSupply < (evvmMetadata.totalSupply * 9999) / 10000)
@@ -1030,7 +1057,10 @@ contract Core is Storage {
      * - Can be called by anyone when conditions are met
      */
     function recalculateReward() public {
-        if (evvmMetadata.totalSupply > evvmMetadata.eraTokens) {
+        if (
+            evvmMetadata.totalSupply > evvmMetadata.eraTokens &&
+            evvmMetadata.totalSupply != type(uint256).max
+        ) {
             evvmMetadata.eraTokens += ((evvmMetadata.totalSupply -
                 evvmMetadata.eraTokens) / 2);
             balances[msg.sender][evvmMetadata.principalTokenAddress] +=
@@ -1167,6 +1197,25 @@ contract Core is Storage {
      */
     function getRewardAmount() public view returns (uint256) {
         return evvmMetadata.reward;
+    }
+
+    /**
+     * @notice Gets comprehensive details of the reward change proposal
+     * @dev Returns current reward, proposed reward and time-lock info
+     *
+     * @return Proposal struct with current reward, proposed reward,
+     *         and time to accept the proposal
+     */
+    function getFullDetailReward()
+        public
+        view
+        returns (ProposalStructs.UintTypeProposal memory)
+    {
+        return ProposalStructs.UintTypeProposal({
+            current: evvmMetadata.reward,
+            proposal: proposalChangeReward,
+            timeToAccept: timeToAcceptChangeReward
+        });
     }
 
     /**

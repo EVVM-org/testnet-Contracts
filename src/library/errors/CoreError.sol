@@ -122,6 +122,8 @@ library CoreError {
 
     error RewardFlowDistributionChangeNotAllowed();
 
+    error BaseRewardIncreaseNotAllowed();
+
     //░▒▓█ Total Supply State ██████████████████████████████████████████████████████▓▒░
 
     error MaxSupplyDeletionNotAllowed();
