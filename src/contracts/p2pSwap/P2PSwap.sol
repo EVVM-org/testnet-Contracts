@@ -17,6 +17,9 @@ import {CoreStructs} from "@evvm/testnet-contracts/interfaces/ICore.sol";
 import {
     AdvancedStrings
 } from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+import {
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
 
 /**
  /$$$$$$$  /$$$$$$ /$$$$$$$  /$$$$$$                                
@@ -47,13 +50,9 @@ contract P2PSwap is EvvmService {
     Structs.Percentage rewardPercentage_proposal;
     uint256 rewardPercentage_timeToAcceptNewChange;
 
-    uint256 percentageFee;
-    uint256 percentageFee_proposal;
-    uint256 percentageFee_timeToAccept;
+    ProposalStructs.UintTypeProposal percentageFee;
 
-    uint256 maxLimitFillFixedFee;
-    uint256 maxLimitFillFixedFee_proposal;
-    uint256 maxLimitFillFixedFee_timeToAccept;
+    ProposalStructs.UintTypeProposal maxLimitFillFixedFee;
 
     address tokenToWithdraw;
     uint256 amountToWithdraw;
@@ -76,8 +75,8 @@ contract P2PSwap is EvvmService {
         address _owner
     ) EvvmService(_coreAddress, _stakingAddress) {
         owner = _owner;
-        maxLimitFillFixedFee = 0.001 ether;
-        percentageFee = 500;
+        maxLimitFillFixedFee.current = 0.001 ether;
+        percentageFee.current = 500;
         rewardPercentage = Structs.Percentage({
             seller: 5000,
             service: 4000,
@@ -267,12 +266,12 @@ contract P2PSwap is EvvmService {
 
     /**
      * @notice Fills order using proportional fee model
-     * @dev Fee = amountB * percentageFee / 10,000
+     * @dev Fee = amountB * percentageFee.current / 10,000
      *
      * Proportional Fee Execution Flow:
      * 1. Validates signature via Core.sol
      * 2. Validates market and order exist
-     * 3. Calculates fee: (amountB * percentageFee) / 10,000
+     * 3. Calculates fee: (amountB * percentageFee.current) / 10,000
      * 4. Validates amountOfTokenBToFill >= amountB + fee
      * 5. Collects tokenB + fee via Evvm.requestPay
      * 6. Handles overpayment refund if any
@@ -298,7 +297,7 @@ contract P2PSwap is EvvmService {
      *
      * Fee Calculation:
      * - Base: amountB (order requirement)
-     * - Fee: (amountB * percentageFee) / 10,000
+     * - Fee: (amountB * percentageFee.current) / 10,000
      * - Total: amountB + fee
      * - Example: 5% fee = 500 / 10,000
      *
@@ -385,7 +384,7 @@ contract P2PSwap is EvvmService {
 
     /**
      * @notice Fills order using fixed/capped fee model
-     * @dev Fee = min(proportionalFee, maxLimitFillFixedFee)
+     * @dev Fee = min(proportionalFee, maxLimitFillFixedFee.current)
      * with -10% tolerance
      *
      * Fixed Fee Execution Flow:
@@ -418,8 +417,8 @@ contract P2PSwap is EvvmService {
      *
      * Fee Calculation:
      * - Base: amountB (order requirement)
-     * - ProportionalFee: (amountB * percentageFee) / 10,000
-     * - Fee: min(proportionalFee, maxLimitFillFixedFee)
+     * - ProportionalFee: (amountB * percentageFee.current) / 10,000
+     * - Fee: min(proportionalFee, maxLimitFillFixedFee.current)
      * - Tolerance: fee * 10% (fee10)
      * - MinRequired: amountB + fee - fee10
      * - FullRequired: amountB + fee
@@ -529,7 +528,7 @@ contract P2PSwap is EvvmService {
         uint256 amount
     ) internal view returns (uint256 fee) {
         ///@dev get the % of the amount
-        fee = (amount * percentageFee) / 10_000;
+        fee = (amount * percentageFee.current) / 10_000;
     }
 
     function calculateFillFixedFee(
@@ -814,26 +813,26 @@ contract P2PSwap is EvvmService {
         if (msg.sender != owner) {
             revert();
         }
-        percentageFee_proposal = _percentageFee;
-        percentageFee_timeToAccept = block.timestamp + 1 days;
+        percentageFee.proposal = _percentageFee;
+        percentageFee.timeToAccept = block.timestamp + 1 days;
     }
 
     function rejectProposePercentageFee() external {
         if (
-            msg.sender != owner || block.timestamp > percentageFee_timeToAccept
+            msg.sender != owner || block.timestamp > percentageFee.timeToAccept
         ) {
             revert();
         }
-        percentageFee_proposal = 0;
+        percentageFee.proposal = 0;
     }
 
     function acceptPercentageFee() external {
         if (
-            msg.sender != owner || block.timestamp > percentageFee_timeToAccept
+            msg.sender != owner || block.timestamp > percentageFee.timeToAccept
         ) {
             revert();
         }
-        percentageFee = percentageFee_proposal;
+        percentageFee.current = percentageFee.proposal;
     }
 
     function proposeMaxLimitFillFixedFee(
@@ -842,28 +841,28 @@ contract P2PSwap is EvvmService {
         if (msg.sender != owner) {
             revert();
         }
-        maxLimitFillFixedFee_proposal = _maxLimitFillFixedFee;
-        maxLimitFillFixedFee_timeToAccept = block.timestamp + 1 days;
+        maxLimitFillFixedFee.proposal = _maxLimitFillFixedFee;
+        maxLimitFillFixedFee.timeToAccept = block.timestamp + 1 days;
     }
 
     function rejectProposeMaxLimitFillFixedFee() external {
         if (
             msg.sender != owner ||
-            block.timestamp > maxLimitFillFixedFee_timeToAccept
+            block.timestamp > maxLimitFillFixedFee.timeToAccept
         ) {
             revert();
         }
-        maxLimitFillFixedFee_proposal = 0;
+        maxLimitFillFixedFee.proposal = 0;
     }
 
     function acceptMaxLimitFillFixedFee() external {
         if (
             msg.sender != owner ||
-            block.timestamp > maxLimitFillFixedFee_timeToAccept
+            block.timestamp > maxLimitFillFixedFee.timeToAccept
         ) {
             revert();
         }
-        maxLimitFillFixedFee = maxLimitFillFixedFee_proposal;
+        maxLimitFillFixedFee.current = maxLimitFillFixedFee.proposal;
     }
 
     function proposeWithdrawal(
@@ -1044,19 +1043,19 @@ contract P2PSwap is EvvmService {
     }
 
     function getProposalPercentageFee() external view returns (uint256) {
-        return percentageFee_proposal;
+        return percentageFee.proposal;
     }
 
     function getPercentageFee() external view returns (uint256) {
-        return percentageFee;
+        return percentageFee.current;
     }
 
     function getMaxLimitFillFixedFeeProposal() external view returns (uint256) {
-        return maxLimitFillFixedFee_proposal;
+        return maxLimitFillFixedFee.proposal;
     }
 
     function getMaxLimitFillFixedFee() external view returns (uint256) {
-        return maxLimitFillFixedFee;
+        return maxLimitFillFixedFee.current;
     }
 
     function getProposedWithdrawal()
