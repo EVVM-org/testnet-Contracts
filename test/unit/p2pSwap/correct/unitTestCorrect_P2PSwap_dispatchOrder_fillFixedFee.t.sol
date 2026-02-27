@@ -42,9 +42,6 @@ import {
     Treasury
 } from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
 import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
-import {
-    P2PSwapStructs
-} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
     function addBalance(address user, address token, uint256 amount) private {
@@ -63,16 +60,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         uint256 priorityFee,
         uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
-        P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
-            .MetadataMakeOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                amountA: amountA,
-                amountB: amountB
-            });
-
+        // build P2P signature
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
@@ -93,6 +81,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             s
         );
 
+        // build payment signature
         (v, r, s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
@@ -117,7 +106,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         vm.startPrank(executor.Address);
         (market, orderId) = p2pSwap.makeOrder(
             user.Address,
-            orderData,
+            tokenA,
+            tokenB,
+            amountA,
+            amountB,
+            address(0),
+            nonceP2PSwap,
             signatureP2P,
             priorityFee,
             noncePay,
@@ -196,16 +190,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             s
         );
 
-        P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
-            .MetadataDispatchOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                amountOfTokenBToFill: amountB + fee,
-                signature: signatureP2P
-            });
+        uint256 amountToFill = amountB + fee;
 
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
@@ -215,7 +200,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 address(p2pSwap),
                 "",
                 tokenB,
-                metadata.amountOfTokenBToFill,
+                amountToFill,
                 priorityFee,
                 address(p2pSwap),
                 noncePay,
@@ -232,7 +217,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         vm.startPrank(COMMON_USER_STAKER.Address);
         p2pSwap.dispatchOrder_fillFixedFee(
             COMMON_USER_NO_STAKER_2.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            amountToFill,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay,
@@ -328,16 +319,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             s
         );
 
-        P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
-            .MetadataDispatchOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                amountOfTokenBToFill: amountB + fee,
-                signature: signatureP2P
-            });
+        uint256 amountToFill = amountB + fee;
 
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
@@ -347,7 +329,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 address(p2pSwap),
                 "",
                 tokenB,
-                metadata.amountOfTokenBToFill,
+                amountToFill,
                 priorityFee,
                 address(p2pSwap),
                 noncePay,
@@ -364,7 +346,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         vm.startPrank(COMMON_USER_STAKER.Address);
         p2pSwap.dispatchOrder_fillFixedFee(
             COMMON_USER_NO_STAKER_2.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            amountToFill,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay,
@@ -452,16 +440,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             s
         );
 
-        P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
-            .MetadataDispatchOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                amountOfTokenBToFill: amountB + fee,
-                signature: signatureP2P
-            });
+        uint256 amountToFill = amountB + fee;
 
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
@@ -471,7 +450,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 address(p2pSwap),
                 "",
                 tokenB,
-                metadata.amountOfTokenBToFill,
+                amountToFill,
                 priorityFee,
                 address(p2pSwap),
                 noncePay,
@@ -488,7 +467,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         vm.startPrank(COMMON_USER_STAKER.Address);
         p2pSwap.dispatchOrder_fillFixedFee(
             COMMON_USER_NO_STAKER_2.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            amountToFill,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay,
@@ -584,16 +569,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             s
         );
 
-        P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
-            .MetadataDispatchOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                amountOfTokenBToFill: amountB + fee,
-                signature: signatureP2P
-            });
+        uint256 amountToFill = amountB + fee;
 
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
@@ -603,7 +579,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 address(p2pSwap),
                 "",
                 tokenB,
-                metadata.amountOfTokenBToFill,
+                amountToFill,
                 priorityFee,
                 address(p2pSwap),
                 noncePay,
@@ -620,7 +596,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         vm.startPrank(COMMON_USER_STAKER.Address);
         p2pSwap.dispatchOrder_fillFixedFee(
             COMMON_USER_NO_STAKER_2.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            amountToFill,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay,

@@ -69,16 +69,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         uint256 priorityFee,
         uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
-        P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
-            .MetadataMakeOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                amountA: amountA,
-                amountB: amountB
-            });
-
+        // build p2p signature (seller authorizes order)
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
@@ -92,13 +83,9 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 amountB
             )
         );
+        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
+        // payment signature to lock amountA
         (v, r, s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
@@ -114,16 +101,17 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 true
             )
         );
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
         vm.startPrank(executor.Address);
         (market, orderId) = p2pSwap.makeOrder(
             user.Address,
-            orderData,
+            tokenA,
+            tokenB,
+            amountA,
+            amountB,
+            address(0),
+            nonceP2PSwap,
             signatureP2P,
             priorityFee,
             noncePay,
@@ -199,23 +187,10 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             )
         );
 
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        // 3.2 crete evvm signature
-        P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
-            .MetadataDispatchOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                amountOfTokenBToFill: amountB + fee,
-                signature: signatureP2P
-            });
+        // compute amount to fill (fixed fee)
+        uint256 amountToFill = amountB + fee;
 
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
@@ -225,7 +200,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 address(p2pSwap),
                 "",
                 tokenB,
-                metadata.amountOfTokenBToFill,
+                amountToFill,
                 priorityFee,
                 address(p2pSwap),
                 noncePay,
@@ -233,14 +208,10 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             )
         );
 
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
         // make sure the order is there
-        P2PSwap.Order memory order = p2pSwap.getOrder(market, orderId);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(market, orderId);
         assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
 
         // dispatch order with amountB
@@ -248,7 +219,13 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         vm.expectRevert();
         p2pSwap.dispatchOrder_fillFixedFee(
             COMMON_USER_NO_STAKER_2.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            amountToFill,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay,
@@ -347,23 +324,10 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             )
         );
 
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        // 3.2 crete evvm signature
-        P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
-            .MetadataDispatchOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                amountOfTokenBToFill: amountB + fee,
-                signature: signatureP2P
-            });
+        // compute amount to fill
+        uint256 amountToFill = amountB + fee;
 
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
@@ -373,7 +337,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 address(p2pSwap),
                 "",
                 tokenB,
-                metadata.amountOfTokenBToFill,
+                amountToFill,
                 priorityFee,
                 address(p2pSwap),
                 noncePay,
@@ -381,14 +345,10 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             )
         );
 
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
         // make sure the order is there
-        P2PSwap.Order memory order = p2pSwap.getOrder(market, orderId);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(market, orderId);
         assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
 
         // dispatch order with amountB
@@ -396,7 +356,13 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         vm.expectRevert();
         p2pSwap.dispatchOrder_fillFixedFee(
             COMMON_USER_NO_STAKER_2.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            amountToFill,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay,
@@ -456,23 +422,10 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             )
         );
 
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        // 3.2 crete evvm signature
-        P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
-            .MetadataDispatchOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: 1,
-                amountOfTokenBToFill: amountB + fee,
-                signature: signatureP2P
-            });
+        // compute fill amount
+        uint256 amountToFill = amountB + fee;
 
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
@@ -482,7 +435,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 address(p2pSwap),
                 "",
                 tokenB,
-                metadata.amountOfTokenBToFill,
+                amountToFill,
                 priorityFee,
                 address(p2pSwap),
                 noncePay,
@@ -490,18 +443,20 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             )
         );
 
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
         // dispatch order with amountB
         vm.startPrank(COMMON_USER_STAKER.Address);
         vm.expectRevert();
         p2pSwap.dispatchOrder_fillFixedFee(
             COMMON_USER_NO_STAKER_2.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            1,
+            amountToFill,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay,
@@ -575,23 +530,10 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             )
         );
 
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        // 3.2 crete evvm signature
-        P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
-            .MetadataDispatchOrder({
-                originExecutor: address(0),
-                nonce: nonceP2PSwap,
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                amountOfTokenBToFill: amountB, // should be amountB + fee
-                signature: signatureP2P
-            });
+        // compute actual amount to fill (should exceed amountB in insufficient case)
+        uint256 amountToFill = amountB; // intentionally insufficient
 
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
@@ -601,7 +543,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 address(p2pSwap),
                 "",
                 tokenB,
-                metadata.amountOfTokenBToFill,
+                amountToFill,
                 priorityFee,
                 address(p2pSwap),
                 noncePay,
@@ -609,14 +551,10 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             )
         );
 
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
         // make sure the order is there
-        P2PSwap.Order memory order = p2pSwap.getOrder(market, orderId);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(market, orderId);
         assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
 
         // dispatch order with amountB
@@ -624,7 +562,13 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         vm.expectRevert();
         p2pSwap.dispatchOrder_fillFixedFee(
             COMMON_USER_NO_STAKER_2.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            amountToFill,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay,
@@ -709,24 +653,12 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             )
         );
 
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
-        // 3.2 crete evvm signature
-        P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
-            .MetadataDispatchOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                amountOfTokenBToFill: amountB + fee,
-                signature: signatureP2P
-            });
+        // compute fill amount
+        uint256 amountToFill = amountB + fee;
 
+        // create pay signature but intentionally use wrong amount to trigger revert
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
@@ -735,7 +667,7 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
                 address(p2pSwap),
                 "",
                 tokenB,
-                amountB, // should be metadata.amountOfTokenBToFill,
+                amountB, // wrong amount
                 priorityFee,
                 address(p2pSwap),
                 noncePay,
@@ -743,14 +675,10 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
             )
         );
 
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
+        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(v, r, s);
 
         // make sure the order is there
-        P2PSwap.Order memory order = p2pSwap.getOrder(market, orderId);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(market, orderId);
         assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
 
         // dispatch order with amountB
@@ -758,7 +686,13 @@ contract unitTestRevert_P2PSwap_dispatchOrder_fillFixedFee is Test, Constants {
         vm.expectRevert();
         p2pSwap.dispatchOrder_fillFixedFee(
             COMMON_USER_NO_STAKER_2.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            amountToFill,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay,

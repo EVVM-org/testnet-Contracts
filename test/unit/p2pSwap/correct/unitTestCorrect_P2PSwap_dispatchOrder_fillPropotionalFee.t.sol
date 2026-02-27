@@ -69,16 +69,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
         uint256 priorityFee,
         uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
-        P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
-            .MetadataMakeOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                amountA: amountA,
-                amountB: amountB
-            });
-
+        // build signatures
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
@@ -123,7 +114,12 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
         vm.startPrank(executor.Address);
         (market, orderId) = p2pSwap.makeOrder(
             user.Address,
-            orderData,
+            tokenA,
+            tokenB,
+            amountA,
+            amountB,
+            address(0),
+            nonceP2PSwap,
             signatureP2P,
             priorityFee,
             noncePay,
@@ -192,18 +188,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
             s
         );
 
-        // 3.2 crete evvm signature
-        P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
-            .MetadataDispatchOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                amountOfTokenBToFill: amountB + fee,
-                signature: signatureP2P
-            });
-
+        // 3.2 create evvm signature and prepare payment for buyer
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
@@ -212,7 +197,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
                 address(p2pSwap),
                 "",
                 tokenB,
-                metadata.amountOfTokenBToFill,
+                amountB + fee,
                 priorityFee,
                 address(p2pSwap),
                 noncePay,
@@ -227,14 +212,20 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
         );
 
         // make sure the order is there
-        P2PSwap.Order memory order = p2pSwap.getOrder(market, orderId);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(market, orderId);
         assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
 
         // dispatch order with amountB
         vm.startPrank(COMMON_USER_STAKER.Address);
         p2pSwap.dispatchOrder_fillPropotionalFee(
             COMMON_USER_NO_STAKER_2.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            amountB + fee,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay
@@ -347,18 +338,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
             s
         );
 
-        // 3.2 crete evvm signature
-        P2PSwap.MetadataDispatchOrder memory metadata = P2PSwapStructs
-            .MetadataDispatchOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                amountOfTokenBToFill: amountB + fee,
-                signature: signatureP2P
-            });
-
+        // 3.2 create evvm signature and prepare payment for buyer
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_2.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
@@ -367,7 +347,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
                 address(p2pSwap),
                 "",
                 tokenB,
-                metadata.amountOfTokenBToFill,
+                amountB + fee,
                 priorityFee,
                 address(p2pSwap),
                 noncePay,
@@ -382,14 +362,20 @@ contract unitTestCorrect_P2PSwap_dispatchOrder_fillPropotionalFee is
         );
 
         // make sure the order is there
-        P2PSwap.Order memory order = p2pSwap.getOrder(market, orderId);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(market, orderId);
         assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
 
         // dispatch order with amountB
         vm.startPrank(COMMON_USER_STAKER.Address);
         p2pSwap.dispatchOrder_fillPropotionalFee(
             COMMON_USER_NO_STAKER_2.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            amountB + fee,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay

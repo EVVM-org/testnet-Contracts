@@ -66,16 +66,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         uint256 priorityFee,
         uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
-        P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
-            .MetadataMakeOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                amountA: amountA,
-                amountB: amountB
-            });
-
+        // prepare signatures
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
@@ -120,7 +111,12 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
         vm.startPrank(executor.Address);
         (market, orderId) = p2pSwap.makeOrder(
             user.Address,
-            orderData,
+            tokenA,
+            tokenB,
+            amountA,
+            amountB,
+            address(0),
+            nonceP2PSwap,
             signatureP2P,
             priorityFee,
             noncePay,
@@ -208,25 +204,20 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             s
         );
 
-        P2PSwapStructs.MetadataCancelOrder memory metadata = P2PSwapStructs
-            .MetadataCancelOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                signature: signatureP2P
-            });
-
         // make sure the order is there
-        P2PSwap.Order memory order = p2pSwap.getOrder(market, orderId);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(market, orderId);
         assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
 
-        // Cancel the order
+        // Cancel the order using explicit parameters
         vm.startPrank(COMMON_USER_STAKER.Address);
         p2pSwap.cancelOrder(
             COMMON_USER_NO_STAKER_1.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay
@@ -334,25 +325,20 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
             s
         );
 
-        P2PSwapStructs.MetadataCancelOrder memory metadata = P2PSwapStructs
-            .MetadataCancelOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                signature: signatureP2P
-            });
-
         // make sure the order is there
-        P2PSwap.Order memory order = p2pSwap.getOrder(market, orderId);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(market, orderId);
         // assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
 
-        // Cancel the order
+        // Cancel the order using explicit parameters
         vm.startPrank(COMMON_USER_STAKER.Address);
         p2pSwap.cancelOrder(
             COMMON_USER_NO_STAKER_1.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            address(0),
+            nonceP2PSwap,
+            signatureP2P,
             priorityFee,
             noncePay,
             signaturePay

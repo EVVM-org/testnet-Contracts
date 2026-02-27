@@ -38,7 +38,7 @@ import {
  *      Integrates with Core.sol for asset locking and settlements, and Staking.sol for validator rewards.
  */
 
-contract P2PSwap is EvvmService, Structs {
+contract P2PSwap is EvvmService {
     address owner;
     address owner_proposal;
     uint256 owner_timeToAccept;
@@ -47,8 +47,8 @@ contract P2PSwap is EvvmService, Structs {
         0x0000000000000000000000000000000000000001;
     address constant ETH_ADDRESS = 0x0000000000000000000000000000000000000000;
 
-    Percentage rewardPercentage;
-    Percentage rewardPercentage_proposal;
+    Structs.Percentage rewardPercentage;
+    Structs.Percentage rewardPercentage_proposal;
     uint256 rewardPercentage_timeToAcceptNewChange;
 
     uint256 percentageFee;
@@ -68,9 +68,9 @@ contract P2PSwap is EvvmService, Structs {
 
     mapping(address tokenA => mapping(address tokenB => uint256 id)) marketId;
 
-    mapping(uint256 id => MarketInformation info) marketMetadata;
+    mapping(uint256 id => Structs.MarketInformation info) marketMetadata;
 
-    mapping(uint256 idMarket => mapping(uint256 idOrder => Order)) ordersInsideMarket;
+    mapping(uint256 idMarket => mapping(uint256 idOrder => Structs.Order)) ordersInsideMarket;
 
     mapping(address => uint256) balancesOfContract;
 
@@ -82,7 +82,7 @@ contract P2PSwap is EvvmService, Structs {
         owner = _owner;
         maxLimitFillFixedFee = 0.001 ether;
         percentageFee = 500;
-        rewardPercentage = Percentage({
+        rewardPercentage = Structs.Percentage({
             seller: 5000,
             service: 4000,
             mateStaker: 1000
@@ -94,7 +94,12 @@ contract P2PSwap is EvvmService, Structs {
      * @dev Locks tokenA in Core.sol and opens an order slot.
      *      Markets are automatically created for new token pairs.
      * @param user Seller address.
-     * @param metadata Order details (tokens, amounts, nonce).
+     * @param tokenA Address of the token being sold.
+     * @param tokenB Address of the token being bought.
+     * @param amountA Amount of tokenA offered.
+     * @param amountB Amount of tokenB requested.
+     * @param originExecutor executor address for signature validation.
+     * @param nonce Nonce for service execution (async).
      * @param signature Seller's authorization signature.
      * @param priorityFeePay Optional priority fee for the executor.
      * @param noncePay Nonce for the Core payment (locks tokenA).
@@ -104,7 +109,12 @@ contract P2PSwap is EvvmService, Structs {
      */
     function makeOrder(
         address user,
-        MetadataMakeOrder memory metadata,
+        address tokenA,
+        address tokenB,
+        uint256 amountA,
+        uint256 amountB,
+        address originExecutor,
+        uint256 nonce,
         bytes memory signature,
         uint256 priorityFeePay,
         uint256 noncePay,
@@ -112,31 +122,26 @@ contract P2PSwap is EvvmService, Structs {
     ) external returns (uint256 market, uint256 orderId) {
         core.validateAndConsumeNonce(
             user,
-            Hash.hashDataForMakeOrder(
-                metadata.tokenA,
-                metadata.tokenB,
-                metadata.amountA,
-                metadata.amountB
-            ),
-            address(0),
-            metadata.nonce,
+            Hash.hashDataForMakeOrder(tokenA, tokenB, amountA, amountB),
+            originExecutor,
+            nonce,
             true,
             signature
         );
 
         requestPay(
             user,
-            metadata.tokenA,
-            metadata.amountA,
+            tokenA,
+            amountA,
             priorityFeePay,
             noncePay,
             true,
             signaturePay
         );
 
-        market = findMarket(metadata.tokenA, metadata.tokenB);
+        market = findMarket(tokenA, tokenB);
         if (market == 0) {
-            market = createMarket(metadata.tokenA, metadata.tokenB);
+            market = createMarket(tokenA, tokenB);
         }
 
         if (
@@ -156,16 +161,16 @@ contract P2PSwap is EvvmService, Structs {
             marketMetadata[market].ordersAvailable++;
         }
 
-        ordersInsideMarket[market][orderId] = Order(
+        ordersInsideMarket[market][orderId] = Structs.Order(
             user,
-            metadata.amountA,
-            metadata.amountB
+            amountA,
+            amountB
         );
 
         if (core.isAddressStaker(msg.sender)) {
             if (priorityFeePay > 0) {
                 // send the executor the priorityFee
-                makeCaPay(msg.sender, metadata.tokenA, priorityFeePay);
+                makeCaPay(msg.sender, tokenA, priorityFeePay);
             }
         }
 
@@ -203,34 +208,40 @@ contract P2PSwap is EvvmService, Structs {
      * - Market slot becomes available for reuse
      *
      * @param user Address that owns the order
-     * @param metadata Cancel details (tokens, orderId, nonce)
+     * @param tokenA Token A in pair
+     * @param tokenB Token B in pair
+     * @param orderId Order ID to cancel
+     * @param originExecutor Executor address for signature validation
+     * @param nonce Nonce for service execution (async)
+     * @param signature Signature for cancellation authorization
      * @param priorityFeePay Optional priority fee for staker
      * @param noncePay Nonce for EVVM payment transaction
      * @param signaturePay Signature for EVVM payment
      */
     function cancelOrder(
         address user,
-        MetadataCancelOrder memory metadata,
+        address tokenA,
+        address tokenB,
+        uint256 orderId,
+        address originExecutor,
+        uint256 nonce,
+        bytes memory signature,
         uint256 priorityFeePay,
         uint256 noncePay,
         bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
-            Hash.hashDataForCancelOrder(
-                metadata.tokenA,
-                metadata.tokenB,
-                metadata.orderId
-            ),
-            metadata.originExecutor,
-            metadata.nonce,
+            Hash.hashDataForCancelOrder(tokenA, tokenB, orderId),
+            originExecutor,
+            nonce,
             true,
-            metadata.signature
+            signature
         );
 
-        uint256 market = findMarket(metadata.tokenA, metadata.tokenB);
+        uint256 market = findMarket(tokenA, tokenB);
 
-        _validateOrderOwnership(market, metadata.orderId, user);
+        _validateOrderOwnership(market, orderId, user);
 
         if (priorityFeePay > 0) {
             requestPay(
@@ -244,13 +255,9 @@ contract P2PSwap is EvvmService, Structs {
             );
         }
 
-        makeCaPay(
-            user,
-            metadata.tokenA,
-            ordersInsideMarket[market][metadata.orderId].amountA
-        );
+        makeCaPay(user, tokenA, ordersInsideMarket[market][orderId].amountA);
 
-        _clearOrderAndUpdateMarket(market, metadata.orderId);
+        _clearOrderAndUpdateMarket(market, orderId);
 
         if (core.isAddressStaker(msg.sender) && priorityFeePay > 0) {
             makeCaPay(msg.sender, MATE_TOKEN_ADDRESS, priorityFeePay);
@@ -296,46 +303,54 @@ contract P2PSwap is EvvmService, Structs {
      * - Example: 5% fee = 500 / 10,000
      *
      * @param user Address filling the order (buyer)
-     * @param metadata Dispatch details (tokens, orderId, amount)
+     * @param tokenA Token A in pair
+     * @param tokenB Token B in pair
+     * @param orderId Order ID to fill
+     * @param amountOfTokenBToFill Amount of tokenB buyer is paying (must cover order + fee)
+     * @param originExecutor Executor address for signature validation
+     * @param nonce Nonce for service execution (async)
+     * @param signature Signature for dispatch authorization
      * @param priorityFeePay Optional priority fee for staker
      * @param noncePay Nonce for EVVM payment transaction
      * @param signaturePay Signature for EVVM payment
      */
     function dispatchOrder_fillPropotionalFee(
         address user,
-        MetadataDispatchOrder memory metadata,
+        address tokenA,
+        address tokenB,
+        uint256 orderId,
+        uint256 amountOfTokenBToFill,
+        address originExecutor,
+        uint256 nonce,
+        bytes memory signature,
         uint256 priorityFeePay,
         uint256 noncePay,
         bytes memory signaturePay
     ) external {
         core.validateAndConsumeNonce(
             user,
-            Hash.hashDataForDispatchOrder(
-                metadata.tokenA,
-                metadata.tokenB,
-                metadata.orderId
-            ),
-            metadata.originExecutor,
-            metadata.nonce,
+            Hash.hashDataForDispatchOrder(tokenA, tokenB, orderId),
+            originExecutor,
+            nonce,
             true,
-            metadata.signature
+            signature
         );
 
-        uint256 market = findMarket(metadata.tokenA, metadata.tokenB);
+        uint256 market = findMarket(tokenA, tokenB);
 
-        Order storage order = _validateMarketAndOrder(market, metadata.orderId);
+        Structs.Order storage order = _validateMarketAndOrder(market, orderId);
 
         uint256 fee = calculateFillPropotionalFee(order.amountB);
         uint256 requiredAmount = order.amountB + fee;
 
-        if (metadata.amountOfTokenBToFill < requiredAmount) {
+        if (amountOfTokenBToFill < requiredAmount) {
             revert("Insuficient amountOfTokenToFill");
         }
 
         requestPay(
             user,
-            metadata.tokenB,
-            metadata.amountOfTokenBToFill,
+            tokenB,
+            amountOfTokenBToFill,
             priorityFeePay,
             noncePay,
             true,
@@ -345,14 +360,14 @@ contract P2PSwap is EvvmService, Structs {
         // si es mas del fee + el monto de la orden hacemos caPay al usuario del sobranate
         bool didRefund = _handleOverpaymentRefund(
             user,
-            metadata.tokenB,
-            metadata.amountOfTokenBToFill,
+            tokenB,
+            amountOfTokenBToFill,
             requiredAmount
         );
 
         // distribute payments to seller and executor
         _distributePayments(
-            metadata.tokenB,
+            tokenB,
             order.amountB,
             fee,
             order.seller,
@@ -361,11 +376,11 @@ contract P2PSwap is EvvmService, Structs {
         );
 
         // pay user with token A
-        makeCaPay(user, metadata.tokenA, order.amountA);
+        makeCaPay(user, tokenA, order.amountA);
 
         _rewardExecutor(msg.sender, didRefund ? 5 : 4);
 
-        _clearOrderAndUpdateMarket(market, metadata.orderId);
+        _clearOrderAndUpdateMarket(market, orderId);
     }
 
     /**
@@ -417,7 +432,13 @@ contract P2PSwap is EvvmService, Structs {
      * - Enables flexible fee payment for users
      *
      * @param user Address filling the order (buyer)
-     * @param metadata Dispatch details (tokens, orderId, amount)
+     * @param tokenA Token A in pair
+     * @param tokenB Token B in pair
+     * @param orderId Order ID to fill
+     * @param amountOfTokenBToFill Amount of tokenB buyer is paying (must cover order + fee)
+     * @param originExecutor Executor address for signature validation
+     * @param nonce Nonce for service execution (async)
+     * @param signature Signature for dispatch authorization
      * @param priorityFeePay Optional priority fee for staker
      * @param noncePay Nonce for EVVM payment transaction
      * @param signaturePay Signature for EVVM payment
@@ -425,7 +446,13 @@ contract P2PSwap is EvvmService, Structs {
      */
     function dispatchOrder_fillFixedFee(
         address user,
-        MetadataDispatchOrder memory metadata,
+        address tokenA,
+        address tokenB,
+        uint256 orderId,
+        uint256 amountOfTokenBToFill,
+        address originExecutor,
+        uint256 nonce,
+        bytes memory signature,
         uint256 priorityFeePay,
         uint256 noncePay,
         bytes memory signaturePay,
@@ -433,20 +460,16 @@ contract P2PSwap is EvvmService, Structs {
     ) external {
         core.validateAndConsumeNonce(
             user,
-            Hash.hashDataForDispatchOrder(
-                metadata.tokenA,
-                metadata.tokenB,
-                metadata.orderId
-            ),
-            metadata.originExecutor,
-            metadata.nonce,
+            Hash.hashDataForDispatchOrder(tokenA, tokenB, orderId),
+            originExecutor,
+            nonce,
             true,
-            metadata.signature
+            signature
         );
 
-        uint256 market = findMarket(metadata.tokenA, metadata.tokenB);
+        uint256 market = findMarket(tokenA, tokenB);
 
-        Order storage order = _validateMarketAndOrder(market, metadata.orderId);
+        Structs.Order storage order = _validateMarketAndOrder(market, orderId);
 
         (uint256 fee, uint256 fee10) = calculateFillFixedFee(
             order.amountB,
@@ -456,14 +479,14 @@ contract P2PSwap is EvvmService, Structs {
         uint256 minRequired = order.amountB + fee - fee10;
         uint256 fullRequired = order.amountB + fee;
 
-        if (metadata.amountOfTokenBToFill < minRequired) {
+        if (amountOfTokenBToFill < minRequired) {
             revert("Insuficient amountOfTokenBToFill");
         }
 
         requestPay(
             user,
-            metadata.tokenB,
-            metadata.amountOfTokenBToFill,
+            tokenB,
+            amountOfTokenBToFill,
             priorityFeePay,
             noncePay,
             true,
@@ -471,7 +494,7 @@ contract P2PSwap is EvvmService, Structs {
         );
 
         uint256 finalFee = _calculateFinalFee(
-            metadata.amountOfTokenBToFill,
+            amountOfTokenBToFill,
             order.amountB,
             fee,
             fee10
@@ -480,14 +503,14 @@ contract P2PSwap is EvvmService, Structs {
         // si es mas del fee + el monto de la orden hacemos caPay al usuario del sobranate
         bool didRefund = _handleOverpaymentRefund(
             user,
-            metadata.tokenB,
-            metadata.amountOfTokenBToFill,
+            tokenB,
+            amountOfTokenBToFill,
             fullRequired
         );
 
         // distribute payments to seller and executor
         _distributePayments(
-            metadata.tokenB,
+            tokenB,
             order.amountB,
             finalFee,
             order.seller,
@@ -495,11 +518,11 @@ contract P2PSwap is EvvmService, Structs {
             priorityFeePay
         );
 
-        makeCaPay(user, metadata.tokenA, order.amountA);
+        makeCaPay(user, tokenA, order.amountA);
 
         _rewardExecutor(msg.sender, didRefund ? 5 : 4);
 
-        _clearOrderAndUpdateMarket(market, metadata.orderId);
+        _clearOrderAndUpdateMarket(market, orderId);
     }
 
     function calculateFillPropotionalFee(
@@ -558,7 +581,7 @@ contract P2PSwap is EvvmService, Structs {
     function _validateMarketAndOrder(
         uint256 market,
         uint256 orderId
-    ) internal view returns (Order storage order) {
+    ) internal view returns (Structs.Order storage order) {
         if (market == 0) {
             revert("Invalid order");
         }
@@ -672,7 +695,7 @@ contract P2PSwap is EvvmService, Structs {
     ) internal returns (uint256) {
         marketCount++;
         marketId[tokenA][tokenB] = marketCount;
-        marketMetadata[marketCount] = MarketInformation(tokenA, tokenB, 0, 0);
+        marketMetadata[marketCount] = Structs.MarketInformation(tokenA, tokenB, 0, 0);
         return marketCount;
     }
 
@@ -718,7 +741,7 @@ contract P2PSwap is EvvmService, Structs {
         if (_seller + _service + _mateStaker != 10_000) {
             revert();
         }
-        rewardPercentage_proposal = Percentage(_seller, _service, _mateStaker);
+        rewardPercentage_proposal = Structs.Percentage(_seller, _service, _mateStaker);
         rewardPercentage_timeToAcceptNewChange = block.timestamp + 1 days;
     }
 
@@ -729,7 +752,7 @@ contract P2PSwap is EvvmService, Structs {
         ) {
             revert();
         }
-        rewardPercentage_proposal = Percentage(0, 0, 0);
+        rewardPercentage_proposal = Structs.Percentage(0, 0, 0);
     }
 
     function acceptFillFixedPercentage() external {
@@ -750,7 +773,7 @@ contract P2PSwap is EvvmService, Structs {
         if (msg.sender != owner || _seller + _service + _mateStaker != 10_000) {
             revert();
         }
-        rewardPercentage_proposal = Percentage(_seller, _service, _mateStaker);
+        rewardPercentage_proposal = Structs.Percentage(_seller, _service, _mateStaker);
         rewardPercentage_timeToAcceptNewChange = block.timestamp + 1 days;
     }
 
@@ -761,7 +784,7 @@ contract P2PSwap is EvvmService, Structs {
         ) {
             revert();
         }
-        rewardPercentage_proposal = Percentage(0, 0, 0);
+        rewardPercentage_proposal = Structs.Percentage(0, 0, 0);
     }
 
     function acceptFillPropotionalPercentage() external {
@@ -898,12 +921,14 @@ contract P2PSwap is EvvmService, Structs {
     //◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢
     function getAllMarketOrders(
         uint256 market
-    ) public view returns (OrderForGetter[] memory orders) {
-        orders = new OrderForGetter[](marketMetadata[market].maxSlot + 1);
+    ) public view returns (Structs.OrderForGetter[] memory orders) {
+        orders = new Structs.OrderForGetter[](
+            marketMetadata[market].maxSlot + 1
+        );
 
         for (uint256 i = 1; i <= marketMetadata[market].maxSlot + 1; i++) {
             if (ordersInsideMarket[market][i].seller != address(0)) {
-                orders[i - 1] = OrderForGetter(
+                orders[i - 1] = Structs.OrderForGetter(
                     market,
                     i,
                     ordersInsideMarket[market][i].seller,
@@ -918,7 +943,7 @@ contract P2PSwap is EvvmService, Structs {
     function getOrder(
         uint256 market,
         uint256 orderId
-    ) public view returns (Order memory order) {
+    ) public view returns (Structs.Order memory order) {
         order = ordersInsideMarket[market][orderId];
         return order;
     }
@@ -926,12 +951,12 @@ contract P2PSwap is EvvmService, Structs {
     function getMyOrdersInSpecificMarket(
         address user,
         uint256 market
-    ) public view returns (OrderForGetter[] memory orders) {
-        orders = new OrderForGetter[](marketMetadata[market].maxSlot + 1);
+    ) public view returns (Structs.OrderForGetter[] memory orders) {
+        orders = new Structs.OrderForGetter[](marketMetadata[market].maxSlot + 1);
 
         for (uint256 i = 1; i <= marketMetadata[market].maxSlot + 1; i++) {
             if (ordersInsideMarket[market][i].seller == user) {
-                orders[i - 1] = OrderForGetter(
+                orders[i - 1] = Structs.OrderForGetter(
                     market,
                     i,
                     ordersInsideMarket[market][i].seller,
@@ -952,18 +977,17 @@ contract P2PSwap is EvvmService, Structs {
 
     function getMarketMetadata(
         uint256 market
-    ) public view returns (MarketInformation memory) {
+    ) public view returns (Structs.MarketInformation memory) {
         return marketMetadata[market];
     }
 
     function getAllMarketsMetadata()
         public
         view
-        returns (MarketInformation[] memory)
+        returns (Structs.MarketInformation[] memory)
     {
-        MarketInformation[] memory markets = new MarketInformation[](
-            marketCount + 1
-        );
+        Structs.MarketInformation[]
+            memory markets = new Structs.MarketInformation[](marketCount + 1);
         for (uint256 i = 1; i <= marketCount; i++) {
             markets[i - 1] = marketMetadata[i];
         }
@@ -991,12 +1015,16 @@ contract P2PSwap is EvvmService, Structs {
     function getRewardPercentageProposal()
         external
         view
-        returns (Percentage memory)
+        returns (Structs.Percentage memory)
     {
         return rewardPercentage_proposal;
     }
 
-    function getRewardPercentage() external view returns (Percentage memory) {
+    function getRewardPercentage()
+        external
+        view
+        returns (Structs.Percentage memory)
+    {
         return rewardPercentage;
     }
 

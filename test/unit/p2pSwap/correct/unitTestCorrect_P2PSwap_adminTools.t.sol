@@ -45,11 +45,11 @@ import {
     Treasury
 } from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
 import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
+import {
+    P2PSwapStructs
+} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract unitTestCorrect_P2PSwap_adminTools is Test, Constants {
-
-
-
     function addBalance(address user, address token, uint256 amount) private {
         core.addBalance(user, token, amount);
     }
@@ -97,7 +97,8 @@ contract unitTestCorrect_P2PSwap_adminTools is Test, Constants {
         uint256 servicePercentage = 8_000;
         uint256 stakerPercentage = 1_000;
 
-        P2PSwap.Percentage memory prop = p2pSwap.getRewardPercentageProposal();
+        P2PSwapStructs.Percentage memory prop = p2pSwap
+            .getRewardPercentageProposal();
 
         assertNotEq(prop.seller, sellerPercentage);
         assertNotEq(prop.service, servicePercentage);
@@ -133,7 +134,8 @@ contract unitTestCorrect_P2PSwap_adminTools is Test, Constants {
         p2pSwap.rejectProposeFillFixedPercentage();
         vm.stopPrank();
 
-        P2PSwap.Percentage memory prop = p2pSwap.getRewardPercentageProposal();
+        P2PSwapStructs.Percentage memory prop = p2pSwap
+            .getRewardPercentageProposal();
         assertEq(prop.seller, 0);
         assertEq(prop.service, 0);
         assertEq(prop.mateStaker, 0);
@@ -154,7 +156,7 @@ contract unitTestCorrect_P2PSwap_adminTools is Test, Constants {
         p2pSwap.acceptFillFixedPercentage();
         vm.stopPrank();
 
-        P2PSwap.Percentage memory reward = p2pSwap.getRewardPercentage();
+        P2PSwapStructs.Percentage memory reward = p2pSwap.getRewardPercentage();
         assertEq(reward.seller, sellerPercentage);
         assertEq(reward.service, servicePercentage);
         assertEq(reward.mateStaker, stakerPercentage);
@@ -165,7 +167,8 @@ contract unitTestCorrect_P2PSwap_adminTools is Test, Constants {
         uint256 servicePercentage = 8_000;
         uint256 stakerPercentage = 1_000;
 
-        P2PSwap.Percentage memory prop = p2pSwap.getRewardPercentageProposal();
+        P2PSwapStructs.Percentage memory prop = p2pSwap
+            .getRewardPercentageProposal();
 
         assertNotEq(prop.seller, sellerPercentage);
         assertNotEq(prop.service, servicePercentage);
@@ -203,7 +206,8 @@ contract unitTestCorrect_P2PSwap_adminTools is Test, Constants {
         p2pSwap.rejectProposeFillPropotionalPercentage();
         vm.stopPrank();
 
-        P2PSwap.Percentage memory prop = p2pSwap.getRewardPercentageProposal();
+        P2PSwapStructs.Percentage memory prop = p2pSwap
+            .getRewardPercentageProposal();
         assertEq(prop.seller, 0);
         assertEq(prop.service, 0);
         assertEq(prop.mateStaker, 0);
@@ -224,7 +228,7 @@ contract unitTestCorrect_P2PSwap_adminTools is Test, Constants {
         p2pSwap.acceptFillPropotionalPercentage();
         vm.stopPrank();
 
-        P2PSwap.Percentage memory reward = p2pSwap.getRewardPercentage();
+        P2PSwapStructs.Percentage memory reward = p2pSwap.getRewardPercentage();
         assertEq(reward.seller, sellerPercentage);
         assertEq(reward.service, servicePercentage);
         assertEq(reward.mateStaker, stakerPercentage);

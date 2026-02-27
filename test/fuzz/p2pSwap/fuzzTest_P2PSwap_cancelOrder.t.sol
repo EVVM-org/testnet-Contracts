@@ -66,16 +66,6 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         uint256 priorityFee,
         uint256 noncePay
     ) private returns (uint256 market, uint256 orderId) {
-        P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
-            .MetadataMakeOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                amountA: amountA,
-                amountB: amountB
-            });
-
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             user.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForMakeOrder(
@@ -120,7 +110,12 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         vm.startPrank(executor.Address);
         (market, orderId) = p2pSwap.makeOrder(
             user.Address,
-            orderData,
+            tokenA,
+            tokenB,
+            amountA,
+            amountB,
+            address(0),
+            nonceP2PSwap,
             signatureP2P,
             priorityFee,
             noncePay,
@@ -227,15 +222,10 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             s
         );
 
-        P2PSwapStructs.MetadataCancelOrder memory metadata = P2PSwapStructs
-            .MetadataCancelOrder({
-                nonce: nextNonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                orderId: orderId,
-                signature: signatureP2P
-            });
+        // we already have signatureP2P above
+        address originExecutor = address(0);
+        uint256 nonce = nextNonceP2PSwap;
+        bytes memory signature = signatureP2P;
 
         // pay
         (v, r, s) = vm.sign(
@@ -263,14 +253,19 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         vm.startPrank(COMMON_USER_STAKER.Address);
         p2pSwap.cancelOrder(
             COMMON_USER_NO_STAKER_1.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            orderId,
+            originExecutor,
+            nonce,
+            signature,
             priorityFee,
             nextnoncePay,
             signaturePay
         );
         vm.stopPrank();
 
-        P2PSwap.MarketInformation memory marketInfo = p2pSwap.getMarketMetadata(
+        P2PSwapStructs.MarketInformation memory marketInfo = p2pSwap.getMarketMetadata(
             market
         );
         assertEq(marketInfo.ordersAvailable, 0);

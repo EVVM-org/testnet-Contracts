@@ -10,7 +10,7 @@ pragma solidity ^0.8.0;
  * @dev All operations validated via Core.sol async nonces. Payments via Core.sol.
  */
 
-abstract contract P2PSwapStructs {
+library P2PSwapStructs {
     /**
      * @notice Market metadata for token pair trading
      * @dev Tracks order slot allocation and active order count.
@@ -67,61 +67,5 @@ abstract contract P2PSwapStructs {
         uint256 seller;
         uint256 service;
         uint256 mateStaker;
-    }
-
-    /**
-     * @notice Metadata for makeOrder operation signature
-     * @dev Hashed via P2PSwapHashUtils. Validated via Core.sol with async nonce.
-     * @param nonce Async nonce
-     * @param tokenA Token offered
-     * @param tokenB Token requested
-     * @param amountA Amount offered
-     * @param amountB Amount requested
-     */
-    struct MetadataMakeOrder {
-        uint256 nonce;
-        address originExecutor;
-        address tokenA;
-        address tokenB;
-        uint256 amountA;
-        uint256 amountB;
-    }
-
-    /**
-     * @notice Metadata for cancelOrder operation signature
-     * @dev Hashed via P2PSwapHashUtils. Only order owner can cancel. Async nonce.
-     * @param nonce Async nonce
-     * @param tokenA Token A in pair
-     * @param tokenB Token B in pair
-     * @param orderId Order ID to cancel
-     * @param signature EIP-191 signature from seller
-     */
-    struct MetadataCancelOrder {
-        uint256 nonce;
-        address originExecutor;
-        address tokenA;
-        address tokenB;
-        uint256 orderId;
-        bytes signature;
-    }
-
-    /**
-     * @notice Metadata for dispatchOrder operation signature
-     * @dev Hashed via P2PSwapHashUtils. Used by both proportional and fixed fee variants. Async nonce.
-     * @param nonce Async nonce
-     * @param tokenA Token A in pair
-     * @param tokenB Token B in pair
-     * @param orderId Order ID to fill
-     * @param amountOfTokenBToFill Total tokenB including fees
-     * @param signature EIP-191 signature from buyer
-     */
-    struct MetadataDispatchOrder {
-        uint256 nonce;
-        address originExecutor;
-        address tokenA;
-        address tokenB;
-        uint256 orderId;
-        uint256 amountOfTokenBToFill;
-        bytes signature;
     }
 }

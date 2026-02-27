@@ -82,16 +82,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
             : ETHER_ADDRESS;
 
         uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
-        uint256 noncePay = input.noncePay ;
-        P2PSwapStructs.MetadataMakeOrder memory metadata = P2PSwapStructs
-            .MetadataMakeOrder({
-                nonce: input.nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                amountA: input.amountA,
-                amountB: input.amountB
-            });
+        uint256 noncePay = input.noncePay;
         uint256 rewardAmountMateToken = priorityFee > 0
             ? (core.getRewardAmount() * 3)
             : (core.getRewardAmount() * 2);
@@ -158,7 +149,12 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         vm.startPrank(COMMON_USER_STAKER.Address);
         (uint256 market, uint256 orderId) = p2pSwap.makeOrder(
             COMMON_USER_NO_STAKER_1.Address,
-            metadata,
+            tokenA,
+            tokenB,
+            input.amountA,
+            input.amountB,
+            address(0),
+            input.nonceP2PSwap,
             signatureP2P,
             priorityFee,
             noncePay,
@@ -166,7 +162,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         );
         vm.stopPrank();
 
-        P2PSwap.MarketInformation memory marketInfo = p2pSwap.getMarketMetadata(
+        P2PSwapStructs.MarketInformation memory marketInfo = p2pSwap.getMarketMetadata(
             market
         );
         assertEq(marketInfo.tokenA, tokenA);

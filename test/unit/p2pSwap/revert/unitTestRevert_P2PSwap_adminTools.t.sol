@@ -48,9 +48,6 @@ import {
     Treasury
 } from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
 import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
-import {
-    P2PSwapStructs
-} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
     
@@ -59,82 +56,6 @@ contract unitTestRevert_P2PSwap_adminTools is Test, Constants {
         core.addBalance(user, token, amount);
     }
 
-    /// @notice Creates an order for testing purposes
-    function createOrder(
-        AccountData memory executor,
-        AccountData memory user,
-        uint256 nonceP2PSwap,
-        address tokenA,
-        address tokenB,
-        uint256 amountA,
-        uint256 amountB,
-        uint256 priorityFee,
-        uint256 noncePay
-    ) private returns (uint256 market, uint256 orderId) {
-        P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
-            .MetadataMakeOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                amountA: amountA,
-                amountB: amountB
-            });
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOrder(
-                core.getEvvmID(),
-                address(p2pSwap),
-                address(0),
-                nonceP2PSwap,
-                tokenA,
-                tokenB,
-                amountA,
-                amountB
-            )
-        );
-
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                core.getEvvmID(),
-                address(core),
-                address(p2pSwap),
-                "",
-                tokenA,
-                amountA,
-                priorityFee,
-                address(p2pSwap),
-                noncePay,
-                true
-            )
-        );
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(executor.Address);
-        (market, orderId) = p2pSwap.makeOrder(
-            user.Address,
-            orderData,
-            signatureP2P,
-            priorityFee,
-            noncePay,
-            signaturePay
-        );
-        vm.stopPrank();
-
-        return (market, orderId);
-    }
 
     function test__unit_revert__proposeOwner_notOwner() external {
         vm.startPrank(COMMON_USER_NO_STAKER_1.Address);

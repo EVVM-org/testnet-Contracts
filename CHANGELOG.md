@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Refactored `getTimeToAcceptImplementation`, `getProposalImplementation` into a single `getFullDetailImplementation` function that returns all variables into a struct for better efficiency and usability in the frontend and other services.
   - Rename `getUserValidatorAddressDetails` to `getFullDetailUserValidator` for better clarity and consistency in naming conventions.
   - Rename `canExecuteUserTransaction` to `_canExecuteUserTransaction` to indicate its internal use and prevent confusion with potential external functions.
+- **P2PSwap.sol**: Refactor to remove Metadata struct and replace with direct parameters.
 
 ## [3.0.1] - 2026-02-19
 

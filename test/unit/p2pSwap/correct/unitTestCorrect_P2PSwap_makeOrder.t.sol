@@ -107,16 +107,6 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             s
         );
 
-        P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
-            .MetadataMakeOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                amountA: amountA,
-                amountB: amountB
-            });
-
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
@@ -142,7 +132,12 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         vm.startPrank(COMMON_USER_STAKER.Address);
         (uint256 market, uint256 orderId) = p2pSwap.makeOrder(
             COMMON_USER_NO_STAKER_1.Address,
-            orderData,
+            tokenA,
+            tokenB,
+            amountA,
+            amountB,
+            address(0),
+            nonceP2PSwap,
             signatureP2P,
             priorityFee,
             noncePay,
@@ -150,7 +145,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         );
         vm.stopPrank();
 
-        P2PSwap.MarketInformation memory marketInfo = p2pSwap.getMarketMetadata(
+        P2PSwapStructs.MarketInformation memory marketInfo = p2pSwap.getMarketMetadata(
             market
         );
 
@@ -198,16 +193,6 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             s
         );
 
-        P2PSwapStructs.MetadataMakeOrder memory orderData = P2PSwapStructs
-            .MetadataMakeOrder({
-                nonce: nonceP2PSwap,
-                originExecutor: address(0),
-                tokenA: tokenA,
-                tokenB: tokenB,
-                amountA: amountA,
-                amountB: amountB
-            });
-
         (v, r, s) = vm.sign(
             COMMON_USER_NO_STAKER_1.PrivateKey,
             Erc191TestBuilder.buildMessageSignedForPay(
@@ -232,7 +217,12 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         vm.startPrank(COMMON_USER_NO_STAKER_2.Address);
         (uint256 market, uint256 orderId) = p2pSwap.makeOrder(
             COMMON_USER_NO_STAKER_1.Address,
-            orderData,
+            tokenA,
+            tokenB,
+            amountA,
+            amountB,
+            address(0),
+            nonceP2PSwap,
             signatureP2P,
             priorityFee,
             noncePay,
@@ -240,7 +230,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         );
         vm.stopPrank();
 
-        P2PSwap.MarketInformation memory marketInfo = p2pSwap.getMarketMetadata(
+        P2PSwapStructs.MarketInformation memory marketInfo = p2pSwap.getMarketMetadata(
             market
         );
         assertEq(marketInfo.tokenA, ETHER_ADDRESS);
