@@ -57,6 +57,7 @@ jobs:
           name: linux-binaries
           path: .executables/evvm-linux-*
           if-no-files-found: error
+          include-hidden-files: true
 
   build-macos:
     name: Build macOS Binaries
@@ -94,6 +95,7 @@ jobs:
           name: macos-binaries
           path: .executables/evvm-darwin-*
           if-no-files-found: error
+          include-hidden-files: true
 
   build-windows:
     name: Build Windows Binaries
@@ -125,6 +127,7 @@ jobs:
           name: windows-binaries
           path: .executables/evvm-windows-x64.exe
           if-no-files-found: error
+          include-hidden-files: true
 
   combine-artifacts:
     name: Combine All Binaries
@@ -161,3 +164,4 @@ jobs:
           name: all-binaries
           path: .executables/*
           if-no-files-found: error
+          include-hidden-files: true
