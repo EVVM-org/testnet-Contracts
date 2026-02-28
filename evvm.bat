@@ -27,6 +27,21 @@ if "%ARCH%"=="64-bit" (
 :: Execute the binary
 if exist "%EXECUTABLE%" (
     "%EXECUTABLE%" %*
+    set "status=%ERRORLEVEL%"
+    if not "%status%"=="0" (
+        echo.
+        echo Warning: native CLI executable returned error %status%.
+        echo This may mean the file is corrupted or built for the wrong platform.
+        where bun >nul 2>&1
+        if not errorlevel 1 (
+            echo Attempting Bun fallback...
+            bun run cli/index.ts %*
+            exit /b %ERRORLEVEL%
+        ) else (
+            echo Bun not found; please install Bun or rebuild the binaries on Windows.
+        )
+        exit /b %status%
+    )
 ) else (
     echo Executable not found: %EXECUTABLE%
     echo Please ensure the executable exists in the .executables folder.

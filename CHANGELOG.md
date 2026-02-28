@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tests**:
   - Added comprehensive tests for the new token list management functionality in `Core.sol`, including tests for proposing, accepting, and rejecting list status changes, as well as verifying token interaction allowances based on the active list.
   - Added tests for the `rewardFlowDistribution` flag to ensure it correctly stops reward distribution when 99.99% of total supply is distributed and allows re-enabling if needed.
-  - Added tests for the new admin functions to delete total supply and change base reward amount, including checks for proper timelock enforcement and access control.
+  - Added tests for the new admin functions to delete total supply and change base reward amount, including checks for proper timelock enforcement and access control.  
+
 
 ### Changed
 
@@ -34,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Rename `getUserValidatorAddressDetails` to `getFullDetailUserValidator` for better clarity and consistency in naming conventions.
   - Rename `canExecuteUserTransaction` to `_canExecuteUserTransaction` to indicate its internal use and prevent confusion with potential external functions.
 - **P2PSwap.sol**: Refactor to remove Metadata struct and replace with direct parameters.
+
+### Fixed
+
+- **CLI:** Fixed bug where all `.executables/*` files were the Linux ELF build; running `./evvm`/`evvm.bat` on macOS or Windows produced “cannot execute binary file”. Wrapper scripts now detect exit‑126 failures, fall back to `bun run cli/index.ts` if Bun is installed, and emit a clear error otherwise. (Proper platform binaries are now produced by CI.) 
 
 ## [3.0.1] - 2026-02-19
 

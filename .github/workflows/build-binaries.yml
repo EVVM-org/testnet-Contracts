@@ -1,0 +1,163 @@
+name: Build Multi-Platform Binaries
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'cli/**'
+      - 'package.json'
+      - 'bun.lockb'
+      - '.github/workflows/build-binaries.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'cli/**'
+      - 'package.json'
+      - 'bun.lockb'
+      - '.github/workflows/build-binaries.yml'
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build Linux Binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build Linux x64
+        run: bun build cli/index.ts --compile --outfile .executables/evvm-linux-x64
+
+      - name: Build Linux ARM64
+        run: bun build cli/index.ts --compile --outfile .executables/evvm-linux-arm64
+
+      - name: Build Linux x64 musl
+        run: bun build cli/index.ts --compile --outfile .executables/evvm-linux-x64-musl
+
+      - name: Build Linux ARM64 musl
+        run: bun build cli/index.ts --compile --outfile .executables/evvm-linux-arm64-musl
+
+      - name: Verify binaries
+        run: |
+          echo "Verifying Linux binaries..."
+          file .executables/evvm-linux-*
+          ls -lh .executables/
+
+      - name: Upload Linux binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: .executables/evvm-linux-*
+          if-no-files-found: error
+
+  build-macos:
+    name: Build macOS Binaries
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build macOS x64 (Intel)
+        run: bun build cli/index.ts --compile --outfile .executables/evvm-darwin-x64
+
+      - name: Build macOS ARM64 (Apple Silicon)
+        run: bun build cli/index.ts --compile --outfile .executables/evvm-darwin-arm64
+
+      - name: Verify binaries
+        run: |
+          echo "Verifying macOS binaries..."
+          file .executables/evvm-darwin-*
+          ls -lh .executables/
+
+      - name: Make binaries executable
+        run: chmod +x .executables/evvm-darwin-*
+
+      - name: Upload macOS binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-binaries
+          path: .executables/evvm-darwin-*
+          if-no-files-found: error
+
+  build-windows:
+    name: Build Windows Binaries
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build Windows x64
+        run: bun build cli/index.ts --compile --outfile .executables/evvm-windows-x64.exe
+
+      - name: Verify binary
+        run: |
+          echo "Verifying Windows binary..."
+          Get-Item .executables/evvm-windows-x64.exe
+        shell: pwsh
+
+      - name: Upload Windows binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: .executables/evvm-windows-x64.exe
+          if-no-files-found: error
+
+  combine-artifacts:
+    name: Combine All Binaries
+    needs: [build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Linux binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-binaries
+          path: .executables/
+
+      - name: Download macOS binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-binaries
+          path: .executables/
+
+      - name: Download Windows binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-binaries
+          path: .executables/
+
+      - name: List all binaries
+        run: |
+          echo "All compiled binaries:"
+          ls -lh .executables/
+          file .executables/* || true
+
+      - name: Upload combined binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-binaries
+          path: .executables/*
+          if-no-files-found: error

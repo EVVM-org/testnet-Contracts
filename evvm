@@ -41,7 +41,25 @@ fi
 
 # Execute the binary
 if [[ -x "$EXECUTABLE" ]]; then
+  # run and capture exit status so we can handle common failure cases
   "$EXECUTABLE" "$@"
+  status=$?
+  if [[ $status -ne 0 ]]; then
+    # exit code 126 means the kernel refused to execute the file (wrong format/arch)
+    if [[ $status -eq 126 ]]; then
+      echo "Warning: native CLI binary failed to execute (exit code 126)."
+      echo "This usually means the file in .executables/ is not built for your platform."
+      # try a fallback to Bun if available
+      if command -v bun >/dev/null 2>&1; then
+        echo "Attempting to run the CLI via Bun fallback..."
+        bun run cli/index.ts "$@"
+        exit $?
+      else
+        echo "bun is not installed. Install Bun or rebuild the binaries on the correct OS." >&2
+      fi
+    fi
+    exit $status
+  fi
 else
   echo "Executable not found or not executable: $EXECUTABLE"
   echo "Please ensure the executable exists and has execute permissions."

@@ -170,9 +170,11 @@ Quick Start (CLI): https://www.evvm.info/docs/QuickStart
 - **RPC timeouts**: CLI automatically tries fallback RPCs; set `RPC_URL` in `.env` to a reliable endpoint.
 - **Wallet not found**: import with `cast wallet import <name> --interactive`.
 - **Bun missing**: install Bun (`curl -fsSL https://bun.sh/install | bash`).
+- **Native binary fails (exit 126)**: if you see "cannot execute binary file" the wrapper will now try running the CLI via `bun run cli/index.ts` automatically when Bun is available. This works as a fallback until correct platform-specific binaries are built.
 - **Tests**: run `./evvm developer --runTest` (Linux/Mac) or `evvm.bat developer --runTest` (Windows), or `forge test`.
 - **Script not executable (Linux/Mac)**: run `chmod +x ./evvm` and ensure `.executables/` binaries have execute permissions.
 - **Wrong architecture detected**: The wrapper scripts auto-detect OS/architecture. If issues occur, manually run the correct binary from `.executables/`.
+- **Binaries built on the wrong host**: macOS and Windows executables must be compiled on their respective platforms. Building on Linux will produce a Linux ELF file regardless of the filename, which leads to "cannot execute binary file" errors on macOS. Use `npm run build-macos` on a Mac and `npm run build-windows` on Windows, or rely on the Bun fallback described below.
 
 Files & structure (short)
 
