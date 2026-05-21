@@ -226,7 +226,7 @@ contract P2PSwap is EvvmService {
         address tokenB,
         uint256 orderId,
         uint256 amountOfTokenBToFill,
-        bool useFixedFee, // ← el único parámetro nuevo
+        bool useFixedFee,
         address senderExecutor,
         address originExecutor,
         uint256 nonce,
