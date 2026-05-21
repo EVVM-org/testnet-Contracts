@@ -60,6 +60,13 @@ library P2PSwapHashUtils {
         uint256 orderId
     ) internal pure returns (bytes32) {
         return
-            keccak256(abi.encode("dispatchOrder", tokenA, tokenB, orderId));
+            keccak256(
+                abi.encode(
+                    "dispatchOrder",
+                    tokenA,
+                    tokenB,
+                    orderId
+                )
+            );
     }
 }
