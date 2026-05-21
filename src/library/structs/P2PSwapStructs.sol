@@ -24,6 +24,7 @@ library P2PSwapStructs {
         address tokenB;
         uint256 maxSlot;
         uint256 ordersAvailable;
+        uint256 medianPrice;
     }
 
     /**
