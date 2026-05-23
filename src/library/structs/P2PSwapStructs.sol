@@ -20,8 +20,6 @@ library P2PSwapStructs {
      * @param ordersAvailable Active order count
      */
     struct MarketInformation {
-        address tokenA;
-        address tokenB;
         uint256 maxSlot;
         uint256 ordersAvailable;
         uint256 medianPrice;
@@ -36,8 +34,9 @@ library P2PSwapStructs {
      */
     struct Order {
         address seller;
-        uint256 amountA;
-        uint256 amountB;
+        uint256 offeredAmount;
+        uint256 requestedAmount;
+        uint256 amountAvailable;
     }
 
     /**

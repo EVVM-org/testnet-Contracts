@@ -44,6 +44,10 @@ contract P2PSwap is EvvmService {
     error OrderDoesNotExist();
     /// @notice Thrown when the payment amount is below the minimum required.
     error InsufficientPayment();
+    /// @notice Thrown when trying to fill an order with no available amount.
+    error OrderIsEmpty();
+    /// @notice Thrown when trying to fill more than the available amount in the order.
+    error InsufficientAmountToFill();
 
     /// @notice Current admin address with a pending proposal mechanism.
     ProposalStructs.AddressTypeProposal admin;
@@ -77,30 +81,12 @@ contract P2PSwap is EvvmService {
         });
     }
 
-    /**
-     * @notice Creates a new limit order in a trading market.
-     * @dev Locks tokenA in Core.sol. The market is identified by the hash of (tokenA, tokenB).
-     *      If all slots are occupied, a new slot is allocated; otherwise the first empty slot is reused.
-     *      The VWAP of the market is updated after each order.
-     * @param user Seller address.
-     * @param tokenA Address of the token being sold.
-     * @param tokenB Address of the token being bought.
-     * @param amountA Amount of tokenA offered.
-     * @param amountB Amount of tokenB requested.
-     * @param senderExecutor Address of the calling executor (must match msg.sender).
-     * @param originExecutor Origin address for signature validation.
-     * @param nonce Async nonce for this operation.
-     * @param signature Seller's authorization signature.
-     * @param priorityFeePay Optional priority fee in tokenA for the executor.
-     * @param noncePay Nonce for the Core payment that locks tokenA.
-     * @param signaturePay Signature for the Core payment.
-     */
     function makeOrder(
         address user,
-        address tokenA,
-        address tokenB,
-        uint256 amountA,
-        uint256 amountB,
+        address offeredToken,
+        address requestedToken,
+        uint256 offeredAmount,
+        uint256 requestedAmount,
         address senderExecutor,
         address originExecutor,
         uint256 nonce,
@@ -112,7 +98,12 @@ contract P2PSwap is EvvmService {
         core.validateAndConsumeNonce(
             user,
             senderExecutor,
-            Hash.hashDataForMakeOrder(tokenA, tokenB, amountA, amountB),
+            Hash.hashDataForMakeOrder(
+                offeredToken,
+                requestedToken,
+                offeredAmount,
+                requestedAmount
+            ),
             originExecutor,
             nonce,
             true,
@@ -121,8 +112,8 @@ contract P2PSwap is EvvmService {
 
         requestPay(
             user,
-            tokenA,
-            amountA,
+            offeredToken,
+            offeredAmount,
             priorityFeePay,
             originExecutor,
             noncePay,
@@ -131,11 +122,10 @@ contract P2PSwap is EvvmService {
         );
 
         //we get the market id from the token pair
-        bytes32 marketId = getMarketId(tokenA, tokenB);
+        bytes32 marketId = getMarketId(offeredToken, requestedToken);
 
         uint256 orderId;
 
-        // we start by checking if the market exists, if not we create it
         if (
             marketInformation[marketId].maxSlot ==
             marketInformation[marketId].ordersAvailable
@@ -160,39 +150,25 @@ contract P2PSwap is EvvmService {
         // we create the order
         orders[marketId][orderId] = Structs.Order({
             seller: user,
-            amountA: amountA,
-            amountB: amountB
+            offeredAmount: offeredAmount,
+            requestedAmount: requestedAmount,
+            amountAvailable: offeredAmount
         });
 
         // we calculate the median price for the market and update it
         marketInformation[marketId].medianPrice = getVWAP(marketId);
 
         if (core.isAddressStaker(msg.sender) && priorityFeePay > 0)
-            makeCaPay(msg.sender, tokenA, priorityFeePay);
+            makeCaPay(msg.sender, offeredToken, priorityFeePay);
 
         // send some mate token reward to the executor (independent of the priorityFee the user attached)
-        _rewardExecutor(msg.sender, priorityFeePay > 0 ? 3 : 2);
+        _rewardExecutor(msg.sender, 2);
     }
 
-    /**
-     * @notice Cancels an existing order and refunds locked tokenA to the seller.
-     * @dev Only the order owner can cancel. The market slot is recycled for new orders.
-     * @param user Order owner address.
-     * @param tokenA Token being sold.
-     * @param tokenB Token being bought.
-     * @param orderId Order slot to cancel.
-     * @param senderExecutor Address of the calling service (must match msg.sender).
-     * @param originExecutor Origin address for signature validation.
-     * @param nonce Async nonce for this operation.
-     * @param signature Cancellation authorization signature.
-     * @param priorityFeePay Optional priority fee for the executor.
-     * @param noncePay Nonce for the priority fee payment.
-     * @param signaturePay Signature for the priority fee payment.
-     */
     function cancelOrder(
         address user,
-        address tokenA,
-        address tokenB,
+        address offeredToken,
+        address requestedToken,
         uint256 orderId,
         address senderExecutor,
         address originExecutor,
@@ -205,14 +181,14 @@ contract P2PSwap is EvvmService {
         core.validateAndConsumeNonce(
             user,
             senderExecutor,
-            Hash.hashDataForCancelOrder(tokenA, tokenB, orderId),
+            Hash.hashDataForCancelOrder(offeredToken, requestedToken, orderId),
             originExecutor,
             nonce,
             true,
             signature
         );
 
-        bytes32 marketId = getMarketId(tokenA, tokenB);
+        bytes32 marketId = getMarketId(offeredToken, requestedToken);
 
         // we store the order in memory to save gas
         Structs.Order memory order = orders[marketId][orderId];
@@ -232,13 +208,14 @@ contract P2PSwap is EvvmService {
                 signaturePay
             );
 
-        // we delete the order
-        _clearOrderAndUpdateMarket(marketId, orderId);
+        makeCaPay(user, offeredToken, order.amountAvailable);
+
+        orders[marketId][orderId].seller = address(0);
+        orders[marketId][orderId].amountAvailable = 0;
+        marketInformation[marketId].ordersAvailable--;
 
         // we calculate the median price for the market and update it
         marketInformation[marketId].medianPrice = getVWAP(marketId);
-
-        makeCaPay(user, tokenA, order.amountA);
 
         if (core.isAddressStaker(msg.sender) && priorityFeePay > 0)
             makeCaPay(
@@ -249,30 +226,14 @@ contract P2PSwap is EvvmService {
 
         _rewardExecutor(msg.sender, priorityFeePay > 0 ? 3 : 2);
     }
-    
-    /**
-     * @notice Fills an existing order, paying tokenB to receive tokenA.
-     * @dev fee = amountB * percentageFee / 10_000. Overpayment is automatically refunded.
-     *      The fee is split among the seller, the protocol, and the executor per basisPointsForReward.
-     * @param user Buyer address filling the order.
-     * @param tokenA Token being bought by the filler (tokenA of the order).
-     * @param tokenB Token being sold by the filler (tokenB of the order).
-     * @param orderId Order slot to fill.
-     * @param amountOfTokenBToFill Amount of tokenB sent by the buyer (must be >= amountB + fee).
-     * @param senderExecutor Address of the calling executor (must match msg.sender).
-     * @param originExecutor Origin address for signature validation.
-     * @param nonce Async nonce for this operation.
-     * @param signature Buyer's authorization signature.
-     * @param priorityFeePay Optional priority fee in the principal token for the executor.
-     * @param noncePay Nonce for the Core payment.
-     * @param signaturePay Signature for the Core payment.
-     */
+
     function dispatchOrder(
         address user,
-        address tokenA,
-        address tokenB,
+        address offeredToken,
+        address requestedToken,
         uint256 orderId,
-        uint256 amountOfTokenBToFill,
+        uint256 receivedAmount,
+        uint256 giveAmount,
         address senderExecutor,
         address originExecutor,
         uint256 nonce,
@@ -281,12 +242,19 @@ contract P2PSwap is EvvmService {
         uint256 noncePay,
         bytes calldata signaturePay
     ) external {
+        bytes32 market = getMarketId(offeredToken, requestedToken);
+        Structs.Order storage order = orders[market][orderId];
+
+        if (order.seller == address(0)) revert OrderDoesNotExist();
+
+        if (order.amountAvailable == 0) revert OrderIsEmpty();
+
         core.validateAndConsumeNonce(
             user,
             senderExecutor,
             Hash.hashDataForDispatchOrder(
-                tokenA,
-                tokenB,
+                offeredToken,
+                requestedToken,
                 orderId
             ),
             originExecutor,
@@ -295,20 +263,24 @@ contract P2PSwap is EvvmService {
             signature
         );
 
-        bytes32 market = getMarketId(tokenA, tokenB);
-        Structs.Order storage order = orders[market][orderId];
+        if (order.amountAvailable < giveAmount)
+            revert InsufficientAmountToFill();
 
-        if (order.seller == address(0)) revert OrderDoesNotExist();
+        if (receivedAmount < giveAmount) revert InsufficientPayment();
 
-        uint256 fee = applyBasisPoints(order.amountB, percentageFee.current);
-        uint256 fullRequired = order.amountB + fee;
+        uint256 paymentAmount = (receivedAmount * order.requestedAmount) /
+            order.offeredAmount;
 
-        if (amountOfTokenBToFill < fullRequired) revert InsufficientPayment();
+        uint256 fee = applyBasisPoints(paymentAmount, percentageFee.current);
+
+        uint256 totalPayment = paymentAmount + fee;
+
+        if (totalPayment > giveAmount) revert InsufficientPayment();
 
         requestPay(
             user,
-            tokenB,
-            amountOfTokenBToFill,
+            requestedToken,
+            giveAmount,
             priorityFeePay,
             originExecutor,
             noncePay,
@@ -316,11 +288,9 @@ contract P2PSwap is EvvmService {
             signaturePay
         );
 
-        bool didRefund = amountOfTokenBToFill > fullRequired;
-        if (didRefund)
-            makeCaPay(user, tokenB, amountOfTokenBToFill - fullRequired);
+        orders[market][orderId].amountAvailable -= giveAmount;
 
-        uint256 sellerAmount = order.amountB +
+        uint256 sellerAmount = giveAmount +
             applyBasisPoints(fee, basisPointsForReward.seller);
         uint256 executorAmount = priorityFeePay +
             applyBasisPoints(fee, basisPointsForReward.mateStaker);
@@ -335,11 +305,20 @@ contract P2PSwap is EvvmService {
             executorAmount,
             msg.sender
         );
-        makeDisperseCaPay(toData, tokenB, sellerAmount + executorAmount);
+        makeDisperseCaPay(
+            toData,
+            requestedToken,
+            sellerAmount + executorAmount
+        );
 
-        makeCaPay(user, tokenA, order.amountA);
-        _rewardExecutor(msg.sender, didRefund ? 5 : 4);
-        _clearOrderAndUpdateMarket(market, orderId);
+        makeCaPay(user, offeredToken, giveAmount);
+
+        if (orders[market][orderId].amountAvailable == 0) {
+            orders[market][orderId].seller = address(0);
+            marketInformation[market].ordersAvailable--;
+        }
+
+        _rewardExecutor(msg.sender, 4);
     }
 
     /**
@@ -382,9 +361,9 @@ contract P2PSwap is EvvmService {
 
         for (uint256 i = 1; i <= maxSlot; i++) {
             Structs.Order storage o = orders[marketId][i];
-            if (o.seller != address(0)) {
-                totalA += o.amountA;
-                totalB += o.amountB;
+            if (o.seller != address(0) && o.amountAvailable > 0) {
+                totalA += o.offeredAmount;
+                totalB += o.requestedAmount;
             }
         }
         return totalA == 0 ? 0 : (totalB * 1e18) / totalA;
@@ -403,18 +382,5 @@ contract P2PSwap is EvvmService {
                 core.getRewardAmount() * multiplier
             );
         }
-    }
-
-    /**
-     * @dev Deletes an order and decrements the active order count for the market.
-     * @param marketId Market containing the order.
-     * @param orderId Slot ID of the order to clear.
-     */
-    function _clearOrderAndUpdateMarket(
-        bytes32 marketId,
-        uint256 orderId
-    ) internal {
-        orders[marketId][orderId].seller = address(0);
-        marketInformation[marketId].ordersAvailable--;
     }
 }
