@@ -9,6 +9,9 @@ import {
 import {
     P2PSwapStructs as Structs
 } from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
+import {
+    P2PSwapError as Error
+} from "@evvm/testnet-contracts/library/errors/P2PSwapError.sol";
 
 import {EvvmService} from "@evvm/testnet-contracts/library/EvvmService.sol";
 import {CoreStructs} from "@evvm/testnet-contracts/interfaces/ICore.sol";
@@ -38,15 +41,6 @@ import {
  */
 
 contract P2PSwap is EvvmService {
-    /// @notice Thrown when the caller is not the order seller.
-    error NotTheSeller();
-    /// @notice Thrown when the referenced order does not exist.
-    error OrderIsUnavailable();
-    /// @notice Thrown when the payment amount is below the minimum required.
-    error InsufficientPayment();
-    /// @notice Thrown when trying to fill more than the available amount in the order.
-    error InsufficientAmountToFill();
-
     /// @notice Current admin address with a pending proposal mechanism.
     ProposalStructs.AddressTypeProposal admin;
     /// @notice Fee split percentages in basis points (seller / service / staker).
@@ -79,6 +73,24 @@ contract P2PSwap is EvvmService {
         });
     }
 
+    /**
+     * @notice Places a new sell order in the order book for a token pair.
+     * @dev Locks `offeredAmount` of `offeredToken` from `user` into the contract.
+     *      Assigns the order to the first available slot or opens a new one.
+     *      Updates the market VWAP after insertion.
+     * @param user Address of the seller creating the order.
+     * @param offeredToken Token the seller is offering.
+     * @param requestedToken Token the seller wants in return.
+     * @param offeredAmount Total amount of `offeredToken` being offered.
+     * @param requestedAmount Total amount of `requestedToken` expected for the full offer.
+     * @param senderExecutor Address of the executor relaying the order action.
+     * @param originExecutor Address of the origin executor for nonce validation.
+     * @param nonce Async nonce authorizing this action.
+     * @param signature User's ECDSA signature over the order parameters.
+     * @param priorityFeePay Priority fee in `offeredToken` paid to the executor.
+     * @param noncePay Async nonce authorizing the payment.
+     * @param signaturePay User's ECDSA signature authorizing the payment.
+     */
     function makeOrder(
         address user,
         address offeredToken,
@@ -163,6 +175,22 @@ contract P2PSwap is EvvmService {
         _rewardExecutor(msg.sender, 2);
     }
 
+    /**
+     * @notice Cancels an existing order and returns the remaining offered tokens to the seller.
+     * @dev Only the original seller can cancel. Returns `amountAvailable` of `offeredToken` to `user`.
+     *      Updates the market VWAP after removal.
+     * @param user Address of the seller who owns the order.
+     * @param offeredToken Token that was offered in the order.
+     * @param requestedToken Token that was requested in the order.
+     * @param orderId Slot ID of the order to cancel.
+     * @param senderExecutor Address of the executor relaying the cancel action.
+     * @param originExecutor Address of the origin executor for nonce validation.
+     * @param nonce Async nonce authorizing this action.
+     * @param signature User's ECDSA signature over the cancel parameters.
+     * @param priorityFeePay Priority fee in MATE token paid to the executor (0 if none).
+     * @param noncePay Async nonce authorizing the priority fee payment.
+     * @param signaturePay User's ECDSA signature authorizing the priority fee payment.
+     */
     function cancelOrder(
         address user,
         address offeredToken,
@@ -192,7 +220,7 @@ contract P2PSwap is EvvmService {
         Structs.Order memory order = orders[marketId][orderId];
 
         // we check if the order exists and if the user is the seller
-        if (order.seller != user) revert NotTheSeller();
+        if (order.seller != user) revert Error.NotTheSeller();
 
         if (priorityFeePay > 0)
             requestPay(
@@ -225,6 +253,26 @@ contract P2PSwap is EvvmService {
         _rewardExecutor(msg.sender, priorityFeePay > 0 ? 3 : 2);
     }
 
+    /**
+     * @notice Fills an existing order partially or fully.
+     * @dev Buyer receives `amountOut` of `offeredToken`. Payment is proportional to the order price.
+     *      The fee is split: seller (50%), service (40%, stays in contract), executor (10%).
+     *      Reverts if `totalPayment + fee` exceeds `amountInMax`.
+     *      If the order is fully filled, the slot is freed and the order count decremented.
+     * @param user Address of the buyer filling the order.
+     * @param offeredToken Token the seller is offering (what the buyer receives).
+     * @param requestedToken Token the seller wants in return (what the buyer pays).
+     * @param orderId Slot ID of the order to fill.
+     * @param amountOut Amount of `offeredToken` the buyer wants to receive.
+     * @param amountInMax Maximum amount of `requestedToken` the buyer is willing to pay, including fee.
+     * @param senderExecutor Address of the executor relaying the fill action.
+     * @param originExecutor Address of the origin executor for nonce validation.
+     * @param nonce Async nonce authorizing this action.
+     * @param signature User's ECDSA signature over the dispatch parameters.
+     * @param priorityFeePay Priority fee in `requestedToken` paid to the executor.
+     * @param noncePay Async nonce authorizing the payment.
+     * @param signaturePay User's ECDSA signature authorizing the payment.
+     */
     function dispatchOrder(
         address user,
         address offeredToken,
@@ -243,10 +291,10 @@ contract P2PSwap is EvvmService {
         bytes32 market = getMarketId(offeredToken, requestedToken);
         Structs.Order storage order = orders[market][orderId];
 
-        if (order.seller == address(0)) revert OrderIsUnavailable();
+        if (order.seller == address(0)) revert Error.OrderIsUnavailable();
 
         if (order.amountAvailable < amountOut)
-            revert InsufficientAmountToFill();
+            revert Error.InsufficientAmountToFill();
 
         core.validateAndConsumeNonce(
             user,
@@ -267,14 +315,12 @@ contract P2PSwap is EvvmService {
             order.offeredAmount,
             order.requestedAmount
         );
-        /*= (amountOut * order.requestedAmount) /
-            order.offeredAmount;*/
 
         uint256 fee = getFeePaymentAmount(netPaymentAmount);
 
         uint256 totalPayment = netPaymentAmount + fee;
 
-        if (totalPayment > amountInMax) revert InsufficientPayment();
+        if (totalPayment > amountInMax) revert Error.InsufficientPayment();
 
         requestPay(
             user,
@@ -346,6 +392,14 @@ contract P2PSwap is EvvmService {
         return (amount * basisPoints) / 10_000;
     }
 
+    /**
+     * @notice Calculates the base payment amount (excluding fee) for a partial fill.
+     * @dev Uses the order's original price ratio: netPayment = amountOut * requestedAmount / offeredAmount.
+     * @param amountOut Amount of `offeredToken` the buyer wants to receive.
+     * @param offeredAmount Total `offeredToken` amount in the order (price denominator).
+     * @param requestedAmount Total `requestedToken` amount in the order (price numerator).
+     * @return Net amount of `requestedToken` owed before fees.
+     */
     function getNetPaymentAmount(
         uint256 amountOut,
         uint256 offeredAmount,
@@ -354,6 +408,12 @@ contract P2PSwap is EvvmService {
         return (amountOut * requestedAmount) / offeredAmount;
     }
 
+    /**
+     * @notice Calculates the protocol fee applied on top of the net payment.
+     * @dev fee = netPaymentAmount * percentageFee / 10_000. Default rate is 500 (5%).
+     * @param netPaymentAmount Base payment amount before fees.
+     * @return Fee amount in `requestedToken` units.
+     */
     function getFeePaymentAmount(
         uint256 netPaymentAmount
     ) public view returns (uint256) {
