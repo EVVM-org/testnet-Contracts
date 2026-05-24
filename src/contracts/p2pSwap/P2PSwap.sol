@@ -302,7 +302,9 @@ contract P2PSwap is EvvmService {
             Hash.hashDataForDispatchOrder(
                 offeredToken,
                 requestedToken,
-                orderId
+                orderId,
+                amountOut,
+                amountInMax
             ),
             originExecutor,
             nonce,
