@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
+// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
+
+pragma solidity ^0.8.0;
+
+/**
+ * @title P2PSwapError - Error Definitions for P2P Swap service
+ * @author Mate labs
+ * @notice Custom error definitions for P2PSwap.sol contract
+ * @dev Gas-efficient custom errors for all P2PSwap.sol failure conditions.
+ */
+library P2PSwapError {
+    /// @notice Thrown when the caller is not the order seller.
+    error NotTheSeller();
+    /// @notice Thrown when the referenced order does not exist.
+    error OrderIsUnavailable();
+    /// @notice Thrown when the payment amount is below the minimum required.
+    error InsufficientPayment();
+    /// @notice Thrown when trying to fill more than the available amount in the order.
+    error InsufficientAmountToFill();
+}
