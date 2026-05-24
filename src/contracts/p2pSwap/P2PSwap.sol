@@ -41,11 +41,9 @@ contract P2PSwap is EvvmService {
     /// @notice Thrown when the caller is not the order seller.
     error NotTheSeller();
     /// @notice Thrown when the referenced order does not exist.
-    error OrderDoesNotExist();
+    error OrderIsUnavailable();
     /// @notice Thrown when the payment amount is below the minimum required.
     error InsufficientPayment();
-    /// @notice Thrown when trying to fill an order with no available amount.
-    error OrderIsEmpty();
     /// @notice Thrown when trying to fill more than the available amount in the order.
     error InsufficientAmountToFill();
 
@@ -232,8 +230,8 @@ contract P2PSwap is EvvmService {
         address offeredToken,
         address requestedToken,
         uint256 orderId,
-        uint256 receivedAmount,
-        uint256 giveAmount,
+        uint256 amountOut,
+        uint256 amountInMax,
         address senderExecutor,
         address originExecutor,
         uint256 nonce,
@@ -245,9 +243,10 @@ contract P2PSwap is EvvmService {
         bytes32 market = getMarketId(offeredToken, requestedToken);
         Structs.Order storage order = orders[market][orderId];
 
-        if (order.seller == address(0)) revert OrderDoesNotExist();
+        if (order.seller == address(0)) revert OrderIsUnavailable();
 
-        if (order.amountAvailable == 0) revert OrderIsEmpty();
+        if (order.amountAvailable < amountOut)
+            revert InsufficientAmountToFill();
 
         core.validateAndConsumeNonce(
             user,
@@ -263,24 +262,24 @@ contract P2PSwap is EvvmService {
             signature
         );
 
-        if (order.amountAvailable < giveAmount)
-            revert InsufficientAmountToFill();
+        uint256 netPaymentAmount = getNetPaymentAmount(
+            amountOut,
+            order.offeredAmount,
+            order.requestedAmount
+        );
+        /*= (amountOut * order.requestedAmount) /
+            order.offeredAmount;*/
 
-        if (receivedAmount < giveAmount) revert InsufficientPayment();
+        uint256 fee = getFeePaymentAmount(netPaymentAmount);
 
-        uint256 paymentAmount = (receivedAmount * order.requestedAmount) /
-            order.offeredAmount;
+        uint256 totalPayment = netPaymentAmount + fee;
 
-        uint256 fee = applyBasisPoints(paymentAmount, percentageFee.current);
-
-        uint256 totalPayment = paymentAmount + fee;
-
-        if (totalPayment > giveAmount) revert InsufficientPayment();
+        if (totalPayment > amountInMax) revert InsufficientPayment();
 
         requestPay(
             user,
             requestedToken,
-            giveAmount,
+            amountInMax,
             priorityFeePay,
             originExecutor,
             noncePay,
@@ -288,13 +287,9 @@ contract P2PSwap is EvvmService {
             signaturePay
         );
 
-        orders[market][orderId].amountAvailable -= giveAmount;
-        if (orders[market][orderId].amountAvailable == 0) {
-            orders[market][orderId].seller = address(0);
-            marketInformation[market].ordersAvailable--;
-        }
+        orders[market][orderId].amountAvailable -= amountOut;
 
-        uint256 sellerAmount = paymentAmount +
+        uint256 sellerAmount = netPaymentAmount +
             applyBasisPoints(fee, basisPointsForReward.seller);
         uint256 executorAmount = priorityFeePay +
             applyBasisPoints(fee, basisPointsForReward.mateStaker);
@@ -315,7 +310,12 @@ contract P2PSwap is EvvmService {
             sellerAmount + executorAmount
         );
 
-        makeCaPay(user, offeredToken, giveAmount);
+        makeCaPay(user, offeredToken, amountOut);
+
+        if (orders[market][orderId].amountAvailable == 0) {
+            orders[market][orderId].seller = address(0);
+            marketInformation[market].ordersAvailable--;
+        }
 
         _rewardExecutor(msg.sender, 4);
     }
@@ -344,6 +344,20 @@ contract P2PSwap is EvvmService {
         uint256 basisPoints
     ) internal pure returns (uint256) {
         return (amount * basisPoints) / 10_000;
+    }
+
+    function getNetPaymentAmount(
+        uint256 amountOut,
+        uint256 offeredAmount,
+        uint256 requestedAmount
+    ) public pure returns (uint256) {
+        return (amountOut * requestedAmount) / offeredAmount;
+    }
+
+    function getFeePaymentAmount(
+        uint256 netPaymentAmount
+    ) public view returns (uint256) {
+        return applyBasisPoints(netPaymentAmount, percentageFee.current);
     }
 
     /**
