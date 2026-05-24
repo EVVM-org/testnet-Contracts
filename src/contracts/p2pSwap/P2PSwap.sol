@@ -46,7 +46,7 @@ contract P2PSwap is EvvmService {
     /// @notice Current admin address with a pending proposal mechanism.
     ProposalStructs.AddressTypeProposal admin;
     /// @notice Fee split percentages in basis points (seller / service / staker).
-    Structs.Percentage basisPointsForReward;
+    Structs.PercentageProposal basisPointsForReward;
     /// @notice Proportional fee rate in basis points applied to fills (500 = 5%).
     ProposalStructs.UintTypeProposal percentageFee;
 
@@ -75,10 +75,18 @@ contract P2PSwap is EvvmService {
     ) EvvmService(_coreAddress, _stakingAddress) {
         admin.current = _admin;
         percentageFee.current = 500;
-        basisPointsForReward = Structs.Percentage({
-            seller: 5000,
-            service: 4000,
-            mateStaker: 1000
+        basisPointsForReward = Structs.PercentageProposal({
+            current: Structs.Percentage({
+                seller: 5000,
+                service: 4000,
+                mateStaker: 1000
+            }),
+            proposed: Structs.Percentage({
+                seller: 0,
+                service: 0,
+                mateStaker: 0
+            }),
+            proposalTime: 0
         });
     }
 
@@ -347,9 +355,9 @@ contract P2PSwap is EvvmService {
         orders[market][orderId].amountAvailable -= amountOut;
 
         uint256 sellerAmount = netPaymentAmount +
-            applyBasisPoints(fee, basisPointsForReward.seller);
+            applyBasisPoints(fee, basisPointsForReward.current.seller);
         uint256 executorAmount = priorityFeePay +
-            applyBasisPoints(fee, basisPointsForReward.mateStaker);
+            applyBasisPoints(fee, basisPointsForReward.current.mateStaker);
 
         CoreStructs.DisperseCaPayMetadata[]
             memory toData = new CoreStructs.DisperseCaPayMetadata[](2);
@@ -445,6 +453,52 @@ contract P2PSwap is EvvmService {
             current: percentageFee.proposal,
             proposal: 0,
             timeToAccept: 0
+        });
+    }
+
+    function proposeBasisPointsForReward(
+        uint256 _seller,
+        uint256 _service,
+        uint256 _mateStaker
+    ) external onlyAdmin {
+        if (_seller + _service + _mateStaker != 10_000)
+            revert Error.InvalidBasisPoints();
+
+        basisPointsForReward = Structs.PercentageProposal({
+            current: basisPointsForReward.current,
+            proposed: Structs.Percentage({
+                seller: _seller,
+                service: _service,
+                mateStaker: _mateStaker
+            }),
+            proposalTime: block.timestamp + TIME_TO_ACCEPT_PROPOSAL
+        });
+    }
+
+    function rejectProposalBasisPointsForReward() external onlyAdmin {
+        basisPointsForReward = Structs.PercentageProposal({
+            current: basisPointsForReward.current,
+            proposed: Structs.Percentage({
+                seller: 0,
+                service: 0,
+                mateStaker: 0
+            }),
+            proposalTime: 0
+        });
+    }
+
+    function acceptBasisPointsForReward() external onlyAdmin {
+        if (block.timestamp < basisPointsForReward.proposalTime)
+            revert Error.ProposalNotReadyToAccept();
+
+        basisPointsForReward = Structs.PercentageProposal({
+            current: basisPointsForReward.proposed,
+            proposed: Structs.Percentage({
+                seller: 0,
+                service: 0,
+                mateStaker: 0
+            }),
+            proposalTime: 0
         });
     }
 

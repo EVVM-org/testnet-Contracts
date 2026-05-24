@@ -26,4 +26,6 @@ library P2PSwapError {
     error ProposalNotReadyToAccept();
     /// @notice Thrown when the sender is not the proposed admin for an admin change.
     error SenderIsNotTheProposedAdmin();
+    /// @notice Thrown when the provided basis points value is invalid (e.g., exceeds 100% or has more than 2 decimal places).
+    error InvalidBasisPoints();
 }

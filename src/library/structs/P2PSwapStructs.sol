@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
+
 pragma solidity ^0.8.0;
 
 /**
@@ -67,5 +68,11 @@ library P2PSwapStructs {
         uint256 seller;
         uint256 service;
         uint256 mateStaker;
+    }
+
+    struct PercentageProposal {
+        Percentage current;
+        Percentage proposed;
+        uint256 proposalTime;
     }
 }
