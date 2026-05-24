@@ -289,8 +289,12 @@ contract P2PSwap is EvvmService {
         );
 
         orders[market][orderId].amountAvailable -= giveAmount;
+        if (orders[market][orderId].amountAvailable == 0) {
+            orders[market][orderId].seller = address(0);
+            marketInformation[market].ordersAvailable--;
+        }
 
-        uint256 sellerAmount = giveAmount +
+        uint256 sellerAmount = paymentAmount +
             applyBasisPoints(fee, basisPointsForReward.seller);
         uint256 executorAmount = priorityFeePay +
             applyBasisPoints(fee, basisPointsForReward.mateStaker);
@@ -312,11 +316,6 @@ contract P2PSwap is EvvmService {
         );
 
         makeCaPay(user, offeredToken, giveAmount);
-
-        if (orders[market][orderId].amountAvailable == 0) {
-            orders[market][orderId].seller = address(0);
-            marketInformation[market].ordersAvailable--;
-        }
 
         _rewardExecutor(msg.sender, 4);
     }
