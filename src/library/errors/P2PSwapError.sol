@@ -18,4 +18,12 @@ library P2PSwapError {
     error InsufficientPayment();
     /// @notice Thrown when trying to fill more than the available amount in the order.
     error InsufficientAmountToFill();
+    /// @notice Thrown when the sender is not the current admin for admin-restricted functions.
+    error SenderIsNotAdmin();
+    /// @notice Thrown when the provided address input is invalid (e.g., zero address or not a contract when expected).
+    error IncorrectAddressInput();
+    /// @notice Thrown when the order is not in a state that allows it to be accepted.
+    error ProposalNotReadyToAccept();
+    /// @notice Thrown when the sender is not the proposed admin for an admin change.
+    error SenderIsNotTheProposedAdmin();
 }

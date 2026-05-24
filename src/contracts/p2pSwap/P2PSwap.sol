@@ -41,6 +41,8 @@ import {
  */
 
 contract P2PSwap is EvvmService {
+    /// @notice Time delay for accepting a new admin proposal (1 day).
+    uint256 constant TIME_TO_ACCEPT_PROPOSAL = 1 days;
     /// @notice Current admin address with a pending proposal mechanism.
     ProposalStructs.AddressTypeProposal admin;
     /// @notice Fee split percentages in basis points (seller / service / staker).
@@ -52,6 +54,13 @@ contract P2PSwap is EvvmService {
     mapping(bytes32 marketId => Structs.MarketInformation) marketInformation;
     /// @notice Stores orders indexed by market ID and order slot.
     mapping(bytes32 marketId => mapping(uint256 orderId => Structs.Order)) orders;
+
+    /// @notice Restricts access to the system administrator.
+    modifier onlyAdmin() {
+        if (msg.sender != admin.current) revert Error.SenderIsNotAdmin();
+
+        _;
+    }
 
     /**
      * @notice Initializes P2PSwap with Core, Staking, and admin addresses.
@@ -366,6 +375,77 @@ contract P2PSwap is EvvmService {
         }
 
         _rewardExecutor(msg.sender, 4);
+    }
+
+    /**
+     * @notice Proposes a new administrator (1-day delay).
+     * @param _newOwner Address of the proposed admin.
+     */
+    function proposeAdmin(address _newOwner) external onlyAdmin {
+        if (_newOwner == address(0) || _newOwner == admin.current)
+            revert Error.IncorrectAddressInput();
+
+        admin = ProposalStructs.AddressTypeProposal({
+            current: admin.current,
+            proposal: _newOwner,
+            timeToAccept: block.timestamp + TIME_TO_ACCEPT_PROPOSAL
+        });
+    }
+
+    /// @notice Cancels a pending admin change proposal.
+    function rejectProposalAdmin() external onlyAdmin {
+        admin = ProposalStructs.AddressTypeProposal({
+            current: admin.current,
+            proposal: address(0),
+            timeToAccept: 0
+        });
+    }
+
+    /**
+     * @notice Finalizes the admin change after the time delay.
+     * @dev Must be called by the proposed admin.
+     */
+    function acceptAdmin() external {
+        if (block.timestamp < admin.timeToAccept)
+            revert Error.ProposalNotReadyToAccept();
+
+        if (msg.sender != admin.proposal)
+            revert Error.SenderIsNotTheProposedAdmin();
+
+        admin = ProposalStructs.AddressTypeProposal({
+            current: admin.proposal,
+            proposal: address(0),
+            timeToAccept: 0
+        });
+    }
+
+    function proposeBasisPercentageFee(uint256 _newFee) external onlyAdmin {
+        if (_newFee > 10_000) revert Error.IncorrectAddressInput();
+
+        percentageFee = ProposalStructs.UintTypeProposal({
+            current: percentageFee.current,
+            proposal: _newFee,
+            timeToAccept: block.timestamp + TIME_TO_ACCEPT_PROPOSAL
+        });
+    }
+
+    function rejectProposalBasisPercentageFee() external onlyAdmin {
+        percentageFee = ProposalStructs.UintTypeProposal({
+            current: percentageFee.current,
+            proposal: 0,
+            timeToAccept: 0
+        });
+    }
+
+    function acceptBasisPercentageFee() external onlyAdmin {
+        if (block.timestamp < percentageFee.timeToAccept)
+            revert Error.ProposalNotReadyToAccept();
+
+        percentageFee = ProposalStructs.UintTypeProposal({
+            current: percentageFee.proposal,
+            proposal: 0,
+            timeToAccept: 0
+        });
     }
 
     /**
