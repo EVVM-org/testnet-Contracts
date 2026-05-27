@@ -906,6 +906,11 @@ contract Core is Storage {
         return evvmMetadata.principalTokenAddress;
     }
 
+    /// @notice Returns the sentinel address for native ETH (address(0)).
+    function getETHAddress() external pure returns (address) {
+        return ETH_ADDRESS;
+    }
+
     /**
      * @notice Returns address(0), the sentinel used for the native chain currency in balance mappings.
      */
@@ -920,6 +925,15 @@ contract Core is Storage {
      */
     function getEvvmID() external view returns (uint256) {
         return evvmMetadata.EvvmID;
+    }
+
+    /**
+     * @notice Gets the timestamp before which the EVVM ID can be changed
+     * @dev Returns the window limit for modifying the EvvmID after deployment or last change
+     * @return Timestamp until which the EvvmID can be modified
+     */
+    function getWindowTimeToChangeEvvmID() external view returns (uint256) {
+        return windowTimeToChangeEvvmID;
     }
 
     /**
@@ -938,6 +952,15 @@ contract Core is Storage {
      */
     function getStakingContractAddress() external view returns (address) {
         return stakingContractAddress;
+    }
+
+    /**
+     * @notice Gets the authorized treasury contract address
+     * @dev Returns the address that can perform privileged balance operations
+     * @return Address of the integrated Treasury contract
+     */
+    function getTreasuryAddress() external view returns (address) {
+        return treasuryAddress;
     }
 
     /**
@@ -962,6 +985,15 @@ contract Core is Storage {
      */
     function isAddressStaker(address user) public view returns (bool) {
         return stakerList[user] == FLAG_IS_STAKER;
+    }
+
+    /**
+     * @notice Gets the staker status flag value
+     * @dev Returns the bytes1 constant used to mark an address as a registered staker
+     * @return The FLAG_IS_STAKER constant value
+     */
+    function getFlagIsStaker() external pure returns (bytes1) {
+        return FLAG_IS_STAKER;
     }
 
     /**
@@ -1029,6 +1061,15 @@ contract Core is Storage {
                 proposal: proposalImplementation,
                 timeToAccept: timeToAcceptImplementation
             });
+    }
+
+    /**
+     * @notice Gets the time delay required to accept an implementation upgrade proposal
+     * @dev Returns the constant delay period for implementation upgrades (30 days)
+     * @return Time delay in seconds for accepting implementation proposals
+     */
+    function getTimeToAcceptImplementation() external pure returns (uint256) {
+        return TIME_TO_ACCEPT_IMPLEMENTATION;
     }
 
     /**
@@ -1186,6 +1227,15 @@ contract Core is Storage {
      */
     function getTimeToDeleteMaxSupply() public view returns (uint256) {
         return timeToDeleteMaxSupply;
+    }
+
+    /**
+     * @notice Gets the time delay required to accept a governance proposal
+     * @dev Returns the constant delay period for admin, validator, list status, and reward proposals (1 day)
+     * @return Time delay in seconds for accepting governance proposals
+     */
+    function getTimeToAcceptProposal() external pure returns (uint256) {
+        return TIME_TO_ACCEPT_PROPOSAL;
     }
 
     //██ User Validation █████████████████████████████████████████████
