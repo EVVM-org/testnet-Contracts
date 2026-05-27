@@ -41,12 +41,15 @@ contract P2PSwap is EvvmService {
     Structs.PercentageProposal basisPointsForReward;
     /// @notice Proportional fee rate in basis points applied to fills (500 = 5%).
     ProposalStructs.UintTypeProposal percentageFee;
+    /// @notice Pending withdrawal proposal for collected fees, with time lock.
+    Structs.WithdrawalProposal withdrawalProposal;
 
     /// @notice Stores market metadata indexed by the hash of the token pair.
     mapping(bytes32 marketId => Structs.MarketInformation) marketInformation;
     /// @notice Stores orders indexed by market ID and order slot.
     mapping(bytes32 marketId => mapping(uint256 orderId => Structs.Order)) orders;
 
+    /// @notice Accumulated service fees per token, available for admin withdrawal.
     mapping(address token => uint256 amountCollected) totalFeesCollected;
 
     /// @notice Restricts access to the system administrator.
@@ -217,6 +220,11 @@ contract P2PSwap is EvvmService {
         uint256 noncePay,
         bytes calldata signaturePay
     ) external {
+        bytes32 marketId = getMarketId(offeredToken, requestedToken);
+
+        // we store the order in memory to save gas
+        Structs.Order memory order = orders[marketId][orderId];
+
         // we check if the order exists and if the user is the seller
         if (order.seller == address(0)) revert Error.OrderIsUnavailable();
         if (order.seller != user) revert Error.NotTheSeller();
@@ -230,11 +238,6 @@ contract P2PSwap is EvvmService {
             true,
             signature
         );
-
-        bytes32 marketId = getMarketId(offeredToken, requestedToken);
-
-        // we store the order in memory to save gas
-        Structs.Order memory order = orders[marketId][orderId];
 
         if (priorityFeePay > 0)
             requestPay(
@@ -439,6 +442,11 @@ contract P2PSwap is EvvmService {
         });
     }
 
+    /**
+     * @notice Proposes a new proportional fee rate in basis points.
+     * @dev Proposal requires 1-day timelock before acceptance.
+     * @param _newFee New fee rate in basis points (max 10_000 = 100%).
+     */
     function proposeBasisPercentageFee(uint256 _newFee) external onlyAdmin {
         if (_newFee > 10_000) revert Error.IncorrectAddressInput();
 
@@ -449,6 +457,7 @@ contract P2PSwap is EvvmService {
         });
     }
 
+    /// @notice Cancels a pending fee rate change proposal.
     function rejectProposalBasisPercentageFee() external onlyAdmin {
         percentageFee = ProposalStructs.UintTypeProposal({
             current: percentageFee.current,
@@ -457,6 +466,10 @@ contract P2PSwap is EvvmService {
         });
     }
 
+    /**
+     * @notice Finalizes the fee rate change after the time delay.
+     * @dev Can only be called by the admin once the timelock expires.
+     */
     function acceptBasisPercentageFee() external onlyAdmin {
         if (block.timestamp < percentageFee.timeToAccept)
             revert Error.ProposalNotReadyToAccept();
@@ -468,6 +481,13 @@ contract P2PSwap is EvvmService {
         });
     }
 
+    /**
+     * @notice Proposes a new fee distribution split among seller, service, and staker.
+     * @dev Proposal requires 1-day timelock. Sum must equal 10_000 basis points.
+     * @param _seller Basis points allocated to the order seller.
+     * @param _service Basis points allocated to the service contract.
+     * @param _mateStaker Basis points allocated to the MATE staker.
+     */
     function proposeBasisPointsForReward(
         uint256 _seller,
         uint256 _service,
@@ -487,6 +507,7 @@ contract P2PSwap is EvvmService {
         });
     }
 
+    /// @notice Cancels a pending fee distribution change proposal.
     function rejectProposalBasisPointsForReward() external onlyAdmin {
         basisPointsForReward = Structs.PercentageProposal({
             current: basisPointsForReward.current,
@@ -499,6 +520,10 @@ contract P2PSwap is EvvmService {
         });
     }
 
+    /**
+     * @notice Finalizes the fee distribution change after the time delay.
+     * @dev Can only be called by the admin once the timelock expires.
+     */
     function acceptBasisPointsForReward() external onlyAdmin {
         if (block.timestamp < basisPointsForReward.proposalTime)
             revert Error.ProposalNotReadyToAccept();
@@ -510,6 +535,67 @@ contract P2PSwap is EvvmService {
                 service: 0,
                 mateStaker: 0
             }),
+            proposalTime: 0
+        });
+    }
+
+    /**
+     * @notice Proposes a withdrawal of accumulated service fees.
+     * @dev Proposal requires 1-day timelock. Cannot exceed available collected fees.
+     * @param tokenToWithdraw Address of the token to withdraw.
+     * @param amountToWithdraw Amount of tokens to withdraw.
+     */
+    function proposeWithdrawal(
+        address tokenToWithdraw,
+        uint256 amountToWithdraw
+    ) external onlyAdmin {
+        if (amountToWithdraw == 0) revert Error.IncorrectInput();
+
+        if (totalFeesCollected[tokenToWithdraw] < amountToWithdraw)
+            revert Error.InsufficientAmount();
+
+        withdrawalProposal = Structs.WithdrawalProposal({
+            tokenToWithdraw: tokenToWithdraw,
+            amountToWithdraw: amountToWithdraw,
+            proposalTime: block.timestamp + TIME_TO_ACCEPT_PROPOSAL
+        });
+    }
+
+    /// @notice Cancels a pending withdrawal proposal.
+    function rejectProposalWithdrawal() external onlyAdmin {
+        withdrawalProposal = Structs.WithdrawalProposal({
+            tokenToWithdraw: address(0),
+            amountToWithdraw: 0,
+            proposalTime: 0
+        });
+    }
+
+    /**
+     * @notice Finalizes the withdrawal of accumulated fees after the time delay.
+     * @dev Can only be called by the admin once the timelock expires.
+     */
+    function acceptWithdrawal() external onlyAdmin {
+        if (block.timestamp < withdrawalProposal.proposalTime)
+            revert Error.ProposalNotReadyToAccept();
+
+        if (
+            totalFeesCollected[withdrawalProposal.tokenToWithdraw] <
+            withdrawalProposal.amountToWithdraw
+        ) revert Error.InsufficientPayment();
+
+        totalFeesCollected[
+            withdrawalProposal.tokenToWithdraw
+        ] -= withdrawalProposal.amountToWithdraw;
+
+        makeCaPay(
+            msg.sender,
+            withdrawalProposal.tokenToWithdraw,
+            withdrawalProposal.amountToWithdraw
+        );
+
+        withdrawalProposal = Structs.WithdrawalProposal({
+            tokenToWithdraw: address(0),
+            amountToWithdraw: 0,
             proposalTime: 0
         });
     }
@@ -595,6 +681,15 @@ contract P2PSwap is EvvmService {
     }
 
     /**
+     * @dev Accumulates service fees collected from trades.
+     * @param token Address of the token in which fees are collected.
+     * @param amount Fee amount to accumulate.
+     */
+    function collectFees(address token, uint256 amount) internal {
+        totalFeesCollected[token] += amount;
+    }
+
+    /**
      * @dev Sends a MATE token reward to the executor if it is a registered staker.
      * @param executor Address of the executor to reward.
      * @param multiplier Reward multiplier applied to the base reward amount (2–5).
@@ -607,5 +702,110 @@ contract P2PSwap is EvvmService {
                 core.getRewardAmount() * multiplier
             );
         }
+    }
+
+    //░▒▓█ Getters █████████████████████████████████████████████████████████████▓▒░
+
+    /// @notice Returns the current admin address.
+    /// @return Current admin address.
+    function getAdmin() external view returns (address) {
+        return admin.current;
+    }
+
+    /// @notice Returns the proposed admin address.
+    /// @return Proposed admin address (address(0) if none pending).
+    function getAdminProposal() external view returns (address) {
+        return admin.proposal;
+    }
+
+    /// @notice Returns the timestamp when the admin proposal becomes acceptable.
+    /// @return Unix timestamp when the proposal can be accepted.
+    function getAdminTimeToAccept() external view returns (uint256) {
+        return admin.timeToAccept;
+    }
+
+    /// @notice Returns the current proportional fee rate in basis points.
+    /// @return Current fee rate in basis points.
+    function getPercentageFee() external view returns (uint256) {
+        return percentageFee.current;
+    }
+
+    /// @notice Returns the proposed proportional fee rate in basis points.
+    /// @return Proposed fee rate in basis points.
+    function getPercentageFeeProposal() external view returns (uint256) {
+        return percentageFee.proposal;
+    }
+
+    /// @notice Returns the timestamp when the percentage fee proposal becomes acceptable.
+    /// @return Unix timestamp when the fee proposal can be accepted.
+    function getPercentageFeeTimeToAccept() external view returns (uint256) {
+        return percentageFee.timeToAccept;
+    }
+
+    /// @notice Returns the current fee distribution percentages.
+    /// @return Current Percentage struct with seller, service, and mateStaker splits.
+    function getBasisPointsForReward()
+        external
+        view
+        returns (Structs.Percentage memory)
+    {
+        return basisPointsForReward.current;
+    }
+
+    /// @notice Returns the proposed fee distribution percentages.
+    /// @return Proposed Percentage struct with seller, service, and mateStaker splits.
+    function getBasisPointsForRewardProposal()
+        external
+        view
+        returns (Structs.Percentage memory)
+    {
+        return basisPointsForReward.proposed;
+    }
+
+    /// @notice Returns the timestamp when the reward basis points proposal becomes acceptable.
+    /// @return Unix timestamp when the reward proposal can be accepted.
+    function getBasisPointsForRewardProposalTime()
+        external
+        view
+        returns (uint256)
+    {
+        return basisPointsForReward.proposalTime;
+    }
+
+    /// @notice Returns the pending withdrawal proposal.
+    /// @return WithdrawalProposal struct with token, amount, and proposal time.
+    function getWithdrawalProposal()
+        external
+        view
+        returns (Structs.WithdrawalProposal memory)
+    {
+        return withdrawalProposal;
+    }
+
+    /// @notice Returns the total fees collected for a specific token.
+    /// @param token Address of the token to query.
+    /// @return Total amount of fees collected in the specified token.
+    function getTotalFeesCollected(address token) external view returns (uint256) {
+        return totalFeesCollected[token];
+    }
+
+    /// @notice Returns the metadata for a given market.
+    /// @param marketId Market ID to query.
+    /// @return MarketInformation struct with maxSlot, ordersAvailable, and medianPrice.
+    function getMarketInformation(
+        bytes32 marketId
+    ) external view returns (Structs.MarketInformation memory) {
+        return marketInformation[marketId];
+    }
+
+    /// @notice Returns the order data for a given market and slot.
+    /// @param marketId Market ID containing the order.
+    /// @param orderId Slot ID of the order.
+    /// @return Order struct with seller, amounts, and availability.
+    function getOrder(
+        bytes32 marketId,
+        uint256 orderId
+    ) external view returns (Structs.Order memory) {
+        return orders[marketId][orderId];
     }
 }

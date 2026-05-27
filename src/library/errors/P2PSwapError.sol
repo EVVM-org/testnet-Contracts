@@ -28,10 +28,14 @@ library P2PSwapError {
     error SenderIsNotTheProposedAdmin();
     /// @notice Thrown when the provided basis points value is invalid (e.g., exceeds 100% or has more than 2 decimal places).
     error InvalidBasisPoints();
-    // @notice Thrown when the provided amount is zero, which is not allowed for certain operations.
+    /// @notice Thrown when the provided amount is zero, which is not allowed for certain operations.
     error ZeroAmount();
-    // @notice Thrown when the provided token pair is the same, which is not allowed for swaps.
+    /// @notice Thrown when the provided token pair is the same, which is not allowed for swaps.
     error SameTokenPair();
-    // @notice Thrown when the provided order ID is invalid (e.g., zero or does not correspond to an existing order).
+    /// @notice Thrown when an unexpected internal state is detected (e.g., order slot search inconsistency).
     error UnexpectedBehavior();
+    /// @notice Thrown when the input parameters for an operation are incorrect or do not meet the required conditions.
+    error IncorrectInput();
+    /// @notice Thrown when the provided amount is insufficient for the requested operation.
+    error InsufficientAmount();
 }
