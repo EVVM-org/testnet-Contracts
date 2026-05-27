@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.1.3] - Unreleased
 
+### Added
 
+- **P2PSwap.sol**: Complete architectural rewrite of the P2P swap contract, replacing the previous implementation with a streamlined order book system:
+  - Implemented core order operations (`makeOrder`, `cancelOrder`, `dispatchOrder`) with proportional fee calculation based on order price ratios and VWAP (Volume Weighted Average Price) tracking for market transparency
+  - Added administrative proposal system with 1-day timelock for critical parameter changes: admin transitions (`proposeAdmin`), fee rate adjustments (`proposeBasisPercentageFee`), fee distribution splits (`proposeBasisPointsForReward`), and service fee withdrawals (`proposeWithdrawal`)
+  - Added helper functions for price calculations and fee management: `getMarketId` (deterministic market ID generation), `applyBasisPoints` (basis point calculations), `getNetPaymentAmount` (proportional payment calculation), `getFeePaymentAmount` (protocol fee calculation), `getVWAP` (market price aggregation), and `collectFees` (service fee accumulation)
+  - Added 13 new getter functions to expose all state variables for frontend integration and transparency: `getAdmin`, `getAdminProposal`, `getAdminTimeToAccept`, `getPercentageFee`, `getPercentageFeeProposal`, `getPercentageFeeTimeToAccept`, `getBasisPointsForReward`, `getBasisPointsForRewardProposal`, `getBasisPointsForRewardProposalTime`, `getWithdrawalProposal`, `getTotalFeesCollected`, `getMarketInformation`, `getOrder`
+- **Core.sol**: Added 6 new getter functions to expose previously inaccessible state variables and constants: `getETHAddress` (returns `ETH_ADDRESS` constant), `getTreasuryAddress` (returns `treasuryAddress`), `getWindowTimeToChangeEvvmID` (returns `windowTimeToChangeEvvmID`), `getFlagIsStaker` (returns `FLAG_IS_STAKER` constant), `getTimeToAcceptProposal` (returns `TIME_TO_ACCEPT_PROPOSAL` constant), `getTimeToAcceptImplementation` (returns `TIME_TO_ACCEPT_IMPLEMENTATION` constant)
+
+### Changed
+
+- **P2PSwapStructs.sol**:
+  - Fixed typo in struct name: `WidrawalProposal` → `WithdrawalProposal` (updated all references in `P2PSwap.sol`)
+  - Added complete NatSpec documentation for all structs including `@notice`, `@dev`, and `@param` tags
+  - Reordered `pragma solidity` statement before `import` statements to comply with Solidity compiler requirements
+  - Updated `MarketInformation` struct NatSpec to remove non-existent `tokenA`/`tokenB` parameters and document actual fields (`maxSlot`, `ordersAvailable`, `medianPrice`)
+  - Updated `Order` struct NatSpec to reflect actual field names (`offeredAmount`, `requestedAmount`, `amountAvailable`) instead of generic `amountA`/`amountB`
+- **P2PSwapError.sol**: Corrected error descriptions to accurately reflect their usage context. `UnexpectedBehavior` now describes internal state inconsistencies (e.g., order slot search failures) rather than invalid order IDs. `IncorrectInput` and `InsufficientAmount` descriptions clarified for their specific use cases in withdrawal proposals
+
+### Fixed
+
+- **P2PSwap.sol**: Fixed critical bug in `makeOrder` where `ordersAvailable` counter was not incremented when reusing free order slots, causing permanent desynchronization between the counter and actual active orders. This led to potential underflow in `cancelOrder` and `dispatchOrder` when decrementing the counter, which would revert transactions and block order management for affected markets
+- **P2PSwap.sol**: Fixed compilation error in `cancelOrder` where the `order` variable was used in validation checks (`order.seller == address(0)`) before being declared, causing the contract to fail compilation
+- **P2PSwap.sol**: Added missing `collectFees` internal function that was being called in `dispatchOrder` to accumulate service fees but was never defined, causing compilation failure
 
 ## [3.1.2] - 2026-04-01
 
