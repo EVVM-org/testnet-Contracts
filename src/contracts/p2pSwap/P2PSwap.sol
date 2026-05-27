@@ -33,6 +33,8 @@ import {ProposalStructs} from "@evvm/testnet-contracts/library/utils/governance/
  */
 
 contract P2PSwap is EvvmService {
+    //░▒▓█ State Variables ██████████████████████████████████████████████████████████████▓▒░
+
     /// @notice Time delay for accepting a new admin proposal (1 day).
     uint256 constant TIME_TO_ACCEPT_PROPOSAL = 1 days;
     /// @notice Current admin address with a pending proposal mechanism.
@@ -58,6 +60,8 @@ contract P2PSwap is EvvmService {
 
         _;
     }
+
+    //░▒▓█ Constructor ████████████████████████████████████████████████████████████▓▒░
 
     /**
      * @notice Initializes P2PSwap with Core, Staking, and admin addresses.
@@ -86,6 +90,8 @@ contract P2PSwap is EvvmService {
             proposalTime: 0
         });
     }
+
+    //░▒▓█ Core Order Operations ████████████████████████████████████████████████████▓▒░
 
     /**
      * @notice Places a new sell order in the order book for a token pair.
@@ -400,6 +406,8 @@ contract P2PSwap is EvvmService {
         _rewardExecutor(msg.sender, 4);
     }
 
+    //░▒▓█ Admin Tools ████████████████████████████████████████████████████████████████▓▒░
+
     /**
      * @notice Proposes a new administrator (1-day delay).
      * @param _newOwner Address of the proposed admin.
@@ -442,6 +450,8 @@ contract P2PSwap is EvvmService {
         });
     }
 
+    //░▒▓█ Fee Management ██████████████████████████████████████████████████████████▓▒░
+
     /**
      * @notice Proposes a new proportional fee rate in basis points.
      * @dev Proposal requires 1-day timelock before acceptance.
@@ -480,6 +490,8 @@ contract P2PSwap is EvvmService {
             timeToAccept: 0
         });
     }
+
+    //░▒▓█ Reward Distribution █████████████████████████████████████████████████████▓▒░
 
     /**
      * @notice Proposes a new fee distribution split among seller, service, and staker.
@@ -538,6 +550,8 @@ contract P2PSwap is EvvmService {
             proposalTime: 0
         });
     }
+
+    //░▒▓█ Withdrawal Management █████████████████████████████████████████████████████▓▒░
 
     /**
      * @notice Proposes a withdrawal of accumulated service fees.
@@ -599,6 +613,8 @@ contract P2PSwap is EvvmService {
             proposalTime: 0
         });
     }
+
+    //░▒▓█ Helper Functions █████████████████████████████████████████████████████████▓▒░
 
     /**
      * @notice Returns the deterministic market ID for a token pair.
@@ -785,7 +801,9 @@ contract P2PSwap is EvvmService {
     /// @notice Returns the total fees collected for a specific token.
     /// @param token Address of the token to query.
     /// @return Total amount of fees collected in the specified token.
-    function getTotalFeesCollected(address token) external view returns (uint256) {
+    function getTotalFeesCollected(
+        address token
+    ) external view returns (uint256) {
         return totalFeesCollected[token];
     }
 
