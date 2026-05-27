@@ -3,40 +3,32 @@
 
 pragma solidity ^0.8.0;
 
-import {
-    P2PSwapHashUtils as Hash
-} from "@evvm/testnet-contracts/library/utils/signature/P2PSwapHashUtils.sol";
-import {
-    P2PSwapStructs as Structs
-} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
-import {
-    P2PSwapError as Error
-} from "@evvm/testnet-contracts/library/errors/P2PSwapError.sol";
+import {P2PSwapHashUtils as Hash} from "@evvm/testnet-contracts/library/utils/signature/P2PSwapHashUtils.sol";
+import {P2PSwapStructs as Structs} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
+import {P2PSwapError as Error} from "@evvm/testnet-contracts/library/errors/P2PSwapError.sol";
 
 import {EvvmService} from "@evvm/testnet-contracts/library/EvvmService.sol";
 import {CoreStructs} from "@evvm/testnet-contracts/interfaces/ICore.sol";
 
-import {
-    ProposalStructs
-} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+import {ProposalStructs} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
 
 /**
- /$$$$$$$  /$$$$$$ /$$$$$$$  /$$$$$$                                
-| $$__  $$/$$__  $| $$__  $$/$$__  $$                               
-| $$  \ $|__/  \ $| $$  \ $| $$  \__//$$  /$$  /$$ /$$$$$$  /$$$$$$ 
+ /$$$$$$$  /$$$$$$ /$$$$$$$  /$$$$$$
+| $$__  $$/$$__  $| $$__  $$/$$__  $$
+| $$  \ $|__/  \ $| $$  \ $| $$  \__//$$  /$$  /$$ /$$$$$$  /$$$$$$
 | $$$$$$$/ /$$$$$$| $$$$$$$|  $$$$$$| $$ | $$ | $$|____  $$/$$__  $$
 | $$____/ /$$____/| $$____/ \____  $| $$ | $$ | $$ /$$$$$$| $$  \ $$
 | $$     | $$     | $$      /$$  \ $| $$ | $$ | $$/$$__  $| $$  | $$
 | $$     | $$$$$$$| $$     |  $$$$$$|  $$$$$/$$$$|  $$$$$$| $$$$$$$/
-|__/     |________|__/      \______/ \_____/\___/ \_______| $$____/ 
-                                                          | $$      
-                                                          | $$      
-                                                          |__/      
+|__/     |________|__/      \______/ \_____/\___/ \_______| $$____/
+                                                          | $$
+                                                          | $$
+                                                          |__/
 
  * @title EVVM P2P Swap
- * @author Mate labs  
+ * @author Mate labs
  * @notice Peer-to-peer decentralized exchange for token trading within EVVM.
- * @dev Supports order book-style trading with customizable fee models. 
+ * @dev Supports order book-style trading with customizable fee models.
  *      Integrates with Core.sol for asset locking and settlements, and Staking.sol for validator rewards.
  */
 
@@ -54,6 +46,8 @@ contract P2PSwap is EvvmService {
     mapping(bytes32 marketId => Structs.MarketInformation) marketInformation;
     /// @notice Stores orders indexed by market ID and order slot.
     mapping(bytes32 marketId => mapping(uint256 orderId => Structs.Order)) orders;
+
+    mapping(address token => uint256 amountCollected) totalFeesCollected;
 
     /// @notice Restricts access to the system administrator.
     modifier onlyAdmin() {
@@ -122,6 +116,10 @@ contract P2PSwap is EvvmService {
         uint256 noncePay,
         bytes calldata signaturePay
     ) external {
+        if (offeredAmount == 0) revert Error.ZeroAmount();
+        if (requestedAmount == 0) revert Error.ZeroAmount();
+        if (offeredToken == requestedToken) revert Error.SameTokenPair();
+
         core.validateAndConsumeNonce(
             user,
             senderExecutor,
@@ -157,22 +155,20 @@ contract P2PSwap is EvvmService {
             marketInformation[marketId].maxSlot ==
             marketInformation[marketId].ordersAvailable
         ) {
-            marketInformation[marketId].maxSlot++;
-            marketInformation[marketId].ordersAvailable++;
             orderId = marketInformation[marketId].maxSlot;
+            marketInformation[marketId].maxSlot++;
         } else {
-            for (
-                uint256 i = 1;
-                i <= marketInformation[marketId].maxSlot + 1;
-                i++
-            ) {
+            for (uint256 i = 1; i < marketInformation[marketId].maxSlot; i++) {
                 if (orders[marketId][i].seller == address(0)) {
                     orderId = i;
                     break;
                 }
             }
-            marketInformation[marketId].ordersAvailable++;
+
+            if (orderId == 0) revert Error.UnexpectedBehavior();
         }
+
+        marketInformation[marketId].ordersAvailable++;
 
         // we create the order
         orders[marketId][orderId] = Structs.Order({
@@ -221,6 +217,10 @@ contract P2PSwap is EvvmService {
         uint256 noncePay,
         bytes calldata signaturePay
     ) external {
+        // we check if the order exists and if the user is the seller
+        if (order.seller == address(0)) revert Error.OrderIsUnavailable();
+        if (order.seller != user) revert Error.NotTheSeller();
+
         core.validateAndConsumeNonce(
             user,
             senderExecutor,
@@ -235,9 +235,6 @@ contract P2PSwap is EvvmService {
 
         // we store the order in memory to save gas
         Structs.Order memory order = orders[marketId][orderId];
-
-        // we check if the order exists and if the user is the seller
-        if (order.seller != user) revert Error.NotTheSeller();
 
         if (priorityFeePay > 0)
             requestPay(
@@ -267,7 +264,7 @@ contract P2PSwap is EvvmService {
                 priorityFeePay
             );
 
-        _rewardExecutor(msg.sender, priorityFeePay > 0 ? 3 : 2);
+        _rewardExecutor(msg.sender, 2);
     }
 
     /**
@@ -308,6 +305,8 @@ contract P2PSwap is EvvmService {
         bytes32 market = getMarketId(offeredToken, requestedToken);
         Structs.Order storage order = orders[market][orderId];
 
+        if (amountOut == 0) revert Error.ZeroAmount();
+        if (amountInMax == 0) revert Error.ZeroAmount();
         if (order.seller == address(0)) revert Error.OrderIsUnavailable();
 
         if (order.amountAvailable < amountOut)
@@ -335,6 +334,8 @@ contract P2PSwap is EvvmService {
             order.requestedAmount
         );
 
+        if (netPaymentAmount == 0) revert Error.InsufficientPayment();
+
         uint256 fee = getFeePaymentAmount(netPaymentAmount);
 
         uint256 totalPayment = netPaymentAmount + fee;
@@ -353,11 +354,19 @@ contract P2PSwap is EvvmService {
         );
 
         orders[market][orderId].amountAvailable -= amountOut;
+        marketInformation[market].medianPrice = getVWAP(market);
 
-        uint256 sellerAmount = netPaymentAmount +
-            applyBasisPoints(fee, basisPointsForReward.current.seller);
-        uint256 executorAmount = priorityFeePay +
-            applyBasisPoints(fee, basisPointsForReward.current.mateStaker);
+        uint256 sellerAmount =
+            netPaymentAmount +
+                applyBasisPoints(fee, basisPointsForReward.current.seller);
+        uint256 executorAmount =
+            priorityFeePay +
+                applyBasisPoints(fee, basisPointsForReward.current.mateStaker);
+
+        collectFees(
+            requestedToken,
+            applyBasisPoints(fee, basisPointsForReward.current.service)
+        );
 
         CoreStructs.DisperseCaPayMetadata[]
             memory toData = new CoreStructs.DisperseCaPayMetadata[](2);
@@ -374,6 +383,9 @@ contract P2PSwap is EvvmService {
             requestedToken,
             sellerAmount + executorAmount
         );
+
+        if (amountInMax > totalPayment)
+            makeCaPay(user, requestedToken, amountInMax - totalPayment);
 
         makeCaPay(user, offeredToken, amountOut);
 
@@ -564,18 +576,22 @@ contract P2PSwap is EvvmService {
      * @return VWAP price scaled by 1e18 (tokenB units per tokenA unit).
      */
     function getVWAP(bytes32 marketId) public view returns (uint256) {
-        uint256 totalA;
-        uint256 totalB;
+        uint256 totalAvailableA;
+        uint256 totalAvailableB;
         uint256 maxSlot = marketInformation[marketId].maxSlot;
 
         for (uint256 i = 1; i <= maxSlot; i++) {
             Structs.Order storage o = orders[marketId][i];
             if (o.seller != address(0) && o.amountAvailable > 0) {
-                totalA += o.offeredAmount;
-                totalB += o.requestedAmount;
+                totalAvailableA += o.amountAvailable;
+                totalAvailableB +=
+                    (o.amountAvailable * o.requestedAmount) / o.offeredAmount;
             }
         }
-        return totalA == 0 ? 0 : (totalB * 1e18) / totalA;
+        return
+            totalAvailableA == 0
+                ? 0
+                : (totalAvailableB * 1e18) / totalAvailableA;
     }
 
     /**
