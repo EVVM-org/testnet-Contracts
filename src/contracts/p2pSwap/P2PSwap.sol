@@ -198,11 +198,14 @@ contract P2PSwap is EvvmService {
         // we calculate the median price for the market and update it
         marketInformation[marketId].medianPrice = getVWAP(marketId);
 
-        if (core.isAddressStaker(msg.sender) && priorityFeePay > 0)
-            makeCaPay(msg.sender, offeredToken, priorityFeePay);
+        bool isStaker = core.isAddressStaker(msg.sender);
 
-        // send some mate token reward to the executor (independent of the priorityFee the user attached)
-        _rewardExecutor(msg.sender, 2);
+        if (priorityFeePay > 0) {
+            if (isStaker) makeCaPay(msg.sender, offeredToken, priorityFeePay);
+            else collectFees(offeredToken, priorityFeePay);
+        }
+
+        if (isStaker) _sendReward(msg.sender, 2);
     }
 
     /**
@@ -274,14 +277,19 @@ contract P2PSwap is EvvmService {
         // we calculate the median price for the market and update it
         marketInformation[marketId].medianPrice = getVWAP(marketId);
 
-        if (core.isAddressStaker(msg.sender) && priorityFeePay > 0)
-            makeCaPay(
-                msg.sender,
-                core.getPrincipalTokenAddress(),
-                priorityFeePay
-            );
+        bool isStaker = core.isAddressStaker(msg.sender);
 
-        _rewardExecutor(msg.sender, 2);
+        if (priorityFeePay > 0) {
+            if (isStaker)
+                makeCaPay(
+                    msg.sender,
+                    core.getPrincipalTokenAddress(),
+                    priorityFeePay
+                );
+            else collectFees(core.getPrincipalTokenAddress(), priorityFeePay);
+        }
+
+        if (isStaker) _sendReward(msg.sender, 2);
     }
 
     /**
@@ -409,7 +417,7 @@ contract P2PSwap is EvvmService {
             marketInformation[market].ordersAvailable--;
         }
 
-        _rewardExecutor(msg.sender, 4);
+        if (core.isAddressStaker(msg.sender)) _sendReward(msg.sender, 2);
     }
 
     //░▒▓█ Admin Tools ████████████████████████████████████████████████████████████████▓▒░
@@ -713,18 +721,16 @@ contract P2PSwap is EvvmService {
     }
 
     /**
-     * @dev Sends a MATE token reward to the executor if it is a registered staker.
+     * @dev Sends a principal token reward to the executor if it is a registered staker.
      * @param executor Address of the executor to reward.
      * @param multiplier Reward multiplier applied to the base reward amount (2–5).
      */
-    function _rewardExecutor(address executor, uint256 multiplier) internal {
-        if (core.isAddressStaker(executor)) {
-            makeCaPay(
-                executor,
-                core.getPrincipalTokenAddress(),
-                core.getRewardAmount() * multiplier
-            );
-        }
+    function _sendReward(address executor, uint256 multiplier) internal {
+        makeCaPay(
+            executor,
+            core.getPrincipalTokenAddress(),
+            core.getRewardAmount() * multiplier
+        );
     }
 
     //░▒▓█ Getters █████████████████████████████████████████████████████████████▓▒░
