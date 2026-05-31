@@ -387,13 +387,13 @@ library Erc191TestBuilder {
 
     function buildMessageSignedForMakeOrder(
         uint256 evvmID,
+        address offeredToken,
+        address requestedToken,
+        uint256 offeredAmount,
+        uint256 requestedAmount,
         address senderExecutor,
         address originExecutor,
-        uint256 nonce,
-        address tokenA,
-        address tokenB,
-        uint256 amountA,
-        uint256 amountB
+        uint256 nonce
     ) internal pure returns (bytes32) {
         return
             buildHashForSign(
@@ -401,10 +401,10 @@ library Erc191TestBuilder {
                     evvmID,
                     senderExecutor,
                     P2PSwapHashUtils.hashDataForMakeOrder(
-                        tokenA,
-                        tokenB,
-                        amountA,
-                        amountB
+                        offeredToken,
+                        requestedToken,
+                        offeredAmount,
+                        requestedAmount
                     ),
                     originExecutor,
                     nonce,
@@ -441,12 +441,14 @@ library Erc191TestBuilder {
 
     function buildMessageSignedForDispatchOrder(
         uint256 evvmID,
+        address offeredToken,
+        address requestedToken,
+        uint256 orderId,
+        uint256 amountOut,
+        uint256 amountInMax,
         address senderExecutor,
         address originExecutor,
-        uint256 nonce,
-        address tokenA,
-        address tokenB,
-        uint256 orderId
+        uint256 nonce
     ) internal pure returns (bytes32) {
         return
             buildHashForSign(
@@ -454,9 +456,11 @@ library Erc191TestBuilder {
                     evvmID,
                     senderExecutor,
                     P2PSwapHashUtils.hashDataForDispatchOrder(
-                        tokenA,
-                        tokenB,
-                        orderId
+                        offeredToken,
+                        requestedToken,
+                        orderId,
+                        amountOut,
+                        amountInMax
                     ),
                     originExecutor,
                     nonce,

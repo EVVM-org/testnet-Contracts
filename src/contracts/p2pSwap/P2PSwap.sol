@@ -3,14 +3,22 @@
 
 pragma solidity ^0.8.0;
 
-import {P2PSwapHashUtils as Hash} from "@evvm/testnet-contracts/library/utils/signature/P2PSwapHashUtils.sol";
-import {P2PSwapStructs as Structs} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
-import {P2PSwapError as Error} from "@evvm/testnet-contracts/library/errors/P2PSwapError.sol";
+import {
+    P2PSwapHashUtils as Hash
+} from "@evvm/testnet-contracts/library/utils/signature/P2PSwapHashUtils.sol";
+import {
+    P2PSwapStructs as Structs
+} from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
+import {
+    P2PSwapError as Error
+} from "@evvm/testnet-contracts/library/errors/P2PSwapError.sol";
 
 import {EvvmService} from "@evvm/testnet-contracts/library/EvvmService.sol";
 import {CoreStructs} from "@evvm/testnet-contracts/interfaces/ICore.sol";
 
-import {ProposalStructs} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
+import {
+    ProposalStructs
+} from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
 
 /**
  /$$$$$$$  /$$$$$$ /$$$$$$$  /$$$$$$
@@ -365,12 +373,10 @@ contract P2PSwap is EvvmService {
         orders[market][orderId].amountAvailable -= amountOut;
         marketInformation[market].medianPrice = getVWAP(market);
 
-        uint256 sellerAmount =
-            netPaymentAmount +
-                applyBasisPoints(fee, basisPointsForReward.current.seller);
-        uint256 executorAmount =
-            priorityFeePay +
-                applyBasisPoints(fee, basisPointsForReward.current.mateStaker);
+        uint256 sellerAmount = netPaymentAmount +
+            applyBasisPoints(fee, basisPointsForReward.current.seller);
+        uint256 executorAmount = priorityFeePay +
+            applyBasisPoints(fee, basisPointsForReward.current.mateStaker);
 
         collectFees(
             requestedToken,
@@ -687,7 +693,8 @@ contract P2PSwap is EvvmService {
             if (o.seller != address(0) && o.amountAvailable > 0) {
                 totalAvailableA += o.amountAvailable;
                 totalAvailableB +=
-                    (o.amountAvailable * o.requestedAmount) / o.offeredAmount;
+                    (o.amountAvailable * o.requestedAmount) /
+                    o.offeredAmount;
             }
         }
         return
