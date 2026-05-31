@@ -25,8 +25,6 @@ import {
 } from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract unitTestCorrect_P2PSwap_makeOrder is Constants {
-    
-
     struct Fisher {
         AccountData noStaker;
         AccountData staker;
@@ -50,7 +48,6 @@ contract unitTestCorrect_P2PSwap_makeOrder is Constants {
     Fisher fisher =
         Fisher({noStaker: COMMON_USER_NO_STAKER_1, staker: COMMON_USER_STAKER});
 
-
     address stableCoinAddress = makeAddr("stableCoin");
 
     function executeBeforeSetUp() internal override {}
@@ -63,13 +60,13 @@ contract unitTestCorrect_P2PSwap_makeOrder is Constants {
         core.addBalance(user.Address, token, amount);
     }
 
-    function test__unit_correct__makeOrder() external {
+    function test__unit_correct__makeOrder__noStaker() external {
         MakeOrderInputs memory inputsNoPF = MakeOrderInputs({
             user: COMMON_USER_NO_STAKER_1,
             offeredToken: ETHER_ADDRESS,
             requestedToken: stableCoinAddress,
             offeredAmount: 0.001 ether,
-            requestedAmount: 1000 * 10**6,
+            requestedAmount: 1000 * 10 ** 6,
             senderExecutor: address(0),
             originExecutor: address(0),
             nonce: 14569,
@@ -82,7 +79,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Constants {
         addBalance(
             inputsNoPF.user,
             inputsNoPF.offeredToken,
-            inputsNoPF.offeredAmount
+            inputsNoPF.offeredAmount + inputsNoPF.priorityFeePay
         );
 
         (
@@ -116,49 +113,169 @@ contract unitTestCorrect_P2PSwap_makeOrder is Constants {
             inputsNoPF.noncePay,
             inputsNoPF.signaturePay
         );
+        vm.stopPrank();
 
-        bytes32 marketId = p2pSwap.getMarketId(
+        bytes32 marketIdNoPF = p2pSwap.getMarketId(
             inputsNoPF.offeredToken,
             inputsNoPF.requestedToken
         );
 
-        P2PSwapStructs.Order memory order = p2pSwap.getOrder(
-            marketId,
+        P2PSwapStructs.Order memory orderNoPF = p2pSwap.getOrder(
+            marketIdNoPF,
             0
         );
 
         assertEq(
-            order.seller,
+            orderNoPF.seller,
             inputsNoPF.user.Address,
-            "Error: incorrect seller in order"
+            "[NoPF] incorrect seller in order"
         );
         assertEq(
-            order.offeredAmount,
+            orderNoPF.offeredAmount,
             inputsNoPF.offeredAmount,
-            "Error: incorrect offered amount in order"
+            "[NoPF] incorrect offered amount in order"
         );
         assertEq(
-            order.requestedAmount,
+            orderNoPF.requestedAmount,
             inputsNoPF.requestedAmount,
-            "Error: incorrect requested amount in order"
+            "[NoPF] incorrect requested amount in order"
         );
         assertEq(
-            order.amountAvailable,
+            orderNoPF.amountAvailable,
             inputsNoPF.offeredAmount,
-            "Error: incorrect amount available in order"
+            "[NoPF] incorrect amount available in order"
         );
 
         assertEq(
             core.getBalance(inputsNoPF.user.Address, inputsNoPF.offeredToken),
             0,
-            "Error: incorrect user balance after makeOrder"
+            "[NoPF] incorrect user balance after makeOrder"
         );
 
         assertEq(
             core.getBalance(address(p2pSwap), inputsNoPF.offeredToken),
             inputsNoPF.offeredAmount,
-            "Error: incorrect p2pSwap balance after makeOrder"
+            "[NoPF] incorrect p2pSwap balance after makeOrder"
+        );
+
+        assertEq(
+            core.getBalance(fisher.noStaker.Address, PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "[NoPF] fisher should not receive any reward when making order without staking"
+        );
+
+        assertEq(
+            core.getBalance(fisher.noStaker.Address, inputsNoPF.offeredToken),
+            0,
+            "[NoPF] fisher should not receive any priorityFee when making order without staking"
+        );
+
+        MakeOrderInputs memory inputsPF = MakeOrderInputs({
+            user: COMMON_USER_NO_STAKER_1,
+            offeredToken: ETHER_ADDRESS,
+            requestedToken: stableCoinAddress,
+            offeredAmount: 0.007 ether,
+            requestedAmount: 3000 * 10 ** 6,
+            senderExecutor: address(0),
+            originExecutor: address(0),
+            nonce: 12312432,
+            signature: "",
+            priorityFeePay: 1 * 10 ** 6,
+            noncePay: 3454353,
+            signaturePay: ""
+        });
+
+        (
+            inputsPF.signature,
+            inputsPF.signaturePay
+        ) = _executeSig_p2pSwap_makeOrder(
+            inputsPF.user,
+            inputsPF.offeredToken,
+            inputsPF.requestedToken,
+            inputsPF.offeredAmount,
+            inputsPF.requestedAmount,
+            inputsPF.senderExecutor,
+            inputsPF.originExecutor,
+            inputsPF.nonce,
+            inputsPF.priorityFeePay,
+            inputsPF.noncePay
+        );
+
+        addBalance(
+            inputsPF.user,
+            inputsPF.offeredToken,
+            inputsPF.offeredAmount + inputsPF.priorityFeePay
+        );
+
+        vm.startPrank(fisher.noStaker.Address, fisher.noStaker.Address);
+        p2pSwap.makeOrder(
+            inputsPF.user.Address,
+            inputsPF.offeredToken,
+            inputsPF.requestedToken,
+            inputsPF.offeredAmount,
+            inputsPF.requestedAmount,
+            inputsPF.senderExecutor,
+            inputsPF.originExecutor,
+            inputsPF.nonce,
+            inputsPF.signature,
+            inputsPF.priorityFeePay,
+            inputsPF.noncePay,
+            inputsPF.signaturePay
         );
         vm.stopPrank();
+
+        bytes32 marketIdPF = p2pSwap.getMarketId(
+            inputsPF.offeredToken,
+            inputsPF.requestedToken
+        );
+
+        P2PSwapStructs.Order memory orderPF = p2pSwap.getOrder(marketIdPF, 1);
+
+        assertEq(
+            orderPF.seller,
+            inputsPF.user.Address,
+            "[PF] incorrect seller in order"
+        );
+        assertEq(
+            orderPF.offeredAmount,
+            inputsPF.offeredAmount,
+            "[PF] incorrect offered amount in order"
+        );
+        assertEq(
+            orderPF.requestedAmount,
+            inputsPF.requestedAmount,
+            "[PF] incorrect requested amount in order"
+        );
+        assertEq(
+            orderPF.amountAvailable,
+            inputsPF.offeredAmount,
+            "[PF] incorrect amount available in order"
+        );
+
+        assertEq(
+            core.getBalance(inputsPF.user.Address, inputsPF.offeredToken),
+            0,
+            "[PF] incorrect user balance after makeOrder"
+        );
+
+        assertEq(
+            core.getBalance(address(p2pSwap), inputsPF.offeredToken),
+            inputsPF.offeredAmount +
+                inputsNoPF.offeredAmount +
+                p2pSwap.getTotalFeesCollected(inputsPF.offeredToken),
+            "[PF] incorrect p2pSwap balance after makeOrder"
+        );
+
+        assertEq(
+            core.getBalance(fisher.noStaker.Address, PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "[PF] fisher should not receive any reward when making order without staking"
+        );
+
+        assertEq(
+            core.getBalance(fisher.noStaker.Address, inputsPF.offeredToken),
+            0,
+            "[PF] fisher should not receive any priorityFee when making order without staking"
+        );
     }
 }
