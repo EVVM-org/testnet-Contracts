@@ -205,7 +205,7 @@ contract P2PSwap is EvvmService {
             else collectFees(offeredToken, priorityFeePay);
         }
 
-        if (isStaker) _sendReward(msg.sender, 2);
+        if (isStaker) _sendReward(msg.sender, (priorityFeePay > 0 ? 2 : 1));
     }
 
     /**
