@@ -415,12 +415,12 @@ library Erc191TestBuilder {
 
     function buildMessageSignedForCancelOrder(
         uint256 evvmID,
+        address offeredToken,
+        address requestedToken,
+        uint256 orderId,
         address senderExecutor,
         address originExecutor,
-        uint256 nonce,
-        address tokenA,
-        address tokenB,
-        uint256 orderId
+        uint256 nonce
     ) internal pure returns (bytes32) {
         return
             buildHashForSign(
@@ -428,8 +428,8 @@ library Erc191TestBuilder {
                     evvmID,
                     senderExecutor,
                     P2PSwapHashUtils.hashDataForCancelOrder(
-                        tokenA,
-                        tokenB,
+                        offeredToken,
+                        requestedToken,
                         orderId
                     ),
                     originExecutor,
