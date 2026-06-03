@@ -172,10 +172,10 @@ contract P2PSwap is EvvmService {
             marketInformation[marketId].maxSlot ==
             marketInformation[marketId].ordersAvailable
         ) {
-            orderId = marketInformation[marketId].maxSlot;
             marketInformation[marketId].maxSlot++;
+            orderId = marketInformation[marketId].maxSlot;
         } else {
-            for (uint256 i = 1; i < marketInformation[marketId].maxSlot; i++) {
+            for (uint256 i = 1; i <= marketInformation[marketId].maxSlot; i++) {
                 if (orders[marketId][i].seller == address(0)) {
                     orderId = i;
                     break;
@@ -271,6 +271,8 @@ contract P2PSwap is EvvmService {
         makeCaPay(user, offeredToken, order.amountAvailable);
 
         orders[marketId][orderId].seller = address(0);
+        orders[marketId][orderId].offeredAmount = 0;
+        orders[marketId][orderId].requestedAmount = 0;
         orders[marketId][orderId].amountAvailable = 0;
         marketInformation[marketId].ordersAvailable--;
 
@@ -414,6 +416,8 @@ contract P2PSwap is EvvmService {
 
         if (orders[market][orderId].amountAvailable == 0) {
             orders[market][orderId].seller = address(0);
+            orders[market][orderId].offeredAmount = 0;
+            orders[market][orderId].requestedAmount = 0;
             marketInformation[market].ordersAvailable--;
         }
 
