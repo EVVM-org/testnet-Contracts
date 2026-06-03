@@ -113,7 +113,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         vm.stopPrank();
 
         bytes32 marketId = p2pSwap.getMarketId(offeredToken, requestedToken);
-        P2PSwapStructs.Order memory order = p2pSwap.getOrder(marketId, 0);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(marketId, 1);
 
         assertEq(
             order.seller,
@@ -226,7 +226,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         vm.stopPrank();
 
         bytes32 marketId = p2pSwap.getMarketId(offeredToken, requestedToken);
-        P2PSwapStructs.Order memory order = p2pSwap.getOrder(marketId, 0);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(marketId, 1);
 
         assertEq(
             order.seller,
