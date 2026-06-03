@@ -1262,6 +1262,98 @@ abstract contract Constants is Test {
             true
         );
     }
+
+    function _executeFn_p2pSwap_makeOrder(
+        AccountData memory fisher,
+        AccountData memory user,
+        address offeredToken,
+        address requestedToken,
+        uint256 offeredAmount,
+        uint256 requestedAmount,
+        address senderExecutor,
+        address originExecutor,
+        uint256 nonce,
+        uint256 priorityFeePay,
+        uint256 noncePay
+    ) internal virtual {
+        (
+            bytes memory signatureMakeOrder,
+            bytes memory signaturePay
+        ) = _executeSig_p2pSwap_makeOrder(
+                user,
+                offeredToken,
+                requestedToken,
+                offeredAmount,
+                requestedAmount,
+                senderExecutor,
+                originExecutor,
+                nonce,
+                priorityFeePay,
+                noncePay
+            );
+
+        vm.startPrank(fisher.Address, fisher.Address);
+        p2pSwap.makeOrder(
+            user.Address,
+            offeredToken,
+            requestedToken,
+            offeredAmount,
+            requestedAmount,
+            senderExecutor,
+            originExecutor,
+            nonce,
+            signatureMakeOrder,
+            priorityFeePay,
+            noncePay,
+            signaturePay
+        );
+        vm.stopPrank();
+    }
+
+    function _executeSig_p2pSwap_cancelOrder(
+        AccountData memory user,
+        address offeredToken,
+        address requestedToken,
+        uint256 orderId,
+        address senderExecutor,
+        address originExecutor,
+        uint256 nonce,
+        uint256 priorityFeePay,
+        uint256 noncePay
+    )
+        internal
+        virtual
+        returns (bytes memory signatureMakeOrder, bytes memory signaturePay)
+    {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForCancelOrder(
+                core.getEvvmID(),
+                offeredToken,
+                requestedToken,
+                orderId,
+                senderExecutor,
+                originExecutor,
+                nonce
+            )
+        );
+        signatureMakeOrder = Erc191TestBuilder.buildERC191Signature(v, r, s);
+
+        signaturePay = priorityFeePay > 0
+            ? _executeSig_evvm_pay(
+                user,
+                address(p2pSwap),
+                "",
+                core.getPrincipalTokenAddress(),
+                0,
+                priorityFeePay,
+                address(p2pSwap),
+                originExecutor,
+                noncePay,
+                true
+            )
+            : bytes(hex"");
+    }
 }
 
 contract MockContractToStake is StakingServiceUtils {
