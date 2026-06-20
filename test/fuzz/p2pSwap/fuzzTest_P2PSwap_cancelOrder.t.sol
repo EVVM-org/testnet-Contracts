@@ -23,6 +23,11 @@ import {
 } from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
+
+    function executeBeforeSetUp() internal override {
+        
+    }
+
     AccountData FISHER_NO_STAKER = COMMON_USER_NO_STAKER_2;
     AccountData FISHER_STAKER = COMMON_USER_STAKER;
     AccountData USER = COMMON_USER_NO_STAKER_1;
@@ -47,50 +52,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         core.addBalance(user.Address, token, amount);
     }
 
-    function _createOrder(
-        address offeredToken,
-        address requestedToken,
-        uint256 offeredAmount,
-        uint256 requestedAmount,
-        uint256 priorityFeePay,
-        uint256 nonce,
-        uint256 noncePay
-    ) private {
-        _addBalance(USER, offeredToken, offeredAmount + priorityFeePay);
-
-        (
-            bytes memory signatureMakeOrder,
-            bytes memory signaturePay
-        ) = _executeSig_p2pSwap_makeOrder(
-                USER,
-                offeredToken,
-                requestedToken,
-                offeredAmount,
-                requestedAmount,
-                address(0),
-                address(0),
-                nonce,
-                priorityFeePay,
-                noncePay
-            );
-
-        vm.startPrank(FISHER_NO_STAKER.Address, FISHER_NO_STAKER.Address);
-        p2pSwap.makeOrder(
-            USER.Address,
-            offeredToken,
-            requestedToken,
-            offeredAmount,
-            requestedAmount,
-            address(0),
-            address(0),
-            nonce,
-            signatureMakeOrder,
-            priorityFeePay,
-            noncePay,
-            signaturePay
-        );
-        vm.stopPrank();
-    }
+    
 
     function test__fuzz__cancelOrder__noStaker(
         CancelOrderInput memory input
@@ -117,13 +79,22 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
                 : PRINCIPAL_TOKEN_ADDRESS;
         }
 
-        _createOrder(
+        _addBalance(
+            USER,
+            offeredToken,
+            uint256(input.offeredAmount)
+        );
+        _executeFn_p2pSwap_makeOrder(
+            WILDCARD_USER,
+            USER,
             offeredToken,
             requestedToken,
             uint256(input.offeredAmount),
             uint256(input.requestedAmount),
-            0,
+            address(0),
+            address(0),
             uint256(input.nonce),
+            0,
             uint256(input.noncePay)
         );
 
@@ -228,13 +199,22 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
                 : PRINCIPAL_TOKEN_ADDRESS;
         }
 
-        _createOrder(
+        _addBalance(
+            USER,
+            offeredToken,
+            uint256(input.offeredAmount)
+        );
+        _executeFn_p2pSwap_makeOrder(
+            WILDCARD_USER,
+            USER,
             offeredToken,
             requestedToken,
             uint256(input.offeredAmount),
             uint256(input.requestedAmount),
-            0,
+            address(0),
+            address(0),
             uint256(input.nonce),
+            0,
             uint256(input.noncePay)
         );
 
