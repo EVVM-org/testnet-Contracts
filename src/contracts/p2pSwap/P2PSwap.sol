@@ -201,11 +201,16 @@ contract P2PSwap is EvvmService {
         bool isStaker = core.isAddressStaker(msg.sender);
 
         if (priorityFeePay > 0) {
-            if (isStaker) makeCaPay(msg.sender, offeredToken, priorityFeePay);
-            else collectFees(offeredToken, priorityFeePay);
+            if (isStaker) {
+                makeCaPay(msg.sender, offeredToken, priorityFeePay);
+                collectFees(
+                    core.getPrincipalTokenAddress(),
+                    core.getRewardAmount()
+                );
+            } else collectFees(offeredToken, priorityFeePay);
         }
 
-        if (isStaker) _sendReward(msg.sender, (priorityFeePay > 0 ? 2 : 1));
+        if (isStaker) _sendReward(msg.sender, 1);
     }
 
     /**
@@ -282,16 +287,20 @@ contract P2PSwap is EvvmService {
         bool isStaker = core.isAddressStaker(msg.sender);
 
         if (priorityFeePay > 0) {
-            if (isStaker)
+            if (isStaker) {
                 makeCaPay(
                     msg.sender,
                     core.getPrincipalTokenAddress(),
                     priorityFeePay
                 );
-            else collectFees(core.getPrincipalTokenAddress(), priorityFeePay);
+                collectFees(
+                    core.getPrincipalTokenAddress(),
+                    core.getRewardAmount()
+                );
+            } else collectFees(core.getPrincipalTokenAddress(), priorityFeePay);
         }
 
-        if (isStaker) _sendReward(msg.sender, 2);
+        if (isStaker) _sendReward(msg.sender, 1);
     }
 
     /**
