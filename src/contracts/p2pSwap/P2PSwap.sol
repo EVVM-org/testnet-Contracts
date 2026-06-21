@@ -665,7 +665,7 @@ contract P2PSwap is EvvmService {
     function applyBasisPoints(
         uint256 amount,
         uint256 basisPoints
-    ) internal pure returns (uint256) {
+    ) public pure returns (uint256) {
         return (amount * basisPoints) / 10_000;
     }
 
