@@ -220,10 +220,7 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Constants {
             inputsPF.requestedToken
         );
 
-        P2PSwapStructs.Order memory orderPF = p2pSwap.getOrder(
-            marketIdPF,
-            2
-        );
+        P2PSwapStructs.Order memory orderPF = p2pSwap.getOrder(marketIdPF, 2);
 
         assertEq(
             orderPF.seller,
@@ -250,6 +247,181 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Constants {
             core.getBalance(USER.Address, inputsPF.offeredToken),
             2 ether,
             "[PF] incorrect balance after cancellation: user should have original offered amount back"
+        );
+    }
+
+    function test__unit_correct__cancelOrder__staker() external {
+        CancelOrderInputs memory inputsNoPF = CancelOrderInputs({
+            offeredToken: ETHER_ADDRESS,
+            requestedToken: stableCoinAddress,
+            orderId: 1,
+            senderExecutor: address(0),
+            originExecutor: address(0),
+            nonce: 67,
+            signature: hex"",
+            priorityFeePay: 0,
+            noncePay: 78,
+            signaturePay: hex""
+        });
+
+        (
+            inputsNoPF.signature,
+            inputsNoPF.signaturePay
+        ) = _executeSig_p2pSwap_cancelOrder(
+            USER,
+            inputsNoPF.offeredToken,
+            inputsNoPF.requestedToken,
+            inputsNoPF.orderId,
+            inputsNoPF.senderExecutor,
+            inputsNoPF.originExecutor,
+            inputsNoPF.nonce,
+            inputsNoPF.priorityFeePay,
+            inputsNoPF.noncePay
+        );
+
+        vm.startPrank(fisher.staker.Address, fisher.staker.Address);
+        p2pSwap.cancelOrder(
+            USER.Address,
+            inputsNoPF.offeredToken,
+            inputsNoPF.requestedToken,
+            inputsNoPF.orderId,
+            inputsNoPF.senderExecutor,
+            inputsNoPF.originExecutor,
+            inputsNoPF.nonce,
+            inputsNoPF.signature,
+            inputsNoPF.priorityFeePay,
+            inputsNoPF.noncePay,
+            inputsNoPF.signaturePay
+        );
+        vm.stopPrank();
+
+        bytes32 marketIdNoPF = p2pSwap.getMarketId(
+            inputsNoPF.offeredToken,
+            inputsNoPF.requestedToken
+        );
+
+        P2PSwapStructs.Order memory orderNoPF = p2pSwap.getOrder(
+            marketIdNoPF,
+            1
+        );
+
+        assertEq(
+            orderNoPF.seller,
+            address(0),
+            "[NoPF] incorrect order cancellation: seller should be address(0)"
+        );
+        assertEq(
+            orderNoPF.offeredAmount,
+            0,
+            "[NoPF] incorrect order cancellation: offeredAmount should be 0"
+        );
+        assertEq(
+            orderNoPF.requestedAmount,
+            0,
+            "[NoPF] incorrect order cancellation: requestedAmount should be 0"
+        );
+        assertEq(
+            orderNoPF.amountAvailable,
+            0,
+            "[NoPF] incorrect order cancellation: amountAvailable should be 0"
+        );
+
+        assertEq(
+            core.getBalance(USER.Address, inputsNoPF.offeredToken),
+            1 ether,
+            "[NoPF] incorrect balance after cancellation: user should have original offered amount back"
+        );
+
+        assertEq(
+            core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
+            inputsNoPF.priorityFeePay + core.getRewardAmount(),
+            "[NoPF] incorrect staker reward after cancellation: staker should receive priority fee pay and reward amount"
+        );
+
+        ///////////////////////////////////////////////////////////////////
+
+        CancelOrderInputs memory inputsPF = CancelOrderInputs({
+            offeredToken: ETHER_ADDRESS,
+            requestedToken: stableCoinAddress,
+            orderId: 2,
+            senderExecutor: address(0),
+            originExecutor: address(0),
+            nonce: 333,
+            signature: hex"",
+            priorityFeePay: 0,
+            noncePay: 555,
+            signaturePay: hex""
+        });
+
+        (
+            inputsPF.signature,
+            inputsPF.signaturePay
+        ) = _executeSig_p2pSwap_cancelOrder(
+            USER,
+            inputsPF.offeredToken,
+            inputsPF.requestedToken,
+            inputsPF.orderId,
+            inputsPF.senderExecutor,
+            inputsPF.originExecutor,
+            inputsPF.nonce,
+            inputsPF.priorityFeePay,
+            inputsPF.noncePay
+        );
+
+        vm.startPrank(fisher.staker.Address, fisher.staker.Address);
+        p2pSwap.cancelOrder(
+            USER.Address,
+            inputsPF.offeredToken,
+            inputsPF.requestedToken,
+            inputsPF.orderId,
+            inputsPF.senderExecutor,
+            inputsPF.originExecutor,
+            inputsPF.nonce,
+            inputsPF.signature,
+            inputsPF.priorityFeePay,
+            inputsPF.noncePay,
+            inputsPF.signaturePay
+        );
+        vm.stopPrank();
+
+        bytes32 marketIdPF = p2pSwap.getMarketId(
+            inputsPF.offeredToken,
+            inputsPF.requestedToken
+        );
+
+        P2PSwapStructs.Order memory orderPF = p2pSwap.getOrder(marketIdPF, 2);
+
+        assertEq(
+            orderPF.seller,
+            address(0),
+            "[PF] incorrect order cancellation: seller should be address(0)"
+        );
+        assertEq(
+            orderPF.offeredAmount,
+            0,
+            "[PF] incorrect order cancellation: offeredAmount should be 0"
+        );
+        assertEq(
+            orderPF.requestedAmount,
+            0,
+            "[PF] incorrect order cancellation: requestedAmount should be 0"
+        );
+        assertEq(
+            orderPF.amountAvailable,
+            0,
+            "[PF] incorrect order cancellation: amountAvailable should be 0"
+        );
+
+        assertEq(
+            core.getBalance(USER.Address, inputsPF.offeredToken),
+            2 ether,
+            "[PF] incorrect balance after cancellation: user should have original offered amount back"
+        );
+
+        assertEq(
+            core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
+            inputsNoPF.priorityFeePay + inputsPF.priorityFeePay + core.getRewardAmount() * 2,
+            "[PF] incorrect staker reward after cancellation: staker should receive priority fee pay and reward amount"
         );
     }
 }
