@@ -288,13 +288,5 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
             expectedReward,
             "[Staker] incorrect fisher reward balance"
         );
-
-        if (input.priorityFeePay > 0) {
-            assertEq(
-                core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
-                expectedReward,
-                "[Staker] incorrect staker MATE balance with priorityFee"
-            );
-        }
     }
 }
