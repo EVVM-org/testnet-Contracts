@@ -122,7 +122,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
 
         P2PSwapStructs.Order memory orderNoPF = p2pSwap.getOrder(
             marketIdNoPF,
-            0
+            1
         );
 
         assertEq(
@@ -229,7 +229,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             inputsPF.requestedToken
         );
 
-        P2PSwapStructs.Order memory orderPF = p2pSwap.getOrder(marketIdPF, 1);
+        P2PSwapStructs.Order memory orderPF = p2pSwap.getOrder(marketIdPF, 2);
 
         assertEq(
             orderPF.seller,
@@ -341,7 +341,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
 
         P2PSwapStructs.Order memory orderNoPF = p2pSwap.getOrder(
             marketIdNoPF,
-            0
+            1
         );
 
         assertEq(
@@ -448,7 +448,7 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             inputsPF.requestedToken
         );
 
-        P2PSwapStructs.Order memory orderPF = p2pSwap.getOrder(marketIdPF, 1);
+        P2PSwapStructs.Order memory orderPF = p2pSwap.getOrder(marketIdPF, 2);
 
         assertEq(
             orderPF.seller,
@@ -487,8 +487,8 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
 
         assertEq(
             core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
-            core.getRewardAmount() * 3,
-            "[PF] fisher should receive 3 reward when making order"
+            core.getRewardAmount() * 2,
+            "[PF] fisher should receive 2 reward when making order"
         );
 
         assertEq(

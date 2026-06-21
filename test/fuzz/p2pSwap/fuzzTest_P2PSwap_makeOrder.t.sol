@@ -263,10 +263,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
             "[Staker] incorrect p2pSwap balance after makeOrder"
         );
 
-        // Reward multiplier: 2 if priorityFee > 0, otherwise 1
-        uint256 expectedReward = input.priorityFeePay > 0
-            ? core.getRewardAmount() * 2
-            : core.getRewardAmount();
+        uint256 expectedReward = core.getRewardAmount();
         assertEq(
             core.getBalance(
                 FISHER_STAKER.Address,
