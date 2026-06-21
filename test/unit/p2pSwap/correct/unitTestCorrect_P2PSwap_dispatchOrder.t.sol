@@ -189,7 +189,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
             core.getBalance(SELLER.Address, inputsNoPF.requestedToken),
             expectedSellerBalanceNoPf,
             "[NoPF] incorrect seller balance after order execution: expectedSellerBalanceNoPf"
-        );  
+        );
 
         assertEq(
             core.getBalance(BUYER.Address, inputsNoPF.offeredToken),
@@ -197,9 +197,7 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
             "[NoPF] incorrect buyer balance after order execution: should be 1 ether"
         );
 
-
-        uint256 expectedFisherBalanceNoPf = 
-            inputsNoPF.priorityFeePay +
+        uint256 expectedFisherBalanceNoPf = inputsNoPF.priorityFeePay +
             p2pSwap.applyBasisPoints(
                 feeAmountNoPf,
                 p2pSwap.getBasisPointsForReward().mateStaker
@@ -217,8 +215,127 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
             "[NoPF] because fisher is not a staker, their balance of principal token should not change"
         );
 
-
-
         ///////////////////////////////////////////////////////////////////
+
+        uint256 feeAmountPf = p2pSwap.getFeePaymentAmount(SELLING_PRICE);
+
+        DispatchOrderInputs memory inputsPf = DispatchOrderInputs({
+            offeredToken: ETHER_ADDRESS,
+            requestedToken: stableCoinAddress,
+            orderId: 2,
+            amountOut: 1 ether,
+            amountInMax: SELLING_PRICE + feeAmountPf,
+            senderExecutor: address(0),
+            originExecutor: address(0),
+            signature: hex"",
+            nonce: 20001,
+            priorityFeePay: 0,
+            noncePay: 20002,
+            signaturePay: hex""
+        });
+
+        _addBalance(BUYER, stableCoinAddress, inputsPf.amountInMax);
+
+        (
+            inputsPf.signature,
+            inputsPf.signaturePay
+        ) = _executeSig_p2pSwap_dispatchOrder(
+            BUYER,
+            inputsPf.offeredToken,
+            inputsPf.requestedToken,
+            inputsPf.orderId,
+            inputsPf.amountOut,
+            inputsPf.amountInMax,
+            inputsPf.senderExecutor,
+            inputsPf.originExecutor,
+            inputsPf.nonce,
+            inputsPf.priorityFeePay,
+            inputsPf.noncePay
+        );
+
+        vm.startPrank(fisher.noStaker.Address, fisher.noStaker.Address);
+        p2pSwap.dispatchOrder(
+            BUYER.Address,
+            inputsPf.offeredToken,
+            inputsPf.requestedToken,
+            inputsPf.orderId,
+            inputsPf.amountOut,
+            inputsPf.amountInMax,
+            inputsPf.senderExecutor,
+            inputsPf.originExecutor,
+            inputsPf.nonce,
+            inputsPf.signature,
+            inputsPf.priorityFeePay,
+            inputsPf.noncePay,
+            inputsPf.signaturePay
+        );
+        vm.stopPrank();
+
+        bytes32 marketIdPf = p2pSwap.getMarketId(
+            inputsPf.offeredToken,
+            inputsPf.requestedToken
+        );
+
+        P2PSwapStructs.Order memory orderPf = p2pSwap.getOrder(marketIdPf, 2);
+
+        assertEq(
+            orderPf.seller,
+            address(0),
+            "[PF] incorrect order cancellation: seller should be address(0)"
+        );
+
+        assertEq(
+            orderPf.offeredAmount,
+            0,
+            "[PF] incorrect order cancellation: offeredAmount should be 0"
+        );
+
+        assertEq(
+            orderPf.requestedAmount,
+            0,
+            "[PF] incorrect order cancellation: requestedAmount should be 0"
+        );
+
+        assertEq(
+            orderPf.amountAvailable,
+            0,
+            "[PF] incorrect order cancellation: amountAvailable should be 0"
+        );
+
+        uint256 expectedSellerBalancePf = (inputsPf.amountInMax - feeAmountPf) +
+            p2pSwap.applyBasisPoints(
+                feeAmountPf,
+                p2pSwap.getBasisPointsForReward().seller
+            );
+
+        assertEq(
+            core.getBalance(SELLER.Address, inputsPf.requestedToken),
+            expectedSellerBalancePf + expectedSellerBalanceNoPf,
+            "[PF] incorrect seller balance after order execution: expectedSellerBalancePf + expectedSellerBalanceNoPf"
+        );
+
+        assertEq(
+            core.getBalance(BUYER.Address, inputsPf.offeredToken),
+            2 ether,
+            "[PF] incorrect buyer balance after order execution: should be 2 ether"
+        );
+
+        uint256 expectedFisherBalancePf = inputsPf.priorityFeePay +
+            p2pSwap.applyBasisPoints(
+                feeAmountPf,
+                p2pSwap.getBasisPointsForReward().mateStaker
+            );
+
+        assertEq(
+            core.getBalance(fisher.noStaker.Address, inputsPf.requestedToken),
+            expectedFisherBalanceNoPf + expectedFisherBalancePf,
+            "[PF] incorrect fisher balance after order execution: expectedFisherBalanceNoPf + expectedFisherBalancePf"
+        );
+
+        assertEq(
+            core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
+            0,
+            "[PF] because fisher is not a staker, their balance of principal token should not change"
+        );
     }
 }
