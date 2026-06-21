@@ -1354,6 +1354,53 @@ abstract contract Constants is Test {
             )
             : bytes(hex"");
     }
+
+    function _executeSig_p2pSwap_dispatchOrder(
+        AccountData memory user,
+        address offeredToken,
+        address requestedToken,
+        uint256 orderId,
+        uint256 amountOut,
+        uint256 amountInMax,
+        address senderExecutor,
+        address originExecutor,
+        uint256 nonce,
+        uint256 priorityFeePay,
+        uint256 noncePay
+    )
+        internal
+        virtual
+        returns (bytes memory signatureMakeOrder, bytes memory signaturePay)
+    {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            user.PrivateKey,
+            Erc191TestBuilder.buildMessageSignedForDispatchOrder(
+                core.getEvvmID(),
+                offeredToken,
+                requestedToken,
+                orderId,
+                amountOut,
+                amountInMax,
+                senderExecutor,
+                originExecutor,
+                nonce
+            )
+        );
+        signatureMakeOrder = Erc191TestBuilder.buildERC191Signature(v, r, s);
+
+        signaturePay = _executeSig_evvm_pay(
+            user,
+            address(p2pSwap),
+            "",
+            requestedToken,
+            amountInMax,
+            priorityFeePay,
+            address(p2pSwap),
+            originExecutor,
+            noncePay,
+            true
+        );
+    }
 }
 
 contract MockContractToStake is StakingServiceUtils {
