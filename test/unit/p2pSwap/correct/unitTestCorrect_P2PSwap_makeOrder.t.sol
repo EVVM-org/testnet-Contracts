@@ -128,46 +128,46 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         assertEq(
             orderNoPF.seller,
             inputsNoPF.user.Address,
-            "[NoPF] incorrect seller in order"
+            "[noStaker/nPF]: incorrect seller in order"
         );
         assertEq(
             orderNoPF.offeredAmount,
             inputsNoPF.offeredAmount,
-            "[NoPF] incorrect offered amount in order"
+            "[noStaker/nPF]: incorrect offered amount in order"
         );
         assertEq(
             orderNoPF.requestedAmount,
             inputsNoPF.requestedAmount,
-            "[NoPF] incorrect requested amount in order"
+            "[noStaker/nPF]: incorrect requested amount in order"
         );
         assertEq(
             orderNoPF.amountAvailable,
             inputsNoPF.offeredAmount,
-            "[NoPF] incorrect amount available in order"
+            "[noStaker/nPF]: incorrect amount available in order"
         );
 
         assertEq(
             core.getBalance(inputsNoPF.user.Address, inputsNoPF.offeredToken),
             0,
-            "[NoPF] incorrect user balance after makeOrder"
+            "[noStaker/nPF]: incorrect user balance after makeOrder"
         );
 
         assertEq(
             core.getBalance(address(p2pSwap), inputsNoPF.offeredToken),
             inputsNoPF.offeredAmount,
-            "[NoPF] incorrect p2pSwap balance after makeOrder"
+            "[noStaker/nPF]: incorrect p2pSwap balance after makeOrder"
         );
 
         assertEq(
             core.getBalance(fisher.noStaker.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
-            "[NoPF] fisher should not receive any reward when making order"
+            "[noStaker/nPF]: fisher should not receive any reward when making order"
         );
 
         assertEq(
             core.getBalance(fisher.noStaker.Address, inputsNoPF.offeredToken),
             0,
-            "[NoPF] fisher should not receive any priorityFee when making order"
+            "[noStaker/nPF]: fisher should not receive any priorityFee when making order"
         );
 
         MakeOrderInputs memory inputsPF = MakeOrderInputs({
@@ -234,28 +234,28 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         assertEq(
             orderPF.seller,
             inputsPF.user.Address,
-            "[PF] incorrect seller in order"
+            "[noStaker/PF]: incorrect seller in order"
         );
         assertEq(
             orderPF.offeredAmount,
             inputsPF.offeredAmount,
-            "[PF] incorrect offered amount in order"
+            "[noStaker/PF]: incorrect offered amount in order"
         );
         assertEq(
             orderPF.requestedAmount,
             inputsPF.requestedAmount,
-            "[PF] incorrect requested amount in order"
+            "[noStaker/PF]: incorrect requested amount in order"
         );
         assertEq(
             orderPF.amountAvailable,
             inputsPF.offeredAmount,
-            "[PF] incorrect amount available in order"
+            "[noStaker/PF]: incorrect amount available in order"
         );
 
         assertEq(
             core.getBalance(inputsPF.user.Address, inputsPF.offeredToken),
             0,
-            "[PF] incorrect user balance after makeOrder"
+            "[noStaker/PF]: incorrect user balance after makeOrder"
         );
 
         assertEq(
@@ -263,19 +263,19 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             inputsPF.offeredAmount +
                 inputsNoPF.offeredAmount +
                 p2pSwap.getTotalFeesCollected(inputsPF.offeredToken),
-            "[PF] incorrect p2pSwap balance after makeOrder"
+            "[noStaker/PF]: incorrect p2pSwap balance after makeOrder"
         );
 
         assertEq(
             core.getBalance(fisher.noStaker.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
-            "[PF] fisher should not receive any reward when making order"
+            "[noStaker/PF]: fisher should not receive any reward when making order"
         );
 
         assertEq(
             core.getBalance(fisher.noStaker.Address, inputsPF.offeredToken),
             0,
-            "[PF] fisher should not receive any priorityFee when making order"
+            "[noStaker/PF]: fisher should not receive any priorityFee when making order"
         );
     }
 
@@ -347,46 +347,46 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         assertEq(
             orderNoPF.seller,
             inputsNoPF.user.Address,
-            "[NoPF] incorrect seller in order"
+            "[staker/nPF]: incorrect seller in order"
         );
         assertEq(
             orderNoPF.offeredAmount,
             inputsNoPF.offeredAmount,
-            "[NoPF] incorrect offered amount in order"
+            "[staker/nPF]: incorrect offered amount in order"
         );
         assertEq(
             orderNoPF.requestedAmount,
             inputsNoPF.requestedAmount,
-            "[NoPF] incorrect requested amount in order"
+            "[staker/nPF]: incorrect requested amount in order"
         );
         assertEq(
             orderNoPF.amountAvailable,
             inputsNoPF.offeredAmount,
-            "[NoPF] incorrect amount available in order"
+            "[staker/nPF]: incorrect amount available in order"
         );
 
         assertEq(
             core.getBalance(inputsNoPF.user.Address, inputsNoPF.offeredToken),
             0,
-            "[NoPF] incorrect user balance after makeOrder"
+            "[staker/nPF]: incorrect user balance after makeOrder"
         );
 
         assertEq(
             core.getBalance(address(p2pSwap), inputsNoPF.offeredToken),
             inputsNoPF.offeredAmount,
-            "[NoPF] incorrect p2pSwap balance after makeOrder"
+            "[staker/nPF]: incorrect p2pSwap balance after makeOrder"
         );
 
         assertEq(
             core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
             core.getRewardAmount(),
-            "[NoPF] fisher should receive 1 reward when making order"
+            "[staker/nPF]: fisher should receive 1 reward when making order"
         );
 
         assertEq(
             core.getBalance(fisher.staker.Address, inputsNoPF.offeredToken),
             inputsNoPF.priorityFeePay,
-            "[NoPF] fisher should not receive an priorityFee of 0 when making order"
+            "[staker/nPF]: fisher should not receive priorityFee of 0 when making order"
         );
 
         MakeOrderInputs memory inputsPF = MakeOrderInputs({
@@ -453,28 +453,28 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
         assertEq(
             orderPF.seller,
             inputsPF.user.Address,
-            "[PF] incorrect seller in order"
+            "[staker/PF]: incorrect seller in order"
         );
         assertEq(
             orderPF.offeredAmount,
             inputsPF.offeredAmount,
-            "[PF] incorrect offered amount in order"
+            "[staker/PF]: incorrect offered amount in order"
         );
         assertEq(
             orderPF.requestedAmount,
             inputsPF.requestedAmount,
-            "[PF] incorrect requested amount in order"
+            "[staker/PF]: incorrect requested amount in order"
         );
         assertEq(
             orderPF.amountAvailable,
             inputsPF.offeredAmount,
-            "[PF] incorrect amount available in order"
+            "[staker/PF]: incorrect amount available in order"
         );
 
         assertEq(
             core.getBalance(inputsPF.user.Address, inputsPF.offeredToken),
             0,
-            "[PF] incorrect user balance after makeOrder"
+            "[staker/PF]: incorrect user balance after makeOrder"
         );
 
         assertEq(
@@ -482,19 +482,19 @@ contract unitTestCorrect_P2PSwap_makeOrder is Test, Constants {
             inputsPF.offeredAmount +
                 inputsNoPF.offeredAmount +
                 p2pSwap.getTotalFeesCollected(inputsPF.offeredToken),
-            "[PF] incorrect p2pSwap balance after makeOrder"
+            "[staker/PF]: incorrect p2pSwap balance after makeOrder"
         );
 
         assertEq(
             core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
             core.getRewardAmount() * 2,
-            "[PF] fisher should receive 2 reward when making order"
+            "[staker/PF]: fisher should receive 2 rewards when making order"
         );
 
         assertEq(
             core.getBalance(fisher.staker.Address, inputsPF.offeredToken),
             inputsPF.priorityFeePay + inputsNoPF.priorityFeePay,
-            "[PF] fisher should receive the correct priorityFee when making order"
+            "[staker/PF]: fisher should receive the correct priorityFee when making order"
         );
     }
 }

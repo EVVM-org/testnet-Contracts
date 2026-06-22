@@ -265,12 +265,12 @@ contract fuzzTest_P2PSwap_dispatchOrder is Test, Constants {
     function test__fuzz__dispatchOrder__noStaker(
         DispatchOrderInput memory input
     ) external {
-        _createOrderAndDispatch(FISHER_NO_STAKER, input, false, "NoStaker");
+        _createOrderAndDispatch(FISHER_NO_STAKER, input, false, "noStaker");
     }
 
     function test__fuzz__dispatchOrder__staker(
         DispatchOrderInput memory input
     ) external {
-        _createOrderAndDispatch(FISHER_STAKER, input, true, "Staker");
+        _createOrderAndDispatch(FISHER_STAKER, input, true, "staker");
     }
 }

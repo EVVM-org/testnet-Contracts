@@ -145,28 +145,28 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Constants {
         assertEq(
             orderNoPF.seller,
             address(0),
-            "[NoPF] incorrect order cancellation: seller should be address(0)"
+            "[noStaker/nPF]: incorrect order cancellation: seller should be address(0)"
         );
         assertEq(
             orderNoPF.offeredAmount,
             0,
-            "[NoPF] incorrect order cancellation: offeredAmount should be 0"
+            "[noStaker/nPF]: incorrect order cancellation: offeredAmount should be 0"
         );
         assertEq(
             orderNoPF.requestedAmount,
             0,
-            "[NoPF] incorrect order cancellation: requestedAmount should be 0"
+            "[noStaker/nPF]: incorrect order cancellation: requestedAmount should be 0"
         );
         assertEq(
             orderNoPF.amountAvailable,
             0,
-            "[NoPF] incorrect order cancellation: amountAvailable should be 0"
+            "[noStaker/nPF]: incorrect order cancellation: amountAvailable should be 0"
         );
 
         assertEq(
             core.getBalance(USER.Address, inputsNoPF.offeredToken),
             1 ether,
-            "[NoPF] incorrect balance after cancellation: user should have original offered amount back"
+            "[noStaker/nPF]: incorrect balance after cancellation: user should have original offered amount back"
         );
 
         ///////////////////////////////////////////////////////////////////
@@ -225,28 +225,28 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Constants {
         assertEq(
             orderPF.seller,
             address(0),
-            "[PF] incorrect order cancellation: seller should be address(0)"
+            "[noStaker/PF]: incorrect order cancellation: seller should be address(0)"
         );
         assertEq(
             orderPF.offeredAmount,
             0,
-            "[PF] incorrect order cancellation: offeredAmount should be 0"
+            "[noStaker/PF]: incorrect order cancellation: offeredAmount should be 0"
         );
         assertEq(
             orderPF.requestedAmount,
             0,
-            "[PF] incorrect order cancellation: requestedAmount should be 0"
+            "[noStaker/PF]: incorrect order cancellation: requestedAmount should be 0"
         );
         assertEq(
             orderPF.amountAvailable,
             0,
-            "[PF] incorrect order cancellation: amountAvailable should be 0"
+            "[noStaker/PF]: incorrect order cancellation: amountAvailable should be 0"
         );
 
         assertEq(
             core.getBalance(USER.Address, inputsPF.offeredToken),
             2 ether,
-            "[PF] incorrect balance after cancellation: user should have original offered amount back"
+            "[noStaker/PF]: incorrect balance after cancellation: user should have original offered amount back"
         );
     }
 
@@ -308,34 +308,34 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Constants {
         assertEq(
             orderNoPF.seller,
             address(0),
-            "[NoPF] incorrect order cancellation: seller should be address(0)"
+            "[staker/nPF]: incorrect order cancellation: seller should be address(0)"
         );
         assertEq(
             orderNoPF.offeredAmount,
             0,
-            "[NoPF] incorrect order cancellation: offeredAmount should be 0"
+            "[staker/nPF]: incorrect order cancellation: offeredAmount should be 0"
         );
         assertEq(
             orderNoPF.requestedAmount,
             0,
-            "[NoPF] incorrect order cancellation: requestedAmount should be 0"
+            "[staker/nPF]: incorrect order cancellation: requestedAmount should be 0"
         );
         assertEq(
             orderNoPF.amountAvailable,
             0,
-            "[NoPF] incorrect order cancellation: amountAvailable should be 0"
+            "[staker/nPF]: incorrect order cancellation: amountAvailable should be 0"
         );
 
         assertEq(
             core.getBalance(USER.Address, inputsNoPF.offeredToken),
             1 ether,
-            "[NoPF] incorrect balance after cancellation: user should have original offered amount back"
+            "[staker/nPF]: incorrect balance after cancellation: user should have original offered amount back"
         );
 
         assertEq(
             core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
             inputsNoPF.priorityFeePay + core.getRewardAmount(),
-            "[NoPF] incorrect staker reward after cancellation: staker should receive priority fee pay and reward amount"
+            "[staker/nPF]: incorrect staker reward after cancellation: staker should receive priority fee pay and reward amount"
         );
 
         ///////////////////////////////////////////////////////////////////
@@ -394,34 +394,34 @@ contract unitTestCorrect_P2PSwap_cancelOrder is Constants {
         assertEq(
             orderPF.seller,
             address(0),
-            "[PF] incorrect order cancellation: seller should be address(0)"
+            "[staker/PF]: incorrect order cancellation: seller should be address(0)"
         );
         assertEq(
             orderPF.offeredAmount,
             0,
-            "[PF] incorrect order cancellation: offeredAmount should be 0"
+            "[staker/PF]: incorrect order cancellation: offeredAmount should be 0"
         );
         assertEq(
             orderPF.requestedAmount,
             0,
-            "[PF] incorrect order cancellation: requestedAmount should be 0"
+            "[staker/PF]: incorrect order cancellation: requestedAmount should be 0"
         );
         assertEq(
             orderPF.amountAvailable,
             0,
-            "[PF] incorrect order cancellation: amountAvailable should be 0"
+            "[staker/PF]: incorrect order cancellation: amountAvailable should be 0"
         );
 
         assertEq(
             core.getBalance(USER.Address, inputsPF.offeredToken),
             2 ether,
-            "[PF] incorrect balance after cancellation: user should have original offered amount back"
+            "[staker/PF]: incorrect balance after cancellation: user should have original offered amount back"
         );
 
         assertEq(
             core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
             inputsNoPF.priorityFeePay + inputsPF.priorityFeePay + core.getRewardAmount() * 2,
-            "[PF] incorrect staker reward after cancellation: staker should receive priority fee pay and reward amount"
+            "[staker/PF]: incorrect staker reward after cancellation: staker should receive priority fee pay and reward amount"
         );
     }
 }

@@ -160,22 +160,22 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             orderNoPF.seller,
             address(0),
-            "[NoPF] incorrect order cancellation: seller should be address(0)"
+            "[noStaker/nPF]: incorrect order cancellation: seller should be address(0)"
         );
         assertEq(
             orderNoPF.offeredAmount,
             0,
-            "[NoPF] incorrect order cancellation: offeredAmount should be 0"
+            "[noStaker/nPF]: incorrect order cancellation: offeredAmount should be 0"
         );
         assertEq(
             orderNoPF.requestedAmount,
             0,
-            "[NoPF] incorrect order cancellation: requestedAmount should be 0"
+            "[noStaker/nPF]: incorrect order cancellation: requestedAmount should be 0"
         );
         assertEq(
             orderNoPF.amountAvailable,
             0,
-            "[NoPF] incorrect order cancellation: amountAvailable should be 0"
+            "[noStaker/nPF]: incorrect order cancellation: amountAvailable should be 0"
         );
 
         uint256 expectedSellerBalanceNoPf = (inputsNoPF.amountInMax -
@@ -188,13 +188,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             core.getBalance(SELLER.Address, inputsNoPF.requestedToken),
             expectedSellerBalanceNoPf,
-            "[NoPF] incorrect seller balance after order execution: expectedSellerBalanceNoPf"
+            "[noStaker/nPF]: incorrect seller balance after order execution: expectedSellerBalanceNoPf"
         );
 
         assertEq(
             core.getBalance(BUYER.Address, inputsNoPF.offeredToken),
             1 ether,
-            "[NoPF] incorrect buyer balance after order execution: should be 1 ether"
+            "[noStaker/nPF]: incorrect buyer balance after order execution: should be 1 ether"
         );
 
         uint256 expectedFisherBalanceNoPf = inputsNoPF.priorityFeePay +
@@ -206,13 +206,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             core.getBalance(fisher.noStaker.Address, inputsNoPF.requestedToken),
             expectedFisherBalanceNoPf,
-            "[NoPF] incorrect fisher balance after order execution: expectedFisherBalanceNoPf"
+            "[noStaker/nPF]: incorrect fisher balance after order execution: expectedFisherBalanceNoPf"
         );
 
         assertEq(
             core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
-            "[NoPF] because fisher is not a staker, their balance of principal token should not change"
+            "[noStaker/nPF]: because fisher is not a staker, their balance of principal token should not change"
         );
 
         ///////////////////////////////////////////////////////////////////
@@ -281,25 +281,25 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             orderPf.seller,
             address(0),
-            "[PF] incorrect order cancellation: seller should be address(0)"
+            "[noStaker/PF]: incorrect order cancellation: seller should be address(0)"
         );
 
         assertEq(
             orderPf.offeredAmount,
             0,
-            "[PF] incorrect order cancellation: offeredAmount should be 0"
+            "[noStaker/PF]: incorrect order cancellation: offeredAmount should be 0"
         );
 
         assertEq(
             orderPf.requestedAmount,
             0,
-            "[PF] incorrect order cancellation: requestedAmount should be 0"
+            "[noStaker/PF]: incorrect order cancellation: requestedAmount should be 0"
         );
 
         assertEq(
             orderPf.amountAvailable,
             0,
-            "[PF] incorrect order cancellation: amountAvailable should be 0"
+            "[noStaker/PF]: incorrect order cancellation: amountAvailable should be 0"
         );
 
         uint256 expectedSellerBalancePf = (inputsPf.amountInMax - feeAmountPf) +
@@ -311,13 +311,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             core.getBalance(SELLER.Address, inputsPf.requestedToken),
             expectedSellerBalancePf + expectedSellerBalanceNoPf,
-            "[PF] incorrect seller balance after order execution: expectedSellerBalancePf + expectedSellerBalanceNoPf"
+            "[noStaker/PF]: incorrect seller balance after order execution: expectedSellerBalancePf + expectedSellerBalanceNoPf"
         );
 
         assertEq(
             core.getBalance(BUYER.Address, inputsPf.offeredToken),
             2 ether,
-            "[PF] incorrect buyer balance after order execution: should be 2 ether"
+            "[noStaker/PF]: incorrect buyer balance after order execution: should be 2 ether"
         );
 
         uint256 expectedFisherBalancePf = inputsPf.priorityFeePay +
@@ -329,13 +329,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             core.getBalance(fisher.noStaker.Address, inputsPf.requestedToken),
             expectedFisherBalanceNoPf + expectedFisherBalancePf,
-            "[PF] incorrect fisher balance after order execution: expectedFisherBalanceNoPf + expectedFisherBalancePf"
+            "[noStaker/PF]: incorrect fisher balance after order execution: expectedFisherBalanceNoPf + expectedFisherBalancePf"
         );
 
         assertEq(
             core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
             0,
-            "[PF] because fisher is not a staker, their balance of principal token should not change"
+            "[noStaker/PF]: because fisher is not a staker, their balance of principal token should not change"
         );
     }
 
@@ -407,22 +407,22 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             orderNoPF.seller,
             address(0),
-            "[NoPF] incorrect order cancellation: seller should be address(0)"
+            "[staker/nPF]: incorrect order cancellation: seller should be address(0)"
         );
         assertEq(
             orderNoPF.offeredAmount,
             0,
-            "[NoPF] incorrect order cancellation: offeredAmount should be 0"
+            "[staker/nPF]: incorrect order cancellation: offeredAmount should be 0"
         );
         assertEq(
             orderNoPF.requestedAmount,
             0,
-            "[NoPF] incorrect order cancellation: requestedAmount should be 0"
+            "[staker/nPF]: incorrect order cancellation: requestedAmount should be 0"
         );
         assertEq(
             orderNoPF.amountAvailable,
             0,
-            "[NoPF] incorrect order cancellation: amountAvailable should be 0"
+            "[staker/nPF]: incorrect order cancellation: amountAvailable should be 0"
         );
 
         uint256 expectedSellerBalanceNoPf = (inputsNoPF.amountInMax -
@@ -435,13 +435,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             core.getBalance(SELLER.Address, inputsNoPF.requestedToken),
             expectedSellerBalanceNoPf,
-            "[NoPF] incorrect seller balance after order execution: expectedSellerBalanceNoPf"
+            "[staker/nPF]: incorrect seller balance after order execution: expectedSellerBalanceNoPf"
         );
 
         assertEq(
             core.getBalance(BUYER.Address, inputsNoPF.offeredToken),
             1 ether,
-            "[NoPF] incorrect buyer balance after order execution: should be 1 ether"
+            "[staker/nPF]: incorrect buyer balance after order execution: should be 1 ether"
         );
 
         uint256 expectedFisherBalanceNoPf = inputsNoPF.priorityFeePay +
@@ -453,13 +453,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             core.getBalance(fisher.staker.Address, inputsNoPF.requestedToken),
             expectedFisherBalanceNoPf,
-            "[NoPF] incorrect fisher balance after order execution: expectedFisherBalanceNoPf"
+            "[staker/nPF]: incorrect fisher balance after order execution: expectedFisherBalanceNoPf"
         );
 
         assertEq(
             core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
             core.getRewardAmount() * 2,
-            "[NoPF] because fisher is a staker, their balance of principal token should increase by the reward amount"
+            "[staker/nPF]: because fisher is a staker, their balance of principal token should increase by the reward amount"
         );
 
         ///////////////////////////////////////////////////////////////////
@@ -528,25 +528,25 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             orderPf.seller,
             address(0),
-            "[PF] incorrect order cancellation: seller should be address(0)"
+            "[staker/PF]: incorrect order cancellation: seller should be address(0)"
         );
 
         assertEq(
             orderPf.offeredAmount,
             0,
-            "[PF] incorrect order cancellation: offeredAmount should be 0"
+            "[staker/PF]: incorrect order cancellation: offeredAmount should be 0"
         );
 
         assertEq(
             orderPf.requestedAmount,
             0,
-            "[PF] incorrect order cancellation: requestedAmount should be 0"
+            "[staker/PF]: incorrect order cancellation: requestedAmount should be 0"
         );
 
         assertEq(
             orderPf.amountAvailable,
             0,
-            "[PF] incorrect order cancellation: amountAvailable should be 0"
+            "[staker/PF]: incorrect order cancellation: amountAvailable should be 0"
         );
 
         uint256 expectedSellerBalancePf = (inputsPf.amountInMax - feeAmountPf) +
@@ -558,13 +558,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             core.getBalance(SELLER.Address, inputsPf.requestedToken),
             expectedSellerBalancePf + expectedSellerBalanceNoPf,
-            "[PF] incorrect seller balance after order execution: expectedSellerBalancePf + expectedSellerBalanceNoPf"
+            "[staker/PF]: incorrect seller balance after order execution: expectedSellerBalancePf + expectedSellerBalanceNoPf"
         );
 
         assertEq(
             core.getBalance(BUYER.Address, inputsPf.offeredToken),
             2 ether,
-            "[PF] incorrect buyer balance after order execution: should be 2 ether"
+            "[staker/PF]: incorrect buyer balance after order execution: should be 2 ether"
         );
 
         uint256 expectedFisherBalancePf = inputsPf.priorityFeePay +
@@ -576,13 +576,13 @@ contract unitTestCorrect_P2PSwap_dispatchOrder is Constants {
         assertEq(
             core.getBalance(fisher.staker.Address, inputsPf.requestedToken),
             expectedFisherBalanceNoPf + expectedFisherBalancePf,
-            "[PF] incorrect fisher balance after order execution: expectedFisherBalanceNoPf + expectedFisherBalancePf"
+            "[staker/PF]: incorrect fisher balance after order execution: expectedFisherBalanceNoPf + expectedFisherBalancePf"
         );
 
         assertEq(
             core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
             core.getRewardAmount() * 4,
-            "[NoPF] because fisher is a staker, their balance of principal token should increase by the reward amount"
+            "[staker/PF]: fisher balance of principal token should increase by the reward amount"
         );
     }
 }

@@ -118,35 +118,35 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         assertEq(
             order.seller,
             USER.Address,
-            "[NoStaker] incorrect seller in order"
+            "[noStaker] incorrect seller in order"
         );
         assertEq(
             order.offeredAmount,
             uint256(input.offeredAmount),
-            "[NoStaker] incorrect offeredAmount in order"
+            "[noStaker] incorrect offeredAmount in order"
         );
         assertEq(
             order.requestedAmount,
             uint256(input.requestedAmount),
-            "[NoStaker] incorrect requestedAmount in order"
+            "[noStaker] incorrect requestedAmount in order"
         );
         assertEq(
             order.amountAvailable,
             uint256(input.offeredAmount),
-            "[NoStaker] incorrect amountAvailable in order"
+            "[noStaker] incorrect amountAvailable in order"
         );
 
         assertEq(
             core.getBalance(USER.Address, offeredToken),
             0,
-            "[NoStaker] incorrect user balance after makeOrder"
+            "[noStaker] incorrect user balance after makeOrder"
         );
 
         // When executor is not staker, priorityFee stays in p2pSwap as collected fees
         assertEq(
             core.getBalance(address(p2pSwap), offeredToken),
             uint256(input.offeredAmount) + uint256(input.priorityFeePay),
-            "[NoStaker] incorrect p2pSwap balance after makeOrder"
+            "[noStaker] incorrect p2pSwap balance after makeOrder"
         );
 
         // No staker = no reward
@@ -156,7 +156,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             0,
-            "[NoStaker] incorrect fisher reward balance"
+            "[noStaker] incorrect fisher reward balance"
         );
     }
 
@@ -231,28 +231,28 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         assertEq(
             order.seller,
             USER.Address,
-            "[Staker] incorrect seller in order"
+            "[staker] incorrect seller in order"
         );
         assertEq(
             order.offeredAmount,
             uint256(input.offeredAmount),
-            "[Staker] incorrect offeredAmount in order"
+            "[staker] incorrect offeredAmount in order"
         );
         assertEq(
             order.requestedAmount,
             uint256(input.requestedAmount),
-            "[Staker] incorrect requestedAmount in order"
+            "[staker] incorrect requestedAmount in order"
         );
         assertEq(
             order.amountAvailable,
             uint256(input.offeredAmount),
-            "[Staker] incorrect amountAvailable in order"
+            "[staker] incorrect amountAvailable in order"
         );
 
         assertEq(
             core.getBalance(USER.Address, offeredToken),
             0,
-            "[Staker] incorrect user balance after makeOrder"
+            "[staker] incorrect user balance after makeOrder"
         );
 
         // When executor is staker + priorityFee > 0, staker receives priorityFee
@@ -260,7 +260,7 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
         assertEq(
             core.getBalance(address(p2pSwap), offeredToken),
             uint256(input.offeredAmount),
-            "[Staker] incorrect p2pSwap balance after makeOrder"
+            "[staker] incorrect p2pSwap balance after makeOrder"
         );
 
         uint256 expectedReward = core.getRewardAmount();
@@ -270,13 +270,13 @@ contract fuzzTest_P2PSwap_makeOrder is Test, Constants {
                 PRINCIPAL_TOKEN_ADDRESS
             ),
             expectedReward,
-            "[Staker] incorrect fisher reward balance"
+            "[staker] incorrect fisher reward balance"
         );
 
         assertEq(
             core.getBalance(FISHER_STAKER.Address, offeredToken),
             uint256(input.priorityFeePay),
-            "[Staker] incorrect fisher priorityFee balance"
+            "[staker] incorrect fisher priorityFee balance"
         );
     }
 }

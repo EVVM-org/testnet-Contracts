@@ -134,34 +134,34 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         assertEq(
             order.seller,
             address(0),
-            "[NoStaker] incorrect order cancellation: seller should be address(0)"
+            "[noStaker] incorrect order cancellation: seller should be address(0)"
         );
         assertEq(
             order.offeredAmount,
             0,
-            "[NoStaker] incorrect order cancellation: offeredAmount should be 0"
+            "[noStaker] incorrect order cancellation: offeredAmount should be 0"
         );
         assertEq(
             order.requestedAmount,
             0,
-            "[NoStaker] incorrect order cancellation: requestedAmount should be 0"
+            "[noStaker] incorrect order cancellation: requestedAmount should be 0"
         );
         assertEq(
             order.amountAvailable,
             0,
-            "[NoStaker] incorrect order cancellation: amountAvailable should be 0"
+            "[noStaker] incorrect order cancellation: amountAvailable should be 0"
         );
 
         assertEq(
             core.getBalance(USER.Address, offeredToken),
             uint256(input.offeredAmount),
-            "[NoStaker] incorrect balance after cancellation: user should have original offered amount back"
+            "[noStaker] incorrect balance after cancellation: user should have original offered amount back"
         );
 
         assertEq(
             core.getBalance(address(p2pSwap), offeredToken),
             0,
-            "[NoStaker] incorrect p2pSwap balance after cancellation"
+            "[noStaker] incorrect p2pSwap balance after cancellation"
         );
     }
 
@@ -250,34 +250,34 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         assertEq(
             order.seller,
             address(0),
-            "[Staker] incorrect order cancellation: seller should be address(0)"
+            "[staker] incorrect order cancellation: seller should be address(0)"
         );
         assertEq(
             order.offeredAmount,
             0,
-            "[Staker] incorrect order cancellation: offeredAmount should be 0"
+            "[staker] incorrect order cancellation: offeredAmount should be 0"
         );
         assertEq(
             order.requestedAmount,
             0,
-            "[Staker] incorrect order cancellation: requestedAmount should be 0"
+            "[staker] incorrect order cancellation: requestedAmount should be 0"
         );
         assertEq(
             order.amountAvailable,
             0,
-            "[Staker] incorrect order cancellation: amountAvailable should be 0"
+            "[staker] incorrect order cancellation: amountAvailable should be 0"
         );
 
         assertEq(
             core.getBalance(USER.Address, offeredToken),
             uint256(input.offeredAmount),
-            "[Staker] incorrect balance after cancellation: user should have original offered amount back"
+            "[staker] incorrect balance after cancellation: user should have original offered amount back"
         );
 
         assertEq(
             core.getBalance(address(p2pSwap), offeredToken),
             0,
-            "[Staker] incorrect p2pSwap balance after cancellation"
+            "[staker] incorrect p2pSwap balance after cancellation"
         );
 
         uint256 expectedReward = input.priorityFeePay > 0
@@ -286,7 +286,7 @@ contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
         assertEq(
             core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
             expectedReward,
-            "[Staker] incorrect fisher reward balance"
+            "[staker] incorrect fisher reward balance"
         );
     }
 }
