@@ -28,14 +28,14 @@ import "@evvm/testnet-contracts/library/structs/StakingStructs.sol";
 import "@evvm/testnet-contracts/library/errors/CoreError.sol";
 
 contract unitTestRevert_Staking_adminFunctions is Test, Constants {
-    function test__unitRevert__addPresaleStaker__SenderIsNotAdmin() external {
+    function test__unit_revert__addPresaleStaker__SenderIsNotAdmin() external {
         vm.startPrank(WILDCARD_USER.Address);
         vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.addPresaleStaker(COMMON_USER_NO_STAKER_1.Address);
         vm.stopPrank();
     }
 
-    function test__unitRevert__addPresaleStaker__limitExceeded() external {
+    function test__unit_revert__addPresaleStaker__limitExceeded() external {
         vm.startPrank(ADMIN.Address);
         /*Yep... I know this is a lot of stakers */
         for (uint256 i = 0; i < 801; i++) {
@@ -54,7 +54,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__addPresaleStakers__SenderIsNotAdmin() external {
+    function test__unit_revert__addPresaleStakers__SenderIsNotAdmin() external {
         address[] memory stakers = new address[](2);
         stakers[0] = makeAddr("alice");
         stakers[1] = makeAddr("bob");
@@ -65,7 +65,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__addPresaleStakers__LimitPresaleStakersExceeded()
+    function test__unit_revert__addPresaleStakers__LimitPresaleStakersExceeded()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -90,14 +90,14 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__proposeAdmin__SenderIsNotAdmin() external {
+    function test__unit_revert__proposeAdmin__SenderIsNotAdmin() external {
         vm.startPrank(WILDCARD_USER.Address);
         vm.expectRevert(StakingError.SenderIsNotAdmin.selector);
         staking.proposeAdmin(WILDCARD_USER.Address);
         vm.stopPrank();
     }
 
-    function test__unitRevert__rejectProposalAdmin__SenderIsNotAdmin()
+    function test__unit_revert__rejectProposalAdmin__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -112,7 +112,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__acceptNewAdmin__SenderIsNotProposedAdmin()
+    function test__unit_revert__acceptNewAdmin__SenderIsNotProposedAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -125,7 +125,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__acceptNewAdmin__TimeToAcceptProposalNotReached()
+    function test__unit_revert__acceptNewAdmin__TimeToAcceptProposalNotReached()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -138,7 +138,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__proposeGoldenFisher__SenderIsNotAdmin()
+    function test__unit_revert__proposeGoldenFisher__SenderIsNotAdmin()
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
@@ -147,7 +147,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__rejectProposalGoldenFisher__SenderIsNotAdmin()
+    function test__unit_revert__rejectProposalGoldenFisher__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -160,7 +160,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__acceptNewGoldenFisher__SenderIsNotAdmin()
+    function test__unit_revert__acceptNewGoldenFisher__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -175,7 +175,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__acceptNewGoldenFisher__TimeToAcceptProposalNotReached()
+    function test__unit_revert__acceptNewGoldenFisher__TimeToAcceptProposalNotReached()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -186,7 +186,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__proposeSetSecondsToUnlockStaking__SenderIsNotAdmin()
+    function test__unit_revert__proposeSetSecondsToUnlockStaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
@@ -195,7 +195,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__rejectProposalSetSecondsToUnlockStaking__SenderIsNotAdmin()
+    function test__unit_revert__rejectProposalSetSecondsToUnlockStaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -210,7 +210,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__acceptSetSecondsToUnlockStaking__SenderIsNotAdmin()
+    function test__unit_revert__acceptSetSecondsToUnlockStaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -225,7 +225,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__acceptSetSecondsToUnlockStaking__TimeToAcceptProposalNotReached()
+    function test__unit_revert__acceptSetSecondsToUnlockStaking__TimeToAcceptProposalNotReached()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -236,7 +236,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__prepareSetSecondsToUnllockFullUnstaking__SenderIsNotAdmin()
+    function test__unit_revert__prepareSetSecondsToUnllockFullUnstaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
@@ -245,7 +245,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__cancelSetSecondsToUnllockFullUnstaking__SenderIsNotAdmin()
+    function test__unit_revert__cancelSetSecondsToUnllockFullUnstaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -260,7 +260,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__confirmSetSecondsToUnllockFullUnstaking__SenderIsNotAdmin()
+    function test__unit_revert__confirmSetSecondsToUnllockFullUnstaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -275,7 +275,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__confirmSetSecondsToUnllockFullUnstaking__TimeToAcceptProposalNotReached()
+    function test__unit_revert__confirmSetSecondsToUnllockFullUnstaking__TimeToAcceptProposalNotReached()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -286,7 +286,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__prepareChangeAllowPublicStaking__SenderIsNotAdmin()
+    function test__unit_revert__prepareChangeAllowPublicStaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
@@ -295,7 +295,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__cancelChangeAllowPublicStaking__SenderIsNotAdmin()
+    function test__unit_revert__cancelChangeAllowPublicStaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -310,7 +310,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__confirmChangeAllowPublicStaking__SenderIsNotAdmin()
+    function test__unit_revert__confirmChangeAllowPublicStaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -325,7 +325,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__confirmChangeAllowPublicStaking__TimeToAcceptProposalNotReached()
+    function test__unit_revert__confirmChangeAllowPublicStaking__TimeToAcceptProposalNotReached()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -336,7 +336,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__prepareChangeAllowPresaleStaking__SenderIsNotAdmin()
+    function test__unit_revert__prepareChangeAllowPresaleStaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(WILDCARD_USER.Address);
@@ -345,7 +345,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__cancelChangeAllowPresaleStaking__SenderIsNotAdmin()
+    function test__unit_revert__cancelChangeAllowPresaleStaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -360,7 +360,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__confirmChangeAllowPresaleStaking__SenderIsNotAdmin()
+    function test__unit_revert__confirmChangeAllowPresaleStaking__SenderIsNotAdmin()
         external
     {
         vm.startPrank(ADMIN.Address);
@@ -375,7 +375,7 @@ contract unitTestRevert_Staking_adminFunctions is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__confirmChangeAllowPresaleStaking__TimeToAcceptProposalNotReached()
+    function test__unit_revert__confirmChangeAllowPresaleStaking__TimeToAcceptProposalNotReached()
         external
     {
         vm.startPrank(ADMIN.Address);

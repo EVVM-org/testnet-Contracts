@@ -50,7 +50,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
         amount = (staking.priceOfStaking() * stakingAmount);
     }
 
-    function test__unitRevert__goldenStaking__SenderIsNotGoldenFisher()
+    function test__unit_revert__goldenStaking__SenderIsNotGoldenFisher()
         external
     {
         (uint256 amount) = _addBalance(COMMON_USER_NO_STAKER_1.Address, 1);
@@ -84,7 +84,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__goldenStaking__AddressMustWaitToFullUnstake()
+    function test__unit_revert__goldenStaking__AddressMustWaitToFullUnstake()
         external
     {
         _addBalance(GOLDEN_STAKER.Address, 10);
@@ -105,7 +105,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__goldenStaking__AddressMustWaitToStakeAgain()
+    function test__unit_revert__goldenStaking__AddressMustWaitToStakeAgain()
         external
     {
         _addBalance(GOLDEN_STAKER.Address, 10);
@@ -135,7 +135,7 @@ contract unitTestRevert_Staking_goldenStaking is Test, Constants {
         vm.stopPrank();
     }
 
-    function test__unitRevert__goldenStaking__InvalidSignature_evvm() external {
+    function test__unit_revert__goldenStaking__InvalidSignature_evvm() external {
         _addBalance(GOLDEN_STAKER.Address, 10);
 
         bytes memory signaturePay = _executeSig_evvm_pay(
