@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.1.3] - Unreleased
+## [3.2.0] - Unreleased
+
+### Codename: "Wraith"
+
+Named after [Wraith](https://www.playdeadlock.com/) from [Deadlock](https://store.steampowered.com/app/1422450/Deadlock/), this release embodies the spirit of precise deal-making and market mastery. Just as Wraith operates the underworld's exchanges with calculated efficiency—setting prices, managing orders, and executing deals with supernatural precision—this release rewrites the P2PSwap contract from the ground up into a clean order book system. The name reflects her identity as the architect of fair exchanges, mirroring how this version introduces VWAP-based price transparency, proportional fee calculation, and a governed proposal system that ensures every market parameter change is deliberate and time-locked.
 
 ### Added
 
