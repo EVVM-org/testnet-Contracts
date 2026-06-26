@@ -15,16 +15,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added helper functions for price calculations and fee management: `getMarketId` (deterministic market ID generation), `applyBasisPoints` (basis point calculations), `getNetPaymentAmount` (proportional payment calculation), `getFeePaymentAmount` (protocol fee calculation), `getVWAP` (market price aggregation), and `collectFees` (service fee accumulation)
   - Added 13 new getter functions to expose all state variables for frontend integration and transparency: `getAdmin`, `getAdminProposal`, `getAdminTimeToAccept`, `getPercentageFee`, `getPercentageFeeProposal`, `getPercentageFeeTimeToAccept`, `getBasisPointsForReward`, `getBasisPointsForRewardProposal`, `getBasisPointsForRewardProposalTime`, `getWithdrawalProposal`, `getTotalFeesCollected`, `getMarketInformation`, `getOrder`
 - **Core.sol**: Added 6 new getter functions to expose previously inaccessible state variables and constants: `getETHAddress` (returns `ETH_ADDRESS` constant), `getTreasuryAddress` (returns `treasuryAddress`), `getWindowTimeToChangeEvvmID` (returns `windowTimeToChangeEvvmID`), `getFlagIsStaker` (returns `FLAG_IS_STAKER` constant), `getTimeToAcceptProposal` (returns `TIME_TO_ACCEPT_PROPOSAL` constant), `getTimeToAcceptImplementation` (returns `TIME_TO_ACCEPT_IMPLEMENTATION` constant)
+- **P2PSwapError.sol**: Added new custom error library with gas-efficient error definitions for all P2PSwap failure conditions: `NotTheSeller`, `OrderIsUnavailable`, `InsufficientPayment`, `InsufficientAmountToFill`, `SenderIsNotAdmin`, `IncorrectAddressInput`, `ProposalNotReadyToAccept`, `SenderIsNotTheProposedAdmin`, `InvalidBasisPoints`, `ZeroAmount`, `SameTokenPair`, `UnexpectedBehavior`, `IncorrectInput`, `InsufficientAmount`
 
 ### Changed
 
+- **P2PSwap.sol**: Refactored admin functions to use proposal pattern with 1-day timelock:
+  - Renamed `proposeOwner`/`rejectProposeOwner`/`acceptOwner` to `proposeAdmin`/`rejectProposalAdmin`/`acceptAdmin`
+  - Renamed `proposePercentageFee`/`rejectProposePercentageFee`/`acceptPercentageFee` to `proposeBasisPercentageFee`/`rejectProposalBasisPercentageFee`/`acceptBasisPercentageFee`
+  - Renamed `proposeFillFixedPercentage`/`rejectProposeFillFixedPercentage`/`acceptFillFixedPercentage` to `proposeBasisPointsForReward`/`rejectProposalBasisPointsForReward`/`acceptBasisPointsForReward`
+  - Consolidated `dispatchOrder_fillFixedFee` and `dispatchOrder_fillPropotionalFee` into single `dispatchOrder` function with proportional fee calculation
+  - Replaced `balancesOfContract` with `totalFeesCollected` mapping for fee tracking
+  - Removed `stake`, `unstake`, `addBalance` functions and `getAllMarketOrders`, `getMyOrdersInSpecificMarket`, `findMarket`, `getMarketMetadata`, `getAllMarketsMetadata`, `getBalanceOfContract`, `getOwner`, `getOwnerProposal`, `getOwnerTimeToAccept`, `getRewardPercentage`, `getRewardPercentageProposal`, `getProposalPercentageFee`, `getMaxLimitFillFixedFee`, `getMaxLimitFillFixedFeeProposal`, `getProposedWithdrawal` getter functions
 - **P2PSwapStructs.sol**:
   - Fixed typo in struct name: `WidrawalProposal` → `WithdrawalProposal` (updated all references in `P2PSwap.sol`)
   - Added complete NatSpec documentation for all structs including `@notice`, `@dev`, and `@param` tags
   - Reordered `pragma solidity` statement before `import` statements to comply with Solidity compiler requirements
-  - Updated `MarketInformation` struct NatSpec to remove non-existent `tokenA`/`tokenB` parameters and document actual fields (`maxSlot`, `ordersAvailable`, `medianPrice`)
-  - Updated `Order` struct NatSpec to reflect actual field names (`offeredAmount`, `requestedAmount`, `amountAvailable`) instead of generic `amountA`/`amountB`
+  - Updated `MarketInformation` struct: removed `tokenA`/`tokenB` fields, added `medianPrice` field for VWAP tracking
+  - Updated `Order` struct: renamed `amountA`/`amountB` to `offeredAmount`/`requestedAmount`, added `amountAvailable` for partial fill tracking
+  - Added `PercentageProposal` struct for time-delayed fee distribution updates
+  - Added `WithdrawalProposal` struct for time-delayed fee withdrawal proposals
 - **P2PSwapError.sol**: Corrected error descriptions to accurately reflect their usage context. `UnexpectedBehavior` now describes internal state inconsistencies (e.g., order slot search failures) rather than invalid order IDs. `IncorrectInput` and `InsufficientAmount` descriptions clarified for their specific use cases in withdrawal proposals
+- **IP2PSwap.sol**: Updated interface to match new P2PSwap contract functions and removed deprecated function signatures
+- **ICore.sol**: Added new getter function signatures: `getETHAddress`, `getFlagIsStaker`, `getTimeToAcceptImplementation`, `getTimeToAcceptProposal`, `getTreasuryAddress`, `getWindowTimeToChangeEvvmID`
 
 ### Fixed
 
