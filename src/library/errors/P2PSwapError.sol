@@ -10,32 +10,32 @@ pragma solidity ^0.8.0;
  * @dev Gas-efficient custom errors for all P2PSwap.sol failure conditions.
  */
 library P2PSwapError {
-    /// @notice Thrown when the caller is not the order seller.
+    /// @notice Thrown when the caller is not the order seller (cancelOrder only).
     error NotTheSeller();
-    /// @notice Thrown when the referenced order does not exist.
+    /// @notice Thrown when the referenced order does not exist (seller == address(0)).
     error OrderIsUnavailable();
-    /// @notice Thrown when the payment amount is below the minimum required.
+    /// @notice Thrown when netPayment is zero or totalPayment (netPayment + fee) exceeds amountInMax.
     error InsufficientPayment();
-    /// @notice Thrown when trying to fill more than the available amount in the order.
+    /// @notice Thrown when trying to fill more than the available amount in the order (amountOut > amountAvailable).
     error InsufficientAmountToFill();
     /// @notice Thrown when the sender is not the current admin for admin-restricted functions.
     error SenderIsNotAdmin();
-    /// @notice Thrown when the provided address input is invalid (e.g., zero address or not a contract when expected).
+    /// @notice Thrown for invalid address/value inputs: zero address, current admin as new admin, or fee > 10_000 basis points.
     error IncorrectAddressInput();
-    /// @notice Thrown when the order is not in a state that allows it to be accepted.
+    /// @notice Thrown when attempting to accept a proposal before the 1-day timelock has elapsed.
     error ProposalNotReadyToAccept();
-    /// @notice Thrown when the sender is not the proposed admin for an admin change.
+    /// @notice Thrown when the sender is not the proposed admin for an admin change (acceptAdmin only).
     error SenderIsNotTheProposedAdmin();
-    /// @notice Thrown when the provided basis points value is invalid (e.g., exceeds 100% or has more than 2 decimal places).
+    /// @notice Thrown when the sum of basis points (seller + service + mateStaker) does not equal 10_000.
     error InvalidBasisPoints();
-    /// @notice Thrown when the provided amount is zero, which is not allowed for certain operations.
+    /// @notice Thrown when offeredAmount or requestedAmount is zero in makeOrder, or amountOut/amountInMax is zero in dispatchOrder.
     error ZeroAmount();
-    /// @notice Thrown when the provided token pair is the same, which is not allowed for swaps.
+    /// @notice Thrown when offeredToken equals requestedToken in makeOrder.
     error SameTokenPair();
-    /// @notice Thrown when an unexpected internal state is detected (e.g., order slot search inconsistency).
+    /// @notice Thrown when no available order slot is found despite ordersAvailable < maxSlot (internal inconsistency).
     error UnexpectedBehavior();
-    /// @notice Thrown when the input parameters for an operation are incorrect or do not meet the required conditions.
+    /// @notice Thrown when amountToWithdraw is zero in proposeWithdrawal.
     error IncorrectInput();
-    /// @notice Thrown when the provided amount is insufficient for the requested operation.
+    /// @notice Thrown when amountToWithdraw exceeds totalFeesCollected[token] in proposeWithdrawal.
     error InsufficientAmount();
 }

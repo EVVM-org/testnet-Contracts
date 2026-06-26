@@ -73,6 +73,10 @@ contract P2PSwap is EvvmService {
 
     /**
      * @notice Initializes P2PSwap with Core, Staking, and admin addresses.
+     * @dev Sets initial configuration:
+     *      - percentageFee.current = 500 (5% protocol fee on fills)
+     *      - basisPointsForReward: seller 50%, service 40%, mateStaker 10%
+     *      - No pending proposals at initialization
      * @param _coreAddress Address of the Core contract.
      * @param _stakingAddress Address of the Staking contract.
      * @param _admin Initial admin address.
@@ -106,6 +110,9 @@ contract P2PSwap is EvvmService {
      * @dev Locks `offeredAmount` of `offeredToken` from `user` into the contract.
      *      Assigns the order to the first available slot or opens a new one.
      *      Updates the market VWAP after insertion.
+     *      Priority fee handling:
+     *      - If executor is a staker: receives `priorityFeePay` in `offeredToken` + reward (1x multiplier)
+     *      - If executor is not a staker: `priorityFeePay` is accumulated as service fee
      * @param user Address of the seller creating the order.
      * @param offeredToken Token the seller is offering.
      * @param requestedToken Token the seller wants in return.
@@ -115,7 +122,7 @@ contract P2PSwap is EvvmService {
      * @param originExecutor Address of the origin executor for nonce validation.
      * @param nonce Async nonce authorizing this action.
      * @param signature User's ECDSA signature over the order parameters.
-     * @param priorityFeePay Priority fee in `offeredToken` paid to the executor.
+     * @param priorityFeePay Priority fee in `offeredToken` paid to the executor (0 if none).
      * @param noncePay Async nonce authorizing the payment.
      * @param signaturePay User's ECDSA signature authorizing the payment.
      */
@@ -163,7 +170,6 @@ contract P2PSwap is EvvmService {
             signaturePay
         );
 
-        //we get the market id from the token pair
         bytes32 marketId = getMarketId(offeredToken, requestedToken);
 
         uint256 orderId;
@@ -187,7 +193,6 @@ contract P2PSwap is EvvmService {
 
         marketInformation[marketId].ordersAvailable++;
 
-        // we create the order
         orders[marketId][orderId] = Structs.Order({
             seller: user,
             offeredAmount: offeredAmount,
@@ -195,7 +200,6 @@ contract P2PSwap is EvvmService {
             amountAvailable: offeredAmount
         });
 
-        // we calculate the median price for the market and update it
         marketInformation[marketId].medianPrice = getVWAP(marketId);
 
         bool isStaker = core.isAddressStaker(msg.sender);
@@ -217,6 +221,9 @@ contract P2PSwap is EvvmService {
      * @notice Cancels an existing order and returns the remaining offered tokens to the seller.
      * @dev Only the original seller can cancel. Returns `amountAvailable` of `offeredToken` to `user`.
      *      Updates the market VWAP after removal.
+     *      Priority fee handling (paid in MATE/principal token):
+     *      - If executor is a staker: receives `priorityFeePay` in principal token + reward (1x multiplier)
+     *      - If executor is not a staker: `priorityFeePay` is accumulated as service fee
      * @param user Address of the seller who owns the order.
      * @param offeredToken Token that was offered in the order.
      * @param requestedToken Token that was requested in the order.
@@ -225,7 +232,7 @@ contract P2PSwap is EvvmService {
      * @param originExecutor Address of the origin executor for nonce validation.
      * @param nonce Async nonce authorizing this action.
      * @param signature User's ECDSA signature over the cancel parameters.
-     * @param priorityFeePay Priority fee in MATE token paid to the executor (0 if none).
+     * @param priorityFeePay Priority fee in MATE/principal token paid to the executor (0 if none).
      * @param noncePay Async nonce authorizing the priority fee payment.
      * @param signaturePay User's ECDSA signature authorizing the priority fee payment.
      */
@@ -244,10 +251,8 @@ contract P2PSwap is EvvmService {
     ) external {
         bytes32 marketId = getMarketId(offeredToken, requestedToken);
 
-        // we store the order in memory to save gas
         Structs.Order memory order = orders[marketId][orderId];
 
-        // we check if the order exists and if the user is the seller
         if (order.seller == address(0)) revert Error.OrderIsUnavailable();
         if (order.seller != user) revert Error.NotTheSeller();
 
@@ -281,7 +286,6 @@ contract P2PSwap is EvvmService {
         orders[marketId][orderId].amountAvailable = 0;
         marketInformation[marketId].ordersAvailable--;
 
-        // we calculate the median price for the market and update it
         marketInformation[marketId].medianPrice = getVWAP(marketId);
 
         bool isStaker = core.isAddressStaker(msg.sender);
@@ -306,9 +310,15 @@ contract P2PSwap is EvvmService {
     /**
      * @notice Fills an existing order partially or fully.
      * @dev Buyer receives `amountOut` of `offeredToken`. Payment is proportional to the order price.
-     *      The fee is split: seller (50%), service (40%, stays in contract), executor (10%).
-     *      Reverts if `totalPayment + fee` exceeds `amountInMax`.
-     *      If the order is fully filled, the slot is freed and the order count decremented.
+     *      The fee is split according to `basisPointsForReward.current` (default: seller 50%, service 40%, executor 10%).
+     *      Flow:
+     *      1. Validate and consume nonce for the buyer
+     *      2. Calculate netPayment (proportional to order price) + protocol fee
+     *      3. Request payment of `amountInMax` + `priorityFeePay` from buyer
+     *      4. Distribute: netPayment + seller's fee share to seller, priorityFee + executor's fee share to executor
+     *      5. Refund excess payment (amountInMax - totalPayment) to buyer if any
+     *      6. If order is fully filled, free the slot and decrement order count
+     *      7. If executor is a staker, send reward (2x multiplier)
      * @param user Address of the buyer filling the order.
      * @param offeredToken Token the seller is offering (what the buyer receives).
      * @param requestedToken Token the seller wants in return (what the buyer pays).
@@ -657,10 +667,11 @@ contract P2PSwap is EvvmService {
     }
 
     /**
-     * @dev Applies a basis-point rate to an amount.
+     * @notice Applies a basis-point rate to an amount.
+     * @dev Calculates: amount * basisPoints / 10_000.
      * @param amount Base amount to apply the rate to.
      * @param basisPoints Rate in basis points (10_000 = 100%).
-     * @return Scaled result: amount * basisPoints / 10_000.
+     * @return Scaled result.
      */
     function applyBasisPoints(
         uint256 amount,
@@ -736,7 +747,7 @@ contract P2PSwap is EvvmService {
     /**
      * @dev Sends a principal token reward to the executor if it is a registered staker.
      * @param executor Address of the executor to reward.
-     * @param multiplier Reward multiplier applied to the base reward amount (2–5).
+     * @param multiplier Reward multiplier applied to the base reward amount (1 for makeOrder/cancelOrder, 2 for dispatchOrder).
      */
     function _sendReward(address executor, uint256 multiplier) internal {
         makeCaPay(
