@@ -3,7 +3,6 @@
 ![Version](https://img.shields.io/badge/version-3.1.2%20%22Wraith%22-red.svg)
 ![Solidity](https://img.shields.io/badge/Solidity-^0.8.0-363636?logo=solidity)
 ![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C?logo=foundry)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript)
 ![Bun](https://img.shields.io/badge/Runtime-Bun-000000?logo=bun)
 [![license](https://img.shields.io/badge/license-EVVM--NONCOMMERCIAL--1.0-blue.svg)](LICENSE)
 [![docs](https://img.shields.io/badge/docs-evvm.info-blue.svg)](https://www.evvm.info/)
