@@ -48,6 +48,10 @@ Named after [Wraith](https://www.playdeadlock.com/) from [Deadlock](https://stor
 - **P2PSwap.sol**: Fixed compilation error in `cancelOrder` where the `order` variable was used in validation checks (`order.seller == address(0)`) before being declared, causing the contract to fail compilation
 - **P2PSwap.sol**: Added missing `collectFees` internal function that was being called in `dispatchOrder` to accumulate service fees but was never defined, causing compilation failure
 
+### Removed
+
+- **CLI**: Moved CLI deployment from this repo to https://github.com/EVVM-org/evvm-cli
+
 ## [3.1.2] - 2026-04-01
 
 ### Changed

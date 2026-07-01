@@ -19,7 +19,6 @@ A clear and concise description of what the bug is.
 - [ ] Treasury (`treasury/`)
 - [ ] Cross-Chain Treasury (`treasuryTwoChains/`)
 - [ ] Library (`library/`)
-- [ ] CLI Tools (`cli/`)
 - [ ] Tests
 - [ ] Other: _______________
 
