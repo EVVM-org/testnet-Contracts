@@ -2,7 +2,13 @@ name: Test and Generate Interfaces
 
 on:
   push:
+    paths:
+      - 'src/contracts/**'
+      - 'test/**'
   pull_request:
+    paths:
+      - 'src/contracts/**'
+      - 'test/**'
   workflow_dispatch:
 
 jobs:
@@ -29,7 +35,7 @@ jobs:
         run: forge install
 
       - name: Install Bun dependencies
-        run: bun install
+        run: bun install --no-cache
 
       - name: Run tests
         run: forge test -vv
