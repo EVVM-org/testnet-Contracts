@@ -2,13 +2,7 @@ name: Test and Generate Interfaces
 
 on:
   push:
-    paths:
-      - 'src/contracts/**'
-      - 'test/**'
   pull_request:
-    paths:
-      - 'src/contracts/**'
-      - 'test/**'
   workflow_dispatch:
 
 jobs:
