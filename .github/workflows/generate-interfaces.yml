@@ -1,0 +1,85 @@
+name: Generate Interfaces
+
+on:
+  push:
+    paths:
+      - "src/contracts/**"
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          version: latest
+
+      - name: Install Foundry dependencies
+        run: forge install
+
+      - name: Install Bun dependencies
+        run: bun install --no-cache
+
+      - name: Generate interfaces
+        env:
+          FOUNDRY_DISABLE_NIGHTLY_WARNING: 1
+        run: |
+          mkdir -p /tmp/interfaces
+          mkdir -p src/interfaces
+
+          declare -A contracts=(
+            ["Core"]="core"
+            ["NameService"]="nameService"
+            ["P2PSwap"]="p2pSwap"
+            ["Staking"]="staking"
+            ["Estimator"]="staking"
+            ["Treasury"]="treasury"
+            ["TreasuryExternalChainStation"]="treasuryTwoChains"
+            ["TreasuryHostChainStation"]="treasuryTwoChains"
+          )
+
+          for contract in "${!contracts[@]}"; do
+            folder="${contracts[$contract]}"
+            echo "Generating interface for $contract..."
+
+            cast interface "src/contracts/$folder/$contract.sol" > "/tmp/interfaces/I${contract}.sol" 2>/dev/null
+
+            sed -i 's|^// SPDX-License-Identifier:.*$|// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0\n// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense|' "/tmp/interfaces/I${contract}.sol"
+            sed -i 's/pragma solidity \^0\.8\.[0-9]*;/pragma solidity ^0.8.0;/' "/tmp/interfaces/I${contract}.sol"
+            sed -i "s/interface $contract {/interface I$contract {/" "/tmp/interfaces/I${contract}.sol"
+
+            echo "I${contract}.sol generated"
+          done
+
+          cp /tmp/interfaces/*.sol src/interfaces/
+          echo "Contract interface generation completed"
+
+      - name: Commit interfaces
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add src/interfaces/
+          git diff --staged --quiet || git commit -m "chore: update contract interfaces"
+          git push
+
+      - name: Upload interfaces artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-interfaces
+          path: src/interfaces/
+          retention-days: 30

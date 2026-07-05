@@ -1,4 +1,4 @@
-name: Test and Generate Interfaces
+name: Test
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-and-generate:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -39,42 +39,3 @@ jobs:
 
       - name: Run tests
         run: forge test -vv
-
-      - name: Generate interfaces
-        env:
-          FOUNDRY_DISABLE_NIGHTLY_WARNING: 1
-        run: |
-          mkdir -p src/interfaces
-
-          declare -A contracts=(
-            ["Core"]="core"
-            ["NameService"]="nameService"
-            ["P2PSwap"]="p2pSwap"
-            ["Staking"]="staking"
-            ["Estimator"]="staking"
-            ["Treasury"]="treasury"
-            ["TreasuryExternalChainStation"]="treasuryTwoChains"
-            ["TreasuryHostChainStation"]="treasuryTwoChains"
-          )
-
-          for contract in "${!contracts[@]}"; do
-            folder="${contracts[$contract]}"
-            echo "Generating interface for $contract..."
-            
-            cast interface "src/contracts/$folder/$contract.sol" 2>/dev/null | \
-              sed 's|^// SPDX-License-Identifier:.*$|// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0\n// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense|' | \
-              sed 's/pragma solidity \^0\.8\.[0-9]*;/pragma solidity ^0.8.0;/' | \
-              sed "s/interface $contract {/interface I$contract {/" \
-              > "src/interfaces/I${contract}.sol"
-            
-            echo "I${contract}.sol generated at src/interfaces/I${contract}.sol"
-          done
-
-          echo "Contract interface generation completed"
-
-      - name: Upload interfaces artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: contract-interfaces
-          path: src/interfaces/
-          retention-days: 30

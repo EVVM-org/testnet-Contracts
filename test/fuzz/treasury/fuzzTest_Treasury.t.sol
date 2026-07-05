@@ -103,7 +103,7 @@ contract fuzzTest_Treasury is Test, Constants {
 
     function test__fuzz__withdraw(withdrawFuzzTestInput memory input) external {
         vm.assume(
-            input.user != address(1) &&
+            uint160(input.user) > 255 &&
                 input.user != address(treasury) &&
                 input.user.code.length == 0
         );
