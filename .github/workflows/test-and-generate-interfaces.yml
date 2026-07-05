@@ -35,6 +35,8 @@ jobs:
         run: forge test -vv
 
       - name: Generate interfaces
+        env:
+          FOUNDRY_DISABLE_NIGHTLY_WARNING: 1
         run: |
           mkdir -p src/interfaces
           
@@ -53,9 +55,9 @@ jobs:
             folder="${contracts[$contract]}"
             echo "Generating interface for $contract..."
             
-            cast interface "src/contracts/$folder/$contract.sol" | \
+            cast interface "src/contracts/$folder/$contract.sol" 2>/dev/null | \
               sed 's|^// SPDX-License-Identifier:.*$|// SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0\n// Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense|' | \
-              sed 's/pragma solidity \^0.8.4;/pragma solidity ^0.8.0;/' | \
+              sed 's/pragma solidity \^0\.8\.[0-9]*;/pragma solidity ^0.8.0;/' | \
               sed "s/interface $contract {/interface I$contract {/" \
               > "src/interfaces/I${contract}.sol"
             
