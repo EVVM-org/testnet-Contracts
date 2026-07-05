@@ -11,55 +11,80 @@ pragma solidity ^0.8.0;
 library P2PSwapHashUtils {
     /**
      * @notice Generates hash for makeOrder operation
-     * @dev Hash: keccak256("makeOrder", tokenA, tokenB, amountA, amountB). Uses async nonce.
-     * @param tokenA Token offered by seller
-     * @param tokenB Token requested by seller
-     * @param amountA Amount of tokenA offered
-     * @param amountB Amount of tokenB requested
+     * @dev Hash: keccak256("makeOrder", offeredToken, requestedToken, offeredAmount, requestedAmount). Uses async nonce.
+     * @param offeredToken Token offered by seller
+     * @param requestedToken Token requested by seller
+     * @param offeredAmount Amount of offeredToken offered
+     * @param requestedAmount Amount of requestedToken requested
      * @return Hash for Core.sol validation
      */
     function hashDataForMakeOrder(
-        address tokenA,
-        address tokenB,
-        uint256 amountA,
-        uint256 amountB
+        address offeredToken,
+        address requestedToken,
+        uint256 offeredAmount,
+        uint256 requestedAmount
     ) internal pure returns (bytes32) {
         return
             keccak256(
-                abi.encode("makeOrder", tokenA, tokenB, amountA, amountB)
+                abi.encode(
+                    "makeOrder",
+                    offeredToken,
+                    requestedToken,
+                    offeredAmount,
+                    requestedAmount
+                )
             );
     }
 
     /**
      * @notice Generates hash for cancelOrder operation
-     * @dev Hash: keccak256("cancelOrder", tokenA, tokenB, orderId). Only order owner can cancel.
-     * @param tokenA Token A in market pair
-     * @param tokenB Token B in market pair
+     * @dev Hash: keccak256("cancelOrder", offeredToken, requestedToken, orderId). Only order owner can cancel.
+     * @param offeredToken Token A in market pair
+     * @param requestedToken Token B in market pair
      * @param orderId Order ID to cancel
      * @return Hash for Core.sol validation
      */
     function hashDataForCancelOrder(
-        address tokenA,
-        address tokenB,
+        address offeredToken,
+        address requestedToken,
         uint256 orderId
     ) internal pure returns (bytes32) {
-        return keccak256(abi.encode("cancelOrder", tokenA, tokenB, orderId));
+        return
+            keccak256(
+                abi.encode("cancelOrder", offeredToken, requestedToken, orderId)
+            );
     }
 
     /**
      * @notice Generates hash for dispatchOrder operation
-     * @dev Hash: keccak256("dispatchOrder", tokenA, tokenB, orderId). Used by both fillProportionalFee and fillFixedFee.
-     * @param tokenA Token A in market pair
-     * @param tokenB Token B in market pair
+     * @dev Hash: keccak256("dispatchOrder", offeredToken, requestedToken, orderId). 
+     *      Used by both fillProportionalFee and fillFixedFee.
+     * @param offeredToken Token A in market pair
+     * @param requestedToken Token B in market pair
      * @param orderId Order ID to dispatch
+     * @param amountOut Amount of requestedToken to receive (amountA in fillProportionalFee, 
+     *                  amountB in fillFixedFee)
+     * @param amountInMax Max amount of offeredToken to pay (amountB in fillProportionalFee,
+     *                    amountA in fillFixedFee)
      * @return Hash for Core.sol validation
      */
     function hashDataForDispatchOrder(
-        address tokenA,
-        address tokenB,
-        uint256 orderId
+        address offeredToken,
+        address requestedToken,
+        uint256 orderId,
+        uint256 amountOut,
+        uint256 amountInMax
     ) internal pure returns (bytes32) {
         return
-            keccak256(abi.encode("dispatchOrder", tokenA, tokenB, orderId));
+            keccak256(
+                abi.encode(
+                    "dispatchOrder",
+                    offeredToken,
+                    requestedToken,
+                    orderId,
+                    amountOut,
+                    amountInMax
+                )
+            );
     }
 }

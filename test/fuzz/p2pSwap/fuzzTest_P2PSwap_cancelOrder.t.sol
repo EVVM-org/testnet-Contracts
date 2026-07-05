@@ -16,300 +16,277 @@ pragma abicoder v2;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-
-import {Constants} from "test/Constants.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    CoreStorage
-} from "@evvm/testnet-contracts/contracts/core/lib/CoreStorage.sol";
-import {
-    AdvancedStrings
-} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
-import {
-    CoreStructs
-} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
-import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
+import "test/Constants.sol";
+import "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
 import {
     P2PSwapStructs
 } from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
 contract fuzzTest_P2PSwap_cancelOrder is Test, Constants {
-    AccountData COMMON_USER_NO_STAKER_3 = WILDCARD_USER;
+    function executeBeforeSetUp() internal override {}
 
-    function addBalance(address user, address token, uint256 amount) private {
-        if (amount == 0) return;
-        core.addBalance(user, token, amount);
+    AccountData FISHER_NO_STAKER = COMMON_USER_NO_STAKER_2;
+    AccountData FISHER_STAKER = COMMON_USER_STAKER;
+    AccountData USER = COMMON_USER_NO_STAKER_1;
+
+    address stableCoinAddress = makeAddr("stableCoin");
+
+    struct CancelOrderInput {
+        uint64 offeredAmount;
+        uint64 requestedAmount;
+        uint32 priorityFeePay;
+        uint64 nonce;
+        uint64 noncePay;
+        bool isOfferedEther;
+        bool isRequestedStable;
     }
 
-    function createOrder(
-        AccountData memory executor,
+    function _addBalance(
         AccountData memory user,
-        uint256 nonceP2PSwap,
-        address tokenA,
-        address tokenB,
-        uint256 amountA,
-        uint256 amountB,
-        uint256 priorityFee,
-        uint256 noncePay
-    ) private returns (uint256 market, uint256 orderId) {
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOrder(
-                core.getEvvmID(),
-                address(0),
-                address(0),
-                nonceP2PSwap,
-                tokenA,
-                tokenB,
-                amountA,
-                amountB
-            )
-        );
-
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                core.getEvvmID(),
-                address(p2pSwap),
-                "",
-                tokenA,
-                amountA,
-                priorityFee,
-                address(p2pSwap),
-                address(0),
-                noncePay,
-                true
-            )
-        );
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(executor.Address);
-        (market, orderId) = p2pSwap.makeOrder(
-            user.Address,
-            tokenA,
-            tokenB,
-            amountA,
-            amountB,
-            address(0),
-            address(0),
-            nonceP2PSwap,
-            signatureP2P,
-            priorityFee,
-            noncePay,
-            signaturePay
-        );
-        vm.stopPrank();
-
-        return (market, orderId);
+        address token,
+        uint256 amount
+    ) private {
+        core.addBalance(user.Address, token, amount);
     }
 
-    struct CancelOrderFuzzTestInput {
-        bool hasPriorityFee;
-        uint16 amountA;
-        uint16 amountB;
-        uint16 priorityFee;
-        uint16 noncePay;
-        uint16 nonceP2PSwap;
-        bool tokenScenario;
-    }
-
-    function test__fuzz__cancelOrder(
-        CancelOrderFuzzTestInput memory input
+    function test__fuzz__cancelOrder__noStaker(
+        CancelOrderInput memory input
     ) external {
-        // assumptions
-        vm.assume(input.priorityFee > 0);
-        vm.assume(input.amountA > 0 && input.amountB > 0);
-        vm.assume(input.noncePay != input.nonceP2PSwap);
+        vm.assume(
+            input.offeredAmount > 0 &&
+                input.requestedAmount > 0 &&
+                input.nonce > 2 &&
+                input.noncePay > 2 &&
+                input.nonce != input.noncePay &&
+                !(input.isOfferedEther && input.isRequestedStable == false)
+        );
 
-        // Form inputs
-        // alternate tokens
-        address tokenA = input.tokenScenario
+        address offeredToken = input.isOfferedEther
             ? ETHER_ADDRESS
+            : stableCoinAddress;
+        address requestedToken = input.isRequestedStable
+            ? stableCoinAddress
             : PRINCIPAL_TOKEN_ADDRESS;
-        address tokenB = input.tokenScenario
-            ? PRINCIPAL_TOKEN_ADDRESS
-            : ETHER_ADDRESS;
 
-        uint256 priorityFee = input.hasPriorityFee ? input.priorityFee : 0;
-        uint256 noncePay = input.noncePay;
+        if (offeredToken == requestedToken) {
+            requestedToken = input.isOfferedEther
+                ? stableCoinAddress
+                : PRINCIPAL_TOKEN_ADDRESS;
+        }
 
-        uint256 rewardAmountMateToken = priorityFee > 0
-            ? core.getRewardAmount() * 3
-            : core.getRewardAmount() * 2;
+        _addBalance(USER, offeredToken, uint256(input.offeredAmount));
+        _executeFn_p2pSwap_makeOrder(
+            WILDCARD_USER,
+            USER,
+            offeredToken,
+            requestedToken,
+            uint256(input.offeredAmount),
+            uint256(input.requestedAmount),
+            address(0),
+            address(0),
+            uint256(input.nonce),
+            0,
+            uint256(input.noncePay)
+        );
 
-        uint256 rewardAmountMateTokenCancel = priorityFee > 0
-            ? (core.getRewardAmount() * 3) + priorityFee
-            : (core.getRewardAmount() * 2);
+        uint256 cancelNonce = uint256(input.nonce) + 1000;
+        uint256 cancelNoncePay = uint256(input.noncePay) + 1000;
 
-        // mate token
-        uint256 initialContractBalance = 50000000000000000000;
+        (
+            bytes memory signatureCancel,
+            bytes memory signaturePay
+        ) = _executeSig_p2pSwap_cancelOrder(
+                USER,
+                offeredToken,
+                requestedToken,
+                1,
+                address(0),
+                address(0),
+                cancelNonce,
+                uint256(input.priorityFeePay),
+                cancelNoncePay
+            );
 
-        // fund account
-        addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
+        _addBalance(
+            USER,
             PRINCIPAL_TOKEN_ADDRESS,
-            priorityFee
+            uint256(input.priorityFeePay)
         );
-        addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            tokenA,
-            input.amountA + priorityFee
-        );
-        // fund contract for reward distribution
-        addBalance(
-            address(p2pSwap),
-            PRINCIPAL_TOKEN_ADDRESS,
-            initialContractBalance
-        );
-
-        // create the order to be cancelled
-        // no priorityFee here
-        (uint256 market, uint256 orderId) = createOrder(
-            COMMON_USER_STAKER,
-            COMMON_USER_NO_STAKER_1,
-            input.nonceP2PSwap,
-            tokenA,
-            tokenB,
-            input.amountA,
-            input.amountB,
-            priorityFee,
-            noncePay
-        );
-        // update nonces - ensure they don't conflict with any previously used async nonces
-        uint256 nextNonceP2PSwap = 99998;
-        uint256 nextnoncePay = 99999;
-
-        // create signatures
-        // p2pswap
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForCancelOrder(
-                core.getEvvmID(),
-                address(0),
-                address(0),
-                nextNonceP2PSwap,
-                tokenA,
-                tokenB,
-                orderId
-            )
-        );
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        // we already have signatureP2P above
-        uint256 nonce = nextNonceP2PSwap;
-        bytes memory signature = signatureP2P;
-
-        // pay
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                core.getEvvmID(),
-                address(p2pSwap),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                0,
-                priorityFee,
-                address(p2pSwap),
-                address(0),
-                nextnoncePay,
-                true
-            )
-        );
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        // execute tx
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(FISHER_NO_STAKER.Address, FISHER_NO_STAKER.Address);
         p2pSwap.cancelOrder(
-            COMMON_USER_NO_STAKER_1.Address,
-            tokenA,
-            tokenB,
-            orderId,
+            USER.Address,
+            offeredToken,
+            requestedToken,
+            1,
             address(0),
             address(0),
-            nonce,
-            signature,
-            priorityFee,
-            nextnoncePay,
+            cancelNonce,
+            signatureCancel,
+            uint256(input.priorityFeePay),
+            cancelNoncePay,
             signaturePay
         );
         vm.stopPrank();
 
-        P2PSwapStructs.MarketInformation memory marketInfo = p2pSwap
-            .getMarketMetadata(market);
-        assertEq(marketInfo.ordersAvailable, 0);
+        bytes32 marketId = p2pSwap.getMarketId(offeredToken, requestedToken);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(marketId, 1);
 
         assertEq(
-            core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA),
-            input.amountA
+            order.seller,
+            address(0),
+            "[noStaker] incorrect order cancellation: seller should be address(0)"
         );
-        if (tokenA == PRINCIPAL_TOKEN_ADDRESS) {
-            // When tokenA is PRINCIPAL_TOKEN and hasPriorityFee is true,
-            // the contract accumulates one extra reward from the pay operation flow
-            if (input.hasPriorityFee) {
-                assertEq(
-                    core.getBalance(address(p2pSwap), tokenA),
-                    initialContractBalance + core.getRewardAmount()
-                );
-            } else {
-                assertEq(
-                    core.getBalance(address(p2pSwap), tokenA),
-                    initialContractBalance
-                );
-            }
-        } else {
-            assertEq(core.getBalance(address(p2pSwap), tokenA), 0);
+        assertEq(
+            order.offeredAmount,
+            0,
+            "[noStaker] incorrect order cancellation: offeredAmount should be 0"
+        );
+        assertEq(
+            order.requestedAmount,
+            0,
+            "[noStaker] incorrect order cancellation: requestedAmount should be 0"
+        );
+        assertEq(
+            order.amountAvailable,
+            0,
+            "[noStaker] incorrect order cancellation: amountAvailable should be 0"
+        );
+
+        assertEq(
+            core.getBalance(USER.Address, offeredToken),
+            uint256(input.offeredAmount),
+            "[noStaker] incorrect balance after cancellation: user should have original offered amount back"
+        );
+
+        assertEq(
+            core.getBalance(address(p2pSwap), offeredToken),
+            0,
+            "[noStaker] incorrect p2pSwap balance after cancellation"
+        );
+    }
+
+    function test__fuzz__cancelOrder__staker(
+        CancelOrderInput memory input
+    ) external {
+        vm.assume(
+            input.offeredAmount > 0 &&
+                input.requestedAmount > 0 &&
+                input.nonce > 2 &&
+                input.noncePay > 2 &&
+                input.nonce != input.noncePay &&
+                !(input.isOfferedEther && input.isRequestedStable == false)
+        );
+
+        address offeredToken = input.isOfferedEther
+            ? ETHER_ADDRESS
+            : stableCoinAddress;
+        address requestedToken = input.isRequestedStable
+            ? stableCoinAddress
+            : PRINCIPAL_TOKEN_ADDRESS;
+
+        if (offeredToken == requestedToken) {
+            requestedToken = input.isOfferedEther
+                ? stableCoinAddress
+                : PRINCIPAL_TOKEN_ADDRESS;
         }
 
-        if (input.hasPriorityFee) {
-            if (tokenA == PRINCIPAL_TOKEN_ADDRESS) {
-                assertEq(
-                    core.getBalance(COMMON_USER_STAKER.Address, tokenA),
-                    priorityFee +
-                        rewardAmountMateToken +
-                        rewardAmountMateTokenCancel
-                );
-            } else {
-                assertEq(
-                    core.getBalance(COMMON_USER_STAKER.Address, tokenA),
-                    input.priorityFee
-                );
-                assertEq(
-                    core.getBalance(COMMON_USER_STAKER.Address, tokenB),
-                    rewardAmountMateToken + rewardAmountMateTokenCancel
-                );
-            }
-        }
+        _addBalance(USER, offeredToken, uint256(input.offeredAmount));
+        _executeFn_p2pSwap_makeOrder(
+            WILDCARD_USER,
+            USER,
+            offeredToken,
+            requestedToken,
+            uint256(input.offeredAmount),
+            uint256(input.requestedAmount),
+            address(0),
+            address(0),
+            uint256(input.nonce),
+            0,
+            uint256(input.noncePay)
+        );
+
+        uint256 cancelNonce = uint256(input.nonce) + 1000;
+        uint256 cancelNoncePay = uint256(input.noncePay) + 1000;
+
+        (
+            bytes memory signatureCancel,
+            bytes memory signaturePay
+        ) = _executeSig_p2pSwap_cancelOrder(
+                USER,
+                offeredToken,
+                requestedToken,
+                1,
+                address(0),
+                address(0),
+                cancelNonce,
+                uint256(input.priorityFeePay),
+                cancelNoncePay
+            );
+
+        _addBalance(
+            USER,
+            PRINCIPAL_TOKEN_ADDRESS,
+            uint256(input.priorityFeePay)
+        );
+        vm.startPrank(FISHER_STAKER.Address, FISHER_STAKER.Address);
+        p2pSwap.cancelOrder(
+            USER.Address,
+            offeredToken,
+            requestedToken,
+            1,
+            address(0),
+            address(0),
+            cancelNonce,
+            signatureCancel,
+            uint256(input.priorityFeePay),
+            cancelNoncePay,
+            signaturePay
+        );
+        vm.stopPrank();
+
+        bytes32 marketId = p2pSwap.getMarketId(offeredToken, requestedToken);
+        P2PSwapStructs.Order memory order = p2pSwap.getOrder(marketId, 1);
+
+        assertEq(
+            order.seller,
+            address(0),
+            "[staker] incorrect order cancellation: seller should be address(0)"
+        );
+        assertEq(
+            order.offeredAmount,
+            0,
+            "[staker] incorrect order cancellation: offeredAmount should be 0"
+        );
+        assertEq(
+            order.requestedAmount,
+            0,
+            "[staker] incorrect order cancellation: requestedAmount should be 0"
+        );
+        assertEq(
+            order.amountAvailable,
+            0,
+            "[staker] incorrect order cancellation: amountAvailable should be 0"
+        );
+
+        assertEq(
+            core.getBalance(USER.Address, offeredToken),
+            uint256(input.offeredAmount),
+            "[staker] incorrect balance after cancellation: user should have original offered amount back"
+        );
+
+        assertEq(
+            core.getBalance(address(p2pSwap), offeredToken),
+            0,
+            "[staker] incorrect p2pSwap balance after cancellation"
+        );
+
+        uint256 expectedReward = input.priorityFeePay > 0
+            ? core.getRewardAmount() + uint256(input.priorityFeePay)
+            : core.getRewardAmount();
+        assertEq(
+            core.getBalance(FISHER_STAKER.Address, PRINCIPAL_TOKEN_ADDRESS),
+            expectedReward,
+            "[staker] incorrect fisher reward balance"
+        );
     }
 }

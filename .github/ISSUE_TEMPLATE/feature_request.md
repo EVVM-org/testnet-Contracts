@@ -27,7 +27,6 @@ A clear and concise description of what you want to happen.
 - [ ] Treasury (`treasury/`)
 - [ ] Cross-Chain Treasury (`treasuryTwoChains/`)
 - [ ] Library (`library/`)
-- [ ] CLI Tools (`cli/`)
 - [ ] Documentation
 - [ ] New Service/Contract
 - [ ] Other: _______________

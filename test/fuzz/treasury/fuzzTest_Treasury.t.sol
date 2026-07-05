@@ -109,6 +109,8 @@ contract fuzzTest_Treasury is Test, Constants {
         );
         vm.assume(input.withdrawAmount > 0);
 
+        uint256 userInitialEthBalance = address(input.user).balance;
+
         if (input.isHostNative) {
             vm.deal(address(treasury), input.withdrawAmount);
             _addBalance(input.user, input.withdrawAmount, ETHER_ADDRESS);
@@ -143,7 +145,7 @@ contract fuzzTest_Treasury is Test, Constants {
             );
             assertEq(
                 address(input.user).balance,
-                input.withdrawAmount,
+                userInitialEthBalance + input.withdrawAmount,
                 "Error: incorrect user balance after withdraw"
             );
         } else {

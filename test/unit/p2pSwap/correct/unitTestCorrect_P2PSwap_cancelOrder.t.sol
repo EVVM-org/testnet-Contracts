@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: EVVM-NONCOMMERCIAL-1.0
 // Full license terms available at: https://www.evvm.info/docs/EVVMNoncommercialLicense
 
-/**                                                                                                        
-██  ██ ▄▄  ▄▄ ▄▄ ▄▄▄▄▄▄   ▄▄▄▄▄▄ ▄▄▄▄▄  ▄▄▄▄ ▄▄▄▄▄▄ 
-██  ██ ███▄██ ██   ██       ██   ██▄▄  ███▄▄   ██   
-▀████▀ ██ ▀██ ██   ██       ██   ██▄▄▄ ▄▄██▀   ██   
-                                                    
-                                                    
-                                                    
- ▄▄▄▄  ▄▄▄  ▄▄▄▄  ▄▄▄▄  ▄▄▄▄▄  ▄▄▄▄ ▄▄▄▄▄▄          
-██▀▀▀ ██▀██ ██▄█▄ ██▄█▄ ██▄▄  ██▀▀▀   ██            
-▀████ ▀███▀ ██ ██ ██ ██ ██▄▄▄ ▀████   ██                                                    
+/**
+██  ██ ▄▄  ▄▄ ▄▄ ▄▄▄▄▄▄   ▄▄▄▄▄▄ ▄▄▄▄▄  ▄▄▄▄ ▄▄▄▄▄▄
+██  ██ ███▄██ ██   ██       ██   ██▄▄  ███▄▄   ██
+▀████▀ ██ ▀██ ██   ██       ██   ██▄▄▄ ▄▄██▀   ██
+
+
+
+ ▄▄▄▄  ▄▄▄  ▄▄▄▄  ▄▄▄▄  ▄▄▄▄▄  ▄▄▄▄ ▄▄▄▄▄▄
+██▀▀▀ ██▀██ ██▄█▄ ██▄█▄ ██▄▄  ██▀▀▀   ██
+▀████ ▀███▀ ██ ██ ██ ██ ██▄▄▄ ▀████   ██
  */
 
 pragma solidity ^0.8.0;
@@ -21,340 +21,407 @@ import "forge-std/console2.sol";
 
 import {Constants} from "test/Constants.sol";
 import {
-    CoreStructs
-} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
-
-import {Staking} from "@evvm/testnet-contracts/contracts/staking/Staking.sol";
-import {
-    NameService
-} from "@evvm/testnet-contracts/contracts/nameService/NameService.sol";
-import {Core} from "@evvm/testnet-contracts/contracts/core/Core.sol";
-import {
-    Erc191TestBuilder
-} from "@evvm/testnet-contracts/library/Erc191TestBuilder.sol";
-import {
-    Estimator
-} from "@evvm/testnet-contracts/contracts/staking/Estimator.sol";
-import {
-    CoreStorage
-} from "@evvm/testnet-contracts/contracts/core/lib/CoreStorage.sol";
-import {
-    CoreStructs
-} from "@evvm/testnet-contracts/library/structs/CoreStructs.sol";
-import {
-    Treasury
-} from "@evvm/testnet-contracts/contracts/treasury/Treasury.sol";
-import {P2PSwap} from "@evvm/testnet-contracts/contracts/p2pSwap/P2PSwap.sol";
-import {
     P2PSwapStructs
 } from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
 
-contract unitTestCorrect_P2PSwap_cancelOrder is Test, Constants {
-    function addBalance(address user, address token, uint256 amount) private {
-        core.addBalance(user, token, amount);
+contract unitTestCorrect_P2PSwap_cancelOrder is Constants {
+    struct Fisher {
+        AccountData noStaker;
+        AccountData staker;
     }
 
-    /// @notice Creates an order for testing purposes
-    function createOrder(
-        AccountData memory executor,
+    struct CancelOrderInputs {
+        address offeredToken;
+        address requestedToken;
+        uint256 orderId;
+        address senderExecutor;
+        address originExecutor;
+        uint256 nonce;
+        bytes signature;
+        uint256 priorityFeePay;
+        uint256 noncePay;
+        bytes signaturePay;
+    }
+
+    AccountData USER = COMMON_USER_NO_STAKER_1;
+    Fisher fisher =
+        Fisher({noStaker: COMMON_USER_NO_STAKER_2, staker: COMMON_USER_STAKER});
+
+    address stableCoinAddress = makeAddr("stableCoin");
+
+    function addBalance(
         AccountData memory user,
-        uint256 nonceP2PSwap,
-        address tokenA,
-        address tokenB,
-        uint256 amountA,
-        uint256 amountB,
-        uint256 priorityFee,
-        uint256 noncePay
-    ) private returns (uint256 market, uint256 orderId) {
-        // prepare signatures
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForMakeOrder(
-                core.getEvvmID(),
-                address(0),
-                address(0),
-                nonceP2PSwap,
-                tokenA,
-                tokenB,
-                amountA,
-                amountB
-            )
-        );
-
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        (v, r, s) = vm.sign(
-            user.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                core.getEvvmID(),
-                address(p2pSwap),
-                "",
-                tokenA,
-                amountA,
-                priorityFee,
-                address(p2pSwap),
-                address(0),
-                noncePay,
-                true
-            )
-        );
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        vm.startPrank(executor.Address);
-        (market, orderId) = p2pSwap.makeOrder(
-            user.Address,
-            tokenA,
-            tokenB,
-            amountA,
-            amountB,
-            address(0),
-            address(0),
-            nonceP2PSwap,
-            signatureP2P,
-            priorityFee,
-            noncePay,
-            signaturePay
-        );
-        vm.stopPrank();
-
-        return (market, orderId);
+        address token,
+        uint256 amount
+    ) private {
+        core.addBalance(user.Address, token, amount);
     }
 
-    function test__unit_correct__cancelOrder_payAsync_noPriorityFee() external {
-        // 1. define params
-        uint256 nonceP2PSwap = 14569;
-        address tokenA = ETHER_ADDRESS;
-        address tokenB = PRINCIPAL_TOKEN_ADDRESS;
-        uint256 amountA = 0.001 ether;
-        uint256 amountB = 0.01 ether;
-        uint256 priorityFee = 0;
-        uint256 noncePay = 4242;
-
-        addBalance(COMMON_USER_NO_STAKER_1.Address, tokenA, amountA);
-        addBalance(
-            address(p2pSwap),
-            PRINCIPAL_TOKEN_ADDRESS,
-            50000000000000000000
-        );
-
-        // 2. create an order
-        (uint256 market, uint256 orderId) = createOrder(
-            COMMON_USER_STAKER,
+    function executeBeforeSetUp() internal override {
+        core.addBalance(USER.Address, ETHER_ADDRESS, 2 ether);
+        _executeFn_p2pSwap_makeOrder(
+            fisher.noStaker,
             COMMON_USER_NO_STAKER_1,
-            nonceP2PSwap,
-            tokenA,
-            tokenB,
-            amountA,
-            amountB,
-            priorityFee,
-            noncePay
-        );
-        nonceP2PSwap = 56565;
-        noncePay = 6565;
-
-        assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
-
-        // 3. cancel that order
-        // 3.1 create p2p signature
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForCancelOrder(
-                core.getEvvmID(),
-                address(0),
-                address(0),
-                nonceP2PSwap,
-                tokenA,
-                tokenB,
-                orderId
-            )
-        );
-
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-        // 3.2 crete evvm signature
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                core.getEvvmID(),
-                address(p2pSwap),
-                "",
-                tokenA,
-                amountA,
-                priorityFee,
-                address(p2pSwap),
-                address(0),
-                noncePay,
-                true
-            )
-        );
-
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        // make sure the order is there
-        P2PSwapStructs.Order memory order = p2pSwap.getOrder(market, orderId);
-        assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
-
-        // Cancel the order using explicit parameters
-        vm.startPrank(COMMON_USER_STAKER.Address);
-        p2pSwap.cancelOrder(
-            COMMON_USER_NO_STAKER_1.Address,
-            tokenA,
-            tokenB,
-            orderId,
+            ETHER_ADDRESS,
+            stableCoinAddress,
+            1 ether,
+            2000 * 10 ** 6,
             address(0),
             address(0),
-            nonceP2PSwap,
-            signatureP2P,
-            priorityFee,
-            noncePay,
-            signaturePay
+            67676767676767676767676767676767676767676767676767676767676767676767,
+            0,
+            420420420420420420420420420420420420420420420420420420420420420420
         );
-        vm.stopPrank();
-
-        // 4. assertions
-        order = p2pSwap.getOrder(market, orderId);
-        // order should not be present anymore
-        assertEq(order.seller, address(0));
-        assertEq(
-            core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA),
-            amountA
+        _executeFn_p2pSwap_makeOrder(
+            fisher.noStaker,
+            COMMON_USER_NO_STAKER_1,
+            ETHER_ADDRESS,
+            stableCoinAddress,
+            1 ether,
+            2000 * 10 ** 6,
+            address(0),
+            address(0),
+            5318008,
+            0,
+            58008
         );
     }
 
-    function test__unit_correct__cancelOrder_payAsync_priorityFee() external {
-        // 1. define params
-        uint256 nonceP2PSwap = 14569;
-        address tokenA = ETHER_ADDRESS;
-        address tokenB = PRINCIPAL_TOKEN_ADDRESS;
-        uint256 amountA = 0.001 ether;
-        uint256 amountB = 0.01 ether;
-        uint256 priorityFee = 0.0001 ether;
-        uint256 noncePay = 78798;
+    function test__unit_correct__cancelOrder__noStaker() external {
+        CancelOrderInputs memory inputsNoPF = CancelOrderInputs({
+            offeredToken: ETHER_ADDRESS,
+            requestedToken: stableCoinAddress,
+            orderId: 1,
+            senderExecutor: address(0),
+            originExecutor: address(0),
+            nonce: 67,
+            signature: hex"",
+            priorityFeePay: 0,
+            noncePay: 78,
+            signaturePay: hex""
+        });
 
-        addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            tokenA,
-            amountA + priorityFee
-        );
-        addBalance(
-            COMMON_USER_NO_STAKER_1.Address,
-            PRINCIPAL_TOKEN_ADDRESS,
-            priorityFee
-        );
-        addBalance(
-            address(p2pSwap),
-            PRINCIPAL_TOKEN_ADDRESS,
-            50000000000000000000
-        );
-
-        // 2. create an order
-        (uint256 market, uint256 orderId) = createOrder(
-            COMMON_USER_STAKER,
-            COMMON_USER_NO_STAKER_1,
-            nonceP2PSwap,
-            tokenA,
-            tokenB,
-            amountA,
-            amountB,
-            priorityFee,
-            noncePay
-        );
-        nonceP2PSwap = 56565;
-        noncePay = 78987;
-
-        assertEq(core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA), 0);
-        assertEq(
-            core.getBalance(COMMON_USER_STAKER.Address, tokenA),
-            priorityFee
+        (
+            inputsNoPF.signature,
+            inputsNoPF.signaturePay
+        ) = _executeSig_p2pSwap_cancelOrder(
+            USER,
+            inputsNoPF.offeredToken,
+            inputsNoPF.requestedToken,
+            inputsNoPF.orderId,
+            inputsNoPF.senderExecutor,
+            inputsNoPF.originExecutor,
+            inputsNoPF.nonce,
+            inputsNoPF.priorityFeePay,
+            inputsNoPF.noncePay
         );
 
-        // 3. cancel that order
-        // 3.1 create p2p signature
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForCancelOrder(
-                core.getEvvmID(),
-                address(0),
-                address(0),
-                nonceP2PSwap,
-                tokenA,
-                tokenB,
-                orderId
-            )
-        );
-
-        bytes memory signatureP2P = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        // 3.2 crete evvm signature
-        (v, r, s) = vm.sign(
-            COMMON_USER_NO_STAKER_1.PrivateKey,
-            Erc191TestBuilder.buildMessageSignedForPay(
-                core.getEvvmID(),
-                address(p2pSwap),
-                "",
-                PRINCIPAL_TOKEN_ADDRESS,
-                0,
-                priorityFee,
-                address(p2pSwap),
-                address(0),
-                noncePay,
-                true
-            )
-        );
-
-        bytes memory signaturePay = Erc191TestBuilder.buildERC191Signature(
-            v,
-            r,
-            s
-        );
-
-        // make sure the order is there
-        P2PSwapStructs.Order memory order = p2pSwap.getOrder(market, orderId);
-        // assertEq(order.seller, COMMON_USER_NO_STAKER_1.Address);
-
-        // Cancel the order using explicit parameters
-        vm.startPrank(COMMON_USER_STAKER.Address);
+        vm.startPrank(fisher.noStaker.Address, fisher.noStaker.Address);
         p2pSwap.cancelOrder(
-            COMMON_USER_NO_STAKER_1.Address,
-            tokenA,
-            tokenB,
-            orderId,
-            address(0),
-            address(0),
-            nonceP2PSwap,
-            signatureP2P,
-            priorityFee,
-            noncePay,
-            signaturePay
+            USER.Address,
+            inputsNoPF.offeredToken,
+            inputsNoPF.requestedToken,
+            inputsNoPF.orderId,
+            inputsNoPF.senderExecutor,
+            inputsNoPF.originExecutor,
+            inputsNoPF.nonce,
+            inputsNoPF.signature,
+            inputsNoPF.priorityFeePay,
+            inputsNoPF.noncePay,
+            inputsNoPF.signaturePay
         );
         vm.stopPrank();
 
-        // 4. assertions
-        order = p2pSwap.getOrder(market, orderId);
-        // order should not be present anymore
-        assertEq(order.seller, address(0));
+        bytes32 marketIdNoPF = p2pSwap.getMarketId(
+            inputsNoPF.offeredToken,
+            inputsNoPF.requestedToken
+        );
+
+        P2PSwapStructs.Order memory orderNoPF = p2pSwap.getOrder(
+            marketIdNoPF,
+            1
+        );
+
         assertEq(
-            core.getBalance(COMMON_USER_NO_STAKER_1.Address, tokenA),
-            amountA
+            orderNoPF.seller,
+            address(0),
+            "[noStaker/nPF]: incorrect order cancellation: seller should be address(0)"
+        );
+        assertEq(
+            orderNoPF.offeredAmount,
+            0,
+            "[noStaker/nPF]: incorrect order cancellation: offeredAmount should be 0"
+        );
+        assertEq(
+            orderNoPF.requestedAmount,
+            0,
+            "[noStaker/nPF]: incorrect order cancellation: requestedAmount should be 0"
+        );
+        assertEq(
+            orderNoPF.amountAvailable,
+            0,
+            "[noStaker/nPF]: incorrect order cancellation: amountAvailable should be 0"
+        );
+
+        assertEq(
+            core.getBalance(USER.Address, inputsNoPF.offeredToken),
+            1 ether,
+            "[noStaker/nPF]: incorrect balance after cancellation: user should have original offered amount back"
+        );
+
+        ///////////////////////////////////////////////////////////////////
+
+        CancelOrderInputs memory inputsPF = CancelOrderInputs({
+            offeredToken: ETHER_ADDRESS,
+            requestedToken: stableCoinAddress,
+            orderId: 2,
+            senderExecutor: address(0),
+            originExecutor: address(0),
+            nonce: 333,
+            signature: hex"",
+            priorityFeePay: 0,
+            noncePay: 555,
+            signaturePay: hex""
+        });
+
+        (
+            inputsPF.signature,
+            inputsPF.signaturePay
+        ) = _executeSig_p2pSwap_cancelOrder(
+            USER,
+            inputsPF.offeredToken,
+            inputsPF.requestedToken,
+            inputsPF.orderId,
+            inputsPF.senderExecutor,
+            inputsPF.originExecutor,
+            inputsPF.nonce,
+            inputsPF.priorityFeePay,
+            inputsPF.noncePay
+        );
+
+        vm.startPrank(fisher.noStaker.Address, fisher.noStaker.Address);
+        p2pSwap.cancelOrder(
+            USER.Address,
+            inputsPF.offeredToken,
+            inputsPF.requestedToken,
+            inputsPF.orderId,
+            inputsPF.senderExecutor,
+            inputsPF.originExecutor,
+            inputsPF.nonce,
+            inputsPF.signature,
+            inputsPF.priorityFeePay,
+            inputsPF.noncePay,
+            inputsPF.signaturePay
+        );
+        vm.stopPrank();
+
+        bytes32 marketIdPF = p2pSwap.getMarketId(
+            inputsPF.offeredToken,
+            inputsPF.requestedToken
+        );
+
+        P2PSwapStructs.Order memory orderPF = p2pSwap.getOrder(marketIdPF, 2);
+
+        assertEq(
+            orderPF.seller,
+            address(0),
+            "[noStaker/PF]: incorrect order cancellation: seller should be address(0)"
+        );
+        assertEq(
+            orderPF.offeredAmount,
+            0,
+            "[noStaker/PF]: incorrect order cancellation: offeredAmount should be 0"
+        );
+        assertEq(
+            orderPF.requestedAmount,
+            0,
+            "[noStaker/PF]: incorrect order cancellation: requestedAmount should be 0"
+        );
+        assertEq(
+            orderPF.amountAvailable,
+            0,
+            "[noStaker/PF]: incorrect order cancellation: amountAvailable should be 0"
+        );
+
+        assertEq(
+            core.getBalance(USER.Address, inputsPF.offeredToken),
+            2 ether,
+            "[noStaker/PF]: incorrect balance after cancellation: user should have original offered amount back"
+        );
+    }
+
+    function test__unit_correct__cancelOrder__staker() external {
+        CancelOrderInputs memory inputsNoPF = CancelOrderInputs({
+            offeredToken: ETHER_ADDRESS,
+            requestedToken: stableCoinAddress,
+            orderId: 1,
+            senderExecutor: address(0),
+            originExecutor: address(0),
+            nonce: 67,
+            signature: hex"",
+            priorityFeePay: 0,
+            noncePay: 78,
+            signaturePay: hex""
+        });
+
+        (
+            inputsNoPF.signature,
+            inputsNoPF.signaturePay
+        ) = _executeSig_p2pSwap_cancelOrder(
+            USER,
+            inputsNoPF.offeredToken,
+            inputsNoPF.requestedToken,
+            inputsNoPF.orderId,
+            inputsNoPF.senderExecutor,
+            inputsNoPF.originExecutor,
+            inputsNoPF.nonce,
+            inputsNoPF.priorityFeePay,
+            inputsNoPF.noncePay
+        );
+
+        vm.startPrank(fisher.staker.Address, fisher.staker.Address);
+        p2pSwap.cancelOrder(
+            USER.Address,
+            inputsNoPF.offeredToken,
+            inputsNoPF.requestedToken,
+            inputsNoPF.orderId,
+            inputsNoPF.senderExecutor,
+            inputsNoPF.originExecutor,
+            inputsNoPF.nonce,
+            inputsNoPF.signature,
+            inputsNoPF.priorityFeePay,
+            inputsNoPF.noncePay,
+            inputsNoPF.signaturePay
+        );
+        vm.stopPrank();
+
+        bytes32 marketIdNoPF = p2pSwap.getMarketId(
+            inputsNoPF.offeredToken,
+            inputsNoPF.requestedToken
+        );
+
+        P2PSwapStructs.Order memory orderNoPF = p2pSwap.getOrder(
+            marketIdNoPF,
+            1
+        );
+
+        assertEq(
+            orderNoPF.seller,
+            address(0),
+            "[staker/nPF]: incorrect order cancellation: seller should be address(0)"
+        );
+        assertEq(
+            orderNoPF.offeredAmount,
+            0,
+            "[staker/nPF]: incorrect order cancellation: offeredAmount should be 0"
+        );
+        assertEq(
+            orderNoPF.requestedAmount,
+            0,
+            "[staker/nPF]: incorrect order cancellation: requestedAmount should be 0"
+        );
+        assertEq(
+            orderNoPF.amountAvailable,
+            0,
+            "[staker/nPF]: incorrect order cancellation: amountAvailable should be 0"
+        );
+
+        assertEq(
+            core.getBalance(USER.Address, inputsNoPF.offeredToken),
+            1 ether,
+            "[staker/nPF]: incorrect balance after cancellation: user should have original offered amount back"
+        );
+
+        assertEq(
+            core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
+            inputsNoPF.priorityFeePay + core.getRewardAmount(),
+            "[staker/nPF]: incorrect staker reward after cancellation: staker should receive priority fee pay and reward amount"
+        );
+
+        ///////////////////////////////////////////////////////////////////
+
+        CancelOrderInputs memory inputsPF = CancelOrderInputs({
+            offeredToken: ETHER_ADDRESS,
+            requestedToken: stableCoinAddress,
+            orderId: 2,
+            senderExecutor: address(0),
+            originExecutor: address(0),
+            nonce: 333,
+            signature: hex"",
+            priorityFeePay: 0,
+            noncePay: 555,
+            signaturePay: hex""
+        });
+
+        (
+            inputsPF.signature,
+            inputsPF.signaturePay
+        ) = _executeSig_p2pSwap_cancelOrder(
+            USER,
+            inputsPF.offeredToken,
+            inputsPF.requestedToken,
+            inputsPF.orderId,
+            inputsPF.senderExecutor,
+            inputsPF.originExecutor,
+            inputsPF.nonce,
+            inputsPF.priorityFeePay,
+            inputsPF.noncePay
+        );
+
+        vm.startPrank(fisher.staker.Address, fisher.staker.Address);
+        p2pSwap.cancelOrder(
+            USER.Address,
+            inputsPF.offeredToken,
+            inputsPF.requestedToken,
+            inputsPF.orderId,
+            inputsPF.senderExecutor,
+            inputsPF.originExecutor,
+            inputsPF.nonce,
+            inputsPF.signature,
+            inputsPF.priorityFeePay,
+            inputsPF.noncePay,
+            inputsPF.signaturePay
+        );
+        vm.stopPrank();
+
+        bytes32 marketIdPF = p2pSwap.getMarketId(
+            inputsPF.offeredToken,
+            inputsPF.requestedToken
+        );
+
+        P2PSwapStructs.Order memory orderPF = p2pSwap.getOrder(marketIdPF, 2);
+
+        assertEq(
+            orderPF.seller,
+            address(0),
+            "[staker/PF]: incorrect order cancellation: seller should be address(0)"
+        );
+        assertEq(
+            orderPF.offeredAmount,
+            0,
+            "[staker/PF]: incorrect order cancellation: offeredAmount should be 0"
+        );
+        assertEq(
+            orderPF.requestedAmount,
+            0,
+            "[staker/PF]: incorrect order cancellation: requestedAmount should be 0"
+        );
+        assertEq(
+            orderPF.amountAvailable,
+            0,
+            "[staker/PF]: incorrect order cancellation: amountAvailable should be 0"
+        );
+
+        assertEq(
+            core.getBalance(USER.Address, inputsPF.offeredToken),
+            2 ether,
+            "[staker/PF]: incorrect balance after cancellation: user should have original offered amount back"
+        );
+
+        assertEq(
+            core.getBalance(fisher.staker.Address, PRINCIPAL_TOKEN_ADDRESS),
+            inputsNoPF.priorityFeePay + inputsPF.priorityFeePay + core.getRewardAmount() * 2,
+            "[staker/PF]: incorrect staker reward after cancellation: staker should receive priority fee pay and reward amount"
         );
     }
 }

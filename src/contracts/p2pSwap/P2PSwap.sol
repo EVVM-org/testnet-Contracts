@@ -9,6 +9,9 @@ import {
 import {
     P2PSwapStructs as Structs
 } from "@evvm/testnet-contracts/library/structs/P2PSwapStructs.sol";
+import {
+    P2PSwapError as Error
+} from "@evvm/testnet-contracts/library/errors/P2PSwapError.sol";
 
 import {EvvmService} from "@evvm/testnet-contracts/library/EvvmService.sol";
 import {CoreStructs} from "@evvm/testnet-contracts/interfaces/ICore.sol";
@@ -18,116 +21,117 @@ import {
 } from "@evvm/testnet-contracts/library/utils/governance/ProposalStructs.sol";
 
 /**
- /$$$$$$$  /$$$$$$ /$$$$$$$  /$$$$$$                                
-| $$__  $$/$$__  $| $$__  $$/$$__  $$                               
-| $$  \ $|__/  \ $| $$  \ $| $$  \__//$$  /$$  /$$ /$$$$$$  /$$$$$$ 
+ /$$$$$$$  /$$$$$$ /$$$$$$$  /$$$$$$
+| $$__  $$/$$__  $| $$__  $$/$$__  $$
+| $$  \ $|__/  \ $| $$  \ $| $$  \__//$$  /$$  /$$ /$$$$$$  /$$$$$$
 | $$$$$$$/ /$$$$$$| $$$$$$$|  $$$$$$| $$ | $$ | $$|____  $$/$$__  $$
 | $$____/ /$$____/| $$____/ \____  $| $$ | $$ | $$ /$$$$$$| $$  \ $$
 | $$     | $$     | $$      /$$  \ $| $$ | $$ | $$/$$__  $| $$  | $$
 | $$     | $$$$$$$| $$     |  $$$$$$|  $$$$$/$$$$|  $$$$$$| $$$$$$$/
-|__/     |________|__/      \______/ \_____/\___/ \_______| $$____/ 
-                                                          | $$      
-                                                          | $$      
-                                                          |__/      
+|__/     |________|__/      \______/ \_____/\___/ \_______| $$____/
+                                                          | $$
+                                                          | $$
+                                                          |__/
 
  * @title EVVM P2P Swap
- * @author Mate labs  
+ * @author Mate labs
  * @notice Peer-to-peer decentralized exchange for token trading within EVVM.
- * @dev Supports order book-style trading with customizable fee models. 
+ * @dev Supports order book-style trading with customizable fee models.
  *      Integrates with Core.sol for asset locking and settlements, and Staking.sol for validator rewards.
  */
 
 contract P2PSwap is EvvmService {
-    /// @notice Current contract owner.
-    address owner;
-    /// @notice Proposed new owner pending acceptance.
-    address owner_proposal;
-    /// @notice Deadline for accepting the owner proposal.
-    uint256 owner_timeToAccept;
+    //░▒▓█ State Variables ██████████████████████████████████████████████████████████████▓▒░
 
-    /// @notice Fee split percentages for order fills (seller/service/staker).
-    Structs.Percentage rewardPercentage;
-    /// @notice Pending proposal for new fee split percentages.
-    Structs.Percentage rewardPercentage_proposal;
-    /// @notice Deadline for accepting the reward percentage proposal.
-    uint256 rewardPercentage_timeToAcceptNewChange;
-
-    /// @notice Proportional fee applied to fills in basis points (500 = 5%).
+    /// @notice Time delay for accepting a new admin proposal (1 day).
+    uint256 constant TIME_TO_ACCEPT_PROPOSAL = 1 days;
+    /// @notice Current admin address with a pending proposal mechanism.
+    ProposalStructs.AddressTypeProposal admin;
+    /// @notice Fee split percentages in basis points (seller / service / staker).
+    Structs.PercentageProposal basisPointsForReward;
+    /// @notice Proportional fee rate in basis points applied to fills (500 = 5%).
     ProposalStructs.UintTypeProposal percentageFee;
+    /// @notice Pending withdrawal proposal for collected fees, with time lock.
+    Structs.WithdrawalProposal withdrawalProposal;
 
-    /// @notice Maximum cap for fixed-fee fills.
-    ProposalStructs.UintTypeProposal maxLimitFillFixedFee;
+    /// @notice Stores market metadata indexed by the hash of the token pair.
+    mapping(bytes32 marketId => Structs.MarketInformation) marketInformation;
+    /// @notice Stores orders indexed by market ID and order slot.
+    mapping(bytes32 marketId => mapping(uint256 orderId => Structs.Order)) orders;
 
-    /// @notice Token pending admin withdrawal.
-    address tokenToWithdraw;
-    /// @notice Amount pending admin withdrawal.
-    uint256 amountToWithdraw;
-    /// @notice Recipient of the pending withdrawal.
-    address recipientToWithdraw;
-    /// @notice Deadline for executing the withdrawal.
-    uint256 timeToWithdrawal;
+    /// @notice Accumulated service fees per token, available for admin withdrawal.
+    mapping(address token => uint256 amountCollected) totalFeesCollected;
 
-    /// @notice Total number of markets created.
-    uint256 marketCount;
+    /// @notice Restricts access to the system administrator.
+    modifier onlyAdmin() {
+        if (msg.sender != admin.current) revert Error.SenderIsNotAdmin();
 
-    /// @notice Maps a token pair to its market ID.
-    mapping(address tokenA => mapping(address tokenB => uint256 id)) marketId;
+        _;
+    }
 
-    /// @notice Stores metadata for each market.
-    mapping(uint256 id => Structs.MarketInformation info) marketMetadata;
-
-    /// @notice Stores orders within each market indexed by slot.
-    mapping(uint256 idMarket => mapping(uint256 idOrder => Structs.Order)) ordersInsideMarket;
-
-    /// @notice Accumulated service fees per token.
-    mapping(address => uint256) balancesOfContract;
+    //░▒▓█ Constructor ████████████████████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Initializes P2PSwap with Core, Staking, and owner addresses.
-     * @param _coreAddress Core contract address.
-     * @param _stakingAddress Staking contract address.
-     * @param _owner Initial owner address.
+     * @notice Initializes P2PSwap with Core, Staking, and admin addresses.
+     * @dev Sets initial configuration:
+     *      - percentageFee.current = 500 (5% protocol fee on fills)
+     *      - basisPointsForReward: seller 50%, service 40%, mateStaker 10%
+     *      - No pending proposals at initialization
+     * @param _coreAddress Address of the Core contract.
+     * @param _stakingAddress Address of the Staking contract.
+     * @param _admin Initial admin address.
      */
     constructor(
         address _coreAddress,
         address _stakingAddress,
-        address _owner
+        address _admin
     ) EvvmService(_coreAddress, _stakingAddress) {
-        owner = _owner;
-        maxLimitFillFixedFee.current = 0.001 ether;
+        admin.current = _admin;
         percentageFee.current = 500;
-        rewardPercentage = Structs.Percentage({
-            seller: 5000,
-            service: 4000,
-            mateStaker: 1000
+        basisPointsForReward = Structs.PercentageProposal({
+            current: Structs.Percentage({
+                seller: 5000,
+                service: 4000,
+                mateStaker: 1000
+            }),
+            proposed: Structs.Percentage({
+                seller: 0,
+                service: 0,
+                mateStaker: 0
+            }),
+            proposalTime: 0
         });
     }
 
+    //░▒▓█ Core Order Operations ████████████████████████████████████████████████████▓▒░
+
     /**
-     * @notice Creates a new limit order in a specific trading market.
-     * @dev Locks tokenA in Core.sol and opens an order slot.
-     *      Markets are automatically created for new token pairs.
-     * @param user Seller address.
-     * @param tokenA Address of the token being sold.
-     * @param tokenB Address of the token being bought.
-     * @param amountA Amount of tokenA offered.
-     * @param amountB Amount of tokenB requested.
-     * @param senderExecutor Address of the calling service (must match msg.sender).
-     * @param originExecutor Origin address for signature validation.
-     * @param nonce Async nonce for this operation.
-     * @param signature Seller's authorization signature.
-     * @param priorityFeePay Optional priority fee for the executor.
-     * @param noncePay Nonce for the Core payment (locks tokenA).
-     * @param signaturePay Signature for the Core payment.
-     * @return market The ID of the market.
-     * @return orderId The ID of the order within that market.
+     * @notice Places a new sell order in the order book for a token pair.
+     * @dev Locks `offeredAmount` of `offeredToken` from `user` into the contract.
+     *      Assigns the order to the first available slot or opens a new one.
+     *      Updates the market VWAP after insertion.
+     *      Priority fee handling:
+     *      - If executor is a staker: receives `priorityFeePay` in `offeredToken` + reward (1x multiplier)
+     *      - If executor is not a staker: `priorityFeePay` is accumulated as service fee
+     * @param user Address of the seller creating the order.
+     * @param offeredToken Token the seller is offering.
+     * @param requestedToken Token the seller wants in return.
+     * @param offeredAmount Total amount of `offeredToken` being offered.
+     * @param requestedAmount Total amount of `requestedToken` expected for the full offer.
+     * @param senderExecutor Address of the executor relaying the order action.
+     * @param originExecutor Address of the origin executor for nonce validation.
+     * @param nonce Async nonce authorizing this action.
+     * @param signature User's ECDSA signature over the order parameters.
+     * @param priorityFeePay Priority fee in `offeredToken` paid to the executor (0 if none).
+     * @param noncePay Async nonce authorizing the payment.
+     * @param signaturePay User's ECDSA signature authorizing the payment.
      */
     function makeOrder(
         address user,
-        address tokenA,
-        address tokenB,
-        uint256 amountA,
-        uint256 amountB,
+        address offeredToken,
+        address requestedToken,
+        uint256 offeredAmount,
+        uint256 requestedAmount,
         address senderExecutor,
         address originExecutor,
         uint256 nonce,
@@ -135,11 +139,20 @@ contract P2PSwap is EvvmService {
         uint256 priorityFeePay,
         uint256 noncePay,
         bytes calldata signaturePay
-    ) external returns (uint256 market, uint256 orderId) {
+    ) external {
+        if (offeredAmount == 0) revert Error.ZeroAmount();
+        if (requestedAmount == 0) revert Error.ZeroAmount();
+        if (offeredToken == requestedToken) revert Error.SameTokenPair();
+
         core.validateAndConsumeNonce(
             user,
             senderExecutor,
-            Hash.hashDataForMakeOrder(tokenA, tokenB, amountA, amountB),
+            Hash.hashDataForMakeOrder(
+                offeredToken,
+                requestedToken,
+                offeredAmount,
+                requestedAmount
+            ),
             originExecutor,
             nonce,
             true,
@@ -148,8 +161,8 @@ contract P2PSwap is EvvmService {
 
         requestPay(
             user,
-            tokenA,
-            amountA,
+            offeredToken,
+            offeredAmount,
             priorityFeePay,
             originExecutor,
             noncePay,
@@ -157,64 +170,76 @@ contract P2PSwap is EvvmService {
             signaturePay
         );
 
-        market = findMarket(tokenA, tokenB);
-        if (market == 0) {
-            market = createMarket(tokenA, tokenB);
-        }
+        bytes32 marketId = getMarketId(offeredToken, requestedToken);
+
+        uint256 orderId;
 
         if (
-            marketMetadata[market].maxSlot ==
-            marketMetadata[market].ordersAvailable
+            marketInformation[marketId].maxSlot ==
+            marketInformation[marketId].ordersAvailable
         ) {
-            marketMetadata[market].maxSlot++;
-            marketMetadata[market].ordersAvailable++;
-            orderId = marketMetadata[market].maxSlot;
+            marketInformation[marketId].maxSlot++;
+            orderId = marketInformation[marketId].maxSlot;
         } else {
-            for (uint256 i = 1; i <= marketMetadata[market].maxSlot + 1; i++) {
-                if (ordersInsideMarket[market][i].seller == address(0)) {
+            for (uint256 i = 1; i <= marketInformation[marketId].maxSlot; i++) {
+                if (orders[marketId][i].seller == address(0)) {
                     orderId = i;
                     break;
                 }
             }
-            marketMetadata[market].ordersAvailable++;
+
+            if (orderId == 0) revert Error.UnexpectedBehavior();
         }
 
-        ordersInsideMarket[market][orderId] = Structs.Order(
-            user,
-            amountA,
-            amountB
-        );
+        marketInformation[marketId].ordersAvailable++;
 
-        if (core.isAddressStaker(msg.sender)) {
-            if (priorityFeePay > 0) {
-                // send the executor the priorityFee
-                makeCaPay(msg.sender, tokenA, priorityFeePay);
-            }
+        orders[marketId][orderId] = Structs.Order({
+            seller: user,
+            offeredAmount: offeredAmount,
+            requestedAmount: requestedAmount,
+            amountAvailable: offeredAmount
+        });
+
+        marketInformation[marketId].medianPrice = getVWAP(marketId);
+
+        bool isStaker = core.isAddressStaker(msg.sender);
+
+        if (priorityFeePay > 0) {
+            if (isStaker) {
+                makeCaPay(msg.sender, offeredToken, priorityFeePay);
+                collectFees(
+                    core.getPrincipalTokenAddress(),
+                    core.getRewardAmount()
+                );
+            } else collectFees(offeredToken, priorityFeePay);
         }
 
-        // send some mate token reward to the executor (independent of the priorityFee the user attached)
-        _rewardExecutor(msg.sender, priorityFeePay > 0 ? 3 : 2);
+        if (isStaker) _sendReward(msg.sender, 1);
     }
 
     /**
-     * @notice Cancels an existing order and refunds locked tokenA to the seller.
-     * @dev Only the order owner can cancel. The market slot is recycled for new orders.
-     * @param user Order owner address.
-     * @param tokenA Token being sold.
-     * @param tokenB Token being bought.
-     * @param orderId Order slot to cancel.
-     * @param senderExecutor Address of the calling service (must match msg.sender).
-     * @param originExecutor Origin address for signature validation.
-     * @param nonce Async nonce for this operation.
-     * @param signature Cancellation authorization signature.
-     * @param priorityFeePay Optional priority fee for the executor.
-     * @param noncePay Nonce for the priority fee payment.
-     * @param signaturePay Signature for the priority fee payment.
+     * @notice Cancels an existing order and returns the remaining offered tokens to the seller.
+     * @dev Only the original seller can cancel. Returns `amountAvailable` of `offeredToken` to `user`.
+     *      Updates the market VWAP after removal.
+     *      Priority fee handling (paid in MATE/principal token):
+     *      - If executor is a staker: receives `priorityFeePay` in principal token + reward (1x multiplier)
+     *      - If executor is not a staker: `priorityFeePay` is accumulated as service fee
+     * @param user Address of the seller who owns the order.
+     * @param offeredToken Token that was offered in the order.
+     * @param requestedToken Token that was requested in the order.
+     * @param orderId Slot ID of the order to cancel.
+     * @param senderExecutor Address of the executor relaying the cancel action.
+     * @param originExecutor Address of the origin executor for nonce validation.
+     * @param nonce Async nonce authorizing this action.
+     * @param signature User's ECDSA signature over the cancel parameters.
+     * @param priorityFeePay Priority fee in MATE/principal token paid to the executor (0 if none).
+     * @param noncePay Async nonce authorizing the priority fee payment.
+     * @param signaturePay User's ECDSA signature authorizing the priority fee payment.
      */
     function cancelOrder(
         address user,
-        address tokenA,
-        address tokenB,
+        address offeredToken,
+        address requestedToken,
         uint256 orderId,
         address senderExecutor,
         address originExecutor,
@@ -224,21 +249,24 @@ contract P2PSwap is EvvmService {
         uint256 noncePay,
         bytes calldata signaturePay
     ) external {
+        bytes32 marketId = getMarketId(offeredToken, requestedToken);
+
+        Structs.Order memory order = orders[marketId][orderId];
+
+        if (order.seller == address(0)) revert Error.OrderIsUnavailable();
+        if (order.seller != user) revert Error.NotTheSeller();
+
         core.validateAndConsumeNonce(
             user,
             senderExecutor,
-            Hash.hashDataForCancelOrder(tokenA, tokenB, orderId),
+            Hash.hashDataForCancelOrder(offeredToken, requestedToken, orderId),
             originExecutor,
             nonce,
             true,
             signature
         );
 
-        uint256 market = findMarket(tokenA, tokenB);
-
-        _validateOrderOwnership(market, orderId, user);
-
-        if (priorityFeePay > 0) {
+        if (priorityFeePay > 0)
             requestPay(
                 user,
                 core.getPrincipalTokenAddress(),
@@ -249,44 +277,69 @@ contract P2PSwap is EvvmService {
                 true,
                 signaturePay
             );
+
+        makeCaPay(user, offeredToken, order.amountAvailable);
+
+        orders[marketId][orderId].seller = address(0);
+        orders[marketId][orderId].offeredAmount = 0;
+        orders[marketId][orderId].requestedAmount = 0;
+        orders[marketId][orderId].amountAvailable = 0;
+        marketInformation[marketId].ordersAvailable--;
+
+        marketInformation[marketId].medianPrice = getVWAP(marketId);
+
+        bool isStaker = core.isAddressStaker(msg.sender);
+
+        if (priorityFeePay > 0) {
+            if (isStaker) {
+                makeCaPay(
+                    msg.sender,
+                    core.getPrincipalTokenAddress(),
+                    priorityFeePay
+                );
+                collectFees(
+                    core.getPrincipalTokenAddress(),
+                    core.getRewardAmount()
+                );
+            } else collectFees(core.getPrincipalTokenAddress(), priorityFeePay);
         }
 
-        makeCaPay(user, tokenA, ordersInsideMarket[market][orderId].amountA);
-
-        _clearOrderAndUpdateMarket(market, orderId);
-
-        if (core.isAddressStaker(msg.sender) && priorityFeePay > 0) {
-            makeCaPay(
-                msg.sender,
-                core.getPrincipalTokenAddress(),
-                priorityFeePay
-            );
-        }
-        _rewardExecutor(msg.sender, priorityFeePay > 0 ? 3 : 2);
+        if (isStaker) _sendReward(msg.sender, 1);
     }
 
     /**
-     * @notice Fills an order using a proportional fee (fee = amountB * percentageFee / 10,000).
-     * @dev Overpayment above amountB + fee is automatically refunded to the buyer.
-     * @param user Buyer address filling the order.
-     * @param tokenA Token being bought by the filler.
-     * @param tokenB Token being sold by the filler.
-     * @param orderId Order slot to fill.
-     * @param amountOfTokenBToFill Amount of tokenB to pay (must cover order amount + fee).
-     * @param senderExecutor Address of the calling service (must match msg.sender).
-     * @param originExecutor Origin address for signature validation.
-     * @param nonce Async nonce for this operation.
-     * @param signature Fill authorization signature.
-     * @param priorityFeePay Optional priority fee for the executor.
-     * @param noncePay Nonce for the payment.
-     * @param signaturePay Signature for the payment.
+     * @notice Fills an existing order partially or fully.
+     * @dev Buyer receives `amountOut` of `offeredToken`. Payment is proportional to the order price.
+     *      The fee is split according to `basisPointsForReward.current` (default: seller 50%, service 40%, executor 10%).
+     *      Flow:
+     *      1. Validate and consume nonce for the buyer
+     *      2. Calculate netPayment (proportional to order price) + protocol fee
+     *      3. Request payment of `amountInMax` + `priorityFeePay` from buyer
+     *      4. Distribute: netPayment + seller's fee share to seller, priorityFee + executor's fee share to executor
+     *      5. Refund excess payment (amountInMax - totalPayment) to buyer if any
+     *      6. If order is fully filled, free the slot and decrement order count
+     *      7. If executor is a staker, send reward (2x multiplier)
+     * @param user Address of the buyer filling the order.
+     * @param offeredToken Token the seller is offering (what the buyer receives).
+     * @param requestedToken Token the seller wants in return (what the buyer pays).
+     * @param orderId Slot ID of the order to fill.
+     * @param amountOut Amount of `offeredToken` the buyer wants to receive.
+     * @param amountInMax Maximum amount of `requestedToken` the buyer is willing to pay, including fee.
+     * @param senderExecutor Address of the executor relaying the fill action.
+     * @param originExecutor Address of the origin executor for nonce validation.
+     * @param nonce Async nonce authorizing this action.
+     * @param signature User's ECDSA signature over the dispatch parameters.
+     * @param priorityFeePay Priority fee in `requestedToken` paid to the executor.
+     * @param noncePay Async nonce authorizing the payment.
+     * @param signaturePay User's ECDSA signature authorizing the payment.
      */
-    function dispatchOrder_fillPropotionalFee(
+    function dispatchOrder(
         address user,
-        address tokenA,
-        address tokenB,
+        address offeredToken,
+        address requestedToken,
         uint256 orderId,
-        uint256 amountOfTokenBToFill,
+        uint256 amountOut,
+        uint256 amountInMax,
         address senderExecutor,
         address originExecutor,
         uint256 nonce,
@@ -295,31 +348,50 @@ contract P2PSwap is EvvmService {
         uint256 noncePay,
         bytes calldata signaturePay
     ) external {
+        bytes32 market = getMarketId(offeredToken, requestedToken);
+        Structs.Order storage order = orders[market][orderId];
+
+        if (amountOut == 0) revert Error.ZeroAmount();
+        if (amountInMax == 0) revert Error.ZeroAmount();
+        if (order.seller == address(0)) revert Error.OrderIsUnavailable();
+
+        if (order.amountAvailable < amountOut)
+            revert Error.InsufficientAmountToFill();
+
         core.validateAndConsumeNonce(
             user,
             senderExecutor,
-            Hash.hashDataForDispatchOrder(tokenA, tokenB, orderId),
+            Hash.hashDataForDispatchOrder(
+                offeredToken,
+                requestedToken,
+                orderId,
+                amountOut,
+                amountInMax
+            ),
             originExecutor,
             nonce,
             true,
             signature
         );
 
-        uint256 market = findMarket(tokenA, tokenB);
+        uint256 netPaymentAmount = getNetPaymentAmount(
+            amountOut,
+            order.offeredAmount,
+            order.requestedAmount
+        );
 
-        Structs.Order storage order = _validateMarketAndOrder(market, orderId);
+        if (netPaymentAmount == 0) revert Error.InsufficientPayment();
 
-        uint256 fee = calculateFillPropotionalFee(order.amountB);
-        uint256 requiredAmount = order.amountB + fee;
+        uint256 fee = getFeePaymentAmount(netPaymentAmount);
 
-        if (amountOfTokenBToFill < requiredAmount) {
-            revert("Insuficient amountOfTokenToFill");
-        }
+        uint256 totalPayment = netPaymentAmount + fee;
+
+        if (totalPayment > amountInMax) revert Error.InsufficientPayment();
 
         requestPay(
             user,
-            tokenB,
-            amountOfTokenBToFill,
+            requestedToken,
+            amountInMax,
             priorityFeePay,
             originExecutor,
             noncePay,
@@ -327,800 +399,468 @@ contract P2PSwap is EvvmService {
             signaturePay
         );
 
-        // si es mas del fee + el monto de la orden hacemos caPay al usuario del sobranate
-        bool didRefund = _handleOverpaymentRefund(
-            user,
-            tokenB,
-            amountOfTokenBToFill,
-            requiredAmount
+        orders[market][orderId].amountAvailable -= amountOut;
+        marketInformation[market].medianPrice = getVWAP(market);
+
+        uint256 sellerAmount = netPaymentAmount +
+            applyBasisPoints(fee, basisPointsForReward.current.seller);
+        uint256 executorAmount = priorityFeePay +
+            applyBasisPoints(fee, basisPointsForReward.current.mateStaker);
+
+        collectFees(
+            requestedToken,
+            applyBasisPoints(fee, basisPointsForReward.current.service)
         );
-
-        // distribute payments to seller and executor
-        _distributePayments(
-            tokenB,
-            order.amountB,
-            fee,
-            order.seller,
-            msg.sender,
-            priorityFeePay
-        );
-
-        // pay user with token A
-        makeCaPay(user, tokenA, order.amountA);
-
-        _rewardExecutor(msg.sender, didRefund ? 5 : 4);
-
-        _clearOrderAndUpdateMarket(market, orderId);
-    }
-
-    /**
-     * @notice Fills an order using a capped fixed fee (min of proportional fee and maxLimitFillFixedFee).
-     * @dev Accepts payment within a 10% tolerance window below the full fee. Final fee is derived from actual payment.
-     * @param user Buyer address filling the order.
-     * @param tokenA Token being bought by the filler.
-     * @param tokenB Token being sold by the filler.
-     * @param orderId Order slot to fill.
-     * @param amountOfTokenBToFill Amount of tokenB to pay.
-     * @param senderExecutor Address of the calling service (must match msg.sender).
-     * @param originExecutor Origin address for signature validation.
-     * @param nonce Async nonce for this operation.
-     * @param signature Fill authorization signature.
-     * @param priorityFeePay Optional priority fee for the executor.
-     * @param noncePay Nonce for the payment.
-     * @param signaturePay Signature for the payment.
-     * @param maxFillFixedFee Fee cap override (for testing).
-     */
-    function dispatchOrder_fillFixedFee(
-        address user,
-        address tokenA,
-        address tokenB,
-        uint256 orderId,
-        uint256 amountOfTokenBToFill,
-        address senderExecutor,
-        address originExecutor,
-        uint256 nonce,
-        bytes calldata signature,
-        uint256 priorityFeePay,
-        uint256 noncePay,
-        bytes calldata signaturePay,
-        uint256 maxFillFixedFee ///@dev for testing purposes
-    ) external {
-        core.validateAndConsumeNonce(
-            user,
-            senderExecutor,
-            Hash.hashDataForDispatchOrder(tokenA, tokenB, orderId),
-            originExecutor,
-            nonce,
-            true,
-            signature
-        );
-
-        uint256 market = findMarket(tokenA, tokenB);
-
-        Structs.Order storage order = _validateMarketAndOrder(market, orderId);
-
-        (uint256 fee, uint256 fee10) = calculateFillFixedFee(
-            order.amountB,
-            maxFillFixedFee
-        );
-
-        uint256 minRequired = order.amountB + fee - fee10;
-        uint256 fullRequired = order.amountB + fee;
-
-        if (amountOfTokenBToFill < minRequired) {
-            revert("Insuficient amountOfTokenBToFill");
-        }
-
-        requestPay(
-            user,
-            tokenB,
-            amountOfTokenBToFill,
-            priorityFeePay,
-            originExecutor,
-            noncePay,
-            true,
-            signaturePay
-        );
-
-        uint256 finalFee = _calculateFinalFee(
-            amountOfTokenBToFill,
-            order.amountB,
-            fee,
-            fee10
-        );
-
-        // si es mas del fee + el monto de la orden hacemos caPay al usuario del sobranate
-        bool didRefund = _handleOverpaymentRefund(
-            user,
-            tokenB,
-            amountOfTokenBToFill,
-            fullRequired
-        );
-
-        // distribute payments to seller and executor
-        _distributePayments(
-            tokenB,
-            order.amountB,
-            finalFee,
-            order.seller,
-            msg.sender,
-            priorityFeePay
-        );
-
-        makeCaPay(user, tokenA, order.amountA);
-
-        _rewardExecutor(msg.sender, didRefund ? 5 : 4);
-
-        _clearOrderAndUpdateMarket(market, orderId);
-    }
-
-    /**
-     * @dev Computes proportional fill fee as a percentage of the order amount.
-     * @param amount Order tokenB amount.
-     * @return fee Fee in tokenB units.
-     */
-    function calculateFillPropotionalFee(
-        uint256 amount
-    ) internal view returns (uint256 fee) {
-        ///@dev get the % of the amount
-        fee = (amount * percentageFee.current) / 10_000;
-    }
-
-    /**
-     * @dev Computes the capped fixed fee and its 10% tolerance window.
-     * @param amount Order tokenB amount.
-     * @param maxFillFixedFee Absolute fee cap.
-     * @return fee Capped fee amount.
-     * @return fee10 10% of the fee (tolerance window).
-     */
-    function calculateFillFixedFee(
-        uint256 amount,
-        uint256 maxFillFixedFee
-    ) internal view returns (uint256 fee, uint256 fee10) {
-        if (calculateFillPropotionalFee(amount) > maxFillFixedFee) {
-            fee = maxFillFixedFee;
-            fee10 = (fee * 1000) / 10_000;
-        } else {
-            fee = calculateFillPropotionalFee(amount);
-        }
-    }
-
-    /**
-     * @dev Calculates the final fee for fixed fee dispatch considering tolerance range
-     * @param amountPaid Amount paid by user
-     * @param orderAmount Base order amount
-     * @param fee Full fee amount
-     * @param fee10 10% tolerance of fee
-     * @return finalFee The calculated final fee
-     */
-    function _calculateFinalFee(
-        uint256 amountPaid,
-        uint256 orderAmount,
-        uint256 fee,
-        uint256 fee10
-    ) internal pure returns (uint256 finalFee) {
-        uint256 minRequired = orderAmount + fee - fee10;
-        uint256 fullRequired = orderAmount + fee;
-
-        if (amountPaid >= minRequired && amountPaid < fullRequired) {
-            finalFee = amountPaid - orderAmount;
-        } else {
-            finalFee = fee;
-        }
-    }
-
-    //◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢
-    // Internal helper functions to avoid Stack too deep
-    //◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢
-
-    /**
-     * @dev Validates that a market and order exist and are valid
-     * @param market The market ID
-     * @param orderId The order ID within the market
-     * @return order The order data if valid
-     */
-    function _validateMarketAndOrder(
-        uint256 market,
-        uint256 orderId
-    ) internal view returns (Structs.Order storage order) {
-        if (market == 0) {
-            revert("Invalid order");
-        }
-        order = ordersInsideMarket[market][orderId];
-        if (order.seller == address(0)) {
-            revert("Invalid order");
-        }
-    }
-
-    /**
-     * @dev Validates that a market exists and the user is the seller of the order
-     * @param market The market ID
-     * @param orderId The order ID
-     * @param user The expected seller address
-     */
-    function _validateOrderOwnership(
-        uint256 market,
-        uint256 orderId,
-        address user
-    ) internal view {
-        if (market == 0 || ordersInsideMarket[market][orderId].seller != user) {
-            revert("Invalid order");
-        }
-    }
-
-    /**
-     * @dev Rewards the executor (staker) with MATE tokens based on operation complexity
-     * @param executor The address of the executor
-     * @param multiplier The reward multiplier (2, 3, 4, or 5)
-     */
-    function _rewardExecutor(address executor, uint256 multiplier) internal {
-        if (core.isAddressStaker(executor)) {
-            makeCaPay(
-                executor,
-                core.getPrincipalTokenAddress(),
-                core.getRewardAmount() * multiplier
-            );
-        }
-    }
-
-    /**
-     * @dev Clears an order and updates market metadata
-     * @param market The market ID
-     * @param orderId The order ID to clear
-     */
-    function _clearOrderAndUpdateMarket(
-        uint256 market,
-        uint256 orderId
-    ) internal {
-        ordersInsideMarket[market][orderId].seller = address(0);
-        marketMetadata[market].ordersAvailable--;
-    }
-
-    /**
-     * @dev Handles refund to user if they overpaid
-     * @param user The user address to refund
-     * @param token The token address
-     * @param amountPaid The amount the user paid
-     * @param amountRequired The required amount (order amount + fee)
-     * @return didRefund Whether a refund was made
-     */
-    function _handleOverpaymentRefund(
-        address user,
-        address token,
-        uint256 amountPaid,
-        uint256 amountRequired
-    ) internal returns (bool didRefund) {
-        if (amountPaid > amountRequired) {
-            makeCaPay(user, token, amountPaid - amountRequired);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * @dev Distributes payment to seller and executor, and accumulates service fee
-     * @param token The token address for payment
-     * @param orderAmount The base order amount
-     * @param fee The fee amount to distribute
-     * @param seller The seller address
-     * @param executor The executor address
-     * @param priorityFee The priority fee for executor
-     */
-    function _distributePayments(
-        address token,
-        uint256 orderAmount,
-        uint256 fee,
-        address seller,
-        address executor,
-        uint256 priorityFee
-    ) internal {
-        uint256 sellerAmount = orderAmount +
-            ((fee * rewardPercentage.seller) / 10_000);
-        uint256 executorAmount = priorityFee +
-            ((fee * rewardPercentage.mateStaker) / 10_000);
 
         CoreStructs.DisperseCaPayMetadata[]
             memory toData = new CoreStructs.DisperseCaPayMetadata[](2);
-
-        toData[0] = CoreStructs.DisperseCaPayMetadata(sellerAmount, seller);
-        toData[1] = CoreStructs.DisperseCaPayMetadata(executorAmount, executor);
-
-        balancesOfContract[token] += (fee * rewardPercentage.service) / 10_000;
-
-        makeDisperseCaPay(toData, token, sellerAmount + executorAmount);
-    }
-
-    /**
-     * @dev Registers a new market for a token pair.
-     * @param tokenA Token A address.
-     * @param tokenB Token B address.
-     * @return New market ID.
-     */
-    function createMarket(
-        address tokenA,
-        address tokenB
-    ) internal returns (uint256) {
-        marketCount++;
-        marketId[tokenA][tokenB] = marketCount;
-        marketMetadata[marketCount] = Structs.MarketInformation(
-            tokenA,
-            tokenB,
-            0,
-            0
+        toData[0] = CoreStructs.DisperseCaPayMetadata(
+            sellerAmount,
+            order.seller
         );
-        return marketCount;
+        toData[1] = CoreStructs.DisperseCaPayMetadata(
+            executorAmount,
+            msg.sender
+        );
+        makeDisperseCaPay(
+            toData,
+            requestedToken,
+            sellerAmount + executorAmount
+        );
+
+        if (amountInMax > totalPayment)
+            makeCaPay(user, requestedToken, amountInMax - totalPayment);
+
+        makeCaPay(user, offeredToken, amountOut);
+
+        if (orders[market][orderId].amountAvailable == 0) {
+            orders[market][orderId].seller = address(0);
+            orders[market][orderId].offeredAmount = 0;
+            orders[market][orderId].requestedAmount = 0;
+            marketInformation[market].ordersAvailable--;
+        }
+
+        if (core.isAddressStaker(msg.sender)) _sendReward(msg.sender, 2);
     }
 
-    //◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢
-    // Admin tools
-    //◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢
+    //░▒▓█ Admin Tools ████████████████████████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Proposes a new owner with a 1-day acceptance window.
-     * @param _owner Proposed owner address.
+     * @notice Proposes a new administrator (1-day delay).
+     * @param _newOwner Address of the proposed admin.
      */
-    function proposeOwner(address _owner) external {
-        if (msg.sender != owner) {
-            revert();
-        }
-        owner_proposal = _owner;
-        owner_timeToAccept = block.timestamp + 1 days;
+    function proposeAdmin(address _newOwner) external onlyAdmin {
+        if (_newOwner == address(0) || _newOwner == admin.current)
+            revert Error.IncorrectAddressInput();
+
+        admin = ProposalStructs.AddressTypeProposal({
+            current: admin.current,
+            proposal: _newOwner,
+            timeToAccept: block.timestamp + TIME_TO_ACCEPT_PROPOSAL
+        });
     }
 
-    /// @notice Cancels the pending owner proposal.
-    function rejectProposeOwner() external {
-        if (
-            msg.sender != owner_proposal || block.timestamp > owner_timeToAccept
-        ) {
-            revert();
-        }
-        owner_proposal = address(0);
-    }
-
-    /// @notice Accepts the pending owner proposal, transferring ownership.
-    function acceptOwner() external {
-        if (
-            msg.sender != owner_proposal || block.timestamp > owner_timeToAccept
-        ) {
-            revert();
-        }
-        owner = owner_proposal;
-        owner_proposal = address(0);
+    /// @notice Cancels a pending admin change proposal.
+    function rejectProposalAdmin() external onlyAdmin {
+        admin = ProposalStructs.AddressTypeProposal({
+            current: admin.current,
+            proposal: address(0),
+            timeToAccept: 0
+        });
     }
 
     /**
-     * @notice Proposes new reward split percentages for fixed-fee fills.
-     * @param _seller Seller share in basis points.
-     * @param _service Service share in basis points.
-     * @param _mateStaker Staker share in basis points.
+     * @notice Finalizes the admin change after the time delay.
+     * @dev Must be called by the proposed admin.
      */
-    function proposeFillFixedPercentage(
+    function acceptAdmin() external {
+        if (block.timestamp < admin.timeToAccept)
+            revert Error.ProposalNotReadyToAccept();
+
+        if (msg.sender != admin.proposal)
+            revert Error.SenderIsNotTheProposedAdmin();
+
+        admin = ProposalStructs.AddressTypeProposal({
+            current: admin.proposal,
+            proposal: address(0),
+            timeToAccept: 0
+        });
+    }
+
+    //░▒▓█ Fee Management ██████████████████████████████████████████████████████████▓▒░
+
+    /**
+     * @notice Proposes a new proportional fee rate in basis points.
+     * @dev Proposal requires 1-day timelock before acceptance.
+     * @param _newFee New fee rate in basis points (max 10_000 = 100%).
+     */
+    function proposeBasisPercentageFee(uint256 _newFee) external onlyAdmin {
+        if (_newFee > 10_000) revert Error.IncorrectAddressInput();
+
+        percentageFee = ProposalStructs.UintTypeProposal({
+            current: percentageFee.current,
+            proposal: _newFee,
+            timeToAccept: block.timestamp + TIME_TO_ACCEPT_PROPOSAL
+        });
+    }
+
+    /// @notice Cancels a pending fee rate change proposal.
+    function rejectProposalBasisPercentageFee() external onlyAdmin {
+        percentageFee = ProposalStructs.UintTypeProposal({
+            current: percentageFee.current,
+            proposal: 0,
+            timeToAccept: 0
+        });
+    }
+
+    /**
+     * @notice Finalizes the fee rate change after the time delay.
+     * @dev Can only be called by the admin once the timelock expires.
+     */
+    function acceptBasisPercentageFee() external onlyAdmin {
+        if (block.timestamp < percentageFee.timeToAccept)
+            revert Error.ProposalNotReadyToAccept();
+
+        percentageFee = ProposalStructs.UintTypeProposal({
+            current: percentageFee.proposal,
+            proposal: 0,
+            timeToAccept: 0
+        });
+    }
+
+    //░▒▓█ Reward Distribution █████████████████████████████████████████████████████▓▒░
+
+    /**
+     * @notice Proposes a new fee distribution split among seller, service, and staker.
+     * @dev Proposal requires 1-day timelock. Sum must equal 10_000 basis points.
+     * @param _seller Basis points allocated to the order seller.
+     * @param _service Basis points allocated to the service contract.
+     * @param _mateStaker Basis points allocated to the MATE staker.
+     */
+    function proposeBasisPointsForReward(
         uint256 _seller,
         uint256 _service,
         uint256 _mateStaker
-    ) external {
-        if (msg.sender != owner) {
-            revert();
-        }
-        if (_seller + _service + _mateStaker != 10_000) {
-            revert();
-        }
-        rewardPercentage_proposal = Structs.Percentage(
-            _seller,
-            _service,
-            _mateStaker
-        );
-        rewardPercentage_timeToAcceptNewChange = block.timestamp + 1 days;
+    ) external onlyAdmin {
+        if (_seller + _service + _mateStaker != 10_000)
+            revert Error.InvalidBasisPoints();
+
+        basisPointsForReward = Structs.PercentageProposal({
+            current: basisPointsForReward.current,
+            proposed: Structs.Percentage({
+                seller: _seller,
+                service: _service,
+                mateStaker: _mateStaker
+            }),
+            proposalTime: block.timestamp + TIME_TO_ACCEPT_PROPOSAL
+        });
     }
 
-    /// @notice Cancels the pending fixed-fee reward percentage proposal.
-    function rejectProposeFillFixedPercentage() external {
-        if (
-            msg.sender != owner ||
-            block.timestamp > rewardPercentage_timeToAcceptNewChange
-        ) {
-            revert();
-        }
-        rewardPercentage_proposal = Structs.Percentage(0, 0, 0);
-    }
-
-    /// @notice Applies the pending fixed-fee reward percentage proposal.
-    function acceptFillFixedPercentage() external {
-        if (
-            msg.sender != owner ||
-            block.timestamp > rewardPercentage_timeToAcceptNewChange
-        ) {
-            revert();
-        }
-        rewardPercentage = rewardPercentage_proposal;
+    /// @notice Cancels a pending fee distribution change proposal.
+    function rejectProposalBasisPointsForReward() external onlyAdmin {
+        basisPointsForReward = Structs.PercentageProposal({
+            current: basisPointsForReward.current,
+            proposed: Structs.Percentage({
+                seller: 0,
+                service: 0,
+                mateStaker: 0
+            }),
+            proposalTime: 0
+        });
     }
 
     /**
-     * @notice Proposes new reward split percentages for proportional-fee fills.
-     * @param _seller Seller share in basis points.
-     * @param _service Service share in basis points.
-     * @param _mateStaker Staker share in basis points.
+     * @notice Finalizes the fee distribution change after the time delay.
+     * @dev Can only be called by the admin once the timelock expires.
      */
-    function proposeFillPropotionalPercentage(
-        uint256 _seller,
-        uint256 _service,
-        uint256 _mateStaker
-    ) external {
-        if (msg.sender != owner || _seller + _service + _mateStaker != 10_000) {
-            revert();
-        }
-        rewardPercentage_proposal = Structs.Percentage(
-            _seller,
-            _service,
-            _mateStaker
-        );
-        rewardPercentage_timeToAcceptNewChange = block.timestamp + 1 days;
+    function acceptBasisPointsForReward() external onlyAdmin {
+        if (block.timestamp < basisPointsForReward.proposalTime)
+            revert Error.ProposalNotReadyToAccept();
+
+        basisPointsForReward = Structs.PercentageProposal({
+            current: basisPointsForReward.proposed,
+            proposed: Structs.Percentage({
+                seller: 0,
+                service: 0,
+                mateStaker: 0
+            }),
+            proposalTime: 0
+        });
     }
 
-    /// @notice Cancels the pending proportional-fee reward percentage proposal.
-    function rejectProposeFillPropotionalPercentage() external {
-        if (
-            msg.sender != owner ||
-            block.timestamp > rewardPercentage_timeToAcceptNewChange
-        ) {
-            revert();
-        }
-        rewardPercentage_proposal = Structs.Percentage(0, 0, 0);
-    }
-
-    /// @notice Applies the pending proportional-fee reward percentage proposal.
-    function acceptFillPropotionalPercentage() external {
-        if (
-            msg.sender != owner ||
-            block.timestamp > rewardPercentage_timeToAcceptNewChange
-        ) {
-            revert();
-        }
-        rewardPercentage = rewardPercentage_proposal;
-    }
+    //░▒▓█ Withdrawal Management █████████████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Proposes a new proportional fee percentage.
-     * @param _percentageFee New fee in basis points (e.g. 500 = 5%).
-     */
-    function proposePercentageFee(uint256 _percentageFee) external {
-        if (msg.sender != owner) {
-            revert();
-        }
-        percentageFee.proposal = _percentageFee;
-        percentageFee.timeToAccept = block.timestamp + 1 days;
-    }
-
-    /// @notice Cancels the pending percentage fee proposal.
-    function rejectProposePercentageFee() external {
-        if (
-            msg.sender != owner || block.timestamp > percentageFee.timeToAccept
-        ) {
-            revert();
-        }
-        percentageFee.proposal = 0;
-    }
-
-    /// @notice Applies the pending percentage fee proposal.
-    function acceptPercentageFee() external {
-        if (
-            msg.sender != owner || block.timestamp > percentageFee.timeToAccept
-        ) {
-            revert();
-        }
-        percentageFee.current = percentageFee.proposal;
-    }
-
-    /**
-     * @notice Proposes a new maximum fixed fee cap.
-     * @param _maxLimitFillFixedFee New cap amount.
-     */
-    function proposeMaxLimitFillFixedFee(
-        uint256 _maxLimitFillFixedFee
-    ) external {
-        if (msg.sender != owner) {
-            revert();
-        }
-        maxLimitFillFixedFee.proposal = _maxLimitFillFixedFee;
-        maxLimitFillFixedFee.timeToAccept = block.timestamp + 1 days;
-    }
-
-    /// @notice Cancels the pending max fixed fee proposal.
-    function rejectProposeMaxLimitFillFixedFee() external {
-        if (
-            msg.sender != owner ||
-            block.timestamp > maxLimitFillFixedFee.timeToAccept
-        ) {
-            revert();
-        }
-        maxLimitFillFixedFee.proposal = 0;
-    }
-
-    /// @notice Applies the pending max fixed fee proposal.
-    function acceptMaxLimitFillFixedFee() external {
-        if (
-            msg.sender != owner ||
-            block.timestamp > maxLimitFillFixedFee.timeToAccept
-        ) {
-            revert();
-        }
-        maxLimitFillFixedFee.current = maxLimitFillFixedFee.proposal;
-    }
-
-    /**
-     * @notice Proposes a fee withdrawal with a 1-day timelock.
-     * @param _tokenToWithdraw Token address to withdraw.
-     * @param _amountToWithdraw Amount to withdraw.
-     * @param _to Recipient address.
+     * @notice Proposes a withdrawal of accumulated service fees.
+     * @dev Proposal requires 1-day timelock. Cannot exceed available collected fees.
+     * @param tokenToWithdraw Address of the token to withdraw.
+     * @param amountToWithdraw Amount of tokens to withdraw.
      */
     function proposeWithdrawal(
-        address _tokenToWithdraw,
-        uint256 _amountToWithdraw,
-        address _to
-    ) external {
+        address tokenToWithdraw,
+        uint256 amountToWithdraw
+    ) external onlyAdmin {
+        if (amountToWithdraw == 0) revert Error.IncorrectInput();
+
+        if (totalFeesCollected[tokenToWithdraw] < amountToWithdraw)
+            revert Error.InsufficientAmount();
+
+        withdrawalProposal = Structs.WithdrawalProposal({
+            tokenToWithdraw: tokenToWithdraw,
+            amountToWithdraw: amountToWithdraw,
+            proposalTime: block.timestamp + TIME_TO_ACCEPT_PROPOSAL
+        });
+    }
+
+    /// @notice Cancels a pending withdrawal proposal.
+    function rejectProposalWithdrawal() external onlyAdmin {
+        withdrawalProposal = Structs.WithdrawalProposal({
+            tokenToWithdraw: address(0),
+            amountToWithdraw: 0,
+            proposalTime: 0
+        });
+    }
+
+    /**
+     * @notice Finalizes the withdrawal of accumulated fees after the time delay.
+     * @dev Can only be called by the admin once the timelock expires.
+     */
+    function acceptWithdrawal() external onlyAdmin {
+        if (block.timestamp < withdrawalProposal.proposalTime)
+            revert Error.ProposalNotReadyToAccept();
+
         if (
-            msg.sender != owner ||
-            _amountToWithdraw > balancesOfContract[_tokenToWithdraw]
-        ) {
-            revert();
-        }
-        tokenToWithdraw = _tokenToWithdraw;
-        amountToWithdraw = _amountToWithdraw;
-        recipientToWithdraw = _to;
-        timeToWithdrawal = block.timestamp + 1 days;
-    }
+            totalFeesCollected[withdrawalProposal.tokenToWithdraw] <
+            withdrawalProposal.amountToWithdraw
+        ) revert Error.InsufficientPayment();
 
-    /// @notice Cancels the pending withdrawal proposal.
-    function rejectProposeWithdrawal() external {
-        if (msg.sender != owner || block.timestamp > timeToWithdrawal) {
-            revert();
-        }
-        tokenToWithdraw = address(0);
-        amountToWithdraw = 0;
-        recipientToWithdraw = address(0);
-        timeToWithdrawal = 0;
-    }
+        totalFeesCollected[
+            withdrawalProposal.tokenToWithdraw
+        ] -= withdrawalProposal.amountToWithdraw;
 
-    /// @notice Executes the pending withdrawal after the timelock.
-    function acceptWithdrawal() external {
-        if (msg.sender != owner || block.timestamp > timeToWithdrawal) {
-            revert();
-        }
-        makeCaPay(recipientToWithdraw, tokenToWithdraw, amountToWithdraw);
-        balancesOfContract[tokenToWithdraw] -= amountToWithdraw;
-
-        tokenToWithdraw = address(0);
-        amountToWithdraw = 0;
-        recipientToWithdraw = address(0);
-        timeToWithdrawal = 0;
-    }
-
-    /**
-     * @notice Stakes MATE tokens from the service balance.
-     * @param amount Number of staking slots to purchase.
-     */
-    function stake(uint256 amount) external {
-        if (
-            msg.sender != owner ||
-            amount * staking.priceOfStaking() >
-            balancesOfContract[0x0000000000000000000000000000000000000001]
-        ) revert();
-
-        _makeStakeService(amount);
-    }
-
-    /**
-     * @notice Unstakes MATE tokens back to the service balance.
-     * @param amount Number of staking slots to release.
-     */
-    function unstake(uint256 amount) external {
-        if (msg.sender != owner) revert();
-
-        _makeUnstakeService(amount);
-    }
-
-    /**
-     * @notice Manually records an added balance for a token (admin only, for accounting).
-     * @param _token Token address.
-     * @param _amount Amount to add.
-     */
-    function addBalance(address _token, uint256 _amount) external {
-        if (msg.sender != owner) {
-            revert();
-        }
-        balancesOfContract[_token] += _amount;
-    }
-
-    //◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢
-    //getters
-    //◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢
-    /**
-     * @notice Returns all active orders in a market.
-     * @param market Market ID.
-     * @return orders Array of orders with market and slot info.
-     */
-    function getAllMarketOrders(
-        uint256 market
-    ) public view returns (Structs.OrderForGetter[] memory orders) {
-        orders = new Structs.OrderForGetter[](
-            marketMetadata[market].maxSlot + 1
+        makeCaPay(
+            msg.sender,
+            withdrawalProposal.tokenToWithdraw,
+            withdrawalProposal.amountToWithdraw
         );
 
-        for (uint256 i = 1; i <= marketMetadata[market].maxSlot + 1; i++) {
-            if (ordersInsideMarket[market][i].seller != address(0)) {
-                orders[i - 1] = Structs.OrderForGetter(
-                    market,
-                    i,
-                    ordersInsideMarket[market][i].seller,
-                    ordersInsideMarket[market][i].amountA,
-                    ordersInsideMarket[market][i].amountB
-                );
-            }
-        }
-        return orders;
+        withdrawalProposal = Structs.WithdrawalProposal({
+            tokenToWithdraw: address(0),
+            amountToWithdraw: 0,
+            proposalTime: 0
+        });
     }
 
-    /**
-     * @notice Returns a single order by market and order ID.
-     * @param market Market ID.
-     * @param orderId Order slot index.
-     * @return order Order data.
-     */
-    function getOrder(
-        uint256 market,
-        uint256 orderId
-    ) public view returns (Structs.Order memory order) {
-        order = ordersInsideMarket[market][orderId];
-        return order;
-    }
+    //░▒▓█ Helper Functions █████████████████████████████████████████████████████████▓▒░
 
     /**
-     * @notice Returns all orders placed by a user in a specific market.
-     * @param user Seller address.
-     * @param market Market ID.
-     * @return orders Array of matching orders.
+     * @notice Returns the deterministic market ID for a token pair.
+     * @param tokenA First token of the pair.
+     * @param tokenB Second token of the pair.
+     * @return Market ID as a bytes32 hash.
      */
-    function getMyOrdersInSpecificMarket(
-        address user,
-        uint256 market
-    ) public view returns (Structs.OrderForGetter[] memory orders) {
-        orders = new Structs.OrderForGetter[](
-            marketMetadata[market].maxSlot + 1
-        );
-
-        for (uint256 i = 1; i <= marketMetadata[market].maxSlot + 1; i++) {
-            if (ordersInsideMarket[market][i].seller == user) {
-                orders[i - 1] = Structs.OrderForGetter(
-                    market,
-                    i,
-                    ordersInsideMarket[market][i].seller,
-                    ordersInsideMarket[market][i].amountA,
-                    ordersInsideMarket[market][i].amountB
-                );
-            }
-        }
-        return orders;
-    }
-
-    /**
-     * @notice Returns the market ID for a token pair, or 0 if it doesn't exist.
-     * @param tokenA Token A address.
-     * @param tokenB Token B address.
-     * @return Market ID.
-     */
-    function findMarket(
+    function getMarketId(
         address tokenA,
         address tokenB
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(tokenA, tokenB));
+    }
+
+    /**
+     * @notice Applies a basis-point rate to an amount.
+     * @dev Calculates: amount * basisPoints / 10_000.
+     * @param amount Base amount to apply the rate to.
+     * @param basisPoints Rate in basis points (10_000 = 100%).
+     * @return Scaled result.
+     */
+    function applyBasisPoints(
+        uint256 amount,
+        uint256 basisPoints
+    ) public pure returns (uint256) {
+        return (amount * basisPoints) / 10_000;
+    }
+
+    /**
+     * @notice Calculates the base payment amount (excluding fee) for a partial fill.
+     * @dev Uses the order's original price ratio: netPayment = amountOut * requestedAmount / offeredAmount.
+     * @param amountOut Amount of `offeredToken` the buyer wants to receive.
+     * @param offeredAmount Total `offeredToken` amount in the order (price denominator).
+     * @param requestedAmount Total `requestedToken` amount in the order (price numerator).
+     * @return Net amount of `requestedToken` owed before fees.
+     */
+    function getNetPaymentAmount(
+        uint256 amountOut,
+        uint256 offeredAmount,
+        uint256 requestedAmount
+    ) public pure returns (uint256) {
+        return (amountOut * requestedAmount) / offeredAmount;
+    }
+
+    /**
+     * @notice Calculates the protocol fee applied on top of the net payment.
+     * @dev fee = netPaymentAmount * percentageFee / 10_000. Default rate is 500 (5%).
+     * @param netPaymentAmount Base payment amount before fees.
+     * @return Fee amount in `requestedToken` units.
+     */
+    function getFeePaymentAmount(
+        uint256 netPaymentAmount
     ) public view returns (uint256) {
-        return marketId[tokenA][tokenB];
+        return applyBasisPoints(netPaymentAmount, percentageFee.current);
     }
 
     /**
-     * @notice Returns metadata for a specific market.
-     * @param market Market ID.
-     * @return Market info struct.
+     * @notice Calculates the Volume Weighted Average Price (VWAP) of a market.
+     * @dev VWAP = sum(amountB) / sum(amountA) across all active orders, scaled by 1e18.
+     *      Returns 0 if there are no active orders.
+     * @param marketId Market ID to calculate the VWAP for.
+     * @return VWAP price scaled by 1e18 (tokenB units per tokenA unit).
      */
-    function getMarketMetadata(
-        uint256 market
-    ) public view returns (Structs.MarketInformation memory) {
-        return marketMetadata[market];
-    }
+    function getVWAP(bytes32 marketId) public view returns (uint256) {
+        uint256 totalAvailableA;
+        uint256 totalAvailableB;
+        uint256 maxSlot = marketInformation[marketId].maxSlot;
 
-    /**
-     * @notice Returns metadata for all markets.
-     * @return Array of all market info structs.
-     */
-    function getAllMarketsMetadata()
-        public
-        view
-        returns (Structs.MarketInformation[] memory)
-    {
-        Structs.MarketInformation[]
-            memory markets = new Structs.MarketInformation[](marketCount + 1);
-        for (uint256 i = 1; i <= marketCount; i++) {
-            markets[i - 1] = marketMetadata[i];
+        for (uint256 i = 1; i <= maxSlot; i++) {
+            Structs.Order storage o = orders[marketId][i];
+            if (o.seller != address(0) && o.amountAvailable > 0) {
+                totalAvailableA += o.amountAvailable;
+                totalAvailableB +=
+                    (o.amountAvailable * o.requestedAmount) /
+                    o.offeredAmount;
+            }
         }
-        return markets;
+        return
+            totalAvailableA == 0
+                ? 0
+                : (totalAvailableB * 1e18) / totalAvailableA;
     }
 
     /**
-     * @notice Returns the accumulated service fee balance for a token.
-     * @param token Token address.
-     * @return Accumulated fee balance.
+     * @dev Accumulates service fees collected from trades.
+     * @param token Address of the token in which fees are collected.
+     * @param amount Fee amount to accumulate.
      */
-    function getBalanceOfContract(
-        address token
-    ) external view returns (uint256) {
-        return balancesOfContract[token];
+    function collectFees(address token, uint256 amount) internal {
+        totalFeesCollected[token] += amount;
     }
 
-    /// @notice Returns the proposed new owner address.
-    function getOwnerProposal() external view returns (address) {
-        return owner_proposal;
+    /**
+     * @dev Sends a principal token reward to the executor if it is a registered staker.
+     * @param executor Address of the executor to reward.
+     * @param multiplier Reward multiplier applied to the base reward amount (1 for makeOrder/cancelOrder, 2 for dispatchOrder).
+     */
+    function _sendReward(address executor, uint256 multiplier) internal {
+        makeCaPay(
+            executor,
+            core.getPrincipalTokenAddress(),
+            core.getRewardAmount() * multiplier
+        );
     }
 
-    /// @notice Returns the current owner address.
-    function getOwner() external view returns (address) {
-        return owner;
+    //░▒▓█ Getters █████████████████████████████████████████████████████████████▓▒░
+
+    /// @notice Returns the current admin address.
+    /// @return Current admin address.
+    function getAdmin() external view returns (address) {
+        return admin.current;
     }
 
-    /// @notice Returns the deadline for accepting the owner proposal.
-    function getOwnerTimeToAccept() external view returns (uint256) {
-        return owner_timeToAccept;
+    /// @notice Returns the proposed admin address.
+    /// @return Proposed admin address (address(0) if none pending).
+    function getAdminProposal() external view returns (address) {
+        return admin.proposal;
     }
 
-    /// @notice Returns the pending fee split percentage proposal.
-    function getRewardPercentageProposal()
-        external
-        view
-        returns (Structs.Percentage memory)
-    {
-        return rewardPercentage_proposal;
+    /// @notice Returns the timestamp when the admin proposal becomes acceptable.
+    /// @return Unix timestamp when the proposal can be accepted.
+    function getAdminTimeToAccept() external view returns (uint256) {
+        return admin.timeToAccept;
     }
 
-    /// @notice Returns the current fee split percentages.
-    function getRewardPercentage()
-        external
-        view
-        returns (Structs.Percentage memory)
-    {
-        return rewardPercentage;
-    }
-
-    /// @notice Returns the proposed new percentage fee.
-    function getProposalPercentageFee() external view returns (uint256) {
-        return percentageFee.proposal;
-    }
-
-    /// @notice Returns the current percentage fee in basis points.
+    /// @notice Returns the current proportional fee rate in basis points.
+    /// @return Current fee rate in basis points.
     function getPercentageFee() external view returns (uint256) {
         return percentageFee.current;
     }
 
-    /// @notice Returns the proposed new max fixed fee cap.
-    function getMaxLimitFillFixedFeeProposal() external view returns (uint256) {
-        return maxLimitFillFixedFee.proposal;
+    /// @notice Returns the proposed proportional fee rate in basis points.
+    /// @return Proposed fee rate in basis points.
+    function getPercentageFeeProposal() external view returns (uint256) {
+        return percentageFee.proposal;
     }
 
-    /// @notice Returns the current max fixed fee cap.
-    function getMaxLimitFillFixedFee() external view returns (uint256) {
-        return maxLimitFillFixedFee.current;
+    /// @notice Returns the timestamp when the percentage fee proposal becomes acceptable.
+    /// @return Unix timestamp when the fee proposal can be accepted.
+    function getPercentageFeeTimeToAccept() external view returns (uint256) {
+        return percentageFee.timeToAccept;
     }
 
-    /**
-     * @notice Returns the details of the pending withdrawal proposal.
-     * @return Token address, amount, recipient, and deadline.
-     */
-    function getProposedWithdrawal()
+    /// @notice Returns the current fee distribution percentages.
+    /// @return Current Percentage struct with seller, service, and mateStaker splits.
+    function getBasisPointsForReward()
         external
         view
-        returns (address, uint256, address, uint256)
+        returns (Structs.Percentage memory)
     {
-        return (
-            tokenToWithdraw,
-            amountToWithdraw,
-            recipientToWithdraw,
-            timeToWithdrawal
-        );
+        return basisPointsForReward.current;
+    }
+
+    /// @notice Returns the proposed fee distribution percentages.
+    /// @return Proposed Percentage struct with seller, service, and mateStaker splits.
+    function getBasisPointsForRewardProposal()
+        external
+        view
+        returns (Structs.Percentage memory)
+    {
+        return basisPointsForReward.proposed;
+    }
+
+    /// @notice Returns the timestamp when the reward basis points proposal becomes acceptable.
+    /// @return Unix timestamp when the reward proposal can be accepted.
+    function getBasisPointsForRewardProposalTime()
+        external
+        view
+        returns (uint256)
+    {
+        return basisPointsForReward.proposalTime;
+    }
+
+    /// @notice Returns the pending withdrawal proposal.
+    /// @return WithdrawalProposal struct with token, amount, and proposal time.
+    function getWithdrawalProposal()
+        external
+        view
+        returns (Structs.WithdrawalProposal memory)
+    {
+        return withdrawalProposal;
+    }
+
+    /// @notice Returns the total fees collected for a specific token.
+    /// @param token Address of the token to query.
+    /// @return Total amount of fees collected in the specified token.
+    function getTotalFeesCollected(
+        address token
+    ) external view returns (uint256) {
+        return totalFeesCollected[token];
+    }
+
+    /// @notice Returns the metadata for a given market.
+    /// @param marketId Market ID to query.
+    /// @return MarketInformation struct with maxSlot, ordersAvailable, and medianPrice.
+    function getMarketInformation(
+        bytes32 marketId
+    ) external view returns (Structs.MarketInformation memory) {
+        return marketInformation[marketId];
+    }
+
+    /// @notice Returns the order data for a given market and slot.
+    /// @param marketId Market ID containing the order.
+    /// @param orderId Slot ID of the order.
+    /// @return Order struct with seller, amounts, and availability.
+    function getOrder(
+        bytes32 marketId,
+        uint256 orderId
+    ) external view returns (Structs.Order memory) {
+        return orders[marketId][orderId];
     }
 }

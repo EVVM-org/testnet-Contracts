@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-07-05
+
+### Codename: "Wraith"
+
+Named after [Wraith](https://deadlock.wiki/Wraith) from [Deadlock](https://www.playdeadlock.com/), this release embodies the spirit of precise deal-making and market mastery. Just as Wraith operates the underworld's exchanges with calculated efficiency—setting prices, managing orders, and executing deals with supernatural precision—this release rewrites the P2PSwap contract from the ground up into a clean order book system. The name reflects her identity as the architect of fair exchanges, mirroring how this version introduces VWAP-based price transparency, proportional fee calculation, and a governed proposal system that ensures every market parameter change is deliberate and time-locked.
+
+### Added
+
+- **P2PSwap.sol**: Complete architectural rewrite of the P2P swap contract, replacing the previous implementation with a streamlined order book system:
+  - Implemented core order operations (`makeOrder`, `cancelOrder`, `dispatchOrder`) with proportional fee calculation based on order price ratios and VWAP (Volume Weighted Average Price) tracking for market transparency
+  - Added administrative proposal system with 1-day timelock for critical parameter changes: admin transitions (`proposeAdmin`), fee rate adjustments (`proposeBasisPercentageFee`), fee distribution splits (`proposeBasisPointsForReward`), and service fee withdrawals (`proposeWithdrawal`)
+  - Added helper functions for price calculations and fee management: `getMarketId` (deterministic market ID generation), `applyBasisPoints` (basis point calculations), `getNetPaymentAmount` (proportional payment calculation), `getFeePaymentAmount` (protocol fee calculation), `getVWAP` (market price aggregation), and `collectFees` (service fee accumulation)
+  - Added 13 new getter functions to expose all state variables for frontend integration and transparency: `getAdmin`, `getAdminProposal`, `getAdminTimeToAccept`, `getPercentageFee`, `getPercentageFeeProposal`, `getPercentageFeeTimeToAccept`, `getBasisPointsForReward`, `getBasisPointsForRewardProposal`, `getBasisPointsForRewardProposalTime`, `getWithdrawalProposal`, `getTotalFeesCollected`, `getMarketInformation`, `getOrder`
+- **Core.sol**: Added 6 new getter functions to expose previously inaccessible state variables and constants: `getETHAddress` (returns `ETH_ADDRESS` constant), `getTreasuryAddress` (returns `treasuryAddress`), `getWindowTimeToChangeEvvmID` (returns `windowTimeToChangeEvvmID`), `getFlagIsStaker` (returns `FLAG_IS_STAKER` constant), `getTimeToAcceptProposal` (returns `TIME_TO_ACCEPT_PROPOSAL` constant), `getTimeToAcceptImplementation` (returns `TIME_TO_ACCEPT_IMPLEMENTATION` constant)
+- **P2PSwapError.sol**: Added new custom error library with gas-efficient error definitions for all P2PSwap failure conditions: `NotTheSeller`, `OrderIsUnavailable`, `InsufficientPayment`, `InsufficientAmountToFill`, `SenderIsNotAdmin`, `IncorrectAddressInput`, `ProposalNotReadyToAccept`, `SenderIsNotTheProposedAdmin`, `InvalidBasisPoints`, `ZeroAmount`, `SameTokenPair`, `UnexpectedBehavior`, `IncorrectInput`, `InsufficientAmount`
+
+### Changed
+
+- **P2PSwap.sol**: Refactored admin functions to use proposal pattern with 1-day timelock:
+  - Renamed `proposeOwner`/`rejectProposeOwner`/`acceptOwner` to `proposeAdmin`/`rejectProposalAdmin`/`acceptAdmin`
+  - Renamed `proposePercentageFee`/`rejectProposePercentageFee`/`acceptPercentageFee` to `proposeBasisPercentageFee`/`rejectProposalBasisPercentageFee`/`acceptBasisPercentageFee`
+  - Renamed `proposeFillFixedPercentage`/`rejectProposeFillFixedPercentage`/`acceptFillFixedPercentage` to `proposeBasisPointsForReward`/`rejectProposalBasisPointsForReward`/`acceptBasisPointsForReward`
+  - Consolidated `dispatchOrder_fillFixedFee` and `dispatchOrder_fillPropotionalFee` into single `dispatchOrder` function with proportional fee calculation
+  - Replaced `balancesOfContract` with `totalFeesCollected` mapping for fee tracking
+  - Removed `stake`, `unstake`, `addBalance` functions and `getAllMarketOrders`, `getMyOrdersInSpecificMarket`, `findMarket`, `getMarketMetadata`, `getAllMarketsMetadata`, `getBalanceOfContract`, `getOwner`, `getOwnerProposal`, `getOwnerTimeToAccept`, `getRewardPercentage`, `getRewardPercentageProposal`, `getProposalPercentageFee`, `getMaxLimitFillFixedFee`, `getMaxLimitFillFixedFeeProposal`, `getProposedWithdrawal` getter functions
+- **P2PSwapStructs.sol**:
+  - Fixed typo in struct name: `WidrawalProposal` → `WithdrawalProposal` (updated all references in `P2PSwap.sol`)
+  - Added complete NatSpec documentation for all structs including `@notice`, `@dev`, and `@param` tags
+  - Reordered `pragma solidity` statement before `import` statements to comply with Solidity compiler requirements
+  - Updated `MarketInformation` struct: removed `tokenA`/`tokenB` fields, added `medianPrice` field for VWAP tracking
+  - Updated `Order` struct: renamed `amountA`/`amountB` to `offeredAmount`/`requestedAmount`, added `amountAvailable` for partial fill tracking
+  - Added `PercentageProposal` struct for time-delayed fee distribution updates
+  - Added `WithdrawalProposal` struct for time-delayed fee withdrawal proposals
+- **P2PSwapError.sol**: Corrected error descriptions to accurately reflect their usage context. `UnexpectedBehavior` now describes internal state inconsistencies (e.g., order slot search failures) rather than invalid order IDs. `IncorrectInput` and `InsufficientAmount` descriptions clarified for their specific use cases in withdrawal proposals
+- **IP2PSwap.sol**: Updated interface to match new P2PSwap contract functions and removed deprecated function signatures
+- **ICore.sol**: Added new getter function signatures: `getETHAddress`, `getFlagIsStaker`, `getTimeToAcceptImplementation`, `getTimeToAcceptProposal`, `getTreasuryAddress`, `getWindowTimeToChangeEvvmID`
+
+### Fixed
+
+- **P2PSwap.sol**: Fixed critical bug in `makeOrder` where `ordersAvailable` counter was not incremented when reusing free order slots, causing permanent desynchronization between the counter and actual active orders. This led to potential underflow in `cancelOrder` and `dispatchOrder` when decrementing the counter, which would revert transactions and block order management for affected markets
+- **P2PSwap.sol**: Fixed compilation error in `cancelOrder` where the `order` variable was used in validation checks (`order.seller == address(0)`) before being declared, causing the contract to fail compilation
+- **P2PSwap.sol**: Added missing `collectFees` internal function that was being called in `dispatchOrder` to accumulate service fees but was never defined, causing compilation failure
+
+### Removed
+
+- **CLI**: Moved CLI deployment from this repo to https://github.com/EVVM-org/evvm-cli
+
 ## [3.1.2] - 2026-04-01
 
 ### Changed

@@ -134,8 +134,10 @@ interface ICore {
     function getCurrentListStatus() external view returns (bytes1);
     function getCurrentSupply() external view returns (uint256);
     function getDenyListStatus(address token) external view returns (bool);
+    function getETHAddress() external pure returns (address);
     function getEvvmID() external view returns (uint256);
     function getEvvmMetadata() external view returns (CoreStructs.EvvmMetadata memory);
+    function getFlagIsStaker() external pure returns (bytes1);
     function getFullDetailAdmin() external view returns (ProposalStructs.AddressTypeProposal memory);
     function getFullDetailImplementation() external view returns (ProposalStructs.AddressTypeProposal memory);
     function getFullDetailListStatus() external view returns (ProposalStructs.Bytes1TypeProposal memory);
@@ -150,8 +152,12 @@ interface ICore {
     function getRewardAmount() external view returns (uint256);
     function getRewardFlowDistributionFlag() external view returns (bool);
     function getStakingContractAddress() external view returns (address);
+    function getTimeToAcceptImplementation() external pure returns (uint256);
+    function getTimeToAcceptProposal() external pure returns (uint256);
     function getTimeToDeleteMaxSupply() external view returns (uint256);
+    function getTreasuryAddress() external view returns (address);
     function getUserValidatorAddress() external view returns (address);
+    function getWindowTimeToChangeEvvmID() external view returns (uint256);
     function initializeSystemContracts(address _nameServiceAddress, address _treasuryAddress) external;
     function isAddressStaker(address user) external view returns (bool);
     function pay(

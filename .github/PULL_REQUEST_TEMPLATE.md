@@ -23,7 +23,6 @@
 - [ ] Treasury (`treasury/`)
 - [ ] Cross-Chain Treasury (`treasuryTwoChains/`)
 - [ ] Library (`library/`)
-- [ ] CLI Tools (`cli/`)
 - [ ] Tests
 - [ ] Scripts/Deployment
 - [ ] Other: _______________

@@ -39,7 +39,6 @@ Please include the following information in your report:
   - [ ] Treasury (`treasury/`)
   - [ ] Cross-Chain Treasury (`treasuryTwoChains/`)
   - [ ] Library (`library/`)
-  - [ ] CLI Tools (`cli/`)
   - [ ] Other: _______________
 - **Severity Assessment**: Your assessment of the severity (Critical/High/Medium/Low)
 - **Steps to Reproduce**: Detailed steps to reproduce the vulnerability

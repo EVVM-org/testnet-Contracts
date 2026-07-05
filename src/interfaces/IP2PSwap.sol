@@ -4,24 +4,16 @@ pragma solidity ^0.8.0;
 
 library P2PSwapStructs {
     struct MarketInformation {
-        address tokenA;
-        address tokenB;
         uint256 maxSlot;
         uint256 ordersAvailable;
+        uint256 medianPrice;
     }
 
     struct Order {
         address seller;
-        uint256 amountA;
-        uint256 amountB;
-    }
-
-    struct OrderForGetter {
-        uint256 marketId;
-        uint256 orderId;
-        address seller;
-        uint256 amountA;
-        uint256 amountB;
+        uint256 offeredAmount;
+        uint256 requestedAmount;
+        uint256 amountAvailable;
     }
 
     struct Percentage {
@@ -29,22 +21,40 @@ library P2PSwapStructs {
         uint256 service;
         uint256 mateStaker;
     }
+
+    struct WithdrawalProposal {
+        address tokenToWithdraw;
+        uint256 amountToWithdraw;
+        uint256 proposalTime;
+    }
 }
 
 interface IP2PSwap {
+    error IncorrectAddressInput();
+    error IncorrectInput();
+    error InsufficientAmount();
+    error InsufficientAmountToFill();
+    error InsufficientPayment();
+    error InvalidBasisPoints();
     error InvalidServiceSignature();
+    error NotTheSeller();
+    error OrderIsUnavailable();
+    error ProposalNotReadyToAccept();
+    error SameTokenPair();
+    error SenderIsNotAdmin();
+    error SenderIsNotTheProposedAdmin();
+    error UnexpectedBehavior();
+    error ZeroAmount();
 
-    function acceptFillFixedPercentage() external;
-    function acceptFillPropotionalPercentage() external;
-    function acceptMaxLimitFillFixedFee() external;
-    function acceptOwner() external;
-    function acceptPercentageFee() external;
+    function acceptAdmin() external;
+    function acceptBasisPercentageFee() external;
+    function acceptBasisPointsForReward() external;
     function acceptWithdrawal() external;
-    function addBalance(address _token, uint256 _amount) external;
+    function applyBasisPoints(uint256 amount, uint256 basisPoints) external pure returns (uint256);
     function cancelOrder(
         address user,
-        address tokenA,
-        address tokenB,
+        address offeredToken,
+        address requestedToken,
         uint256 orderId,
         address senderExecutor,
         address originExecutor,
@@ -54,27 +64,13 @@ interface IP2PSwap {
         uint256 noncePay,
         bytes memory signaturePay
     ) external;
-    function dispatchOrder_fillFixedFee(
+    function dispatchOrder(
         address user,
-        address tokenA,
-        address tokenB,
+        address offeredToken,
+        address requestedToken,
         uint256 orderId,
-        uint256 amountOfTokenBToFill,
-        address senderExecutor,
-        address originExecutor,
-        uint256 nonce,
-        bytes memory signature,
-        uint256 priorityFeePay,
-        uint256 noncePay,
-        bytes memory signaturePay,
-        uint256 maxFillFixedFee
-    ) external;
-    function dispatchOrder_fillPropotionalFee(
-        address user,
-        address tokenA,
-        address tokenB,
-        uint256 orderId,
-        uint256 amountOfTokenBToFill,
+        uint256 amountOut,
+        uint256 amountInMax,
         address senderExecutor,
         address originExecutor,
         uint256 nonce,
@@ -83,36 +79,36 @@ interface IP2PSwap {
         uint256 noncePay,
         bytes memory signaturePay
     ) external;
-    function findMarket(address tokenA, address tokenB) external view returns (uint256);
-    function getAllMarketOrders(uint256 market) external view returns (P2PSwapStructs.OrderForGetter[] memory orders);
-    function getAllMarketsMetadata() external view returns (P2PSwapStructs.MarketInformation[] memory);
-    function getBalanceOfContract(address token) external view returns (uint256);
+    function getAdmin() external view returns (address);
+    function getAdminProposal() external view returns (address);
+    function getAdminTimeToAccept() external view returns (uint256);
+    function getBasisPointsForReward() external view returns (P2PSwapStructs.Percentage memory);
+    function getBasisPointsForRewardProposal() external view returns (P2PSwapStructs.Percentage memory);
+    function getBasisPointsForRewardProposalTime() external view returns (uint256);
     function getEvvmID() external view returns (uint256);
+    function getFeePaymentAmount(uint256 netPaymentAmount) external view returns (uint256);
     function getIfUsedAsyncNonce(address user, uint256 nonce) external view returns (bool);
-    function getMarketMetadata(uint256 market) external view returns (P2PSwapStructs.MarketInformation memory);
-    function getMaxLimitFillFixedFee() external view returns (uint256);
-    function getMaxLimitFillFixedFeeProposal() external view returns (uint256);
-    function getMyOrdersInSpecificMarket(address user, uint256 market)
+    function getMarketId(address tokenA, address tokenB) external pure returns (bytes32);
+    function getMarketInformation(bytes32 marketId) external view returns (P2PSwapStructs.MarketInformation memory);
+    function getNetPaymentAmount(uint256 amountOut, uint256 offeredAmount, uint256 requestedAmount)
         external
-        view
-        returns (P2PSwapStructs.OrderForGetter[] memory orders);
+        pure
+        returns (uint256);
     function getNextCurrentSyncNonce(address user) external view returns (uint256);
-    function getOrder(uint256 market, uint256 orderId) external view returns (P2PSwapStructs.Order memory order);
-    function getOwner() external view returns (address);
-    function getOwnerProposal() external view returns (address);
-    function getOwnerTimeToAccept() external view returns (uint256);
+    function getOrder(bytes32 marketId, uint256 orderId) external view returns (P2PSwapStructs.Order memory);
     function getPercentageFee() external view returns (uint256);
+    function getPercentageFeeProposal() external view returns (uint256);
+    function getPercentageFeeTimeToAccept() external view returns (uint256);
     function getPrincipalTokenAddress() external view returns (address);
-    function getProposalPercentageFee() external view returns (uint256);
-    function getProposedWithdrawal() external view returns (address, uint256, address, uint256);
-    function getRewardPercentage() external view returns (P2PSwapStructs.Percentage memory);
-    function getRewardPercentageProposal() external view returns (P2PSwapStructs.Percentage memory);
+    function getTotalFeesCollected(address token) external view returns (uint256);
+    function getVWAP(bytes32 marketId) external view returns (uint256);
+    function getWithdrawalProposal() external view returns (P2PSwapStructs.WithdrawalProposal memory);
     function makeOrder(
         address user,
-        address tokenA,
-        address tokenB,
-        uint256 amountA,
-        uint256 amountB,
+        address offeredToken,
+        address requestedToken,
+        uint256 offeredAmount,
+        uint256 requestedAmount,
         address senderExecutor,
         address originExecutor,
         uint256 nonce,
@@ -120,19 +116,13 @@ interface IP2PSwap {
         uint256 priorityFeePay,
         uint256 noncePay,
         bytes memory signaturePay
-    ) external returns (uint256 market, uint256 orderId);
-    function proposeFillFixedPercentage(uint256 _seller, uint256 _service, uint256 _mateStaker) external;
-    function proposeFillPropotionalPercentage(uint256 _seller, uint256 _service, uint256 _mateStaker) external;
-    function proposeMaxLimitFillFixedFee(uint256 _maxLimitFillFixedFee) external;
-    function proposeOwner(address _owner) external;
-    function proposePercentageFee(uint256 _percentageFee) external;
-    function proposeWithdrawal(address _tokenToWithdraw, uint256 _amountToWithdraw, address _to) external;
-    function rejectProposeFillFixedPercentage() external;
-    function rejectProposeFillPropotionalPercentage() external;
-    function rejectProposeMaxLimitFillFixedFee() external;
-    function rejectProposeOwner() external;
-    function rejectProposePercentageFee() external;
-    function rejectProposeWithdrawal() external;
-    function stake(uint256 amount) external;
-    function unstake(uint256 amount) external;
+    ) external;
+    function proposeAdmin(address _newOwner) external;
+    function proposeBasisPercentageFee(uint256 _newFee) external;
+    function proposeBasisPointsForReward(uint256 _seller, uint256 _service, uint256 _mateStaker) external;
+    function proposeWithdrawal(address tokenToWithdraw, uint256 amountToWithdraw) external;
+    function rejectProposalAdmin() external;
+    function rejectProposalBasisPercentageFee() external;
+    function rejectProposalBasisPointsForReward() external;
+    function rejectProposalWithdrawal() external;
 }
