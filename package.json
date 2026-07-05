@@ -1,6 +1,6 @@
 {
   "name": "@evvm/testnet-contracts",
-  "version": "3.1.2",
+  "version": "3.2.0",
   "type": "module",
   "description": "EVVM Testnet Contracts - Smart contracts and tools for scalable, modular, and cross-chain EVM virtualization",
   "files": [
