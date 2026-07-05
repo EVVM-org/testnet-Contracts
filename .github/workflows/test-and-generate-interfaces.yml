@@ -20,8 +20,16 @@ jobs:
         with:
           version: nightly
 
-      - name: Install dependencies
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          version: latest
+
+      - name: Install Foundry dependencies
         run: forge install
+
+      - name: Install Bun dependencies
+        run: bun install
 
       - name: Run tests
         run: forge test -vv
